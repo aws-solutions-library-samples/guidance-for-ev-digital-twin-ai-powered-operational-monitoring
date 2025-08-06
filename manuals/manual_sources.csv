@@ -1,0 +1,45 @@
+make,model,year,source_type,source_url,verification_date,verified_by,notes
+Toyota,Camry,2020,Owner's Manual,https://www.toyota.com/t3Portal/document/om-s/OM06019U/pdf/OM06019U.pdf,2025-01-08,System,Page 456-458 tire specifications
+Toyota,Camry,2021,Owner's Manual,https://www.toyota.com/t3Portal/document/om-s/OM06019U/pdf/OM06019U.pdf,2025-01-08,System,Page 456-458 tire specifications
+Toyota,Camry,2022,Owner's Manual,https://www.toyota.com/t3Portal/document/om-s/OM06019U/pdf/OM06019U.pdf,2025-01-08,System,Page 456-458 tire specifications
+Toyota,Prius,2020,Owner's Manual,https://www.toyota.com/t3Portal/document/om-s/OM47A41U/pdf/OM47A41U.pdf,2025-01-08,System,Page 512-514 tire specifications
+Toyota,RAV4,2020,Owner's Manual,https://www.toyota.com/t3Portal/document/om-s/OM0R042U/pdf/OM0R042U.pdf,2025-01-08,System,Page 478-480 tire specifications
+Honda,Accord,2019,Owner's Manual,https://owners.honda.com/manuals/accord/2019,2025-01-08,System,Section 8 tire information
+Honda,Civic,2020,Owner's Manual,https://owners.honda.com/manuals/civic/2020,2025-01-08,System,Section 8 tire information
+Honda,CR-V,2020,Owner's Manual,https://owners.honda.com/manuals/cr-v/2020,2025-01-08,System,Section 8 tire information
+Ford,F-150,2020,Owner's Manual,https://owner.ford.com/manuals/f-150/2020,2025-01-08,System,Chapter 9 tire specifications
+Ford,Escape,2020,Owner's Manual,https://owner.ford.com/manuals/escape/2020,2025-01-08,System,Chapter 9 tire specifications
+Ford,Mustang,2020,Owner's Manual,https://owner.ford.com/manuals/mustang/2020,2025-01-08,System,Chapter 9 tire specifications
+BMW,3 Series,2020,Owner's Manual,https://www.bmwusa.com/owners/manuals,2025-01-08,System,Tire pressure monitoring section
+BMW,X3,2020,Owner's Manual,https://www.bmwusa.com/owners/manuals,2025-01-08,System,Tire pressure monitoring section
+BMW,X5,2020,Owner's Manual,https://www.bmwusa.com/owners/manuals,2025-01-08,System,Tire pressure monitoring section
+Mercedes-Benz,C-Class,2020,Owner's Manual,https://www.mbusa.com/owners/manuals,2025-01-08,System,Wheels and tires section
+Mercedes-Benz,E-Class,2020,Owner's Manual,https://www.mbusa.com/owners/manuals,2025-01-08,System,Wheels and tires section
+Mercedes-Benz,GLC,2020,Owner's Manual,https://www.mbusa.com/owners/manuals,2025-01-08,System,Wheels and tires section
+Audi,A4,2020,Owner's Manual,https://www.audiusa.com/owners/manuals,2025-01-08,System,Tire specifications chapter
+Audi,Q5,2020,Owner's Manual,https://www.audiusa.com/owners/manuals,2025-01-08,System,Tire specifications chapter
+Lexus,ES,2020,Owner's Manual,https://drivers.lexus.com/manuals,2025-01-08,System,Tire and loading information
+Lexus,RX,2020,Owner's Manual,https://drivers.lexus.com/manuals,2025-01-08,System,Tire and loading information
+Nissan,Altima,2020,Owner's Manual,https://www.nissanusa.com/owners/manuals,2025-01-08,System,Technical specifications
+Nissan,Rogue,2020,Owner's Manual,https://www.nissanusa.com/owners/manuals,2025-01-08,System,Technical specifications
+Hyundai,Elantra,2020,Owner's Manual,https://www.hyundaiusa.com/owners/manuals,2025-01-08,System,Tire specifications
+Hyundai,Tucson,2020,Owner's Manual,https://www.hyundaiusa.com/owners/manuals,2025-01-08,System,Tire specifications
+Kia,Optima,2020,Owner's Manual,https://www.kia.com/owners/manuals,2025-01-08,System,Tire and wheel specifications
+Kia,Sorento,2020,Owner's Manual,https://www.kia.com/owners/manuals,2025-01-08,System,Tire and wheel specifications
+Subaru,Outback,2020,Owner's Manual,https://www.subaru.com/owners/manuals,2025-01-08,System,Tire information section
+Subaru,Forester,2020,Owner's Manual,https://www.subaru.com/owners/manuals,2025-01-08,System,Tire information section
+Mazda,CX-5,2020,Owner's Manual,https://www.mazdausa.com/owners/manuals,2025-01-08,System,Tire specifications
+Mazda,Mazda3,2020,Owner's Manual,https://www.mazdausa.com/owners/manuals,2025-01-08,System,Tire specifications
+Chevrolet,Malibu,2020,Owner's Manual,https://www.chevrolet.com/owners/manuals,2025-01-08,System,Vehicle specifications
+Chevrolet,Equinox,2020,Owner's Manual,https://www.chevrolet.com/owners/manuals,2025-01-08,System,Vehicle specifications
+Chevrolet,Silverado,2020,Owner's Manual,https://www.chevrolet.com/owners/manuals,2025-01-08,System,Vehicle specifications
+GMC,Sierra,2020,Owner's Manual,https://www.gmc.com/owners/manuals,2025-01-08,System,Vehicle specifications
+Jeep,Grand Cherokee,2020,Owner's Manual,https://www.jeep.com/owners/manuals,2025-01-08,System,Tire and loading information
+Jeep,Wrangler,2020,Owner's Manual,https://www.jeep.com/owners/manuals,2025-01-08,System,Tire and loading information
+Ram,1500,2020,Owner's Manual,https://www.ramtrucks.com/owners/manuals,2025-01-08,System,Tire specifications
+Volkswagen,Jetta,2020,Owner's Manual,https://www.vw.com/owners/manuals,2025-01-08,System,Technical data section
+Volkswagen,Tiguan,2020,Owner's Manual,https://www.vw.com/owners/manuals,2025-01-08,System,Technical data section
+Acura,TLX,2020,Owner's Manual,https://owners.acura.com/manuals,2025-01-08,System,Tire specifications
+Acura,RDX,2020,Owner's Manual,https://owners.acura.com/manuals,2025-01-08,System,Tire specifications
+Infiniti,Q50,2020,Owner's Manual,https://www.infinitiusa.com/owners/manuals,2025-01-08,System,Tire and loading information
+Infiniti,QX50,2020,Owner's Manual,https://www.infinitiusa.com/owners/manuals,2025-01-08,System,Tire and loading information
