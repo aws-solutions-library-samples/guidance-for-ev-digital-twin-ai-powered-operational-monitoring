@@ -5,21 +5,26 @@ import json
 import sys
 import os
 from datetime import datetime, timedelta
-from maintenance_agent import MaintenanceAgent
-from data_generator import TireDataGenerator
+from enhanced_maintenance_agent import EnhancedMaintenanceAgent
+from data_generator import VehicleDataGenerator
 from tire_predictor import TirePredictor
+from motor_predictor import MotorPredictor
 
-class TireMaintenanceCLI:
+class VehicleMaintenanceCLI:
     def __init__(self):
         self.tire_data = None
+        self.motor_data = None
+        self.combined_data = None
         self.manual_data = None
         self.load_data()
-        self.agent = MaintenanceAgent()  # Initialize agent after data is loaded
+        self.agent = EnhancedMaintenanceAgent()  # Initialize agent after data is loaded
     
     def load_data(self):
-        """Load or generate tire data"""
+        """Load or generate vehicle maintenance data"""
         try:
             self.tire_data = pd.read_csv("tire_wear_data.csv")
+            self.motor_data = pd.read_csv("motor_sensor_data.csv")
+            self.combined_data = pd.read_csv("vehicle_maintenance_data.csv")
             self.manual_data = pd.read_csv("car_manual_specs.csv")
             print("✓ Data loaded successfully")
         except FileNotFoundError:
@@ -27,46 +32,69 @@ class TireMaintenanceCLI:
             self.generate_sample_data()
     
     def generate_sample_data(self):
-        """Generate sample tire data"""
-        generator = TireDataGenerator()
+        """Generate sample vehicle maintenance data"""
+        generator = VehicleDataGenerator()
         
-        print("Generating tire wear data...")
+        print("Generating vehicle maintenance data...")
         self.tire_data = generator.generate_tire_dataset(num_vehicles=20, days_history=180)
+        self.motor_data = generator.generate_motor_dataset(num_vehicles=20, days_history=180)
+        self.combined_data = generator.generate_combined_dataset(num_vehicles=20, days_history=180)
         self.manual_data = generator.generate_car_manual_data()
         
         # Save data
         self.tire_data.to_csv("tire_wear_data.csv", index=False)
+        self.motor_data.to_csv("motor_sensor_data.csv", index=False)
+        self.combined_data.to_csv("vehicle_maintenance_data.csv", index=False)
         self.manual_data.to_csv("car_manual_specs.csv", index=False)
         
         print(f"✓ Generated data for {self.tire_data['vehicle_id'].nunique()} vehicles")
         
         # Train models
         print("Training prediction models...")
-        predictor = TirePredictor()
-        predictor.train_wear_prediction_model(self.tire_data)
-        predictor.train_anomaly_detection_model(self.tire_data)
-        predictor.save_models()
+        tire_predictor = TirePredictor()
+        tire_predictor.train_wear_prediction_model(self.tire_data)
+        tire_predictor.train_anomaly_detection_model(self.tire_data)
+        tire_predictor.save_models()
+        
+        motor_predictor = MotorPredictor()
+        motor_predictor.train_performance_model(self.motor_data)
+        motor_predictor.train_failure_prediction_model(self.motor_data)
+        motor_predictor.train_anomaly_detection_model(self.motor_data)
+        motor_predictor.save_models()
+        
         print("✓ Models trained and saved")
         
         # Reload the agent to use the new models
-        self.agent = MaintenanceAgent()
+        self.agent = EnhancedMaintenanceAgent()
     
     def display_menu(self):
         """Display main menu"""
-        print("\n" + "="*60)
-        print("🚗 TIRE MAINTENANCE SYSTEM - PoC")
-        print("="*60)
+        print("\n" + "="*70)
+        print("🚗 VEHICLE MAINTENANCE SYSTEM - PoC")
+        print("="*70)
+        print("TIRE MANAGEMENT:")
         print("1. 📊 View Vehicle Fleet")
         print("2. 🔍 Analyze Vehicle Tires")
         print("3. 📈 View Tire Predictions")
-        print("4. ⚠️  Detect Anomalies")
-        print("5. 📅 Schedule Appointment")
-        print("6. 📋 View Appointments")
-        print("7. 📄 Generate Report")
-        print("8. 📊 Fleet Dashboard")
-        print("9. 🔧 Regenerate Data")
+        print("4. ⚠️  Detect Tire Anomalies")
+        print("")
+        print("MOTOR MANAGEMENT:")
+        print("10. ⚙️  View Motor Health")
+        print("11. 🔧 Analyze Engine Performance")
+        print("12. 📈 Motor Failure Predictions")
+        print("13. ⚠️  Detect Motor Anomalies")
+        print("")
+        print("UNIFIED OPERATIONS:")
+        print("20. 📅 Schedule Appointment")
+        print("21. 📋 View Appointments")
+        print("22. 📄 Generate Report")
+        print("23. 📊 Unified Fleet Dashboard")
+        print("24. 🔄 Cross-System Analysis")
+        print("")
+        print("SYSTEM:")
+        print("30. 🔧 Regenerate Data")
         print("0. 🚪 Exit")
-        print("="*60)
+        print("="*70)
     
     def view_fleet(self):
         """Display vehicle fleet information"""
@@ -207,7 +235,7 @@ class TireMaintenanceCLI:
             predictor.save_models()
             
             # Reload the agent with new models
-            self.agent = MaintenanceAgent()
+            self.agent = EnhancedMaintenanceAgent()
             print("✅ Models trained successfully!")
             
         except Exception as e:
@@ -247,6 +275,185 @@ class TireMaintenanceCLI:
                         
         except Exception as e:
             print(f"❌ Error detecting anomalies: {str(e)}")
+    
+    # MOTOR MANAGEMENT METHODS
+    def view_motor_health(self):
+        """Display motor health overview for all vehicles"""
+        print("\n⚙️  MOTOR HEALTH OVERVIEW")
+        print("-" * 50)
+        
+        if self.motor_data is None:
+            print("❌ Motor data not available")
+            return
+        
+        # Get latest readings for each vehicle
+        latest_motor = self.motor_data.groupby('vehicle_id').last().reset_index()
+        
+        for _, vehicle in latest_motor.iterrows():
+            # Determine status based on performance and failure risk
+            if vehicle['failure_risk'] >= 2:
+                status_icon = "🔴"
+                status = "CRITICAL"
+            elif vehicle['failure_risk'] == 1 or vehicle['performance_score'] < 70:
+                status_icon = "🟡"
+                status = "WARNING"
+            else:
+                status_icon = "🟢"
+                status = "GOOD"
+            
+            print(f"{status_icon} Vehicle {vehicle['vehicle_id']:2d}: {vehicle['year']} {vehicle['make']} {vehicle['model']}")
+            print(f"   Performance: {vehicle['performance_score']:.1f}% | Engine Temp: {vehicle['engine_temp_c']:.1f}°C")
+            print(f"   Oil Pressure: {vehicle['oil_pressure_psi']:.1f} PSI | Status: {status}")
+            if vehicle['motor_anomaly']:
+                print(f"   ⚠️  Anomaly: {vehicle['anomaly_type']}")
+    
+    def analyze_engine_performance(self):
+        """Analyze specific vehicle engine performance"""
+        try:
+            vehicle_id = int(input("\n🔧 Enter Vehicle ID to analyze: "))
+            
+            if self.motor_data is None or vehicle_id not in self.motor_data['vehicle_id'].values:
+                print(f"❌ Vehicle {vehicle_id} motor data not found!")
+                return
+            
+            vehicle_motor_data = self.motor_data[self.motor_data['vehicle_id'] == vehicle_id]
+            latest = vehicle_motor_data.iloc[-1]
+            
+            print(f"\n🔧 ENGINE PERFORMANCE ANALYSIS - VEHICLE {vehicle_id}")
+            print("-" * 50)
+            
+            # Vehicle info
+            print(f"🚗 {latest['year']} {latest['make']} {latest['model']}")
+            print(f"   Engine: {latest['engine_type']} | Fuel: {latest['fuel_type']}")
+            
+            # Current performance metrics
+            print(f"\n📊 CURRENT PERFORMANCE:")
+            perf_icon = "🔴" if latest['performance_score'] < 60 else "🟡" if latest['performance_score'] < 80 else "🟢"
+            print(f"{perf_icon} Overall Performance: {latest['performance_score']:.1f}%")
+            
+            temp_icon = "🔴" if latest['engine_temp_c'] > 105 else "🟡" if latest['engine_temp_c'] > 95 else "🟢"
+            print(f"{temp_icon} Engine Temperature: {latest['engine_temp_c']:.1f}°C")
+            
+            oil_icon = "🔴" if latest['oil_pressure_psi'] < 15 else "🟡" if latest['oil_pressure_psi'] < 20 else "🟢"
+            print(f"{oil_icon} Oil Pressure: {latest['oil_pressure_psi']:.1f} PSI")
+            
+            vib_icon = "🔴" if latest['vibration_level'] > 4 else "🟡" if latest['vibration_level'] > 2.5 else "🟢"
+            print(f"{vib_icon} Vibration Level: {latest['vibration_level']:.2f}")
+            
+            print(f"⛽ Fuel Consumption: {latest['fuel_consumption_l100km']:.2f} L/100km")
+            print(f"🔄 Average RPM: {latest['rpm_avg']:.0f}")
+            
+            # Failure risk assessment
+            risk_levels = ["🟢 LOW", "🟡 MEDIUM", "🔴 HIGH"]
+            print(f"\n⚠️  FAILURE RISK: {risk_levels[int(latest['failure_risk'])]}")
+            
+            # Recent anomalies
+            recent_anomalies = vehicle_motor_data[vehicle_motor_data['motor_anomaly'] == True].tail(5)
+            if not recent_anomalies.empty:
+                print(f"\n⚠️  RECENT ANOMALIES:")
+                for _, anomaly in recent_anomalies.iterrows():
+                    print(f"   📅 {anomaly['date']}: {anomaly['anomaly_type']}")
+            
+            # Performance trend (last 30 days)
+            recent_data = vehicle_motor_data.tail(30)
+            if len(recent_data) > 1:
+                perf_trend = recent_data['performance_score'].iloc[-1] - recent_data['performance_score'].iloc[0]
+                trend_icon = "📈" if perf_trend > 0 else "📉" if perf_trend < -2 else "➡️"
+                print(f"\n📊 30-DAY TREND: {trend_icon} Performance change: {perf_trend:+.1f}%")
+            
+        except ValueError:
+            print("❌ Please enter a valid vehicle ID number")
+        except Exception as e:
+            print(f"❌ Error analyzing engine performance: {str(e)}")
+    
+    def motor_failure_predictions(self):
+        """View motor failure predictions"""
+        try:
+            vehicle_id = int(input("\n📈 Enter Vehicle ID for motor predictions: "))
+            
+            if self.motor_data is None or vehicle_id not in self.motor_data['vehicle_id'].values:
+                print(f"❌ Vehicle {vehicle_id} motor data not found!")
+                return
+            
+            # Load motor predictor
+            motor_predictor = MotorPredictor()
+            motor_predictor.load_models()
+            
+            if motor_predictor.performance_model is None:
+                print("❌ Motor prediction models not available. Training models now...")
+                motor_predictor.train_performance_model(self.motor_data)
+                motor_predictor.train_failure_prediction_model(self.motor_data)
+                motor_predictor.save_models()
+            
+            vehicle_data = self.motor_data[self.motor_data['vehicle_id'] == vehicle_id]
+            
+            print(f"\n📈 MOTOR FAILURE PREDICTIONS - VEHICLE {vehicle_id}")
+            print("-" * 50)
+            
+            try:
+                predictions = motor_predictor.predict_performance_degradation(vehicle_data, days_ahead=60)
+                
+                if predictions.empty:
+                    print("No predictions available")
+                    return
+                
+                print("Performance degradation forecast:")
+                for _, pred in predictions.head(10).iterrows():  # Show first 10 days
+                    if pred['critical_attention']:
+                        status = "🔴 CRITICAL"
+                    elif pred['maintenance_recommended']:
+                        status = "🟡 MAINTENANCE"
+                    else:
+                        status = "🟢 GOOD"
+                    
+                    print(f"   Day {pred['days_ahead']:2d}: {pred['predicted_performance']:.1f}% {status}")
+                        
+            except Exception as e:
+                print(f"❌ Error generating motor predictions: {str(e)}")
+                
+        except ValueError:
+            print("❌ Please enter a valid vehicle ID number")
+    
+    def detect_motor_anomalies(self):
+        """Detect and display motor anomalies"""
+        print("\n⚠️  MOTOR ANOMALY DETECTION RESULTS")
+        print("-" * 40)
+        
+        if self.motor_data is None:
+            print("❌ Motor data not available")
+            return
+        
+        try:
+            # Load motor predictor
+            motor_predictor = MotorPredictor()
+            motor_predictor.load_models()
+            
+            if motor_predictor.anomaly_model is None:
+                print("❌ Motor anomaly detection models not available. Training models now...")
+                motor_predictor.train_anomaly_detection_model(self.motor_data)
+                motor_predictor.save_models()
+            
+            anomalies = motor_predictor.detect_motor_anomalies(self.motor_data)
+            
+            if anomalies.empty:
+                print("✅ No motor anomalies detected in the fleet")
+                return
+            
+            # Group by vehicle
+            for vehicle_id in anomalies['vehicle_id'].unique():
+                vehicle_anomalies = anomalies[anomalies['vehicle_id'] == vehicle_id]
+                print(f"\n🚗 Vehicle {vehicle_id}:")
+                
+                for _, anomaly in vehicle_anomalies.iterrows():
+                    severity = "🔴 HIGH" if anomaly['motor_anomaly_score'] < -0.5 else "🟡 MEDIUM"
+                    print(f"   {severity} | {anomaly['date']}")
+                    print(f"   Temp: {anomaly['engine_temp_c']:.1f}°C | Oil: {anomaly['oil_pressure_psi']:.1f} PSI")
+                    print(f"   Performance: {anomaly['performance_score']:.1f}% | Vibration: {anomaly['vibration_level']:.2f}")
+                    if anomaly['anomaly_type'] != 'normal':
+                        print(f"   Type: {anomaly['anomaly_type']}")
+                        
+        except Exception as e:
+            print(f"❌ Error detecting motor anomalies: {str(e)}")
     
     def schedule_appointment(self):
         """Schedule maintenance appointment"""
@@ -389,6 +596,80 @@ class TireMaintenanceCLI:
         appointments = self.agent.get_appointments()
         scheduled_appointments = len([a for a in appointments if a['status'] == 'scheduled'])
         print(f"📅 Scheduled Appointments: {scheduled_appointments}")
+        
+        # Motor statistics
+        if self.motor_data is not None:
+            latest_motor = self.motor_data.groupby('vehicle_id').last().reset_index()
+            critical_motors = len(latest_motor[latest_motor['failure_risk'] >= 2])
+            warning_motors = len(latest_motor[latest_motor['failure_risk'] == 1])
+            good_motors = len(latest_motor) - critical_motors - warning_motors
+            motor_anomalies = self.motor_data['motor_anomaly'].sum()
+            
+            print(f"\n⚙️  MOTOR HEALTH:")
+            print(f"🔴 Critical Motors: {critical_motors}")
+            print(f"🟡 Warning Motors: {warning_motors}")
+            print(f"🟢 Good Motors: {good_motors}")
+            print(f"⚠️  Motor Anomalies: {motor_anomalies}")
+    
+    def cross_system_analysis(self):
+        """Analyze correlations between tire and motor systems"""
+        print("\n🔄 CROSS-SYSTEM CORRELATION ANALYSIS")
+        print("-" * 50)
+        
+        if self.combined_data is None:
+            print("❌ Combined data not available")
+            return
+        
+        try:
+            # Analyze correlations
+            latest_data = self.combined_data.groupby('vehicle_id').last().reset_index()
+            
+            print("🔍 SYSTEM CORRELATIONS:")
+            
+            # Vehicles with both tire and motor issues
+            critical_both = latest_data[
+                (latest_data['maintenance_due_tire'] == True) & 
+                (latest_data['failure_risk'] >= 2)
+            ]
+            
+            if not critical_both.empty:
+                print(f"\n🚨 VEHICLES WITH BOTH TIRE & MOTOR ISSUES ({len(critical_both)}):")
+                for _, vehicle in critical_both.iterrows():
+                    print(f"   Vehicle {vehicle['vehicle_id']}: {vehicle['year']} {vehicle['make']} {vehicle['model']}")
+                    print(f"   Tire: Avg {vehicle[['tread_depth_mm']].mean():.1f}mm | Motor: {vehicle['performance_score']:.1f}%")
+            
+            # Performance correlation insights
+            print(f"\n📊 INSIGHTS:")
+            
+            # Vehicles with good tires but poor motor performance
+            good_tires_bad_motor = latest_data[
+                (latest_data['maintenance_due_tire'] == False) & 
+                (latest_data['performance_score'] < 70)
+            ]
+            if not good_tires_bad_motor.empty:
+                print(f"   🔧 {len(good_tires_bad_motor)} vehicles have good tires but poor motor performance")
+            
+            # Vehicles with worn tires and good motor
+            bad_tires_good_motor = latest_data[
+                (latest_data['maintenance_due_tire'] == True) & 
+                (latest_data['performance_score'] > 80)
+            ]
+            if not bad_tires_good_motor.empty:
+                print(f"   🛞 {len(bad_tires_good_motor)} vehicles have worn tires but good motor performance")
+            
+            # Driving pattern analysis
+            pattern_analysis = latest_data.groupby('driving_pattern').agg({
+                'performance_score': 'mean',
+                'tread_depth_mm': 'mean',
+                'fuel_consumption_l100km': 'mean'
+            }).round(2)
+            
+            print(f"\n🚗 DRIVING PATTERN IMPACT:")
+            for pattern, data in pattern_analysis.iterrows():
+                print(f"   {pattern.title()}: Motor {data['performance_score']:.1f}% | Tires {data['tread_depth_mm']:.1f}mm | Fuel {data['fuel_consumption_l100km']:.1f}L/100km")
+            
+        except Exception as e:
+            print(f"❌ Error in cross-system analysis: {str(e)}")
     
     def regenerate_data(self):
         """Regenerate sample data"""
@@ -401,16 +682,17 @@ class TireMaintenanceCLI:
     
     def run(self):
         """Main CLI loop"""
-        print("🚗 Welcome to Tire Maintenance System PoC!")
+        print("🚗 Welcome to Vehicle Maintenance System PoC!")
         
         while True:
             try:
                 self.display_menu()
-                choice = input("\n👉 Select option (0-9): ").strip()
+                choice = input("\n👉 Select option: ").strip()
                 
                 if choice == "0":
-                    print("\n👋 Thank you for using Tire Maintenance System!")
+                    print("\n👋 Thank you for using Vehicle Maintenance System!")
                     break
+                # Tire Management (1-4)
                 elif choice == "1":
                     self.view_fleet()
                 elif choice == "2":
@@ -419,18 +701,31 @@ class TireMaintenanceCLI:
                     self.view_predictions()
                 elif choice == "4":
                     self.detect_anomalies()
-                elif choice == "5":
+                # Motor Management (10-13)
+                elif choice == "10":
+                    self.view_motor_health()
+                elif choice == "11":
+                    self.analyze_engine_performance()
+                elif choice == "12":
+                    self.motor_failure_predictions()
+                elif choice == "13":
+                    self.detect_motor_anomalies()
+                # Unified Operations (20-24)
+                elif choice == "20":
                     self.schedule_appointment()
-                elif choice == "6":
+                elif choice == "21":
                     self.view_appointments()
-                elif choice == "7":
+                elif choice == "22":
                     self.generate_report()
-                elif choice == "8":
+                elif choice == "23":
                     self.fleet_dashboard()
-                elif choice == "9":
+                elif choice == "24":
+                    self.cross_system_analysis()
+                # System (30)
+                elif choice == "30":
                     self.regenerate_data()
                 else:
-                    print("❌ Invalid option. Please select 0-9.")
+                    print("❌ Invalid option. Please select a valid menu number.")
                 
                 input("\n📱 Press Enter to continue...")
                 
@@ -443,8 +738,11 @@ class TireMaintenanceCLI:
 
 def main():
     """Main entry point for the CLI application"""
-    cli = TireMaintenanceCLI()
+    cli = VehicleMaintenanceCLI()
     cli.run()
+
+# Maintain backward compatibility
+TireMaintenanceCLI = VehicleMaintenanceCLI
 
 if __name__ == "__main__":
     main()

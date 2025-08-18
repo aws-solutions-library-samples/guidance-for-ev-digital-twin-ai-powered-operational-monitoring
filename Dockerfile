@@ -1,4 +1,4 @@
-# Tire Maintenance System - Docker Configuration
+# Vehicle Maintenance System - Docker Configuration
 
 FROM python:3.10-slim
 
@@ -47,6 +47,6 @@ CMD ["python", "cli_interface.py"]
 
 # Labels for metadata
 LABEL maintainer="your.email@example.com"
-LABEL version="1.0.0"
-LABEL description="AI-powered tire maintenance prediction and management system"
-LABEL org.opencontainers.image.source="https://github.com/yourusername/tire-maintenance-system"
+LABEL version="2.0.0"
+LABEL description="AI-powered vehicle maintenance prediction and management system with tire and motor analytics"
+LABEL org.opencontainers.image.source="https://github.com/yourusername/vehicle-maintenance-system"

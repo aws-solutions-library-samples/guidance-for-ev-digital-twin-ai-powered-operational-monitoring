@@ -3,7 +3,7 @@ import numpy as np
 from datetime import datetime, timedelta
 import random
 
-class TireDataGenerator:
+class VehicleDataGenerator:
     def __init__(self):
         # Load actual car specifications from manual data
         try:
@@ -12,11 +12,11 @@ class TireDataGenerator:
         except FileNotFoundError:
             # Fallback to basic models if CSV not found
             self.car_models = [
-                {"make": "Toyota", "model": "Camry", "year": 2020, "tire_size": "215/60R16"},
-                {"make": "Honda", "model": "Accord", "year": 2019, "tire_size": "235/45R18"},
-                {"make": "Ford", "model": "F-150", "year": 2021, "tire_size": "275/65R18"},
-                {"make": "BMW", "model": "3 Series", "year": 2022, "tire_size": "225/50R17"},
-                {"make": "Mercedes-Benz", "model": "C-Class", "year": 2021, "tire_size": "225/45R18"}
+                {"make": "Toyota", "model": "Camry", "year": 2020, "tire_size": "215/60R16", "engine_type": "I4", "fuel_type": "gasoline"},
+                {"make": "Honda", "model": "Accord", "year": 2019, "tire_size": "235/45R18", "engine_type": "I4", "fuel_type": "gasoline"},
+                {"make": "Ford", "model": "F-150", "year": 2021, "tire_size": "275/65R18", "engine_type": "V6", "fuel_type": "gasoline"},
+                {"make": "BMW", "model": "3 Series", "year": 2022, "tire_size": "225/50R17", "engine_type": "I4", "fuel_type": "gasoline"},
+                {"make": "Mercedes-Benz", "model": "C-Class", "year": 2021, "tire_size": "225/45R18", "engine_type": "I4", "fuel_type": "gasoline"}
             ]
         
         # Premium tire brands with realistic market distribution
@@ -29,6 +29,14 @@ class TireDataGenerator:
             "Dunlop": 0.08,        # 8% market share
             "Yokohama": 0.06,      # 6% market share
             "Hankook": 0.04        # 4% market share
+        }
+        
+        # Engine specifications by type
+        self.engine_specs = {
+            "I4": {"optimal_temp": 90, "max_temp": 110, "optimal_oil_pressure": 25, "base_rpm": 2000},
+            "V6": {"optimal_temp": 88, "max_temp": 115, "optimal_oil_pressure": 30, "base_rpm": 1800},
+            "V8": {"optimal_temp": 85, "max_temp": 120, "optimal_oil_pressure": 35, "base_rpm": 1600},
+            "Hybrid": {"optimal_temp": 85, "max_temp": 105, "optimal_oil_pressure": 20, "base_rpm": 1500}
         }
         
     def generate_tire_dataset(self, num_vehicles=50, days_history=365):
@@ -170,18 +178,187 @@ class TireDataGenerator:
                     }
             
             return pd.DataFrame(list(unique_cars.values()))
+    
+    def generate_motor_dataset(self, num_vehicles=50, days_history=365):
+        """Generate comprehensive motor sensor dataset"""
+        data = []
+        
+        for vehicle_id in range(1, num_vehicles + 1):
+            car = random.choice(self.car_models)
+            engine_type = car.get('engine_type', 'I4')
+            fuel_type = car.get('fuel_type', 'gasoline')
+            
+            # Get engine specifications
+            engine_spec = self.engine_specs.get(engine_type, self.engine_specs['I4'])
+            
+            # Initial motor health (new vehicles start at 95-100% performance)
+            initial_performance = random.uniform(95, 100)
+            
+            # Generate daily readings
+            start_date = datetime.now() - timedelta(days=days_history)
+            
+            for day in range(days_history):
+                current_date = start_date + timedelta(days=day)
+                
+                # Performance degradation over time (very gradual)
+                age_factor = 1 - (day / (days_history * 10))  # Very slow degradation
+                current_performance = max(50, initial_performance * age_factor)
+                
+                # Driving pattern influence on motor stress
+                driving_patterns = random.choice(["city", "highway", "mixed"])
+                pattern_stress = {"city": 1.2, "highway": 0.8, "mixed": 1.0}
+                
+                # Weather influence on motor performance
+                weather = random.choice(["dry", "wet", "snow", "hot"])
+                weather_multiplier = {"dry": 1.0, "wet": 1.05, "snow": 1.15, "hot": 1.1}
+                
+                # Base engine temperature (influenced by weather and driving)
+                ambient_temp = random.uniform(-10, 40)  # Celsius
+                base_engine_temp = engine_spec['optimal_temp']
+                
+                # Temperature variations based on conditions
+                temp_variance = random.uniform(-5, 15)
+                if weather == "hot":
+                    temp_variance += random.uniform(5, 15)
+                elif driving_patterns == "city":
+                    temp_variance += random.uniform(2, 8)  # Stop-and-go increases temp
+                
+                engine_temp = base_engine_temp + temp_variance
+                
+                # Oil pressure (decreases with age and temperature)
+                base_oil_pressure = engine_spec['optimal_oil_pressure']
+                age_pressure_loss = (days_history - day) / days_history * 5  # Up to 5 PSI loss over time
+                temp_pressure_effect = max(0, (engine_temp - 90) * 0.1)  # Higher temp = lower pressure
+                
+                oil_pressure = max(10, base_oil_pressure - age_pressure_loss - temp_pressure_effect + random.uniform(-2, 2))
+                
+                # RPM patterns (varies by driving style and engine load)
+                base_rpm = engine_spec['base_rpm']
+                if driving_patterns == "city":
+                    rpm_avg = base_rpm + random.uniform(200, 800)
+                elif driving_patterns == "highway":
+                    rpm_avg = base_rpm + random.uniform(500, 1200)
+                else:  # mixed
+                    rpm_avg = base_rpm + random.uniform(300, 1000)
+                
+                # Speed correlation with RPM
+                speed_kmh = (rpm_avg - base_rpm) / 20 + random.uniform(10, 30)
+                speed_kmh = max(0, speed_kmh)
+                
+                # Vibration level (increases with age, temperature, and RPM)
+                base_vibration = 1.0
+                age_vibration = (days_history - day) / days_history * 2  # Increases over time
+                temp_vibration = max(0, (engine_temp - 95) * 0.05)
+                rpm_vibration = (rpm_avg - base_rpm) / 1000
+                
+                vibration_level = base_vibration + age_vibration + temp_vibration + rpm_vibration + random.uniform(-0.2, 0.5)
+                vibration_level = max(0.5, vibration_level)
+                
+                # Fuel efficiency (decreases with age and poor conditions)
+                base_efficiency = 8.0  # L/100km
+                efficiency_degradation = (days_history - day) / days_history * 1.5
+                weather_efficiency_impact = weather_multiplier[weather] - 1
+                
+                fuel_consumption = base_efficiency + efficiency_degradation + weather_efficiency_impact + random.uniform(-0.5, 0.5)
+                fuel_consumption = max(5.0, fuel_consumption)
+                
+                # Motor anomalies (mechanical issues, sensor failures)
+                motor_anomaly = False
+                anomaly_type = "normal"
+                failure_risk = 0  # 0=low, 1=medium, 2=high
+                
+                # Determine failure risk based on conditions
+                if engine_temp > engine_spec['max_temp']:
+                    failure_risk = 2
+                elif oil_pressure < 15:
+                    failure_risk = 2
+                elif vibration_level > 4:
+                    failure_risk = 1
+                elif current_performance < 70:
+                    failure_risk = 1
+                
+                # Random anomalies
+                if random.random() < 0.03:  # 3% chance of anomaly
+                    motor_anomaly = True
+                    anomaly_types = ["overheating", "oil_pressure_drop", "excessive_vibration", "sensor_malfunction", "fuel_system_issue"]
+                    anomaly_type = random.choice(anomaly_types)
+                    
+                    if anomaly_type == "overheating":
+                        engine_temp += random.uniform(10, 25)
+                        failure_risk = 2
+                    elif anomaly_type == "oil_pressure_drop":
+                        oil_pressure *= random.uniform(0.3, 0.7)
+                        failure_risk = 2
+                    elif anomaly_type == "excessive_vibration":
+                        vibration_level *= random.uniform(1.5, 3.0)
+                        failure_risk = 1
+                    elif anomaly_type == "fuel_system_issue":
+                        fuel_consumption *= random.uniform(1.2, 1.8)
+                        current_performance *= random.uniform(0.7, 0.9)
+                
+                data.append({
+                    "vehicle_id": vehicle_id,
+                    "date": current_date.strftime("%Y-%m-%d"),
+                    "make": car["make"],
+                    "model": car["model"],
+                    "year": car["year"],
+                    "engine_type": engine_type,
+                    "fuel_type": fuel_type,
+                    "engine_temp_c": round(engine_temp, 1),
+                    "oil_pressure_psi": round(oil_pressure, 1),
+                    "rpm_avg": round(rpm_avg, 0),
+                    "speed_kmh": round(speed_kmh, 1),
+                    "vibration_level": round(vibration_level, 2),
+                    "fuel_consumption_l100km": round(fuel_consumption, 2),
+                    "performance_score": round(current_performance, 1),
+                    "mileage": day * random.uniform(20, 100),
+                    "driving_pattern": driving_patterns,
+                    "weather_condition": weather,
+                    "motor_anomaly": motor_anomaly,
+                    "anomaly_type": anomaly_type,
+                    "failure_risk": failure_risk,
+                    "maintenance_due": failure_risk >= 2 or current_performance < 60,
+                    "curb_weight_lbs": car.get('curb_weight_lbs', 3500),
+                    "drivetrain": car.get('drivetrain', 'FWD'),
+                    "vehicle_class": car.get('vehicle_class', 'Sedan')
+                })
+        
+        return pd.DataFrame(data)
+    
+    def generate_combined_dataset(self, num_vehicles=50, days_history=365):
+        """Generate combined tire and motor dataset for the same vehicles"""
+        tire_data = self.generate_tire_dataset(num_vehicles, days_history)
+        motor_data = self.generate_motor_dataset(num_vehicles, days_history)
+        
+        # Merge on vehicle_id and date
+        combined_data = pd.merge(tire_data, motor_data, 
+                               on=['vehicle_id', 'date', 'make', 'model', 'year', 'mileage', 
+                                   'driving_pattern', 'weather_condition'], 
+                               suffixes=('_tire', '_motor'))
+        
+        return combined_data
+
+# Maintain backward compatibility
+TireDataGenerator = VehicleDataGenerator
 
 if __name__ == "__main__":
-    generator = TireDataGenerator()
+    generator = VehicleDataGenerator()
     
     # Generate datasets
     tire_data = generator.generate_tire_dataset(num_vehicles=50, days_history=365)
+    motor_data = generator.generate_motor_dataset(num_vehicles=50, days_history=365)
+    combined_data = generator.generate_combined_dataset(num_vehicles=50, days_history=365)
     manual_data = generator.generate_car_manual_data()
     
     # Save to CSV
     tire_data.to_csv("tire_wear_data.csv", index=False)
+    motor_data.to_csv("motor_sensor_data.csv", index=False)
+    combined_data.to_csv("vehicle_maintenance_data.csv", index=False)
     manual_data.to_csv("car_manual_specs.csv", index=False)
     
     print(f"Generated {len(tire_data)} tire readings for {tire_data['vehicle_id'].nunique()} vehicles")
+    print(f"Generated {len(motor_data)} motor readings for {motor_data['vehicle_id'].nunique()} vehicles")
+    print(f"Generated {len(combined_data)} combined readings for {combined_data['vehicle_id'].nunique()} vehicles")
     print(f"Generated manual data for {len(manual_data)} car models")
-    print(f"Anomalies detected: {tire_data['anomaly'].sum()}")
+    print(f"Tire anomalies: {tire_data['anomaly'].sum()}")
+    print(f"Motor anomalies: {motor_data['motor_anomaly'].sum()}")

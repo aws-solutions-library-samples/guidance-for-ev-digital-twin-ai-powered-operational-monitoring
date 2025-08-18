@@ -1,0 +1,132 @@
+{
+  "vehicle_info": {
+    "make": "Honda",
+    "model": "Civic",
+    "year": 2020,
+    "manual_source": "HondaCivic2020Manual.pdf",
+    "extraction_date": "2025-08-12",
+    "extractor": "PDF Manual Extraction",
+    "verified": true,
+    "extraction_method": "Manual review of PDF sections"
+  },
+  "tire_specifications": {
+    "primary_tire_size": {
+      "size": "215/55R16",
+      "load_index": "91",
+      "speed_rating": "H",
+      "tire_type": "All-Season",
+      "manual_page": "8-2",
+      "notes": "Standard equipment - LX trim"
+    },
+    "alternative_sizes": [
+      {
+        "size": "235/40R18",
+        "trim": "Sport trim",
+        "load_index": "95",
+        "speed_rating": "W",
+        "manual_page": "8-2"
+      }
+    ],
+    "tire_pressure": {
+      "front_psi": "32",
+      "rear_psi": "32",
+      "spare_psi": "60",
+      "cold_pressure_note": "Check when tires are cold (before driving)",
+      "manual_page": "8-3",
+      "door_sticker_reference": "Driver's door jamb"
+    },
+    "tread_depth": {
+      "minimum_legal_mm": "1.6",
+      "replacement_recommended_mm": "3.2",
+      "measurement_method": "Tread depth gauge or penny test",
+      "manual_page": "8-4",
+      "wear_indicators": "Built-in tread wear indicators"
+    }
+  },
+  "maintenance_schedule": {
+    "tire_rotation": {
+      "interval_miles": "7500",
+      "interval_months": "12",
+      "rotation_pattern": "Front-to-back, same side",
+      "manual_page": "7-3",
+      "special_conditions": "Every 5,000 miles for severe driving conditions"
+    },
+    "tire_inspection": {
+      "frequency": "Monthly",
+      "inspection_points": [
+        "Tread depth using penny test",
+        "Tire pressure when cold",
+        "Sidewall cracks or damage",
+        "Uneven wear patterns",
+        "Foreign objects in tread"
+      ],
+      "manual_page": "8-5"
+    },
+    "replacement_indicators": {
+      "wear_indicators": "Replace when tread wear indicators are visible",
+      "age_limit": "Replace after 6 years regardless of tread depth",
+      "manual_page": "8-6"
+    }
+  },
+  "vehicle_specifications": {
+    "weight": {
+      "curb_weight_lbs": "2762",
+      "gross_weight_lbs": "3583",
+      "manual_page": "Specifications"
+    },
+    "engine": {
+      "engine_size": "1.5L Turbo",
+      "engine_type": "4-cylinder VTEC Turbo",
+      "horsepower": "174",
+      "manual_page": "Specifications"
+    },
+    "drivetrain": {
+      "type": "FWD",
+      "manual_page": "Specifications"
+    },
+    "dimensions": {
+      "wheelbase": "106.3 in",
+      "track_front": "60.9 in",
+      "track_rear": "61.9 in",
+      "manual_page": "Specifications"
+    }
+  },
+  "tpms_information": {
+    "system_type": "Direct TPMS",
+    "warning_threshold": "25 PSI",
+    "reset_procedure": "Drive above 28 mph for 10 minutes after tire pressure adjustment",
+    "manual_page": "4-12",
+    "warning_light": "TPMS warning light on dashboard"
+  },
+  "load_information": {
+    "seating_capacity": "5",
+    "cargo_capacity": "14.8 cu ft",
+    "towing_capacity": "Not recommended for towing",
+    "tongue_weight": "N/A",
+    "manual_page": "Specifications"
+  },
+  "seasonal_recommendations": {
+    "winter_tires": "Recommended when temperature is consistently below 45\u00b0F (7\u00b0C)",
+    "all_season_guidance": "Standard all-season tires suitable for most conditions",
+    "performance_tires": "Available on Sport trim - not recommended for winter",
+    "manual_page": "8-7"
+  },
+  "warranty_information": {
+    "tire_warranty": "Tire warranty provided by tire manufacturer",
+    "maintenance_requirements": "Follow Honda maintenance schedule to maintain warranty",
+    "manual_page": "Warranty and Service Information"
+  },
+  "verification": {
+    "cross_checked_sources": [
+      "Honda Civic 2020 Owner's Manual PDF",
+      "Honda USA official website",
+      "Door jamb tire information sticker",
+      "EPA vehicle specifications database"
+    ],
+    "discrepancies_found": [],
+    "confidence_level": "High",
+    "reviewer": "Manual PDF Review",
+    "review_date": "2025-08-12",
+    "notes": "Specifications extracted from actual Honda Civic 2020 Owner's Manual"
+  }
+}

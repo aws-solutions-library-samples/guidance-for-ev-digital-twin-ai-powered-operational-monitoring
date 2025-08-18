@@ -7,11 +7,11 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
     requirements = [line.strip() for line in fh if line.strip() and not line.startswith("#")]
 
 setup(
-    name="tire-maintenance-system",
-    version="1.0.0",
+    name="vehicle-maintenance-system",
+    version="2.0.0",
     author="Your Name",
     author_email="your.email@example.com",
-    description="AI-powered tire maintenance prediction and management system",
+    description="AI-powered vehicle maintenance prediction and management system with tire and motor analytics",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/yourusername/tire-maintenance-system",
@@ -33,7 +33,7 @@ setup(
     install_requires=requirements,
     entry_points={
         "console_scripts": [
-            "tire-maintenance=cli_interface:main",
+            "vehicle-maintenance=cli_interface:main",
         ],
     },
     include_package_data=True,
