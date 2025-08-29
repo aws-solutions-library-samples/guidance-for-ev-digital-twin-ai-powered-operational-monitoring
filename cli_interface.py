@@ -36,9 +36,9 @@ class VehicleMaintenanceCLI:
         generator = VehicleDataGenerator()
         
         print("Generating vehicle maintenance data...")
-        self.tire_data = generator.generate_tire_dataset(num_vehicles=20, days_history=180)
-        self.motor_data = generator.generate_motor_dataset(num_vehicles=20, days_history=180)
-        self.combined_data = generator.generate_combined_dataset(num_vehicles=20, days_history=180)
+        self.tire_data = generator.generate_tire_dataset(num_vehicles=5, days_history=180)
+        self.motor_data = generator.generate_motor_dataset(num_vehicles=5, days_history=180)
+        self.combined_data = generator.generate_combined_dataset(num_vehicles=5, days_history=180)
         self.manual_data = generator.generate_car_manual_data()
         
         # Save data

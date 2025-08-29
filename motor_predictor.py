@@ -181,40 +181,63 @@ class MotorPredictor:
             raise ValueError("Performance prediction model not trained")
         
         predictions = []
-        current_data = vehicle_data.copy()
         
-        # Get latest reading for the vehicle
-        latest_reading = current_data.sort_values('date').iloc[-1:].copy()
+        # Prepare features for the entire vehicle dataset (needed for lag features)
+        features_data = self.prepare_features(vehicle_data)
+        features_data = features_data.dropna()
+        
+        if features_data.empty:
+            return pd.DataFrame(predictions)
+        
+        # Get the latest reading with all features prepared
+        latest_reading = features_data.iloc[-1]
+        
+        feature_cols = [
+            'year', 'day_of_year', 'month', 'engine_temp_c', 'oil_pressure_psi', 
+            'rpm_avg', 'vibration_level', 'mileage', 'temp_deviation', 'rpm_efficiency',
+            'prev_engine_temp', 'prev_oil_pressure', 'prev_rpm_avg',
+            'make_encoded', 'model_encoded', 'engine_type_encoded', 'fuel_type_encoded',
+            'driving_pattern_encoded', 'weather_condition_encoded'
+        ]
+        
+        # Filter available columns
+        available_cols = [col for col in feature_cols if col in features_data.columns]
+        
+        if len(available_cols) == 0:
+            return pd.DataFrame(predictions)
+        
+        # Use the latest reading as base for predictions
+        base_features = latest_reading[available_cols]
+        
+        # Check for NaN values
+        if base_features.isna().any():
+            return pd.DataFrame(predictions)
+        
+        # Convert to numpy array for prediction
+        base_features_array = base_features.values.astype(float)
         
         for day in range(1, days_ahead + 1):
-            # Prepare features for prediction
-            features_data = self.prepare_features(latest_reading)
+            # For simplicity, use the same feature values for future predictions
+            # In a more sophisticated model, you'd simulate degradation over time
+            X_pred = base_features_array.reshape(1, -1)
             
-            feature_cols = [
-                'year', 'day_of_year', 'month', 'engine_temp_c', 'oil_pressure_psi', 
-                'rpm_avg', 'vibration_level', 'mileage', 'temp_deviation', 'rpm_efficiency',
-                'prev_engine_temp', 'prev_oil_pressure', 'prev_rpm_avg',
-                'make_encoded', 'model_encoded', 'engine_type_encoded', 'fuel_type_encoded',
-                'driving_pattern_encoded', 'weather_condition_encoded'
-            ]
-            
-            # Filter available columns
-            available_cols = [col for col in feature_cols if col in features_data.columns]
-            
-            if len(available_cols) > 0:
-                X_pred = features_data[available_cols].iloc[0].values.reshape(1, -1)
+            try:
+                predicted_performance = self.performance_model.predict(X_pred)[0]
                 
-                # Handle any NaN values
-                if not np.isnan(X_pred).any():
-                    predicted_performance = self.performance_model.predict(X_pred)[0]
-                    
-                    predictions.append({
-                        'vehicle_id': latest_reading['vehicle_id'].iloc[0],
-                        'days_ahead': day,
-                        'predicted_performance': predicted_performance,
-                        'maintenance_recommended': predicted_performance < 70,
-                        'critical_attention': predicted_performance < 50
-                    })
+                # Simulate slight degradation over time
+                degradation_factor = 1 - (day * 0.001)  # 0.1% degradation per day
+                predicted_performance *= degradation_factor
+                
+                predictions.append({
+                    'vehicle_id': latest_reading['vehicle_id'],
+                    'days_ahead': day,
+                    'predicted_performance': round(predicted_performance, 1),
+                    'maintenance_recommended': predicted_performance < 70,
+                    'critical_attention': predicted_performance < 50
+                })
+            except Exception as e:
+                # Skip this prediction if there's an error
+                continue
         
         return pd.DataFrame(predictions)
     

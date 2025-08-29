@@ -8,15 +8,38 @@ class VehicleDataGenerator:
         # Load actual car specifications from manual data
         try:
             self.manual_data = pd.read_csv("car_manual_specs.csv")
-            self.car_models = self.manual_data.to_dict('records')
+            # Filter to only 5 vehicles including Honda Civic
+            target_vehicles = [
+                ("Honda", "Civic", 2020),
+                ("Toyota", "Camry", 2022), 
+                ("Ford", "F-150", 2023),
+                ("BMW", "3 Series", 2020),
+                ("Mercedes-Benz", "C-Class", 2022)
+            ]
+            
+            filtered_data = []
+            for make, model, year in target_vehicles:
+                vehicle_match = self.manual_data[
+                    (self.manual_data['make'] == make) & 
+                    (self.manual_data['model'] == model) & 
+                    (self.manual_data['year'] == year)
+                ]
+                if not vehicle_match.empty:
+                    filtered_data.append(vehicle_match.iloc[0].to_dict())
+            
+            if filtered_data:
+                self.car_models = filtered_data
+            else:
+                # If no matches found, use fallback
+                raise FileNotFoundError("No matching vehicles found in manual data")
         except FileNotFoundError:
-            # Fallback to basic models if CSV not found
+            # Fallback to basic models if CSV not found - 5 vehicle fleet
             self.car_models = [
-                {"make": "Toyota", "model": "Camry", "year": 2020, "tire_size": "215/60R16", "engine_type": "I4", "fuel_type": "gasoline"},
-                {"make": "Honda", "model": "Accord", "year": 2019, "tire_size": "235/45R18", "engine_type": "I4", "fuel_type": "gasoline"},
-                {"make": "Ford", "model": "F-150", "year": 2021, "tire_size": "275/65R18", "engine_type": "V6", "fuel_type": "gasoline"},
-                {"make": "BMW", "model": "3 Series", "year": 2022, "tire_size": "225/50R17", "engine_type": "I4", "fuel_type": "gasoline"},
-                {"make": "Mercedes-Benz", "model": "C-Class", "year": 2021, "tire_size": "225/45R18", "engine_type": "I4", "fuel_type": "gasoline"}
+                {"make": "Honda", "model": "Civic", "year": 2020, "tire_size": "215/55R16", "engine_type": "I4", "fuel_type": "gasoline"},
+                {"make": "Toyota", "model": "Camry", "year": 2022, "tire_size": "215/60R16", "engine_type": "I4", "fuel_type": "gasoline"},
+                {"make": "Ford", "model": "F-150", "year": 2023, "tire_size": "275/65R18", "engine_type": "V6", "fuel_type": "gasoline"},
+                {"make": "BMW", "model": "3 Series", "year": 2020, "tire_size": "225/50R17", "engine_type": "I4", "fuel_type": "gasoline"},
+                {"make": "Mercedes-Benz", "model": "C-Class", "year": 2022, "tire_size": "225/45R18", "engine_type": "I4", "fuel_type": "gasoline"}
             ]
         
         # Premium tire brands with realistic market distribution
@@ -39,12 +62,18 @@ class VehicleDataGenerator:
             "Hybrid": {"optimal_temp": 85, "max_temp": 105, "optimal_oil_pressure": 20, "base_rpm": 1500}
         }
         
-    def generate_tire_dataset(self, num_vehicles=50, days_history=365):
+    def generate_tire_dataset(self, num_vehicles=5, days_history=365):
         """Generate comprehensive tire wear dataset"""
         data = []
         
+        # Ensure we use each car model exactly once for the first 5 vehicles
+        available_cars = self.car_models.copy()
+        
         for vehicle_id in range(1, num_vehicles + 1):
-            car = random.choice(self.car_models)
+            if vehicle_id <= len(available_cars):
+                car = available_cars[vehicle_id - 1]  # Use each car once
+            else:
+                car = random.choice(self.car_models)  # If more vehicles than models, repeat randomly
             
             # Select tire brand based on market distribution
             tire_brand = np.random.choice(
@@ -179,12 +208,18 @@ class VehicleDataGenerator:
             
             return pd.DataFrame(list(unique_cars.values()))
     
-    def generate_motor_dataset(self, num_vehicles=50, days_history=365):
+    def generate_motor_dataset(self, num_vehicles=5, days_history=365):
         """Generate comprehensive motor sensor dataset"""
         data = []
         
+        # Ensure we use each car model exactly once for the first 5 vehicles
+        available_cars = self.car_models.copy()
+        
         for vehicle_id in range(1, num_vehicles + 1):
-            car = random.choice(self.car_models)
+            if vehicle_id <= len(available_cars):
+                car = available_cars[vehicle_id - 1]  # Use each car once
+            else:
+                car = random.choice(self.car_models)  # If more vehicles than models, repeat randomly
             engine_type = car.get('engine_type', 'I4')
             fuel_type = car.get('fuel_type', 'gasoline')
             
@@ -325,7 +360,7 @@ class VehicleDataGenerator:
         
         return pd.DataFrame(data)
     
-    def generate_combined_dataset(self, num_vehicles=50, days_history=365):
+    def generate_combined_dataset(self, num_vehicles=5, days_history=365):
         """Generate combined tire and motor dataset for the same vehicles"""
         tire_data = self.generate_tire_dataset(num_vehicles, days_history)
         motor_data = self.generate_motor_dataset(num_vehicles, days_history)
@@ -344,10 +379,10 @@ TireDataGenerator = VehicleDataGenerator
 if __name__ == "__main__":
     generator = VehicleDataGenerator()
     
-    # Generate datasets
-    tire_data = generator.generate_tire_dataset(num_vehicles=50, days_history=365)
-    motor_data = generator.generate_motor_dataset(num_vehicles=50, days_history=365)
-    combined_data = generator.generate_combined_dataset(num_vehicles=50, days_history=365)
+    # Generate datasets for 5 vehicles
+    tire_data = generator.generate_tire_dataset(num_vehicles=5, days_history=365)
+    motor_data = generator.generate_motor_dataset(num_vehicles=5, days_history=365)
+    combined_data = generator.generate_combined_dataset(num_vehicles=5, days_history=365)
     manual_data = generator.generate_car_manual_data()
     
     # Save to CSV

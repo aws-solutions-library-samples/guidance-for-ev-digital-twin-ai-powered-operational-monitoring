@@ -36,7 +36,7 @@ python cli_interface.py
 
 ### First Run
 The system will automatically:
-1. Generate sample tire and motor data for 20 vehicles over 180 days
+1. Generate sample tire and motor data for 5 vehicles over 180 days (including verified Honda Civic 2020)
 2. Train machine learning models for both tire and motor systems
 3. Launch the interactive unified CLI
 
