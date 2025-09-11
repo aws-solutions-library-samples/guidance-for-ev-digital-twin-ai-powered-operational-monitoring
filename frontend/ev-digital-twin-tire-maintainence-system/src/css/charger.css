@@ -1,0 +1,368 @@
+.charger-page {
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  font-family: 'Amazon Ember', sans-serif;
+  position: fixed;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.charger-container {
+  width: 1400px;
+  height: 800px;
+  background: #2d343d;
+  position: relative;
+  overflow: hidden;
+  border-radius: 0;
+}
+
+/* Header Styles */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: #1b1e20;
+  color: white;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.header-left h1 {
+  margin: 0;
+  color: white;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-profile {
+  font-size: 14px;
+  color: white;
+}
+
+.user-icon {
+  width: 32px;
+  height: 32px;
+  background: #555;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.charger-layout {
+  display: grid;
+  grid-template-columns: calc(100% - 343px) 343px;
+  gap: 0;
+  height: 720px;
+  margin: 20px 0 20px 20px;
+  overflow: hidden;
+}
+
+.nav-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #3a4552;
+  position: relative;
+}
+
+.vin-number {
+  position: absolute;
+  right: 420px;
+  top: 35px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 8px;
+}
+
+.back-button {
+  background: none;
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 24px;
+  padding: 0;
+  margin: 0;
+}
+
+.back-button:hover {
+  opacity: 0.8;
+}
+
+.charger-page .main-panel {
+  background: transparent;
+  border: none;
+  padding: 20px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.charger-page .right-panel {
+  background: #434a54;
+  overflow: hidden;
+  width: 343px;
+  position: absolute;
+  top: 60px;
+  right: 0px;
+  height: calc(100% - 60px);
+}
+
+.data-container {
+  background: #1b1e20;
+  border: 1px solid #3a4552;
+  padding: 20px;
+  color: white;
+}
+
+.charger-status.in-use {
+  display: inline-block;
+  background: #37bc12;
+  color: #fff;
+  font-size: 12px;
+  border-radius: 6px;
+  padding: 2px 10px;
+  margin-bottom: 10px;
+}
+
+.charger-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 200px);
+  gap: 12px;
+  margin-bottom: 20px;
+  justify-content: start;
+}
+
+.charger-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.gauge-container {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.charger-page .gauge-arc {
+  position: absolute;
+  width: 100px;
+  height: 50px;
+  border: 8px solid #555;
+  border-radius: 100px 100px 0 0 !important;
+  border-bottom: none !important;
+  border-top-color: #37bc12;
+  border-right-color: #37bc12;
+  border-left-color: #37bc12;
+  transform: rotate(0deg);
+}
+
+.charger-page .gauge-value {
+  font-size: 12px !important;
+  font-weight: bold;
+  color: white;
+  z-index: 1;
+}
+
+.charger-page .gauge-label {
+  font-size: 5px !important;
+  color: #ccc;
+  margin-top: 5px;
+}
+
+.charger-center-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.charger-image-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.charger-image {
+  width: 220px;
+  height: auto;
+  margin-bottom: 8px;
+}
+
+.charger-efficiency {
+  font-size: 12px;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.charger-metrics-row {
+  display: flex;
+  gap: 40px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.charger-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 14px;
+  color: #fff;
+}
+
+.charger-metric-label {
+  font-size: 10px;
+  color: #ccc;
+  margin-top: 2px;
+}
+
+.charge-efficiency-chart {
+  width: 100%;
+  height: 100px;
+  background: #222;
+  border-radius: 8px;
+  margin-top: 12px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.charger-prediction {
+  background: #3a4149;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.prediction-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.prediction-header h2 {
+  font-size: 24px;
+  font-weight: normal;
+  color: white;
+}
+
+.charger-info {
+  color: #ff9900;
+  font-size: 16px;
+}
+
+.charger-failure-chart {
+  margin-bottom: 24px;
+}
+
+.failure-title {
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+
+.failure-chart {
+  height: 80px;
+  background: #222;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.charger-life-bar {
+  margin: 16px 0;
+}
+
+.life-bar {
+  width: 100%;
+  height: 25px;
+  background: #333;
+  border: 1px solid #555;
+  border-radius: 0;
+  overflow: hidden;
+  margin-top: 8px;
+  position: relative;
+}
+
+.life-bar-fill {
+  background: linear-gradient(90deg, #ff9900 0%, #37bc12 100%);
+  height: 100%;
+  border-radius: 0;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.life-bar-label {
+  position: absolute;
+  right: 8px;
+  top: -24px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #7cf67c;
+}
+
+.charger-genai {
+  margin-top: 16px;
+}
+
+.charger-efficiency-tuning {
+  background: #1a1d21;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 12px;
+  color: #ff5252;
+}
+
+.efficiency-icon {
+  margin-right: 8px;
+}
+
+.charger-more {
+  color: #ffb700;
+  text-decoration: underline;
+  margin-left: 8px;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.charger-page .warning-icon {
+  color: #ff5252;
+}
+
+.charger-page .recommendations-list .warning-icon {
+  color: #ff5252 !important;
+}
+
+.charger-page .charger-metric .gauge-value {
+  font-size: 24px !important;
+  font-weight: 300 !important;
+  color: white !important;
+}

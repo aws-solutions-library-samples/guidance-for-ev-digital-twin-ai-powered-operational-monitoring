@@ -1,0 +1,3840 @@
+[
+  {
+    "vehicle_id": 1,
+    "ml_analysis": {
+      "vehicle_info": {
+        "vehicle_id": 1,
+        "make": "Honda",
+        "model": "Civic",
+        "year": "2020",
+        "tire_size": "215/55R16",
+        "tire_brand": "Pirelli"
+      },
+      "current_condition": {
+        "front_left": {
+          "tread_depth_mm": 9.55,
+          "pressure_psi": 32.1,
+          "temperature_c": 16.2,
+          "status": "GOOD",
+          "wear_percentage": 5.357142857142849
+        },
+        "front_right": {
+          "tread_depth_mm": 9.41,
+          "pressure_psi": 33.5,
+          "temperature_c": 18.0,
+          "status": "GOOD",
+          "wear_percentage": 7.023809523809523
+        },
+        "rear_left": {
+          "tread_depth_mm": 9.59,
+          "pressure_psi": 33.5,
+          "temperature_c": 21.3,
+          "status": "GOOD",
+          "wear_percentage": 4.880952380952382
+        },
+        "rear_right": {
+          "tread_depth_mm": 9.46,
+          "pressure_psi": 30.7,
+          "temperature_c": 11.3,
+          "status": "GOOD",
+          "wear_percentage": 6.428571428571418
+        }
+      },
+      "predictions": {
+        "front_left": {
+          "days_until_maintenance": 133,
+          "days_until_replacement": 106,
+          "predicted_depth_30_days": 7.764700000000006,
+          "replacement_timeline": {
+            "status": "BEST",
+            "days_remaining": 106,
+            "message": "Continue manufacturer maintenance schedule - 3 months remaining",
+            "days_until_maintenance": 133,
+            "days_until_replacement": 106,
+            "confidence": 0.95,
+            "ml_source": "enhanced_maintenance_agent + tire_predictor"
+          }
+        },
+        "front_right": {
+          "days_until_maintenance": 1062,
+          "days_until_replacement": 844,
+          "predicted_depth_30_days": 9.189499999999997,
+          "replacement_timeline": {
+            "status": "BEST",
+            "days_remaining": 844,
+            "message": "Continue manufacturer maintenance schedule - 28 months remaining",
+            "days_until_maintenance": 1062,
+            "days_until_replacement": 844,
+            "confidence": 0.95,
+            "ml_source": "enhanced_maintenance_agent + tire_predictor"
+          }
+        },
+        "rear_left": {
+          "days_until_maintenance": 1937,
+          "days_until_replacement": 1549,
+          "predicted_depth_30_days": 9.46630000000001,
+          "replacement_timeline": {
+            "status": "BEST",
+            "days_remaining": 1549,
+            "message": "Continue manufacturer maintenance schedule - 51 months remaining",
+            "days_until_maintenance": 1937,
+            "days_until_replacement": 1549,
+            "confidence": 0.95,
+            "ml_source": "enhanced_maintenance_agent + tire_predictor"
+          }
+        },
+        "rear_right": {
+          "days_until_maintenance": 1491,
+          "days_until_replacement": 1187,
+          "predicted_depth_30_days": 9.301900000000007,
+          "replacement_timeline": {
+            "status": "BEST",
+            "days_remaining": 1187,
+            "message": "Continue manufacturer maintenance schedule - 39 months remaining",
+            "days_until_maintenance": 1491,
+            "days_until_replacement": 1187,
+            "confidence": 0.95,
+            "ml_source": "enhanced_maintenance_agent + tire_predictor"
+          }
+        }
+      },
+      "recommendations": [
+        {
+          "priority": "LOW",
+          "action": "Schedule tire rotation every 7500 miles",
+          "reason": "Honda manual maintenance schedule requirement",
+          "estimated_cost": "$50-80",
+          "manual_reference": "Page 7-3",
+          "manufacturer_verified": true
+        },
+        {
+          "priority": "LOW",
+          "action": "Monitor TPMS warnings - system alerts at 25 PSI PSI",
+          "reason": "Honda TPMS system specification",
+          "estimated_cost": "Free",
+          "manual_reference": "Page 4-12",
+          "manufacturer_verified": true
+        },
+        {
+          "priority": "LOW",
+          "action": "Consider seasonal tire changes",
+          "reason": "Recommended when temperature is consistently below 45\u00b0F (7\u00b0C)",
+          "estimated_cost": "$400-800",
+          "manual_reference": "Page 8-7",
+          "manufacturer_verified": true
+        }
+      ],
+      "anomalies": [
+        {
+          "date": "2025-03-10 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 6.97,
+          "pressure": 33.9,
+          "anomaly_score": -0.07750807659265613,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-11 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 11.07,
+          "pressure": 30.8,
+          "anomaly_score": -0.01680265272403958,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-15 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.31,
+          "pressure": 31.1,
+          "anomaly_score": -0.14019815678420944,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-16 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 11.04,
+          "pressure": 28.5,
+          "anomaly_score": -0.03788408590021375,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-18 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.81,
+          "pressure": 25.7,
+          "anomaly_score": -0.023084898778906515,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-02 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.13,
+          "pressure": 33.7,
+          "anomaly_score": -0.15212234480654008,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-03 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.63,
+          "pressure": 32.6,
+          "anomaly_score": -0.030154914160138047,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-10 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 7.28,
+          "pressure": 26.2,
+          "anomaly_score": -0.05539052751199158,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-01 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "puncture",
+          "tread_depth": 2.75,
+          "pressure": 31.6,
+          "anomaly_score": -0.1355385752900281,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-02 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.24,
+          "pressure": 32.8,
+          "anomaly_score": -0.036692170019852255,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-03 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.96,
+          "pressure": 25.1,
+          "anomaly_score": -0.05957973473233036,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-03 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "puncture",
+          "tread_depth": 2.61,
+          "pressure": 32.6,
+          "anomaly_score": -0.1427931111093066,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-04 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.53,
+          "pressure": 32.7,
+          "anomaly_score": -0.024500593068890963,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-07 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 7.25,
+          "pressure": 28.5,
+          "anomaly_score": -0.0371748282594474,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-13 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 6.49,
+          "pressure": 31.9,
+          "anomaly_score": -0.04799423112346768,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-14 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.9,
+          "pressure": 28.8,
+          "anomaly_score": -0.008823241162182471,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-16 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 7.23,
+          "pressure": 30.9,
+          "anomaly_score": -0.030316485590356268,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-25 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 7.29,
+          "pressure": 28.7,
+          "anomaly_score": -0.024976477690894505,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-27 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 5.56,
+          "pressure": 31.0,
+          "anomaly_score": -0.0928333637146882,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-28 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.77,
+          "pressure": 29.1,
+          "anomaly_score": -0.035825464820326336,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-29 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.42,
+          "pressure": 28.6,
+          "anomaly_score": -0.030113484577966254,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-31 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 7.81,
+          "pressure": 37.1,
+          "anomaly_score": -0.0204837308562017,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-29 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.27,
+          "pressure": 31.7,
+          "anomaly_score": -0.14615470973970168,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-30 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.72,
+          "pressure": 31.8,
+          "anomaly_score": -0.03330371146118716,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-11 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 7.02,
+          "pressure": 31.7,
+          "anomaly_score": -0.06134882561176047,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-29 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 6.01,
+          "pressure": 31.3,
+          "anomaly_score": -0.05886610788468161,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-14 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.15,
+          "pressure": 27.5,
+          "anomaly_score": -0.12638786214408837,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-15 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.44,
+          "pressure": 33.6,
+          "anomaly_score": -0.021540455684980087,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-16 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 8.89,
+          "pressure": 25.7,
+          "anomaly_score": -0.019939922736794458,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-07 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 6.65,
+          "pressure": 28.2,
+          "anomaly_score": -0.05206067182238994,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-13 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "puncture",
+          "tread_depth": 2.81,
+          "pressure": 33.8,
+          "anomaly_score": -0.15875749382064785,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-14 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 8.76,
+          "pressure": 30.0,
+          "anomaly_score": -0.03220862980514905,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-01 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.43,
+          "pressure": 25.8,
+          "anomaly_score": -0.019895633539694146,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-03 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.49,
+          "pressure": 25.3,
+          "anomaly_score": -0.03339069419348639,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-06 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.25,
+          "pressure": 25.1,
+          "anomaly_score": -0.03691200310416887,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-07 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 8.67,
+          "pressure": 25.4,
+          "anomaly_score": -0.055358937432423705,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-12 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.64,
+          "pressure": 27.4,
+          "anomaly_score": -0.0034583505119307745,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-13 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 7.44,
+          "pressure": 33.2,
+          "anomaly_score": -0.02974198535330741,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-26 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 8.39,
+          "pressure": 32.3,
+          "anomaly_score": -0.0019336527991494767,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-28 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 8.38,
+          "pressure": 34.9,
+          "anomaly_score": -0.03660603438485521,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-30 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 8.2,
+          "pressure": 34.8,
+          "anomaly_score": -0.02659594429415979,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-31 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.21,
+          "pressure": 31.4,
+          "anomaly_score": -0.017476022941679048,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-07 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 11.1,
+          "pressure": 25.9,
+          "anomaly_score": -0.10165294970960825,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-15 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.29,
+          "pressure": 27.7,
+          "anomaly_score": -0.1565116409857682,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-16 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 11.01,
+          "pressure": 32.0,
+          "anomaly_score": -0.06661591353193663,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-30 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.86,
+          "pressure": 24.9,
+          "anomaly_score": -0.047121061544093124,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-03 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.8,
+          "pressure": 25.0,
+          "anomaly_score": -0.031146833934594276,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-30 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.64,
+          "pressure": 25.4,
+          "anomaly_score": -0.011216309189559404,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-24 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 5.87,
+          "pressure": 31.6,
+          "anomaly_score": -0.06140868247668485,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-25 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.72,
+          "pressure": 35.1,
+          "anomaly_score": -0.01116042992005939,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-23 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.74,
+          "pressure": 25.9,
+          "anomaly_score": -0.014451488174740845,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-01 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.49,
+          "pressure": 25.7,
+          "anomaly_score": -0.08751257464508366,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-07 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 6.08,
+          "pressure": 31.3,
+          "anomaly_score": -0.06272933332893194,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-14 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 5.39,
+          "pressure": 27.8,
+          "anomaly_score": -0.08226658507249673,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-15 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.2,
+          "pressure": 28.7,
+          "anomaly_score": -0.0633906364506246,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-25 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.8,
+          "pressure": 31.0,
+          "anomaly_score": -0.03902637389102148,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-29 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 5.81,
+          "pressure": 26.1,
+          "anomaly_score": -0.14041792416406973,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-30 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.22,
+          "pressure": 31.7,
+          "anomaly_score": -0.005842725065702048,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-13 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 11.02,
+          "pressure": 37.1,
+          "anomaly_score": -0.001713824524972818,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-18 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.98,
+          "pressure": 25.1,
+          "anomaly_score": -0.031309419960514395,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-07 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.71,
+          "pressure": 25.6,
+          "anomaly_score": -0.006975042137246312,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-27 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.1,
+          "pressure": 29.7,
+          "anomaly_score": -0.13238413681110373,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-28 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.66,
+          "pressure": 25.6,
+          "anomaly_score": -0.09547735160012649,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-01 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.73,
+          "pressure": 26.3,
+          "anomaly_score": -0.0204639967186675,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-02 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.85,
+          "pressure": 25.6,
+          "anomaly_score": -0.001316647393094117,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-05 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.14,
+          "pressure": 26.2,
+          "anomaly_score": -0.1573695952161338,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-06 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.74,
+          "pressure": 28.4,
+          "anomaly_score": -0.018827417577475858,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-04 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.4,
+          "pressure": 25.7,
+          "anomaly_score": -0.00557681090131279,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-13 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.13,
+          "pressure": 25.3,
+          "anomaly_score": -0.027811548909797312,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-20 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 8.58,
+          "pressure": 25.0,
+          "anomaly_score": -0.06843933592861062,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-25 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.85,
+          "pressure": 34.3,
+          "anomaly_score": -0.007410948071867041,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-27 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.26,
+          "pressure": 25.7,
+          "anomaly_score": -0.010168626528348601,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-31 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.67,
+          "pressure": 35.3,
+          "anomaly_score": -0.00222058114777135,
+          "severity": "medium"
+        }
+      ],
+      "data_source": "manufacturer_verified",
+      "generated_at": "2025-09-09T23:03:58.281720"
+    }
+  },
+  {
+    "vehicle_id": 2,
+    "ml_analysis": {
+      "vehicle_info": {
+        "vehicle_id": 2,
+        "make": "Toyota",
+        "model": "Camry",
+        "year": "2022",
+        "tire_size": "215/60R16",
+        "tire_brand": "Continental"
+      },
+      "current_condition": {
+        "front_left": {
+          "tread_depth_mm": 1.92,
+          "pressure_psi": 29.9,
+          "temperature_c": 7.3,
+          "status": "WARNING - Replacement recommended",
+          "wear_percentage": 96.19047619047618
+        },
+        "front_right": {
+          "tread_depth_mm": 10.61,
+          "pressure_psi": 37.0,
+          "temperature_c": 38.3,
+          "status": "GOOD",
+          "wear_percentage": 0
+        },
+        "rear_left": {
+          "tread_depth_mm": 8.37,
+          "pressure_psi": 33.5,
+          "temperature_c": 33.5,
+          "status": "GOOD",
+          "wear_percentage": 19.404761904761912
+        },
+        "rear_right": {
+          "tread_depth_mm": 9.13,
+          "pressure_psi": 31.7,
+          "temperature_c": 20.6,
+          "status": "GOOD",
+          "wear_percentage": 10.357142857142847
+        }
+      },
+      "predictions": {
+        "front_left": {
+          "days_until_maintenance": 31,
+          "days_until_replacement": null,
+          "predicted_depth_30_days": 3.8712999999999993,
+          "replacement_timeline": {
+            "status": "WARNING",
+            "days_remaining": 31,
+            "message": "Schedule replacement within 4 weeks",
+            "days_until_maintenance": 31,
+            "days_until_replacement": null,
+            "confidence": 0.85,
+            "ml_source": "enhanced_maintenance_agent + tire_predictor"
+          }
+        },
+        "front_right": {
+          "days_until_maintenance": 165,
+          "days_until_replacement": 135,
+          "predicted_depth_30_days": 8.971900000000003,
+          "replacement_timeline": {
+            "status": "BEST",
+            "days_remaining": 135,
+            "message": "Continue current maintenance - 4 months remaining",
+            "days_until_maintenance": 165,
+            "days_until_replacement": 135,
+            "confidence": 0.85,
+            "ml_source": "enhanced_maintenance_agent + tire_predictor"
+          }
+        },
+        "rear_left": {
+          "days_until_maintenance": 2600,
+          "days_until_replacement": 1985,
+          "predicted_depth_30_days": 8.2919,
+          "replacement_timeline": {
+            "status": "BEST",
+            "days_remaining": 1985,
+            "message": "Continue current maintenance - 66 months remaining",
+            "days_until_maintenance": 2600,
+            "days_until_replacement": 1985,
+            "confidence": 0.85,
+            "ml_source": "enhanced_maintenance_agent + tire_predictor"
+          }
+        },
+        "rear_right": {
+          "days_until_maintenance": 15263,
+          "days_until_replacement": 12020,
+          "predicted_depth_30_days": 9.115199999999998,
+          "replacement_timeline": {
+            "status": "BEST",
+            "days_remaining": 12020,
+            "message": "Continue current maintenance - 400 months remaining",
+            "days_until_maintenance": 15263,
+            "days_until_replacement": 12020,
+            "confidence": 0.85,
+            "ml_source": "enhanced_maintenance_agent + tire_predictor"
+          }
+        }
+      },
+      "recommendations": [
+        {
+          "action": "Schedule front left tire replacement",
+          "priority": "WARNING",
+          "source": "ML Analysis",
+          "type": "replacement",
+          "timeline": {
+            "status": "WARNING",
+            "days_remaining": 31,
+            "message": "Schedule replacement within 4 weeks",
+            "days_until_maintenance": 31,
+            "days_until_replacement": null,
+            "confidence": 0.85,
+            "ml_source": "enhanced_maintenance_agent + tire_predictor"
+          }
+        },
+        {
+          "priority": "HIGH",
+          "action": "Schedule front_left tire replacement",
+          "reason": "Tread depth 1.92mm approaching limit",
+          "estimated_cost": "$150-250"
+        },
+        {
+          "priority": "LOW",
+          "action": "Schedule tire rotation",
+          "reason": "Recommended every 5000 miles",
+          "estimated_cost": "$50-80"
+        }
+      ],
+      "anomalies": [
+        {
+          "date": "2025-04-15 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.34,
+          "pressure": 29.7,
+          "anomaly_score": -0.1379792072984869,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-16 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.53,
+          "pressure": 28.6,
+          "anomaly_score": -0.03407374264983598,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-18 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.07,
+          "pressure": 25.8,
+          "anomaly_score": -0.006316451161648251,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-09 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.62,
+          "pressure": 25.6,
+          "anomaly_score": -0.017843648774519938,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-23 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 7.95,
+          "pressure": 37.5,
+          "anomaly_score": -0.06753866692037047,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-28 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.57,
+          "pressure": 36.9,
+          "anomaly_score": -0.01828007111577612,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-29 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 5.62,
+          "pressure": 32.0,
+          "anomaly_score": -0.08215368795082334,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-06 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 7.92,
+          "pressure": 36.0,
+          "anomaly_score": -0.024171556932020333,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-18 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.47,
+          "pressure": 36.4,
+          "anomaly_score": -0.03134702910708154,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-20 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.33,
+          "pressure": 26.2,
+          "anomaly_score": -0.02380409793231497,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-22 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 7.99,
+          "pressure": 36.5,
+          "anomaly_score": -0.012614817795658984,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-18 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.48,
+          "pressure": 26.2,
+          "anomaly_score": -0.02173604388697392,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-20 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.82,
+          "pressure": 27.7,
+          "anomaly_score": -0.03000990124023417,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-22 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 7.17,
+          "pressure": 29.5,
+          "anomaly_score": -0.003150344554507356,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-23 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.85,
+          "pressure": 26.5,
+          "anomaly_score": -0.008817652937497145,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-24 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 7.06,
+          "pressure": 34.4,
+          "anomaly_score": -0.02998930970930247,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-25 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.13,
+          "pressure": 28.6,
+          "anomaly_score": -0.09326766271651366,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-26 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.56,
+          "pressure": 34.6,
+          "anomaly_score": -0.0867290112232948,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-09-01 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "puncture",
+          "tread_depth": 1.92,
+          "pressure": 29.9,
+          "anomaly_score": -0.14222429212622023,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-17 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 7.48,
+          "pressure": 33.2,
+          "anomaly_score": -0.054279127823701034,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-18 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 11.24,
+          "pressure": 32.7,
+          "anomaly_score": -0.0034622744114249926,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-28 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 11.31,
+          "pressure": 36.9,
+          "anomaly_score": -0.0004895608741321,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-02 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 6.57,
+          "pressure": 30.8,
+          "anomaly_score": -0.08054416416832699,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-22 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.48,
+          "pressure": 25.6,
+          "anomaly_score": -0.008009164278622194,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-04 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.62,
+          "pressure": 25.9,
+          "anomaly_score": -0.009351201675366072,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-21 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.68,
+          "pressure": 26.0,
+          "anomaly_score": -0.0012695115283043457,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-26 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.65,
+          "pressure": 25.4,
+          "anomaly_score": -0.031144391559574824,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-06 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.58,
+          "pressure": 37.3,
+          "anomaly_score": -0.0013799758626371617,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-16 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 8.88,
+          "pressure": 37.1,
+          "anomaly_score": -0.03690065224110328,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-21 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.08,
+          "pressure": 36.2,
+          "anomaly_score": -0.1679052894362454,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-22 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 7.65,
+          "pressure": 32.5,
+          "anomaly_score": -0.03795521874496455,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-31 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 7.72,
+          "pressure": 28.5,
+          "anomaly_score": -0.010669375847713214,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-01 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "puncture",
+          "tread_depth": 2.89,
+          "pressure": 34.9,
+          "anomaly_score": -0.12805790903512915,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-02 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.02,
+          "pressure": 29.5,
+          "anomaly_score": -0.05573988218851056,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-08 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "puncture",
+          "tread_depth": 2.92,
+          "pressure": 32.9,
+          "anomaly_score": -0.1313970901405267,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-09 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.41,
+          "pressure": 28.1,
+          "anomaly_score": -0.10345410871784633,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-10 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.05,
+          "pressure": 26.1,
+          "anomaly_score": -0.030494998820331132,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-13 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.53,
+          "pressure": 25.1,
+          "anomaly_score": -0.04860606117930533,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-15 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.1,
+          "pressure": 26.8,
+          "anomaly_score": -0.0012193991966011897,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-19 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 8.64,
+          "pressure": 25.1,
+          "anomaly_score": -0.100579791808039,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-09-01 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.61,
+          "pressure": 37.0,
+          "anomaly_score": -0.048856522434283955,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-22 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 7.64,
+          "pressure": 30.0,
+          "anomaly_score": -0.014010496583318988,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-23 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 11.19,
+          "pressure": 35.6,
+          "anomaly_score": -0.0061013572201287225,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-26 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 11.32,
+          "pressure": 25.2,
+          "anomaly_score": -0.05110715376251285,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-20 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 11.26,
+          "pressure": 25.2,
+          "anomaly_score": -0.025955318245657444,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-24 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.23,
+          "pressure": 30.4,
+          "anomaly_score": -0.13870957417354046,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-25 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.44,
+          "pressure": 26.6,
+          "anomaly_score": -0.09191883364101738,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-08 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.69,
+          "pressure": 36.5,
+          "anomaly_score": -0.0044869456426115395,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-17 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.59,
+          "pressure": 25.7,
+          "anomaly_score": -0.030718846271152067,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-19 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.11,
+          "pressure": 35.7,
+          "anomaly_score": -0.0018221039517483106,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-25 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.86,
+          "pressure": 33.4,
+          "anomaly_score": -0.01594663850002076,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-09-01 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.37,
+          "pressure": 33.5,
+          "anomaly_score": -0.038744629592459945,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-24 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.35,
+          "pressure": 30.3,
+          "anomaly_score": -0.14063354985608045,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-25 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 11.34,
+          "pressure": 31.5,
+          "anomaly_score": -0.031749190762934365,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-19 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.61,
+          "pressure": 25.5,
+          "anomaly_score": -0.011209078090927083,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-08 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "puncture",
+          "tread_depth": 2.75,
+          "pressure": 32.6,
+          "anomaly_score": -0.15547384138488773,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-09 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.19,
+          "pressure": 27.5,
+          "anomaly_score": -0.06860642754758506,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-12 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "puncture",
+          "tread_depth": 2.9,
+          "pressure": 35.1,
+          "anomaly_score": -0.12843071774620718,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-13 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.17,
+          "pressure": 27.9,
+          "anomaly_score": -0.06982268025020066,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-17 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "puncture",
+          "tread_depth": 2.66,
+          "pressure": 31.4,
+          "anomaly_score": -0.13166287715550729,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-18 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.09,
+          "pressure": 27.5,
+          "anomaly_score": -0.07566897272415418,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-25 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.66,
+          "pressure": 27.4,
+          "anomaly_score": -0.019079022242964094,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-26 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 8.13,
+          "pressure": 31.9,
+          "anomaly_score": -0.027273990069502596,
+          "severity": "medium"
+        }
+      ],
+      "data_source": "synthesized",
+      "generated_at": "2025-09-09T23:04:00.858304"
+    }
+  },
+  {
+    "vehicle_id": 3,
+    "ml_analysis": {
+      "vehicle_info": {
+        "vehicle_id": 3,
+        "make": "Ford",
+        "model": "F-150",
+        "year": "2023",
+        "tire_size": "275/65R18",
+        "tire_brand": "Yokohama"
+      },
+      "current_condition": {
+        "front_left": {
+          "tread_depth_mm": 7.11,
+          "pressure_psi": 39.3,
+          "temperature_c": 38.5,
+          "status": "GOOD",
+          "wear_percentage": 34.4047619047619
+        },
+        "front_right": {
+          "tread_depth_mm": 6.4,
+          "pressure_psi": 38.1,
+          "temperature_c": 36.4,
+          "status": "GOOD",
+          "wear_percentage": 42.85714285714285
+        },
+        "rear_left": {
+          "tread_depth_mm": 7.96,
+          "pressure_psi": 36.3,
+          "temperature_c": 24.5,
+          "status": "GOOD",
+          "wear_percentage": 24.285714285714285
+        },
+        "rear_right": {
+          "tread_depth_mm": 9.81,
+          "pressure_psi": 31.3,
+          "temperature_c": -1.2,
+          "status": "GOOD",
+          "wear_percentage": 2.261904761904756
+        }
+      },
+      "predictions": {
+        "front_left": {
+          "days_until_maintenance": 551,
+          "days_until_replacement": 391,
+          "predicted_depth_30_days": 7.157399999999999,
+          "replacement_timeline": {
+            "status": "BEST",
+            "days_remaining": 391,
+            "message": "Continue current maintenance - 13 months remaining",
+            "days_until_maintenance": 551,
+            "days_until_replacement": 391,
+            "confidence": 0.85,
+            "ml_source": "enhanced_maintenance_agent + tire_predictor"
+          }
+        },
+        "front_right": {
+          "days_until_maintenance": 480,
+          "days_until_replacement": 320,
+          "predicted_depth_30_days": 6.900899999999999,
+          "replacement_timeline": {
+            "status": "BEST",
+            "days_remaining": 320,
+            "message": "Continue current maintenance - 10 months remaining",
+            "days_until_maintenance": 480,
+            "days_until_replacement": 320,
+            "confidence": 0.85,
+            "ml_source": "enhanced_maintenance_agent + tire_predictor"
+          }
+        },
+        "rear_left": {
+          "days_until_maintenance": 1794,
+          "days_until_replacement": 1343,
+          "predicted_depth_30_days": 7.853700000000008,
+          "replacement_timeline": {
+            "status": "BEST",
+            "days_remaining": 1343,
+            "message": "Continue current maintenance - 44 months remaining",
+            "days_until_maintenance": 1794,
+            "days_until_replacement": 1343,
+            "confidence": 0.85,
+            "ml_source": "enhanced_maintenance_agent + tire_predictor"
+          }
+        },
+        "rear_right": {
+          "days_until_maintenance": 238,
+          "days_until_replacement": 192,
+          "predicted_depth_30_days": 8.777799999999996,
+          "replacement_timeline": {
+            "status": "BEST",
+            "days_remaining": 192,
+            "message": "Continue current maintenance - 6 months remaining",
+            "days_until_maintenance": 238,
+            "days_until_replacement": 192,
+            "confidence": 0.85,
+            "ml_source": "enhanced_maintenance_agent + tire_predictor"
+          }
+        }
+      },
+      "recommendations": [
+        {
+          "priority": "LOW",
+          "action": "Schedule tire rotation",
+          "reason": "Recommended every 5000 miles",
+          "estimated_cost": "$50-80"
+        }
+      ],
+      "anomalies": [
+        {
+          "date": "2025-03-16 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.85,
+          "pressure": 38.4,
+          "anomaly_score": -0.03201340862428226,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-19 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.69,
+          "pressure": 37.3,
+          "anomaly_score": -0.0036609002648193556,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-30 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.66,
+          "pressure": 38.9,
+          "anomaly_score": -0.01205854473083412,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-10 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.2,
+          "pressure": 38.9,
+          "anomaly_score": -0.20894393329332572,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-11 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.62,
+          "pressure": 36.8,
+          "anomaly_score": -0.06999792965238383,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-13 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.44,
+          "pressure": 38.7,
+          "anomaly_score": -0.018151058446889246,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-08 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.3,
+          "pressure": 39.7,
+          "anomaly_score": -0.10168684583323517,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-11 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.77,
+          "pressure": 37.9,
+          "anomaly_score": -0.023647908210467805,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-13 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.11,
+          "pressure": 35.3,
+          "anomaly_score": -0.1477546731465742,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-14 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.22,
+          "pressure": 36.1,
+          "anomaly_score": -0.03529795437619454,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-20 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "puncture",
+          "tread_depth": 2.87,
+          "pressure": 35.1,
+          "anomaly_score": -0.14125093570873182,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-21 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.69,
+          "pressure": 30.0,
+          "anomaly_score": -0.03133043614276787,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-30 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.14,
+          "pressure": 32.9,
+          "anomaly_score": -0.14293722217598426,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-31 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.36,
+          "pressure": 37.1,
+          "anomaly_score": -0.0790524523902646,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-03 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.53,
+          "pressure": 39.5,
+          "anomaly_score": -0.0672479115274156,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-16 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 7.82,
+          "pressure": 39.7,
+          "anomaly_score": -0.10182673856475988,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-17 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.14,
+          "pressure": 37.8,
+          "anomaly_score": -0.0463765830072812,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-21 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.65,
+          "pressure": 38.2,
+          "anomaly_score": -0.04235567527698603,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-23 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 6.45,
+          "pressure": 32.4,
+          "anomaly_score": -0.05336160015566893,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-26 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 6.24,
+          "pressure": 28.8,
+          "anomaly_score": -0.04903566735266485,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-30 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.55,
+          "pressure": 38.1,
+          "anomaly_score": -0.014357374448031757,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-19 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.17,
+          "pressure": 38.7,
+          "anomaly_score": -0.04323962888267585,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-20 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.51,
+          "pressure": 36.7,
+          "anomaly_score": -0.007515788849585925,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-21 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.2,
+          "pressure": 38.3,
+          "anomaly_score": -0.028394365619885398,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-06 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "sidewall_damage",
+          "tread_depth": 9.37,
+          "pressure": 38.3,
+          "anomaly_score": -0.04855686940024706,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-07 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.29,
+          "pressure": 38.4,
+          "anomaly_score": -0.06369334095186108,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-17 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.18,
+          "pressure": 32.0,
+          "anomaly_score": -0.029903381304668186,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-20 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.07,
+          "pressure": 29.2,
+          "anomaly_score": -0.012735467730744077,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-21 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.6,
+          "pressure": 30.8,
+          "anomaly_score": -0.06013431450338269,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-23 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.84,
+          "pressure": 29.2,
+          "anomaly_score": -0.016308536287673925,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-24 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.36,
+          "pressure": 38.2,
+          "anomaly_score": -0.03566697122069773,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-28 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 6.24,
+          "pressure": 32.3,
+          "anomaly_score": -0.06326313658378224,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-29 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.46,
+          "pressure": 38.6,
+          "anomaly_score": -0.07374912206184481,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-31 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 6.47,
+          "pressure": 37.1,
+          "anomaly_score": -0.0902264996100316,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-09-01 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 7.11,
+          "pressure": 39.3,
+          "anomaly_score": -0.12302990676249337,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-07 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.98,
+          "pressure": 37.1,
+          "anomaly_score": -0.00274717952288428,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-10 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.97,
+          "pressure": 38.6,
+          "anomaly_score": -0.02350249831186113,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-31 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.73,
+          "pressure": 38.0,
+          "anomaly_score": -0.040306304665311044,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-10 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.11,
+          "pressure": 31.2,
+          "anomaly_score": -0.16281292464729968,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-11 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.3,
+          "pressure": 28.9,
+          "anomaly_score": -0.03134567656631004,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-17 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.49,
+          "pressure": 39.3,
+          "anomaly_score": -0.03757378983621751,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-24 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.14,
+          "pressure": 36.1,
+          "anomaly_score": -0.15006193984852823,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-25 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.2,
+          "pressure": 30.8,
+          "anomaly_score": -0.02609772492311968,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-27 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.57,
+          "pressure": 38.0,
+          "anomaly_score": -0.010377223799409308,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-30 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 6.62,
+          "pressure": 31.2,
+          "anomaly_score": -0.06621301810647306,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-08 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.1,
+          "pressure": 37.5,
+          "anomaly_score": -0.1838062707879673,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-09 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.85,
+          "pressure": 33.7,
+          "anomaly_score": -0.012322312741056218,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-10 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.41,
+          "pressure": 39.6,
+          "anomaly_score": -0.06478677313399861,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-12 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.09,
+          "pressure": 38.2,
+          "anomaly_score": -0.0010503295667692036,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-13 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.13,
+          "pressure": 38.2,
+          "anomaly_score": -0.00023996071100618188,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-23 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 6.43,
+          "pressure": 32.1,
+          "anomaly_score": -0.06241710836553005,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-24 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.85,
+          "pressure": 31.3,
+          "anomaly_score": -0.035214353727847425,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-03 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.45,
+          "pressure": 38.9,
+          "anomaly_score": -0.04104308830454595,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-09 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.58,
+          "pressure": 39.4,
+          "anomaly_score": -0.07276386174372074,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-13 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.17,
+          "pressure": 39.2,
+          "anomaly_score": -0.04012501578214267,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-19 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.61,
+          "pressure": 39.5,
+          "anomaly_score": -0.05402136080465636,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-22 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.68,
+          "pressure": 31.4,
+          "anomaly_score": -0.0027432521586616687,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-25 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 8.53,
+          "pressure": 29.8,
+          "anomaly_score": -0.011447345245494844,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-30 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.53,
+          "pressure": 36.9,
+          "anomaly_score": -0.018952605534746647,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-31 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 6.21,
+          "pressure": 28.7,
+          "anomaly_score": -0.043995303433961186,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-01 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 5.03,
+          "pressure": 37.4,
+          "anomaly_score": -0.11149184661231404,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-02 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.37,
+          "pressure": 29.2,
+          "anomaly_score": -0.03188060271539095,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-04 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 7.58,
+          "pressure": 37.2,
+          "anomaly_score": -0.0384654371742672,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-08 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.6,
+          "pressure": 40.4,
+          "anomaly_score": -0.08109400965308278,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-14 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 7.57,
+          "pressure": 38.0,
+          "anomaly_score": -0.08167038350885991,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-16 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 8.6,
+          "pressure": 37.0,
+          "anomaly_score": -0.038286369416059896,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-17 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 6.54,
+          "pressure": 36.8,
+          "anomaly_score": -0.06737842887821621,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-18 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.63,
+          "pressure": 38.0,
+          "anomaly_score": -0.08402943560544618,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-19 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "alignment_issue",
+          "tread_depth": 8.27,
+          "pressure": 40.3,
+          "anomaly_score": -0.1160049727111998,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-20 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.18,
+          "pressure": 38.0,
+          "anomaly_score": -0.010672354059526157,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-21 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.72,
+          "pressure": 38.4,
+          "anomaly_score": -0.020073132525463167,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-22 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 8.07,
+          "pressure": 32.2,
+          "anomaly_score": -0.04764018381688928,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-23 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.49,
+          "pressure": 38.7,
+          "anomaly_score": -0.12332693411000684,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-27 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 7.87,
+          "pressure": 38.5,
+          "anomaly_score": -0.04923114794417516,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-30 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 7.84,
+          "pressure": 29.7,
+          "anomaly_score": -0.04644695620544714,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-09-01 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 6.4,
+          "pressure": 38.1,
+          "anomaly_score": -0.1130820458047862,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-27 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.91,
+          "pressure": 37.9,
+          "anomaly_score": -0.010577801941769382,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-19 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.74,
+          "pressure": 38.7,
+          "anomaly_score": -0.025573834163463816,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-01 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.48,
+          "pressure": 38.8,
+          "anomaly_score": -0.016339339306917,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-05 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 6.74,
+          "pressure": 38.8,
+          "anomaly_score": -0.12152960113631295,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-06 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.46,
+          "pressure": 39.9,
+          "anomaly_score": -0.11673172752993977,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-07 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.2,
+          "pressure": 38.7,
+          "anomaly_score": -0.03967398391392729,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-25 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.1,
+          "pressure": 38.7,
+          "anomaly_score": -0.05190582652546705,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-26 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.88,
+          "pressure": 37.5,
+          "anomaly_score": -0.023544270012893498,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-03 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.95,
+          "pressure": 38.0,
+          "anomaly_score": -0.03982516574694406,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-06 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.59,
+          "pressure": 38.0,
+          "anomaly_score": -0.05429474950642199,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-16 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.26,
+          "pressure": 37.2,
+          "anomaly_score": -0.024027747453925774,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-20 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.22,
+          "pressure": 30.2,
+          "anomaly_score": -0.035884632525420956,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-21 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "puncture",
+          "tread_depth": 2.64,
+          "pressure": 38.8,
+          "anomaly_score": -0.2167629709469151,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-22 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.45,
+          "pressure": 30.4,
+          "anomaly_score": -0.04514542409494937,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-26 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 7.73,
+          "pressure": 37.3,
+          "anomaly_score": -0.020920760903291202,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-27 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.22,
+          "pressure": 31.8,
+          "anomaly_score": -0.04348789300049294,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-08 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 7.14,
+          "pressure": 33.3,
+          "anomaly_score": -0.03733029057422699,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-09 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.97,
+          "pressure": 37.4,
+          "anomaly_score": -0.07662876428048204,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-28 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.88,
+          "pressure": 39.1,
+          "anomaly_score": -0.01764936449729171,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-07 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.75,
+          "pressure": 39.0,
+          "anomaly_score": -0.037171425703739214,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-16 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.76,
+          "pressure": 38.2,
+          "anomaly_score": -0.007770835600272252,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-15 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.64,
+          "pressure": 38.8,
+          "anomaly_score": -0.048509172024423175,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-29 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.72,
+          "pressure": 38.4,
+          "anomaly_score": -0.02540496153776617,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-30 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.43,
+          "pressure": 39.3,
+          "anomaly_score": -0.04435213455817899,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-15 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.13,
+          "pressure": 32.6,
+          "anomaly_score": -0.1492291132574518,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-16 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.42,
+          "pressure": 33.3,
+          "anomaly_score": -0.025149480306839278,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-26 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.36,
+          "pressure": 38.6,
+          "anomaly_score": -0.03013947752023549,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-12 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.87,
+          "pressure": 38.5,
+          "anomaly_score": -0.018899939203949168,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-18 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 8.85,
+          "pressure": 38.3,
+          "anomaly_score": -0.03181273630977821,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-19 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.5,
+          "pressure": 38.8,
+          "anomaly_score": -0.03466596646107101,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-26 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.09,
+          "pressure": 39.2,
+          "anomaly_score": -0.060498539687412034,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-02 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 8.6,
+          "pressure": 36.9,
+          "anomaly_score": -0.006811531920090541,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-06 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 8.72,
+          "pressure": 37.3,
+          "anomaly_score": -0.03435867053462216,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-11 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.2,
+          "pressure": 39.2,
+          "anomaly_score": -0.0605940294940599,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-27 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.02,
+          "pressure": 32.2,
+          "anomaly_score": -0.031784770745227564,
+          "severity": "medium"
+        }
+      ],
+      "data_source": "synthesized",
+      "generated_at": "2025-09-09T23:04:03.445145"
+    }
+  },
+  {
+    "vehicle_id": 4,
+    "ml_analysis": {
+      "vehicle_info": {
+        "vehicle_id": 4,
+        "make": "BMW",
+        "model": "3 Series",
+        "year": "2020",
+        "tire_size": "225/50R17",
+        "tire_brand": "Yokohama"
+      },
+      "current_condition": {
+        "front_left": {
+          "tread_depth_mm": 8.5,
+          "pressure_psi": 34.2,
+          "temperature_c": 28.3,
+          "status": "GOOD",
+          "wear_percentage": 17.857142857142858
+        },
+        "front_right": {
+          "tread_depth_mm": 8.21,
+          "pressure_psi": 30.3,
+          "temperature_c": -0.4,
+          "status": "GOOD",
+          "wear_percentage": 21.309523809523796
+        },
+        "rear_left": {
+          "tread_depth_mm": 10.45,
+          "pressure_psi": 33.5,
+          "temperature_c": 23.0,
+          "status": "GOOD",
+          "wear_percentage": 0
+        },
+        "rear_right": {
+          "tread_depth_mm": 10.07,
+          "pressure_psi": 31.1,
+          "temperature_c": 10.4,
+          "status": "GOOD",
+          "wear_percentage": 0
+        }
+      },
+      "predictions": {
+        "front_left": {
+          "days_until_maintenance": 1266,
+          "days_until_replacement": 973,
+          "predicted_depth_30_days": 8.336599999999999,
+          "replacement_timeline": {
+            "status": "BEST",
+            "days_remaining": 973,
+            "message": "Continue current maintenance - 32 months remaining",
+            "days_until_maintenance": 1266,
+            "days_until_replacement": 973,
+            "confidence": 0.85,
+            "ml_source": "enhanced_maintenance_agent + tire_predictor"
+          }
+        },
+        "front_right": {
+          "days_until_maintenance": 661,
+          "days_until_replacement": 501,
+          "predicted_depth_30_days": 8.375400000000006,
+          "replacement_timeline": {
+            "status": "BEST",
+            "days_remaining": 501,
+            "message": "Continue current maintenance - 16 months remaining",
+            "days_until_maintenance": 661,
+            "days_until_replacement": 501,
+            "confidence": 0.85,
+            "ml_source": "enhanced_maintenance_agent + tire_predictor"
+          }
+        },
+        "rear_left": {
+          "days_until_maintenance": 949,
+          "days_until_replacement": 778,
+          "predicted_depth_30_days": 10.17050000000001,
+          "replacement_timeline": {
+            "status": "BEST",
+            "days_remaining": 778,
+            "message": "Continue current maintenance - 25 months remaining",
+            "days_until_maintenance": 949,
+            "days_until_replacement": 778,
+            "confidence": 0.85,
+            "ml_source": "enhanced_maintenance_agent + tire_predictor"
+          }
+        },
+        "rear_right": {
+          "days_until_maintenance": 1473,
+          "days_until_replacement": 1195,
+          "predicted_depth_30_days": 9.897600000000017,
+          "replacement_timeline": {
+            "status": "BEST",
+            "days_remaining": 1195,
+            "message": "Continue current maintenance - 39 months remaining",
+            "days_until_maintenance": 1473,
+            "days_until_replacement": 1195,
+            "confidence": 0.85,
+            "ml_source": "enhanced_maintenance_agent + tire_predictor"
+          }
+        }
+      },
+      "recommendations": [
+        {
+          "priority": "LOW",
+          "action": "Schedule tire rotation",
+          "reason": "Recommended every 6000 miles",
+          "estimated_cost": "$50-80"
+        }
+      ],
+      "anomalies": [
+        {
+          "date": "2025-04-08 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.11,
+          "pressure": 28.2,
+          "anomaly_score": -0.15212075658658952,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-09 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.47,
+          "pressure": 27.2,
+          "anomaly_score": -0.06460261805900047,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-11 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.42,
+          "pressure": 25.7,
+          "anomaly_score": -0.021702838946772607,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-10 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.81,
+          "pressure": 25.1,
+          "anomaly_score": -0.016743060629864748,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-29 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.01,
+          "pressure": 35.5,
+          "anomaly_score": -0.14820203173492807,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-30 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.19,
+          "pressure": 28.6,
+          "anomaly_score": -0.03526601385517503,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-04 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.1,
+          "pressure": 26.3,
+          "anomaly_score": -0.012215275314195528,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-05 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.07,
+          "pressure": 37.0,
+          "anomaly_score": -0.016481145328119617,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-15 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 7.97,
+          "pressure": 35.8,
+          "anomaly_score": -0.013859984794074576,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-18 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.07,
+          "pressure": 37.4,
+          "anomaly_score": -0.009714170521625265,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-21 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 6.54,
+          "pressure": 29.9,
+          "anomaly_score": -0.03265823248349242,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-23 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 7.92,
+          "pressure": 28.4,
+          "anomaly_score": -0.03164623878313022,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-27 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 6.39,
+          "pressure": 37.0,
+          "anomaly_score": -0.10292889427504293,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-28 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 7.7,
+          "pressure": 28.3,
+          "anomaly_score": -0.011998777812570971,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-30 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.3,
+          "pressure": 33.3,
+          "anomaly_score": -0.15546932601901586,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-31 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 11.03,
+          "pressure": 33.9,
+          "anomaly_score": -0.03428543353831559,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-15 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.27,
+          "pressure": 34.0,
+          "anomaly_score": -0.14204115234651382,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-16 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.84,
+          "pressure": 32.5,
+          "anomaly_score": -0.026189948935140706,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-19 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.95,
+          "pressure": 25.5,
+          "anomaly_score": -0.01302155805666061,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-01 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.07,
+          "pressure": 26.1,
+          "anomaly_score": -0.006813015116960197,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-07 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 6.09,
+          "pressure": 33.9,
+          "anomaly_score": -0.07403542538257979,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-27 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 7.86,
+          "pressure": 33.7,
+          "anomaly_score": -7.898230287939345e-05,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-31 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.34,
+          "pressure": 34.1,
+          "anomaly_score": -0.046935421361913754,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-21 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.93,
+          "pressure": 26.2,
+          "anomaly_score": -0.010768332558451998,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-19 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.06,
+          "pressure": 33.2,
+          "anomaly_score": -0.142058130036135,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-20 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.5,
+          "pressure": 26.5,
+          "anomaly_score": -0.06686056429412712,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-15 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.68,
+          "pressure": 26.2,
+          "anomaly_score": -0.0223149664254646,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-16 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.08,
+          "pressure": 27.0,
+          "anomaly_score": -0.012646566705671103,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-11 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.69,
+          "pressure": 26.1,
+          "anomaly_score": -0.008187001392323201,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-18 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "puncture",
+          "tread_depth": 2.83,
+          "pressure": 35.6,
+          "anomaly_score": -0.14178510792221377,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-19 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.76,
+          "pressure": 32.9,
+          "anomaly_score": -0.05852324978145629,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-26 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.55,
+          "pressure": 30.9,
+          "anomaly_score": -0.012115355677728368,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-28 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.08,
+          "pressure": 30.1,
+          "anomaly_score": -0.011445537030741582,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-30 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 8.11,
+          "pressure": 36.0,
+          "anomaly_score": -0.007735097976676153,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-03 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 6.47,
+          "pressure": 32.7,
+          "anomaly_score": -0.06345393727572957,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-23 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.3,
+          "pressure": 25.0,
+          "anomaly_score": -0.04387712270784749,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-25 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "puncture",
+          "tread_depth": 2.95,
+          "pressure": 30.9,
+          "anomaly_score": -0.1477423888974193,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-26 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.5,
+          "pressure": 31.6,
+          "anomaly_score": -0.04206320304198752,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-22 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.85,
+          "pressure": 26.0,
+          "anomaly_score": -0.000861281158490268,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-28 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.12,
+          "pressure": 25.3,
+          "anomaly_score": -0.1009229991763737,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-29 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 8.21,
+          "pressure": 26.8,
+          "anomaly_score": -0.01527598576915734,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-07 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.27,
+          "pressure": 25.7,
+          "anomaly_score": -0.012139128103518138,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-24 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.19,
+          "pressure": 33.4,
+          "anomaly_score": -0.007887504360227227,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-29 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.21,
+          "pressure": 31.6,
+          "anomaly_score": -0.028392404850857478,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-09-01 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.07,
+          "pressure": 31.1,
+          "anomaly_score": -0.020515745153755427,
+          "severity": "medium"
+        }
+      ],
+      "data_source": "synthesized",
+      "generated_at": "2025-09-09T23:04:05.825658"
+    }
+  },
+  {
+    "vehicle_id": 5,
+    "ml_analysis": {
+      "vehicle_info": {
+        "vehicle_id": 5,
+        "make": "Mercedes-Benz",
+        "model": "C-Class",
+        "year": "2022",
+        "tire_size": "225/45R18",
+        "tire_brand": "Continental"
+      },
+      "current_condition": {
+        "front_left": {
+          "tread_depth_mm": 9.86,
+          "pressure_psi": 33.8,
+          "temperature_c": 39.8,
+          "status": "GOOD",
+          "wear_percentage": 1.6666666666666732
+        },
+        "front_right": {
+          "tread_depth_mm": 8.82,
+          "pressure_psi": 26.2,
+          "temperature_c": -3.4,
+          "status": "ATTENTION - Pressure adjustment needed",
+          "wear_percentage": 14.047619047619046
+        },
+        "rear_left": {
+          "tread_depth_mm": 9.47,
+          "pressure_psi": 25.8,
+          "temperature_c": -5.4,
+          "status": "ATTENTION - Pressure adjustment needed",
+          "wear_percentage": 6.309523809523801
+        },
+        "rear_right": {
+          "tread_depth_mm": 8.61,
+          "pressure_psi": 28.6,
+          "temperature_c": -7.5,
+          "status": "GOOD",
+          "wear_percentage": 16.54761904761905
+        }
+      },
+      "predictions": {
+        "front_left": {
+          "days_until_maintenance": 302,
+          "days_until_replacement": 243,
+          "predicted_depth_30_days": 9.041100000000005,
+          "replacement_timeline": {
+            "status": "BEST",
+            "days_remaining": 243,
+            "message": "Continue current maintenance - 8 months remaining",
+            "days_until_maintenance": 302,
+            "days_until_replacement": 243,
+            "confidence": 0.85,
+            "ml_source": "enhanced_maintenance_agent + tire_predictor"
+          }
+        },
+        "front_right": {
+          "days_until_maintenance": 480,
+          "days_until_replacement": 373,
+          "predicted_depth_30_days": 8.369100000000008,
+          "replacement_timeline": {
+            "status": "BEST",
+            "days_remaining": 373,
+            "message": "Continue current maintenance - 12 months remaining",
+            "days_until_maintenance": 480,
+            "days_until_replacement": 373,
+            "confidence": 0.85,
+            "ml_source": "enhanced_maintenance_agent + tire_predictor"
+          }
+        },
+        "rear_left": {
+          "days_until_maintenance": 5155,
+          "days_until_replacement": 4106,
+          "predicted_depth_30_days": 9.424200000000011,
+          "replacement_timeline": {
+            "status": "BEST",
+            "days_remaining": 4106,
+            "message": "Continue current maintenance - 136 months remaining",
+            "days_until_maintenance": 5155,
+            "days_until_replacement": 4106,
+            "confidence": 0.85,
+            "ml_source": "enhanced_maintenance_agent + tire_predictor"
+          }
+        },
+        "rear_right": {
+          "days_until_maintenance": 761,
+          "days_until_replacement": 587,
+          "predicted_depth_30_days": 8.333699999999999,
+          "replacement_timeline": {
+            "status": "BEST",
+            "days_remaining": 587,
+            "message": "Continue current maintenance - 19 months remaining",
+            "days_until_maintenance": 761,
+            "days_until_replacement": 587,
+            "confidence": 0.85,
+            "ml_source": "enhanced_maintenance_agent + tire_predictor"
+          }
+        }
+      },
+      "recommendations": [
+        {
+          "priority": "MEDIUM",
+          "action": "Adjust front_right tire pressure",
+          "reason": "Pressure 26.2 PSI deviates from recommended 32 PSI",
+          "estimated_cost": "Free"
+        },
+        {
+          "priority": "MEDIUM",
+          "action": "Adjust rear_left tire pressure",
+          "reason": "Pressure 25.8 PSI deviates from recommended 32 PSI",
+          "estimated_cost": "Free"
+        },
+        {
+          "priority": "LOW",
+          "action": "Schedule tire rotation",
+          "reason": "Recommended every 6000 miles",
+          "estimated_cost": "$50-80"
+        }
+      ],
+      "anomalies": [
+        {
+          "date": "2025-03-17 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "alignment_issue",
+          "tread_depth": 11.68,
+          "pressure": 25.8,
+          "anomaly_score": -0.05673115979226828,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-30 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 11.57,
+          "pressure": 26.0,
+          "anomaly_score": -0.012155398483827073,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-16 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 11.45,
+          "pressure": 25.8,
+          "anomaly_score": -0.025890150211043794,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-09 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.3,
+          "pressure": 35.0,
+          "anomaly_score": -0.1358095145553022,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-10 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.9,
+          "pressure": 34.3,
+          "anomaly_score": -0.015080946306183951,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-23 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "alignment_issue",
+          "tread_depth": 10.72,
+          "pressure": 25.0,
+          "anomaly_score": -0.032736411199522863,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-12 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.61,
+          "pressure": 25.5,
+          "anomaly_score": -0.021414460897239307,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-24 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.7,
+          "pressure": 25.6,
+          "anomaly_score": -0.009754430397924674,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-01 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "alignment_issue",
+          "tread_depth": 10.29,
+          "pressure": 27.7,
+          "anomaly_score": -0.001705294685567571,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-12 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "alignment_issue",
+          "tread_depth": 8.67,
+          "pressure": 26.1,
+          "anomaly_score": -0.08772942302644027,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-23 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.08,
+          "pressure": 26.6,
+          "anomaly_score": -0.07540113576093777,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-24 00:00:00",
+          "position": "front_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.42,
+          "pressure": 25.8,
+          "anomaly_score": -0.06916325661577305,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-11 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "alignment_issue",
+          "tread_depth": 11.75,
+          "pressure": 37.0,
+          "anomaly_score": -0.017257540749612055,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-12 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 11.73,
+          "pressure": 25.4,
+          "anomaly_score": -0.06780362217420388,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-13 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 11.7,
+          "pressure": 25.9,
+          "anomaly_score": -0.03575664834685943,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-14 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 7.83,
+          "pressure": 33.3,
+          "anomaly_score": -0.035179533443872035,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-15 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 11.66,
+          "pressure": 30.8,
+          "anomaly_score": -0.02696267758915405,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-18 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 11.71,
+          "pressure": 26.6,
+          "anomaly_score": -0.014871977714849383,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-05 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 8.28,
+          "pressure": 32.9,
+          "anomaly_score": -0.012476536118075865,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-06 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 11.44,
+          "pressure": 26.8,
+          "anomaly_score": -0.04486162400338434,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-08 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 11.44,
+          "pressure": 25.1,
+          "anomaly_score": -0.037105325311603043,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-09 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.65,
+          "pressure": 25.6,
+          "anomaly_score": -0.015230385031298144,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-11 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.0,
+          "pressure": 33.3,
+          "anomaly_score": -0.13960575930419306,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-12 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 11.19,
+          "pressure": 34.5,
+          "anomaly_score": -0.022319536628588765,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-12 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.33,
+          "pressure": 27.8,
+          "anomaly_score": -0.00016091455871636295,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-18 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.86,
+          "pressure": 26.6,
+          "anomaly_score": -0.002148018578363109,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-20 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 7.6,
+          "pressure": 27.1,
+          "anomaly_score": -0.017986776496496604,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-27 00:00:00",
+          "position": "front_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.71,
+          "pressure": 35.9,
+          "anomaly_score": -0.00826221773229241,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-13 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 11.7,
+          "pressure": 26.3,
+          "anomaly_score": -0.0194731753870806,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-16 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 11.5,
+          "pressure": 24.8,
+          "anomaly_score": -0.05768844664596939,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-17 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.99,
+          "pressure": 25.2,
+          "anomaly_score": -0.024947754637311914,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-31 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.79,
+          "pressure": 25.3,
+          "anomaly_score": -0.0191326935256656,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-06 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 9.09,
+          "pressure": 26.1,
+          "anomaly_score": -0.010425928173020904,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-03 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.35,
+          "pressure": 30.9,
+          "anomaly_score": -0.13123871602478643,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-04 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.39,
+          "pressure": 30.1,
+          "anomaly_score": -0.041133687503618455,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-10 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 8.71,
+          "pressure": 25.4,
+          "anomaly_score": -0.0412333377877353,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-18 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 11.23,
+          "pressure": 26.1,
+          "anomaly_score": -0.06919453374003526,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-09 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.04,
+          "pressure": 35.3,
+          "anomaly_score": -0.16179218805276374,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-10 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.92,
+          "pressure": 28.6,
+          "anomaly_score": -0.06319726102908019,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-13 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 4.86,
+          "pressure": 28.7,
+          "anomaly_score": -0.10402290799827629,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-14 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.05,
+          "pressure": 35.4,
+          "anomaly_score": -0.004692003270534428,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-15 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.49,
+          "pressure": 25.2,
+          "anomaly_score": -0.04222106060052222,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-16 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 11.14,
+          "pressure": 32.1,
+          "anomaly_score": -0.017477356628278984,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-23 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 7.26,
+          "pressure": 32.4,
+          "anomaly_score": -0.05332933500770609,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-31 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 10.62,
+          "pressure": 30.2,
+          "anomaly_score": -0.006320212423014615,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-09-01 00:00:00",
+          "position": "rear_left",
+          "anomaly_type": "normal",
+          "tread_depth": 9.47,
+          "pressure": 25.8,
+          "anomaly_score": -0.006634482939762432,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-15 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 11.69,
+          "pressure": 26.2,
+          "anomaly_score": -0.02248433367530389,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-16 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 11.74,
+          "pressure": 26.8,
+          "anomaly_score": -0.015853604849964897,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-03-18 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 11.71,
+          "pressure": 27.5,
+          "anomaly_score": -0.0018914174411953644,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-04-29 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 11.12,
+          "pressure": 26.0,
+          "anomaly_score": -0.009305025476135431,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-01 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 11.37,
+          "pressure": 37.3,
+          "anomaly_score": -0.0021039275835322835,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-05-11 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 11.33,
+          "pressure": 24.9,
+          "anomaly_score": -0.046532087912151465,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-01 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 11.49,
+          "pressure": 26.5,
+          "anomaly_score": -0.007381712847384092,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-06-24 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 11.16,
+          "pressure": 25.6,
+          "anomaly_score": -0.03995493758012514,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-04 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "irregular_wear",
+          "tread_depth": 6.6,
+          "pressure": 29.0,
+          "anomaly_score": -0.03465103540802972,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-05 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.47,
+          "pressure": 32.9,
+          "anomaly_score": -0.0045922876904692655,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-07-16 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.94,
+          "pressure": 26.1,
+          "anomaly_score": -0.003980307102995018,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-13 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.72,
+          "pressure": 35.3,
+          "anomaly_score": -0.0015696289512935335,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-15 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 8.56,
+          "pressure": 26.3,
+          "anomaly_score": -0.016016064328229662,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-18 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.0,
+          "pressure": 25.7,
+          "anomaly_score": -0.04097256355849632,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-19 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "puncture",
+          "tread_depth": 3.15,
+          "pressure": 31.9,
+          "anomaly_score": -0.16711660724238098,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-20 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 8.94,
+          "pressure": 34.1,
+          "anomaly_score": -0.058733335389655195,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-26 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 9.44,
+          "pressure": 27.8,
+          "anomaly_score": -0.023879616459155595,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-27 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 10.75,
+          "pressure": 36.0,
+          "anomaly_score": -0.04047570918433141,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-08-31 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "puncture",
+          "tread_depth": 2.9,
+          "pressure": 30.1,
+          "anomaly_score": -0.13306475079223945,
+          "severity": "medium"
+        },
+        {
+          "date": "2025-09-01 00:00:00",
+          "position": "rear_right",
+          "anomaly_type": "normal",
+          "tread_depth": 8.61,
+          "pressure": 28.6,
+          "anomaly_score": -0.08536563253393914,
+          "severity": "medium"
+        }
+      ],
+      "data_source": "synthesized",
+      "generated_at": "2025-09-09T23:04:08.058206"
+    }
+  }
+]

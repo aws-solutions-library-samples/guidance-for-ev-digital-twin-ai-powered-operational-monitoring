@@ -1,0 +1,443 @@
+/* Fixed sizing for consistency across all screens */
+.invertor-page {
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  font-family: 'Amazon Ember', sans-serif;
+  position: fixed;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.invertor-container {
+  width: 1400px;
+  height: 800px;
+  background: #2d343d;
+  position: relative;
+  overflow: hidden;
+  border-radius: 0;
+}
+
+/* Header Styles */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: #1b1e20;
+  color: white;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.header-left h1 {
+  margin: 0;
+  color: white;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-profile {
+  font-size: 14px;
+  color: white;
+}
+
+.user-icon {
+  width: 32px;
+  height: 32px;
+  background: #555;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.invertor-layout {
+  display: grid;
+  grid-template-columns: calc(100% - 343px) 343px;
+  gap: 0;
+  height: 720px;
+  margin: 20px 0 20px 20px;
+  overflow: hidden;
+}
+
+.nav-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #3a4552;
+  position: relative;
+}
+
+.vin-number {
+  position: absolute;
+  right: 420px;
+  top: 35px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 8px;
+}
+
+.back-button {
+  background: none;
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 24px;
+  padding: 0;
+  margin: 0;
+}
+
+.back-button:hover {
+  opacity: 0.8;
+}
+
+.invertor-page .main-panel {
+  background: transparent;
+  border: none;
+  padding: 20px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.invertor-page .right-panel {
+  background: #434a54;
+  overflow: hidden;
+  width: 343px;
+  position: absolute;
+  top: 60px;
+  right: 0px;
+  height: calc(100% - 60px);
+}
+
+.data-container {
+  background: #1b1e20;
+  border: 1px solid #3a4552;
+  padding: 20px;
+  color: white;
+}
+
+.invertor-page .bottom-containers {
+  display: flex;
+  gap: 20px;
+}
+
+.invertor-page .bottom-containers .data-container:first-child {
+  flex: 2.0;
+  min-height: 200px;
+  max-height: 200px;
+  overflow: hidden;
+  margin-left: -15px;
+}
+
+.invertor-page .bottom-containers .data-container:last-child {
+  flex: 1.3;
+  min-height: 200px;
+  max-height: 200px;
+  overflow: hidden;
+  transform: translateX(15px);
+}
+
+/* Power Metrics Grid */
+.invertor-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.invertor-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.gauge-container {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.invertor-page .gauge-arc {
+  position: absolute;
+  width: 100px;
+  height: 50px;
+  border: 8px solid #555;
+  border-radius: 100px 100px 0 0 !important;
+  border-bottom: none !important;
+  border-top-color: #37bc12;
+  border-right-color: #37bc12;
+  border-left-color: #37bc12;
+  transform: rotate(0deg);
+}
+
+.invertor-page .gauge-value {
+  font-size: 12px !important;
+  font-weight: bold;
+  color: white;
+  z-index: 1;
+}
+
+.invertor-page .gauge-label {
+  font-size: 5px !important;
+  color: #ccc;
+  margin-top: 5px;
+}
+
+/* Inverter Center Section */
+.invertor-center-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.invertor-image {
+  width: 220px;
+  height: auto;
+  margin-bottom: 16px;
+}
+
+.invertor-temp {
+  display: flex;
+  align-items: center;
+  font-size: 1.2rem;
+  margin-bottom: 8px;
+}
+
+.invertor-temp-icon {
+  margin-right: 8px;
+}
+
+.invertor-temp-value {
+  font-size: 24px;
+  font-weight: 300;
+  color: white;
+}
+
+.invertor-temp-label {
+  font-size: 10px;
+  color: white;
+  margin-left: 8px;
+}
+
+.invertor-dc-link {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Bottom Section Styling */
+.invertor-pulse-chart {
+  height: 48px;
+  background: #222;
+  border-radius: 8px;
+  margin: 12px 0;
+}
+
+.invertor-pulse-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.invertor-fault-btn {
+  background: #ff5252;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.invertor-fault-desc {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Right Panel Styling */
+.invertor-prediction {
+  background: #3a4149;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.prediction-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.prediction-header h2 {
+  font-size: 24px;
+  font-weight: normal;
+  color: white;
+}
+
+.invertor-info {
+  color: #ff9900;
+  font-size: 16px;
+}
+
+/* Failure Prediction */
+.failure-prediction {
+  margin-bottom: 30px;
+}
+
+.failure-prediction h3 {
+  font-size: 14px;
+  margin-bottom: 10px;
+  position: relative;
+  top: 25px;
+}
+
+.prediction-legend {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 15px;
+  position: relative;
+  top: 25px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+}
+
+.legend-color {
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.legend-color.past {
+  background: #ff9900;
+}
+
+.legend-color.predicted {
+  background: #37bc12;
+}
+
+.prediction-chart {
+  height: 420px;
+  background: transparent;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: -60px;
+}
+
+.prediction-chart svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Remaining Useful Life */
+.useful-life {
+  margin-top: -80px;
+  margin-bottom: -60px;
+  text-align: center;
+}
+
+.life-bar {
+  width: 100%;
+  height: 25px;
+  background: #333;
+  border: 1px solid #555;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.life-fill {
+  width: 83%;
+  height: 100%;
+  background: linear-gradient(90deg, #ff9900 0%, #37bc12 100%);
+  border-radius: 0;
+}
+
+.invertor-prediction-container {
+  background: #2d343d !important;
+  border: 1px solid #3a4552;
+  margin: -10px -20px 30px -20px;
+  padding: 15px 20px;
+  color: white;
+}
+
+/* GenAI Recommendations */
+.genai-recommendations h3 {
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+.genai-recommendations p {
+  font-size: 9px;
+  color: #ccc;
+  line-height: 1.4;
+  margin: 0 5px 20px 5px;
+}
+
+.recommendations-list {
+  background: #252b33;
+  border-radius: 0;
+  padding: 5px;
+  margin: 0 -10px;
+}
+
+.recommendation-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 5px;
+  font-size: 10px;
+}
+
+.warning-icon {
+  color: #ff9900;
+}
+
+.recommendation-details {
+  font-size: 11px;
+  color: #ccc;
+  line-height: 1.2;
+  margin-bottom: 3px;
+}
+
+.recommendation-details p {
+  margin-bottom: 5px;
+}
+
+.more-link {
+  color: #ff9900;
+  font-size: 8px;
+  cursor: pointer;
+  text-align: right;
+}

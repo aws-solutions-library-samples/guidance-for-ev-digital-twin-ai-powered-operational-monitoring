@@ -1,0 +1,305 @@
+[
+  {
+    "vehicle_id": 1,
+    "ml_analysis": {
+      "vehicle_info": {
+        "vehicle_id": 1,
+        "make": "Honda",
+        "model": "Civic",
+        "year": 2020,
+        "engine_type": "I4",
+        "fuel_type": "gasoline"
+      },
+      "current_condition": {
+        "engine_temperature_c": 88.7,
+        "oil_pressure_psi": 19.4,
+        "rpm_avg": 2925,
+        "vibration_level": 3.94,
+        "performance_score": 99.7,
+        "status": "GOOD"
+      },
+      "predictions": {
+        "performance_degradation": {
+          "days_until_maintenance": 180,
+          "days_until_critical": null,
+          "predicted_performance_30_days": 98.5,
+          "replacement_timeline": {
+            "status": "GOOD",
+            "days_remaining": 180,
+            "message": "Continue current maintenance schedule"
+          }
+        },
+        "temperature_trend": {
+          "status": "NORMAL",
+          "trend": "stable",
+          "risk_level": "low"
+        },
+        "oil_pressure_trend": {
+          "status": "ATTENTION",
+          "trend": "declining",
+          "risk_level": "medium"
+        }
+      },
+      "recommendations": [
+        {
+          "priority": "MEDIUM",
+          "action": "Monitor oil pressure - showing gradual decline",
+          "description": "Oil pressure trending downward from optimal range",
+          "estimated_cost": "$80-150"
+        },
+        {
+          "priority": "LOW",
+          "action": "Schedule routine engine maintenance",
+          "description": "Preventive maintenance to maintain performance",
+          "estimated_cost": "$200-400"
+        },
+        {
+          "priority": "LOW",
+          "action": "Continue current driving patterns",
+          "description": "Engine performing within normal parameters",
+          "estimated_cost": "Free"
+        }
+      ]
+    }
+  },
+  {
+    "vehicle_id": 2,
+    "ml_analysis": {
+      "vehicle_info": {
+        "vehicle_id": 2,
+        "make": "Toyota",
+        "model": "Camry",
+        "year": 2022,
+        "engine_type": "I4",
+        "fuel_type": "gasoline"
+      },
+      "current_condition": {
+        "engine_temperature_c": 92.3,
+        "oil_pressure_psi": 22.1,
+        "rpm_avg": 2650,
+        "vibration_level": 2.8,
+        "performance_score": 97.2,
+        "status": "GOOD"
+      },
+      "predictions": {
+        "performance_degradation": {
+          "days_until_maintenance": 120,
+          "days_until_critical": null,
+          "predicted_performance_30_days": 96.8,
+          "replacement_timeline": {
+            "status": "GOOD",
+            "days_remaining": 120,
+            "message": "Schedule maintenance within 4 months"
+          }
+        },
+        "temperature_trend": {
+          "status": "NORMAL",
+          "trend": "stable",
+          "risk_level": "low"
+        },
+        "oil_pressure_trend": {
+          "status": "GOOD",
+          "trend": "stable",
+          "risk_level": "low"
+        }
+      },
+      "recommendations": [
+        {
+          "priority": "LOW",
+          "action": "Excellent engine condition - continue current maintenance",
+          "description": "All parameters within optimal ranges",
+          "estimated_cost": "$150-300"
+        },
+        {
+          "priority": "LOW",
+          "action": "Monitor fuel efficiency trends",
+          "description": "Track consumption patterns for optimization",
+          "estimated_cost": "Free"
+        }
+      ]
+    }
+  },
+  {
+    "vehicle_id": 3,
+    "ml_analysis": {
+      "vehicle_info": {
+        "vehicle_id": 3,
+        "make": "Ford",
+        "model": "F-150",
+        "year": 2023,
+        "engine_type": "V6",
+        "fuel_type": "gasoline"
+      },
+      "current_condition": {
+        "engine_temperature_c": 95.8,
+        "oil_pressure_psi": 28.5,
+        "rpm_avg": 2200,
+        "vibration_level": 4.2,
+        "performance_score": 94.1,
+        "status": "WARNING"
+      },
+      "predictions": {
+        "performance_degradation": {
+          "days_until_maintenance": 60,
+          "days_until_critical": 150,
+          "predicted_performance_30_days": 92.5,
+          "replacement_timeline": {
+            "status": "WARNING",
+            "days_remaining": 60,
+            "message": "Schedule maintenance within 2 months"
+          }
+        },
+        "temperature_trend": {
+          "status": "ELEVATED",
+          "trend": "increasing",
+          "risk_level": "medium"
+        },
+        "oil_pressure_trend": {
+          "status": "GOOD",
+          "trend": "stable",
+          "risk_level": "low"
+        }
+      },
+      "recommendations": [
+        {
+          "priority": "HIGH",
+          "action": "Check cooling system - temperature trending high",
+          "description": "Engine running warmer than optimal",
+          "estimated_cost": "$200-500"
+        },
+        {
+          "priority": "MEDIUM",
+          "action": "Investigate vibration levels",
+          "description": "Vibration above normal range for V6 engine",
+          "estimated_cost": "$150-400"
+        },
+        {
+          "priority": "MEDIUM",
+          "action": "Performance tune-up recommended",
+          "description": "Performance score declining from optimal",
+          "estimated_cost": "$300-600"
+        }
+      ]
+    }
+  },
+  {
+    "vehicle_id": 4,
+    "ml_analysis": {
+      "vehicle_info": {
+        "vehicle_id": 4,
+        "make": "BMW",
+        "model": "3 Series",
+        "year": 2020,
+        "engine_type": "I4",
+        "fuel_type": "gasoline"
+      },
+      "current_condition": {
+        "engine_temperature_c": 89.2,
+        "oil_pressure_psi": 24.7,
+        "rpm_avg": 2800,
+        "vibration_level": 2.1,
+        "performance_score": 98.9,
+        "status": "EXCELLENT"
+      },
+      "predictions": {
+        "performance_degradation": {
+          "days_until_maintenance": 200,
+          "days_until_critical": null,
+          "predicted_performance_30_days": 98.7,
+          "replacement_timeline": {
+            "status": "EXCELLENT",
+            "days_remaining": 200,
+            "message": "Premium engine condition - minimal maintenance needed"
+          }
+        },
+        "temperature_trend": {
+          "status": "OPTIMAL",
+          "trend": "stable",
+          "risk_level": "low"
+        },
+        "oil_pressure_trend": {
+          "status": "OPTIMAL",
+          "trend": "stable",
+          "risk_level": "low"
+        }
+      },
+      "recommendations": [
+        {
+          "priority": "LOW",
+          "action": "Continue premium maintenance schedule",
+          "description": "Engine performing exceptionally well",
+          "estimated_cost": "$250-450"
+        },
+        {
+          "priority": "LOW",
+          "action": "Use high-quality synthetic oil",
+          "description": "Maintain premium performance standards",
+          "estimated_cost": "$80-120"
+        }
+      ]
+    }
+  },
+  {
+    "vehicle_id": 5,
+    "ml_analysis": {
+      "vehicle_info": {
+        "vehicle_id": 5,
+        "make": "Mercedes-Benz",
+        "model": "C-Class",
+        "year": 2022,
+        "engine_type": "I4",
+        "fuel_type": "gasoline"
+      },
+      "current_condition": {
+        "engine_temperature_c": 103.2,
+        "oil_pressure_psi": 16.8,
+        "rpm_avg": 3200,
+        "vibration_level": 5.7,
+        "performance_score": 78.3,
+        "status": "CRITICAL"
+      },
+      "predictions": {
+        "performance_degradation": {
+          "days_until_maintenance": 7,
+          "days_until_critical": 14,
+          "predicted_performance_30_days": 65.2,
+          "replacement_timeline": {
+            "status": "CRITICAL",
+            "days_remaining": 7,
+            "message": "URGENT: Schedule immediate service"
+          }
+        },
+        "temperature_trend": {
+          "status": "CRITICAL",
+          "trend": "rapidly_increasing",
+          "risk_level": "high"
+        },
+        "oil_pressure_trend": {
+          "status": "CRITICAL",
+          "trend": "rapidly_declining",
+          "risk_level": "high"
+        }
+      },
+      "recommendations": [
+        {
+          "priority": "URGENT",
+          "action": "STOP DRIVING - Engine overheating detected",
+          "description": "Temperature exceeds safe operating limits",
+          "estimated_cost": "$500-1500"
+        },
+        {
+          "priority": "URGENT",
+          "action": "Check oil system immediately",
+          "description": "Oil pressure critically low - engine damage risk",
+          "estimated_cost": "$200-800"
+        },
+        {
+          "priority": "HIGH",
+          "action": "Comprehensive engine diagnostic required",
+          "description": "Multiple critical parameters out of range",
+          "estimated_cost": "$400-1200"
+        }
+      ]
+    }
+  }
+]

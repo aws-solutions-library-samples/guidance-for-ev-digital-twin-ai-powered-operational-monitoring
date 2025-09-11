@@ -1,0 +1,383 @@
+.energymanagement-page {
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  font-family: 'Amazon Ember', sans-serif;
+  position: fixed;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.energymanagement-container {
+  width: 1400px;
+  height: 800px;
+  background: #2d343d;
+  position: relative;
+  overflow: hidden;
+  border-radius: 0;
+}
+
+
+
+.energymanagement-layout {
+  display: grid;
+  grid-template-columns: calc(100% - 343px) 343px;
+  gap: 0;
+  height: 720px;
+  overflow: hidden;
+}
+
+.nav-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #3a4552;
+  position: relative;
+}
+
+.vin-number {
+  position: absolute;
+  right: 420px;
+  top: 35px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 8px;
+}
+
+.back-button {
+  background: none;
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 24px;
+  padding: 0;
+  margin: 0;
+}
+
+.back-button:hover {
+  opacity: 0.8;
+}
+
+.energymanagement-page .main-panel {
+  background: transparent;
+  border: none;
+  padding: 20px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.energymanagement-page .right-panel {
+  background: #434a54;
+  overflow: hidden;
+  width: 343px;
+  position: absolute;
+  top: 60px;
+  right: 0px;
+  height: calc(100% - 60px);
+}
+
+.data-container {
+  background: #1b1e20;
+  border: 1px solid #3a4552;
+  padding: 20px;
+  color: white;
+}
+
+.thermal-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.thermal-metrics-grid-bottom {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.regenerative-metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.regenerative-stacked-section {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-left: -100px;
+  width: 300px;
+  margin-top: -20px;
+}
+
+.stacked-bar-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stacked-bar {
+  width: 200px;
+  height: 20px;
+  background: #333;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.stacked-bar-fill {
+  height: 100%;
+  background: #37bc12;
+  border-radius: 4px;
+}
+
+.stacked-bar-label {
+  font-size: 18px;
+  font-weight: 300;
+  color: white;
+  margin-left: 10px;
+  min-width: 80px;
+  text-align: right;
+}
+
+.regenerative-gauge:nth-child(2) {
+  margin-left: 20px;
+}
+
+.thermal-gauge,
+.regenerative-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.regenerative-gauge:first-child,
+.regenerative-gauge:nth-child(2) {
+  align-items: flex-start;
+  text-align: left;
+}
+
+.gauge-container {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.energymanagement-page .gauge-arc {
+  position: absolute;
+  width: 100px;
+  height: 50px;
+  border: 8px solid #555;
+  border-radius: 100px 100px 0 0 !important;
+  border-bottom: none !important;
+  border-top-color: #37bc12;
+  border-right-color: #37bc12;
+  border-left-color: #37bc12;
+  transform: rotate(0deg);
+}
+
+.energymanagement-page .gauge-value {
+  font-size: 12px !important;
+  font-weight: bold;
+  color: white;
+  z-index: 1;
+  margin-top: 15px;
+}
+
+.regenerative-gauge:first-child .gauge-value,
+.regenerative-gauge:nth-child(2) .gauge-value {
+  font-size: 22px !important;
+  font-weight: 300;
+  color: white;
+}
+
+.regenerative-gauge:nth-child(2) .gauge-label {
+  text-align: center;
+  max-width: 120px;
+}
+
+.regenerative-gauge:first-child .gauge-label,
+.regenerative-gauge:nth-child(2) .gauge-label {
+  color: white;
+}
+
+.gauge-label {
+  font-size: 8px;
+  color: #ccc;
+  margin-top: 8px;
+  text-align: center;
+  line-height: 1.2;
+  max-width: 90px;
+  word-wrap: break-word;
+}
+
+.failure-title {
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+
+.failure-chart {
+  height: 80px;
+  background: #222;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.life-bar {
+  width: 100%;
+  height: 25px;
+  background: #333;
+  border: 1px solid #555;
+  border-radius: 0;
+  overflow: hidden;
+  margin-top: 8px;
+  position: relative;
+}
+
+.life-bar-fill {
+  background: linear-gradient(90deg, #ff9900 0%, #37bc12 100%);
+  height: 100%;
+  border-radius: 0;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.life-bar-label {
+  position: absolute;
+  right: 8px;
+  top: -24px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #7cf67c;
+}
+
+.energymanagement-genai {
+  margin-top: 16px;
+}
+
+.energymanagement-efficiency-tuning {
+  background: #1a1d21;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 12px;
+  color: #ff5252;
+}
+
+.efficiency-icon {
+  margin-right: 8px;
+}
+
+.energymanagement-more {
+  color: #ffb700;
+  text-decoration: underline;
+  margin-left: 8px;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.prediction-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.prediction-header h2 {
+  font-size: 24px;
+  font-weight: normal;
+  color: white;
+}
+
+.energymanagement-info {
+  color: #ff9900;
+  font-size: 16px;
+}
+
+/* Prediction Chart Styles */
+.failure-prediction {
+  margin-bottom: 20px;
+}
+
+.failure-prediction h3 {
+  font-size: 16px;
+  color: white;
+  margin-bottom: 10px;
+}
+
+.prediction-legend {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: white;
+}
+
+.legend-color {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.legend-color.past {
+  background-color: rgba(255,153,0,1);
+}
+
+.legend-color.predicted {
+  background-color: rgba(56,239,125,1);
+}
+
+.legend-color.current {
+  background: #37bc12;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.legend-color.expected {
+  background: #ff9900;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.prediction-chart {
+  background: transparent;
+}
+
+.useful-life {
+  margin-top: 20px;
+}
+
+.life-fill {
+  background: linear-gradient(90deg, #ff9900 0%, #37bc12 100%);
+  height: 100%;
+}

@@ -1,0 +1,807 @@
+.motor-page {
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  font-family: 'Amazon Ember', sans-serif;
+  position: fixed;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.motor-container {
+  max-width: 1400px;
+  width: 100%;
+  min-width: 1200px;
+  height: calc(100vh - 76px);
+  background: #2d343d;
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+@media (min-height: 900px) {
+  .motor-container {
+    height: 70vh;
+  }
+}
+
+@media (max-height: 800px) {
+  .motor-container {
+    height: calc(100vh - 50px);
+    min-height: 700px;
+  }
+}
+
+@media (max-height: 768px) {
+  .motor-container {
+    height: calc(100vh - 40px);
+    min-height: 650px;
+  }
+}
+
+.motor-layout {
+  display: grid;
+  grid-template-columns: calc(100% - 343px) 343px;
+  gap: 0;
+  height: calc(100vh - 180px);
+  margin: -30px 0 20px 20px;
+  overflow: hidden;
+}
+
+@media (min-height: 900px) {
+  .motor-layout {
+    height: calc(70vh - 40px);
+  }
+}
+
+@media (max-height: 800px) {
+  .motor-layout {
+    height: calc(100vh - 140px);
+  }
+}
+
+@media (max-height: 768px) {
+  .motor-layout {
+    height: calc(100vh - 120px);
+  }
+}
+
+.nav-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #3a4552;
+  position: relative;
+}
+
+.vin-number {
+  position: absolute;
+  right: 420px;
+  top: 35px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 8px;
+}
+
+.back-button {
+  background: none;
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 24px;
+  padding: 0;
+  margin: 0;
+}
+
+.back-button:hover {
+  opacity: 0.8;
+}
+
+
+
+.motor-page .main-panel {
+  background: transparent;
+  border: none;
+  padding: 20px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.motor-page .right-panel {
+  background: #434a54;
+  overflow: visible;
+  width: 343px;
+  position: absolute;
+  top: 60px;
+  right: 0px;
+  height: calc(100% - 60px);
+}
+
+.data-container {
+  background: #1b1e20;
+  border: 1px solid #3a4552;
+  padding: 20px;
+  color: white;
+}
+
+.motor-page .bottom-containers {
+  display: flex;
+  gap: 20px;
+}
+
+.motor-page .bottom-containers .data-container:first-child {
+  flex: 2.0;
+  min-height: 200px;
+  max-height: 200px;
+  overflow: hidden;
+  margin-left: -15px;
+}
+
+.motor-page .bottom-containers .data-container:last-child {
+  flex: 1.3;
+  min-height: 200px;
+  max-height: 200px;
+  overflow: hidden;
+  transform: translateX(15px);
+}
+
+
+
+/* Motor Performance Panel */
+.motor-performance {
+  background: #3a4149;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.motor-performance h2 {
+  font-size: 18px;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.performance-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: auto auto auto;
+  gap: 20px;
+  height: 100%;
+}
+
+/* RPM Gauge */
+.rpm-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.gauge-container {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.rpm-gauge .gauge-container {
+  width: 90px;
+  height: 90px;
+}
+
+.gauge-arc {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  border: 8px solid #555;
+  border-radius: 50%;
+  border-top-color: #37bc12;
+  border-right-color: #37bc12;
+  transform: rotate(-45deg);
+}
+
+.rpm-gauge .gauge-arc {
+  width: 100px;
+  height: 50px;
+  border-radius: 100px 100px 0 0;
+  border-bottom: none;
+  transform: rotate(0deg);
+}
+
+.gauge-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+  z-index: 1;
+}
+
+.rpm-gauge .gauge-value {
+  font-size: 14px;
+}
+
+.gauge-label {
+  font-size: 12px;
+  color: #ccc;
+  margin-top: 5px;
+}
+
+.gauge-unit {
+  font-size: 10px;
+  color: #888;
+}
+
+.gauge-legend {
+  display: flex;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 6px;
+}
+
+.legend-color {
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.legend-color.current {
+  background: #37bc12;
+}
+
+.legend-color.expected {
+  background: #ff9900;
+}
+
+.legend-color.past {
+  background: #ff9900;
+}
+
+.legend-color.predicted {
+  background: #37bc12;
+}
+
+/* Rotor Position */
+.rotor-position {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transform: translateX(-150px);
+}
+
+/* Insulation Resistance */
+.insulation-resistance {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transform: translateX(-300px);
+}
+
+.rotor-position .gauge-container, .insulation-resistance .gauge-container {
+  width: 90px;
+  height: 90px;
+}
+
+.rotor-position .gauge-arc, .insulation-resistance .gauge-arc {
+  width: 100px;
+  height: 50px;
+  border-radius: 100px 100px 0 0;
+  border-bottom: none;
+  transform: rotate(0deg);
+}
+
+.rotor-position .gauge-value, .insulation-resistance .gauge-value {
+  font-size: 14px;
+}
+
+.insulation-resistance .gauge-label {
+  font-size: 8px;
+}
+
+.rotor-position .gauge-label {
+  font-size: 8px;
+}
+
+.rpm-gauge .gauge-label {
+  font-size: 8px;
+}
+
+.torque-gauge .gauge-label {
+  font-size: 8px;
+}
+
+.rotor-position h3, .insulation-resistance h3 {
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.rotor-position p, .insulation-resistance p {
+  font-size: 12px;
+  color: #ccc;
+  margin-bottom: 15px;
+}
+
+.position-chart, .resistance-chart {
+  height: 60px;
+  background: linear-gradient(90deg, #37bc12 0%, #37bc12 70%, transparent 70%);
+  border-radius: 4px;
+  position: relative;
+}
+
+.position-chart::after, .resistance-chart::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 100%;
+  background: #37bc12;
+  right: 30%;
+  top: 0;
+}
+
+/* Motor Image */
+.motor-image {
+  grid-row: span 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.motor-3d {
+  display: none;
+}
+
+/* Torque Gauge */
+.torque-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.torque-gauge .gauge-container {
+  width: 90px;
+  height: 90px;
+}
+
+.torque-gauge .gauge-arc {
+  width: 100px;
+  height: 50px;
+  border-radius: 100px 100px 0 0;
+  border-bottom: none;
+  transform: rotate(0deg);
+}
+
+.torque-gauge .gauge-value {
+  font-size: 14px;
+}
+
+/* Bearing Health */
+.bearing-health {
+  grid-column: 2;
+  grid-row: 2;
+  transform: translateX(-120px);
+  font-size: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.bearing-health h3 {
+  font-size: 10px;
+  margin-bottom: 8px;
+}
+
+.health-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.health-bar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.health-bar span {
+  font-size: 8px;
+  width: 60px;
+  color: #ccc;
+}
+
+.bar {
+  height: 6px;
+  border-radius: 0;
+  min-width: 60px;
+}
+
+.bar.red {
+  background: #ff4444;
+}
+
+.bar.green {
+  background: #37bc12;
+}
+
+/* Motor Temperature */
+.motor-temperature {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  grid-column: 3;
+  grid-row: 2;
+  transform: translateX(-20px);
+}
+
+.temp-icon {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.temp-value {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.temp-label {
+  font-size: 10px;
+  color: #ccc;
+  margin-bottom: 15px;
+}
+
+.temp-chart {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  align-items: center;
+}
+
+.motor-temperature .temp-chart {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 15px !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+.motor-temperature .temp-chart .legend-item {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 5px !important;
+  font-size: 12px !important;
+}
+
+/* Motor Prediction Panel */
+.motor-prediction {
+  background: #3a4149;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.prediction-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.prediction-header h2 {
+  font-size: 24px;
+  font-weight: normal;
+  color: white;
+}
+
+.info-icon {
+  color: #ff9900;
+  font-size: 16px;
+}
+
+/* Failure Prediction */
+.failure-prediction {
+  margin-bottom: 30px;
+}
+
+.failure-prediction h3 {
+  font-size: 14px;
+  margin-bottom: 10px;
+  position: relative;
+  top: 25px;
+}
+
+.prediction-legend {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 15px;
+  position: relative;
+  top: 25px;
+}
+
+.legend-color.past {
+  background: #ff9900;
+}
+
+.legend-color.predicted {
+  background: #37bc12;
+}
+
+.prediction-chart {
+  height: 420px;
+  background: transparent;
+  position: relative;
+  overflow: visible;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: -60px;
+  padding-left: 10px;
+}
+
+.prediction-chart svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Remaining Useful Life */
+.useful-life {
+  margin-top: -80px;
+  margin-bottom: -60px;
+  text-align: center;
+}
+
+@media (max-height: 800px) {
+  .useful-life {
+    margin-bottom: -15px;
+  }
+}
+
+@media (max-height: 768px) {
+  .useful-life {
+    margin-bottom: -10px;
+  }
+}
+
+.useful-life h3 {
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+.life-percentage {
+  font-size: 36px;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.life-bar {
+  width: 100%;
+  height: 25px;
+  background: #333;
+  border: 1px solid #555;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.life-fill {
+  width: 70%;
+  height: 100%;
+  background: linear-gradient(90deg, #ff9900 0%, #37bc12 100%);
+  border-radius: 0;
+}
+
+.motor-prediction-container {
+  background: #2d343d !important;
+  border: 1px solid #3a4552;
+  margin: -10px -20px 30px -20px;
+  padding: 15px 20px;
+  color: white;
+}
+
+/* GenAI Recommendations */
+.genai-recommendations h3 {
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+.genai-recommendations p {
+  font-size: 9px;
+  color: #ccc;
+  line-height: 1.4;
+  margin: 0 5px 20px 5px;
+}
+
+.recommendations-list {
+  background: #252b33;
+  border-radius: 0;
+  padding: 5px;
+  margin: 0 -10px;
+}
+
+.recommendation-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 5px;
+  font-size: 10px;
+}
+
+.warning-icon {
+  color: #ff9900;
+}
+
+.recommendation-details {
+  font-size: 11px;
+  color: #ccc;
+  line-height: 1.2;
+  margin-bottom: 3px;
+}
+
+.recommendation-details p {
+  margin-bottom: 5px;
+}
+
+.more-link {
+  color: #ff9900;
+  font-size: 8px;
+  cursor: pointer;
+  text-align: right;
+}
+
+/* Bottom Panels */
+.bottom-panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin: 20px;
+}
+
+.electrical-panel, .performance-panel {
+  background: #3a4149;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.electrical-panel h3, .performance-panel h3 {
+  font-size: 16px;
+  margin-bottom: 20px;
+}
+
+.electrical-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.performance-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 20px;
+}
+
+.metric-item {
+  text-align: center;
+}
+
+.metric-value {
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.metric-label {
+  font-size: 8px;
+  color: #ccc;
+  margin-bottom: 10px;
+}
+
+.metric-chart {
+  height: 40px;
+  background: linear-gradient(90deg, #37bc12 0%, #37bc12 60%, transparent 60%);
+  border-radius: 4px;
+  position: relative;
+}
+
+.metric-chart::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: #37bc12;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+}
+
+.motor-content {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 20px;
+  margin: 0 20px;
+  flex: 1;
+}
+
+/* Fixed sizing for consistency across all screens */
+.motor-page {
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  font-family: 'Amazon Ember', sans-serif;
+  position: fixed;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.motor-container {
+  width: 1400px;
+  height: 800px;
+  background: #2d343d;
+  position: relative;
+  overflow: hidden;
+  border-radius: 0;
+}
+
+.motor-layout {
+  display: grid;
+  grid-template-columns: calc(100% - 343px) 343px;
+  gap: 0;
+  height: 720px;
+  margin: 20px 0 20px 20px;
+  overflow: hidden;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .motor-content {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+  }
+  
+  .motor-prediction {
+    order: 2;
+  }
+}
+
+@media (max-width: 768px) {
+  .performance-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .motor-image {
+    grid-column: span 2;
+    grid-row: span 1;
+  }
+  
+  .bearing-health {
+    grid-column: span 2;
+  }
+  
+  .bottom-panels {
+    grid-template-columns: 1fr;
+  }
+}
