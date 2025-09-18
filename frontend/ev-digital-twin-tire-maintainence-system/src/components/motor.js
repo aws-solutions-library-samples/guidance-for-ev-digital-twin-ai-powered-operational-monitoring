@@ -13,6 +13,8 @@ const Motor = () => {
   const [dataIndex, setDataIndex] = useState(0);
   const [mlResults, setMlResults] = useState([]);
   const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [showPrediction, setShowPrediction] = useState(false);
+  const [animationProgress, setAnimationProgress] = useState(0);
 
   useEffect(() => {
     Papa.parse('/data/motor_sensor_data.csv', {
@@ -53,6 +55,29 @@ const Motor = () => {
       return () => clearInterval(interval);
     }
   }, [csvData]);
+
+  // Animation effect for prediction line
+  useEffect(() => {
+    if (showPrediction) {
+      setAnimationProgress(0);
+      const animationDuration = 2000; // 2 seconds
+      const startTime = Date.now();
+      
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / animationDuration, 1);
+        setAnimationProgress(progress);
+        
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        }
+      };
+      
+      requestAnimationFrame(animate);
+    } else {
+      setAnimationProgress(0);
+    }
+  }, [showPrediction]);
 
   const currentData = csvData[dataIndex] || {};
   
@@ -219,11 +244,42 @@ const Motor = () => {
     };
   };
 
+  // Calculate rotor position based on RPM and performance
+  const calculateRotorPosition = (rpm, performanceScore) => {
+    const rpmVal = parseFloat(rpm) || 2500;
+    const perfVal = parseFloat(performanceScore) || 95;
+    
+    // Rotor position in degrees (0-360°)
+    // Base position varies with RPM, performance affects accuracy
+    const basePosition = (rpmVal / 10) % 360;
+    const performanceOffset = (100 - perfVal) * 2; // Poor performance = position drift
+    const finalPosition = (basePosition + performanceOffset) % 360;
+    
+    return Math.round(finalPosition);
+  };
+
+  // Calculate insulation resistance based on temperature and performance
+  const calculateInsulationResistance = (temperature, performanceScore) => {
+    const temp = parseFloat(temperature) || 90;
+    const perf = parseFloat(performanceScore) || 95;
+    
+    // Insulation resistance in MΩ (Megohms)
+    // Higher temperature = lower resistance, better performance = higher resistance
+    const baseResistance = 500; // 500 MΩ baseline
+    const tempEffect = Math.max(0, (120 - temp) * 4); // Decreases with temperature
+    const perfEffect = (perf / 100) * 200; // Increases with performance
+    
+    const finalResistance = baseResistance + tempEffect + perfEffect;
+    return Math.round(finalResistance);
+  };
+
   // ML INTEGRATION COMPLETE - Using real predictions from motor data
   const remainingLife = getRemainingLife();
   const aiRecommendations = getAiRecommendations();
   const electricalMetrics = formatElectricalMetrics(currentData.rpm_avg, currentData.performance_score);
   const bearingHealth = calculateBearingHealth(currentData.vibration_level, currentData.performance_score);
+  const rotorPosition = calculateRotorPosition(currentData.rpm_avg, currentData.performance_score);
+  const insulationResistance = calculateInsulationResistance(currentData.engine_temp_c, currentData.performance_score);
   
   // Enhanced debug info with ML integration
   const currentPredictions = calculateDynamicMotorPredictions(currentData);
@@ -231,6 +287,7 @@ const Motor = () => {
   console.log('Vehicle:', currentData.vehicle_id, '| Index:', dataIndex, '| Performance:', remainingLife + '%');
   console.log('CSV Temp:', currentPredictions?.temperature + '°C', '| CSV Status:', currentPredictions?.status);
   console.log('Oil Pressure:', currentPredictions?.oil_pressure + ' PSI', '| RPM:', currentData.rpm_avg);
+  console.log('Rotor Position:', rotorPosition + '°', '| Insulation:', insulationResistance + ' MΩ');
   console.log('Vibration:', currentData.vibration_level, '| Anomaly:', currentPredictions?.has_anomaly);
   console.log('ML Data Available:', !!currentMlData, '| Recommendations:', aiRecommendations.length);
   console.log('=======================');
@@ -274,14 +331,14 @@ const Motor = () => {
             <div className="main-panel">
               {/* Motor Performance Container - Top */}
               <div className="data-container" style={{ marginBottom: '20px', marginTop: '-20px', maxHeight: '400px', overflow: 'hidden', width: 'calc(100% + 30px)', marginLeft: '-15px' }}>
-                <h3 style={{ color: 'white' }}>Motor Performance 
-                  <span style={{ fontSize: '12px', color: '#37bc12', marginLeft: '10px' }}>
-                    🔄 Auto-refresh: {lastRefresh.toLocaleTimeString()}
-                  </span>
-                </h3>
+                <h3 style={{ color: 'white' }}>Motor Performance</h3>
                 <span className="last-updated">Last Updated: {getLastUpdated()}</span>
                 
-                <div className="performance-grid">
+                <div className="performance-grid" style={{ position: 'relative' }}>
+                  {/* Motor Image - Positioned in empty space */}
+                  <div style={{ position: 'absolute', top: '10px', right: '50px', zIndex: 1 }}>
+                    <img src={require('./assets/motorimage.png')} alt="Motor" style={{ width: '380px', height: 'auto' }} />
+                  </div>
                   {/* RPM Gauge */}
                   <div className="rpm-gauge">
                     <div className="gauge-container">
@@ -324,7 +381,7 @@ const Motor = () => {
                   {/* Rotor Position */}
                   <div className="rotor-position">
                     <div className="gauge-container">
-                      <div className="gauge-value">XXX</div>
+                      <div className="gauge-value">{rotorPosition}°</div>
                       <div className="gauge-label">Rotor Position</div>
                     </div>
                     <img src={require('./assets/graph.png')} alt="Graph" style={{ width: '120px', height: '60px', marginTop: '5px' }} />
@@ -333,7 +390,7 @@ const Motor = () => {
                   {/* Insulation Resistance */}
                   <div className="insulation-resistance">
                     <div className="gauge-container">
-                      <div className="gauge-value">XXX</div>
+                      <div className="gauge-value">{insulationResistance} MΩ</div>
                       <div className="gauge-label">Insulation Resistance</div>
                     </div>
                     <img src={require('./assets/graph2.png')} alt="Graph" style={{ width: '120px', height: '60px', marginTop: '5px' }} />
@@ -409,10 +466,10 @@ const Motor = () => {
                   </div>
 
                   {/* Motor Temperature */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px', gridColumn: '3', gridRow: '2', transform: 'translateX(-100px)', marginTop: '40px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px', gridColumn: '3', gridRow: '2', transform: 'translateX(0px)', marginTop: '40px' }}>
                     <div className="motor-temperature">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <div className="temp-icon">🌡️</div>
+                        <img src={require('./assets/tempicon.png')} alt="Temperature" style={{ width: '20px', height: '28px' }} />
                         <div className="temp-value" style={{ 
                           fontSize: '24px', 
                           fontWeight: '300',
@@ -425,15 +482,22 @@ const Motor = () => {
                       <div className="temp-label">Motor Temperature</div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                      <svg width="80px" height="40px" viewBox="0 0 80 40">
-                        {Array.from({ length: 5 }, (_, i) => (
-                          <line key={i} x1="0" y1={5 + i * 7} x2="80" y2={5 + i * 7} stroke="rgba(104,111,120,0.3)" strokeWidth="0.5"/>
+                      <svg width="100px" height="50px" viewBox="0 0 100 50">
+                        {Array.from({ length: 6 }, (_, i) => (
+                          <line key={i} x1="0" y1={5 + i * 8} x2="100" y2={5 + i * 8} stroke="rgba(104,111,120,0.3)" strokeWidth="0.5"/>
                         ))}
-                        <polyline
-                          points="0,30 15,25 30,20 45,18 60,15 75,12"
+                        <path
+                          d="M0,35 Q10,30 20,25 T40,20 Q50,18 60,15 T80,12 Q90,10 100,8"
                           fill="none"
                           stroke="#37bc12"
-                          strokeWidth="1"
+                          strokeWidth="1.5"
+                        />
+                        <path
+                          d="M0,40 Q10,35 20,30 T40,25 Q50,23 60,20 T80,17 Q90,15 100,13"
+                          fill="none"
+                          stroke="#ff9900"
+                          strokeWidth="1.5"
+                          strokeDasharray="3,3"
                         />
                       </svg>
                       <div style={{ display: 'flex', gap: '8px', fontSize: '8px' }}>
@@ -601,82 +665,190 @@ const Motor = () => {
                 {/* Failure Prediction Chart */}
                 <div className="motor-prediction-container">
                   <div className="failure-prediction">
-                    <h3>Motor Failure Prediction</h3>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <h3 style={{ margin: 0 }}>Motor Failure Prediction</h3>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.7)' }}>
+                          Show Prediction
+                        </span>
+                        <button
+                          onClick={() => setShowPrediction(!showPrediction)}
+                          style={{
+                            background: showPrediction ? '#37bc12' : 'rgba(255,255,255,0.2)',
+                            border: '1px solid rgba(255,255,255,0.3)',
+                            borderRadius: '12px',
+                            width: '40px',
+                            height: '20px',
+                            position: 'relative',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease',
+                            zIndex: 1000,
+                            outline: 'none',
+                            padding: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: showPrediction ? 'flex-end' : 'flex-start',
+                            paddingLeft: showPrediction ? '0' : '2px',
+                            paddingRight: showPrediction ? '2px' : '0'
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: '16px',
+                              height: '16px',
+                              borderRadius: '50%',
+                              background: 'white',
+                              transition: 'all 0.3s ease',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                              pointerEvents: 'none'
+                            }}
+                          />
+                        </button>
+                      </div>
+                    </div>
                     <div className="prediction-legend">
                       <div className="legend-item">
                         <div style={{ width: '15px', height: '2px', backgroundColor: 'rgba(255,153,0,1)' }}></div>
-                        <span>Past</span>
+                        <span>Historical Health</span>
                       </div>
                       <div className="legend-item">
                         <div style={{ width: '15px', height: '2px', backgroundColor: 'rgba(56,239,125,1)', borderTop: '2px dashed rgba(56,239,125,1)', backgroundColor: 'transparent' }}></div>
-                        <span>Predicted</span>
+                        <span>Predicted Degradation</span>
+                      </div>
+                      <div className="legend-item">
+                        <div style={{ width: '15px', height: '2px', backgroundColor: 'rgba(255,68,68,1)' }}></div>
+                        <span>Failure Risk</span>
                       </div>
                     </div>
                     <div style={{ position: 'relative' }}>
-                      <img 
-                        src={require('./assets/stateofhealth.png')} 
-                        alt="State of Health" 
-                        style={{
-                          position: 'absolute',
-                          left: '-15px',
-                          top: '120px',
-                          width: '20px',
-                          height: 'auto',
-                          zIndex: 10
-                        }} 
-                      />
                       <div className="prediction-chart">
-                        <svg width="240px" height="240px" viewBox="0 0 240 240">
-                        {/* Grid lines */}
-                        {Array.from({ length: 11 }, (_, i) => (
-                          <line key={i} x1="0" y1={20 + i * 18} x2="240" y2={20 + i * 18} stroke="rgba(104,111,120,1)" strokeWidth="0.5"/>
+                        <svg width="300px" height="180px" viewBox="0 0 300 180">
+                        {/* Chart area background */}
+                        <rect x="35" y="25" width="220" height="120" fill="rgba(0,0,0,0.1)" stroke="rgba(104,111,120,0.3)" strokeWidth="1"/>
+                        
+                        {/* Horizontal grid lines - Y-axis intervals */}
+                        {[25, 45, 65, 85, 105, 125, 145].map((y, i) => (
+                          <line key={`h-${i}`} x1="35" y1={y} x2="255" y2={y} stroke="rgba(104,111,120,0.3)" strokeWidth="0.5"/>
                         ))}
                         
-                        {/* Past data (orange) */}
+                        {/* Vertical grid lines - X-axis intervals */}
+                        {[35, 70, 105, 140, 175, 210, 245].map((x, i) => (
+                          <line key={`v-${i}`} x1={x} y1="25" x2={x} y2="145" stroke="rgba(104,111,120,0.3)" strokeWidth="0.5"/>
+                        ))}
+                        
+                        {/* Y-axis labels (Health %) - Properly positioned */}
+                        <text x="30" y="30" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="end">100%</text>
+                        <text x="30" y="50" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="end">80%</text>
+                        <text x="30" y="70" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="end">60%</text>
+                        <text x="30" y="90" fill="rgba(255,153,0,0.9)" fontSize="8" textAnchor="end">40%</text>
+                        <text x="30" y="110" fill="rgba(255,68,68,0.9)" fontSize="8" textAnchor="end">20%</text>
+                        <text x="30" y="130" fill="rgba(255,68,68,0.9)" fontSize="8" textAnchor="end">0%</text>
+                        
+                        {/* X-axis labels (Days) - Properly positioned */}
+                        <text x="35" y="160" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">0</text>
+                        <text x="70" y="160" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">30</text>
+                        <text x="105" y="160" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">60</text>
+                        <text x="140" y="160" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">90</text>
+                        <text x="175" y="160" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">120</text>
+                        <text x="210" y="160" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">150</text>
+                        <text x="245" y="160" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">180</text>
+                        
+                        {/* Axis labels */}
+                        <text x="145" y="175" fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="middle">Days</text>
+                        <text x="8" y="85" fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="middle" transform="rotate(-90 8 85)">Health %</text>
+                        
+                        {/* Critical failure threshold line */}
+                        <line x1="35" y1="105" x2="255" y2="105" stroke="rgba(255,68,68,0.6)" strokeWidth="1" strokeDasharray="3,3"/>
+                        <text x="260" y="110" fill="rgba(255,68,68,0.9)" fontSize="7">Critical</text>
+                        
+                        {/* Warning threshold line */}
+                        <line x1="35" y1="85" x2="255" y2="85" stroke="rgba(255,153,0,0.6)" strokeWidth="1" strokeDasharray="3,3"/>
+                        <text x="260" y="90" fill="rgba(255,153,0,0.9)" fontSize="7">Warning</text>
+                        
+                        {/* Past data (orange) - Declining health: 90% → 65% */}
                         <polyline
-                          points="0,200 18,190 36,180 54,170 72,160 90,150 108,145"
+                          points="35,35 50,40 65,45 80,50 95,55 110,60 125,65"
                           fill="none"
                           stroke="rgba(255,153,0,1)"
                           strokeWidth="2"
                         />
                         
-                        {/* Predicted data (green) */}
-                        <polyline
-                          points="108,145 126,140 144,135 162,130 180,125 198,120 216,115 234,110"
-                          fill="none"
-                          stroke="rgba(56,239,125,1)"
-                          strokeWidth="2"
-                          strokeDasharray="4,4"
-                        />
+                        {/* Predicted data (green) - Animated based on toggle */}
+                        {showPrediction && (
+                          <polyline
+                            points="125,65 140,70 155,75 170,82 185,90 200,100 215,112"
+                            fill="none"
+                            stroke="rgba(56,239,125,1)"
+                            strokeWidth="2"
+                            strokeDasharray="4,4"
+                            strokeDashoffset={100 * (1 - animationProgress)}
+                            style={{
+                              transition: 'stroke-dashoffset 0.1s ease-out'
+                            }}
+                          />
+                        )}
                         
-                        {/* Data points */}
-                        {Array.from({ length: 13 }, (_, i) => (
-                          <circle key={i} cx={i * 18} cy={200 - i * 8} r="2" fill={i < 6 ? "rgba(255,153,0,1)" : "rgba(56,239,125,1)"}/>
-                        ))}
+                        {/* Data points - Historical */}
+                        <circle cx="35" cy="35" r="1.5" fill="rgba(255,153,0,1)"/>
+                        <circle cx="50" cy="40" r="1.5" fill="rgba(255,153,0,1)"/>
+                        <circle cx="65" cy="45" r="1.5" fill="rgba(255,153,0,1)"/>
+                        <circle cx="80" cy="50" r="1.5" fill="rgba(255,153,0,1)"/>
+                        <circle cx="95" cy="55" r="1.5" fill="rgba(255,153,0,1)"/>
+                        <circle cx="110" cy="60" r="1.5" fill="rgba(255,153,0,1)"/>
                         
-                        {/* X-axis labels */}
-                        {[0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40].map((value, i) => (
-                          <text key={i} x={value * 6} y="215" fill="rgba(255,255,255,0.6)" fontSize="8" textAnchor="middle">
-                            {value}
-                          </text>
-                        ))}
+                        {/* Current point - Highlighted */}
+                        <circle cx="125" cy="65" r="2.5" fill="rgba(255,153,0,1)" stroke="white" strokeWidth="1.5"/>
+                        
+                        {/* Data points - Predicted (appear progressively) */}
+                        {showPrediction && animationProgress > 0.15 && (
+                          <circle cx="140" cy="70" r="1.5" fill="rgba(56,239,125,1)" opacity={Math.min(1, (animationProgress - 0.15) * 5)}/>
+                        )}
+                        {showPrediction && animationProgress > 0.3 && (
+                          <circle cx="155" cy="75" r="1.5" fill="rgba(56,239,125,1)" opacity={Math.min(1, (animationProgress - 0.3) * 5)}/>
+                        )}
+                        {showPrediction && animationProgress > 0.45 && (
+                          <circle cx="170" cy="82" r="1.5" fill="rgba(255,153,0,1)" opacity={Math.min(1, (animationProgress - 0.45) * 5)}/>
+                        )}
+                        {showPrediction && animationProgress > 0.6 && (
+                          <circle cx="185" cy="90" r="1.5" fill="rgba(255,153,0,1)" opacity={Math.min(1, (animationProgress - 0.6) * 5)}/>
+                        )}
+                        {showPrediction && animationProgress > 0.75 && (
+                          <circle cx="200" cy="100" r="1.5" fill="rgba(255,68,68,1)" opacity={Math.min(1, (animationProgress - 0.75) * 5)}/>
+                        )}
+                        {showPrediction && animationProgress > 0.9 && (
+                          <circle cx="215" cy="112" r="1.5" fill="rgba(255,68,68,1)" opacity={Math.min(1, (animationProgress - 0.9) * 10)}/>
+                        )}
+                        
+                        {/* Annotations */}
+                        <text x="125" y="58" fill="rgba(255,255,255,0.9)" fontSize="7" textAnchor="middle" fontWeight="bold">NOW</text>
+                        {showPrediction && animationProgress > 0.5 && (
+                          <>
+                            <text x="170" y="75" fill="rgba(255,153,0,0.9)" fontSize="6" textAnchor="middle" opacity={Math.min(1, (animationProgress - 0.5) * 2)}>Maintenance</text>
+                            <text x="170" y="83" fill="rgba(255,153,0,0.9)" fontSize="6" textAnchor="middle" opacity={Math.min(1, (animationProgress - 0.5) * 2)}>Needed</text>
+                          </>
+                        )}
+                        {showPrediction && animationProgress > 0.8 && (
+                          <>
+                            <text x="200" y="93" fill="rgba(255,68,68,0.9)" fontSize="6" textAnchor="middle" opacity={Math.min(1, (animationProgress - 0.8) * 5)}>Failure</text>
+                            <text x="200" y="101" fill="rgba(255,68,68,0.9)" fontSize="6" textAnchor="middle" opacity={Math.min(1, (animationProgress - 0.8) * 5)}>Risk</text>
+                          </>
+                        )}
                         </svg>
                       </div>
                     </div>
                   </div>
 
                   {/* Remaining Useful Life */}
-                  <div className="useful-life" style={{ marginBottom: '-80px', marginTop: '-100px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
-                      <span style={{ fontSize: '10px', color: 'white' }}>Remaining useful life</span>
-                      <span style={{ fontSize: '12px', color: 'white', fontWeight: 'bold' }}>
+                  <div className="useful-life">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '11px', color: 'white', fontWeight: '500' }}>Remaining Useful Life</span>
+                      <span style={{ fontSize: '16px', color: 'white', fontWeight: 'bold' }}>
                         {remainingLife}%
                       </span>
                     </div>
-                    <div className="life-bar" style={{ borderRadius: '0' }}>
+                    <div className="life-bar">
                       <div className="life-fill" style={{ 
-                        width: `${remainingLife}%`, 
-                        borderRadius: '0',
+                        width: `${remainingLife}%`,
                         background: remainingLife < 30 ? '#ff4444' : 
                                    remainingLife < 60 ? '#ff9900' : 
                                    'linear-gradient(90deg, #ff9900 0%, #37bc12 100%)'
@@ -687,16 +859,16 @@ const Motor = () => {
                   {/* GenAI Recommendations */}
                   <div className="genai-recommendations">
                     <h3>GenAI Recommendations</h3>
-                    <p>AI-powered motor optimization based on real-time performance data, driving patterns, and predictive analytics from sensor readings.</p>
+                    <p>AI-powered motor optimization based on real-time performance data and predictive analytics.</p>
                     
                     <div className="recommendations-list">
                       {aiRecommendations.slice(0, 3).map((rec, index) => (
-                        <div key={index}>
+                        <div key={index} style={{ marginBottom: '8px' }}>
                           <div className="recommendation-item">
                             <span className="warning-icon">
                               {rec.priority === 'URGENT' ? '🚨' : rec.priority === 'HIGH' ? '⚠️' : 'ℹ️'}
                             </span>
-                            <span>{rec.action}</span>
+                            <span style={{ flex: 1 }}>{rec.action}</span>
                           </div>
                           {rec.description && (
                             <div className="recommendation-details">

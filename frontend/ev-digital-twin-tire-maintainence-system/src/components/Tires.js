@@ -478,11 +478,7 @@ const TiresPage = () => {
       <div style={{ margin: '-30px 20px 5px' }}>
         {/* Details Container */}
         <div className="data-container" style={{ marginBottom: '20px', width: 'calc(100% - 363px)', marginTop: '20px' }}>
-          <h3 style={{ color: 'white' }}>Details 
-            <span style={{ fontSize: '12px', color: '#37bc12', marginLeft: '10px' }}>
-              🔄 Auto-refresh: {lastRefresh.toLocaleTimeString()}
-            </span>
-          </h3>
+          <h3 style={{ color: 'white' }}>Details</h3>
           <span className="last-updated">Last Updated: {getLastUpdated()}</span>
 
           <div className="tire-grid">
