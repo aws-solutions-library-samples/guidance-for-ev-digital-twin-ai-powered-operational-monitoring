@@ -1,24 +1,20 @@
 .charger-page {
   width: 100vw;
   height: 100vh;
-  background: #000;
-  font-family: 'Amazon Ember', sans-serif;
   position: fixed;
   top: 0;
   left: 0;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  background: #000;
+  font-family: 'Amazon Ember', sans-serif;
 }
 
 .charger-container {
-  width: 1400px;
-  height: 800px;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   background: #2d343d;
-  position: relative;
-  overflow: hidden;
-  border-radius: 0;
+  overflow-y: auto;
 }
 
 /* Header Styles */
@@ -63,12 +59,12 @@
 }
 
 .charger-layout {
-  display: grid;
-  grid-template-columns: calc(100% - 343px) 343px;
-  gap: 0;
-  height: 720px;
-  margin: 20px 0 20px 20px;
-  overflow: hidden;
+  display: flex;
+  gap: 32px;
+  width: 100%;
+  height: 100%;
+  margin: -90px 0 20px 20px;
+  overflow: visible;
 }
 
 .nav-header {
@@ -107,24 +103,26 @@
 }
 
 .charger-page .main-panel {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
   background: transparent;
   border: none;
   padding: 20px;
   overflow: hidden;
   position: relative;
-  display: flex;
-  flex-direction: column;
   height: 100%;
 }
 
 .charger-page .right-panel {
+  flex: 1;
   background: #434a54;
-  overflow: hidden;
-  width: 343px;
-  position: absolute;
-  top: 60px;
-  right: 0px;
-  height: calc(100% - 60px);
+  border-radius: 0;
+  padding: 24px;
+  min-width: 350px;
+  min-height: 0;
+  overflow: visible;
 }
 
 .data-container {
@@ -146,16 +144,47 @@
 
 .charger-metrics-grid {
   display: grid;
-  grid-template-columns: repeat(2, 200px);
-  gap: 12px;
+  grid-template-columns: repeat(2, minmax(140px, 1fr));
+  gap: 24px;
   margin-bottom: 20px;
-  justify-content: start;
+  justify-content: center;
+  width: 100%;
+  max-width: 380px;
+}
+
+.charger-page .main-panel .data-container:first-child {
+  min-height: 350px;
+}
+
+.charger-page .main-panel .data-container:last-child {
+  min-height: 200px;
+}
+
+@media (min-width: 1400px) {
+  .charger-page .main-panel .data-container:first-child {
+    min-height: 400px;
+  }
+  
+  .charger-page .main-panel .data-container:last-child {
+    min-height: 250px;
+  }
+}
+
+@media (min-width: 1920px) {
+  .charger-page .main-panel .data-container:first-child {
+    min-height: 450px;
+  }
+  
+  .charger-page .main-panel .data-container:last-child {
+    min-height: 280px;
+  }
 }
 
 .charger-gauge {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 .gauge-container {
@@ -166,6 +195,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  margin: 0 auto;
 }
 
 .charger-page .gauge-arc {
@@ -186,12 +216,17 @@
   font-weight: bold;
   color: white;
   z-index: 1;
+  margin-top: 15px;
 }
 
 .charger-page .gauge-label {
-  font-size: 5px !important;
+  font-size: 8px !important;
   color: #ccc;
-  margin-top: 5px;
+  margin-top: 8px;
+  text-align: center;
+  line-height: 1.2;
+  max-width: 90px;
+  word-wrap: break-word;
 }
 
 .charger-center-section {

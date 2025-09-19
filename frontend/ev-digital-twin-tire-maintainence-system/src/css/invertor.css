@@ -1,25 +1,20 @@
-/* Fixed sizing for consistency across all screens */
 .invertor-page {
   width: 100vw;
   height: 100vh;
-  background: #000;
-  font-family: 'Amazon Ember', sans-serif;
   position: fixed;
   top: 0;
   left: 0;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  background: #000;
+  font-family: 'Amazon Ember', sans-serif;
 }
 
 .invertor-container {
-  width: 1400px;
-  height: 800px;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   background: #2d343d;
-  position: relative;
-  overflow: hidden;
-  border-radius: 0;
+  overflow-y: auto;
 }
 
 /* Header Styles */
@@ -64,11 +59,11 @@
 }
 
 .invertor-layout {
-  display: grid;
-  grid-template-columns: calc(100% - 343px) 343px;
-  gap: 0;
-  height: 720px;
-  margin: 20px 0 20px 20px;
+  display: flex;
+  gap: 32px;
+  width: 100%;
+  height: 100%;
+  margin: -90px 0 20px 20px;
   overflow: hidden;
 }
 
@@ -84,8 +79,8 @@
 
 .vin-number {
   position: absolute;
-  right: 420px;
-  top: 35px;
+  right: 20px;
+  top: 200px;
   color: rgba(255, 255, 255, 0.6);
   font-size: 8px;
 }
@@ -108,24 +103,27 @@
 }
 
 .invertor-page .main-panel {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
   background: transparent;
   border: none;
   padding: 20px;
   overflow: hidden;
   position: relative;
-  display: flex;
-  flex-direction: column;
   height: 100%;
+  margin-top: 90px;
 }
 
 .invertor-page .right-panel {
+  flex: 1;
   background: #434a54;
-  overflow: hidden;
-  width: 343px;
-  position: absolute;
-  top: 60px;
-  right: 0px;
-  height: calc(100% - 60px);
+  border-radius: 0;
+  padding: 24px;
+  min-width: 350px;
+  min-height: 0;
+  overflow: visible;
 }
 
 .data-container {
@@ -137,37 +135,72 @@
 
 .invertor-page .bottom-containers {
   display: flex;
-  gap: 20px;
+  gap: 24px;
+  width: 100%;
 }
 
 .invertor-page .bottom-containers .data-container:first-child {
-  flex: 2.0;
-  min-height: 200px;
-  max-height: 200px;
+  width: 65%;
+  flex: none;
+  min-height: 300px;
+  max-height: 300px;
   overflow: hidden;
   margin-left: -15px;
 }
 
 .invertor-page .bottom-containers .data-container:last-child {
-  flex: 1.3;
-  min-height: 200px;
-  max-height: 200px;
+  width: 35%;
+  flex: none;
+  min-height: 300px;
+  max-height: 300px;
   overflow: hidden;
   transform: translateX(15px);
+}
+
+@media (max-height: 900px) {
+  .invertor-page .bottom-containers .data-container:first-child,
+  .invertor-page .bottom-containers .data-container:last-child {
+    min-height: 350px;
+    max-height: 350px;
+  }
+}
+
+@media (min-height: 1080px) {
+  .invertor-page .bottom-containers .data-container:first-child,
+  .invertor-page .bottom-containers .data-container:last-child {
+    max-height: 400px;
+  }
+}
+
+@media (min-height: 1200px) {
+  .invertor-page .bottom-containers .data-container:first-child,
+  .invertor-page .bottom-containers .data-container:last-child {
+    max-height: 450px;
+  }
 }
 
 /* Power Metrics Grid */
 .invertor-metrics-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(2, minmax(140px, 1fr));
+  gap: 24px;
   margin-bottom: 20px;
+  margin-left: 60px;
+  justify-content: start;
+  max-width: 400px;
+}
+
+@media (min-width: 1920px) {
+  .invertor-metrics-grid {
+    gap: 16px;
+    transform: scale(1.2);
+  }
 }
 
 .invertor-gauge {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
 }
 
 .gauge-container {
@@ -218,6 +251,46 @@
   width: 220px;
   height: auto;
   margin-bottom: 16px;
+}
+
+.invertor-image-positioned {
+  position: absolute;
+  right: 40px;
+  top: 60px;
+  width: 200px;
+  height: auto;
+  z-index: 1;
+}
+
+@media (min-width: 1400px) and (max-width: 1919px) {
+  .invertor-image-positioned {
+    width: 240px;
+  }
+}
+
+@media (min-width: 1920px) {
+  .invertor-image-positioned {
+    right: 300px;
+    width: 350px;
+  }
+}
+
+@media (min-width: 1400px) and (max-width: 1919px) {
+  .invertor-image {
+    transform: scale(1.15);
+  }
+  .invertor-temp {
+    transform: scale(1.15);
+  }
+}
+
+@media (min-width: 1920px) {
+  .invertor-image {
+    transform: scale(1.3);
+  }
+  .invertor-temp {
+    transform: scale(1.3);
+  }
 }
 
 .invertor-temp {
@@ -390,6 +463,21 @@
   margin: -10px -20px 30px -20px;
   padding: 15px 20px;
   color: white;
+}
+
+/* Legend Colors */
+.legend-color.current {
+  width: 8px;
+  height: 2px;
+  background: #37bc12;
+  border-radius: 1px;
+}
+
+.legend-color.expected {
+  width: 8px;
+  height: 2px;
+  background: #ff9900;
+  border-radius: 1px;
 }
 
 /* GenAI Recommendations */

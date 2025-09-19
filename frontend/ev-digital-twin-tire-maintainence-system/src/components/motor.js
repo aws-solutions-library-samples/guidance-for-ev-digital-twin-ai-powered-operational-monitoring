@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Papa from 'papaparse';
 import DataNeededModal from "./DataNeededModal";
@@ -13,8 +13,37 @@ const Motor = () => {
   const [dataIndex, setDataIndex] = useState(0);
   const [mlResults, setMlResults] = useState([]);
   const [lastRefresh, setLastRefresh] = useState(new Date());
-  const [showPrediction, setShowPrediction] = useState(false);
+  const [showPrediction, setShowPrediction] = useState(true);
   const [animationProgress, setAnimationProgress] = useState(0);
+  
+  // Memoized responsive sizing - only recalculates on window resize
+  const spacing = useMemo(() => {
+    const width = window.innerWidth;
+    if (width >= 2560) return { 
+      gaugeSize: '120px', 
+      fontSize: '16px', 
+      chartHeight: '100px',
+      imageWidth: '320px'
+    };
+    if (width >= 1920) return { 
+      gaugeSize: '100px', 
+      fontSize: '14px', 
+      chartHeight: '80px',
+      imageWidth: '280px'
+    };
+    if (width >= 1400) return { 
+      gaugeSize: '90px', 
+      fontSize: '12px', 
+      chartHeight: '60px',
+      imageWidth: '240px'
+    };
+    return { 
+      gaugeSize: '80px', 
+      fontSize: '10px', 
+      chartHeight: '50px',
+      imageWidth: '200px'
+    };
+  }, []);
 
   useEffect(() => {
     Papa.parse('/data/motor_sensor_data.csv', {
@@ -51,31 +80,25 @@ const Motor = () => {
         
         // Force component re-render for fresh data
         setMlResults(prev => [...prev]);
-      }, 30000);
+      }, 10000);
       return () => clearInterval(interval);
     }
   }, [csvData]);
 
-  // Animation effect for prediction line
+  // Animation effect for prediction toggle
   useEffect(() => {
     if (showPrediction) {
       setAnimationProgress(0);
-      const animationDuration = 2000; // 2 seconds
-      const startTime = Date.now();
-      
-      const animate = () => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / animationDuration, 1);
-        setAnimationProgress(progress);
-        
-        if (progress < 1) {
-          requestAnimationFrame(animate);
-        }
-      };
-      
-      requestAnimationFrame(animate);
-    } else {
-      setAnimationProgress(0);
+      const animationInterval = setInterval(() => {
+        setAnimationProgress(prev => {
+          if (prev >= 1) {
+            clearInterval(animationInterval);
+            return 1;
+          }
+          return prev + 0.02;
+        });
+      }, 50);
+      return () => clearInterval(animationInterval);
     }
   }, [showPrediction]);
 
@@ -244,42 +267,11 @@ const Motor = () => {
     };
   };
 
-  // Calculate rotor position based on RPM and performance
-  const calculateRotorPosition = (rpm, performanceScore) => {
-    const rpmVal = parseFloat(rpm) || 2500;
-    const perfVal = parseFloat(performanceScore) || 95;
-    
-    // Rotor position in degrees (0-360°)
-    // Base position varies with RPM, performance affects accuracy
-    const basePosition = (rpmVal / 10) % 360;
-    const performanceOffset = (100 - perfVal) * 2; // Poor performance = position drift
-    const finalPosition = (basePosition + performanceOffset) % 360;
-    
-    return Math.round(finalPosition);
-  };
-
-  // Calculate insulation resistance based on temperature and performance
-  const calculateInsulationResistance = (temperature, performanceScore) => {
-    const temp = parseFloat(temperature) || 90;
-    const perf = parseFloat(performanceScore) || 95;
-    
-    // Insulation resistance in MΩ (Megohms)
-    // Higher temperature = lower resistance, better performance = higher resistance
-    const baseResistance = 500; // 500 MΩ baseline
-    const tempEffect = Math.max(0, (120 - temp) * 4); // Decreases with temperature
-    const perfEffect = (perf / 100) * 200; // Increases with performance
-    
-    const finalResistance = baseResistance + tempEffect + perfEffect;
-    return Math.round(finalResistance);
-  };
-
   // ML INTEGRATION COMPLETE - Using real predictions from motor data
   const remainingLife = getRemainingLife();
   const aiRecommendations = getAiRecommendations();
   const electricalMetrics = formatElectricalMetrics(currentData.rpm_avg, currentData.performance_score);
   const bearingHealth = calculateBearingHealth(currentData.vibration_level, currentData.performance_score);
-  const rotorPosition = calculateRotorPosition(currentData.rpm_avg, currentData.performance_score);
-  const insulationResistance = calculateInsulationResistance(currentData.engine_temp_c, currentData.performance_score);
   
   // Enhanced debug info with ML integration
   const currentPredictions = calculateDynamicMotorPredictions(currentData);
@@ -287,7 +279,6 @@ const Motor = () => {
   console.log('Vehicle:', currentData.vehicle_id, '| Index:', dataIndex, '| Performance:', remainingLife + '%');
   console.log('CSV Temp:', currentPredictions?.temperature + '°C', '| CSV Status:', currentPredictions?.status);
   console.log('Oil Pressure:', currentPredictions?.oil_pressure + ' PSI', '| RPM:', currentData.rpm_avg);
-  console.log('Rotor Position:', rotorPosition + '°', '| Insulation:', insulationResistance + ' MΩ');
   console.log('Vibration:', currentData.vibration_level, '| Anomaly:', currentPredictions?.has_anomaly);
   console.log('ML Data Available:', !!currentMlData, '| Recommendations:', aiRecommendations.length);
   console.log('=======================');
@@ -326,30 +317,36 @@ const Motor = () => {
         </div>
 
         <div style={{ margin: '10px 20px 5px' }}>
-          <div className="motor-layout">
+          <div className="motor-layout" style={{ marginTop: '-100px' }}>
             {/* Main Content */}
-            <div className="main-panel">
+            <div className="main-panel" style={{ marginTop: '60px' }}>
               {/* Motor Performance Container - Top */}
-              <div className="data-container" style={{ marginBottom: '20px', marginTop: '-20px', maxHeight: '400px', overflow: 'hidden', width: 'calc(100% + 30px)', marginLeft: '-15px' }}>
-                <h3 style={{ color: 'white' }}>Motor Performance</h3>
+              <div className="data-container" style={{ marginBottom: '20px', marginTop: '0px', height: '320px', overflow: 'hidden', width: 'calc(100% + 30px)', marginLeft: '-15px' }}>
+                <h3 style={{ color: 'white' }}>Motor Performance 
+                  <span style={{ fontSize: '12px', color: '#37bc12', marginLeft: '10px' }}>
+                    🔄 Auto-refresh: {lastRefresh.toLocaleTimeString()}
+                  </span>
+                </h3>
                 <span className="last-updated">Last Updated: {getLastUpdated()}</span>
                 
                 <div className="performance-grid" style={{ position: 'relative' }}>
-                  {/* Motor Image - Positioned in empty space */}
+                  {/* Motor Image - Responsive positioning */}
                   <div style={{ position: 'absolute', top: '10px', right: '50px', zIndex: 1 }}>
-                    <img src={require('./assets/motorimage.png')} alt="Motor" style={{ width: '380px', height: 'auto' }} />
+                    <img src={require('./assets/motorimage.png')} alt="Motor" style={{ width: spacing.imageWidth, height: 'auto' }} />
                   </div>
-                  {/* RPM Gauge */}
+                  {/* RPM Gauge - Responsive */}
                   <div className="rpm-gauge">
-                    <div className="gauge-container">
+                    <div className="gauge-container" style={{ width: spacing.gaugeSize, height: spacing.gaugeSize }}>
                       <div className="gauge-arc" style={{ 
+                        width: spacing.gaugeSize,
+                        height: `calc(${spacing.gaugeSize} / 2)`,
                         borderTopColor: currentPredictions?.status === 'CRITICAL' ? '#ff4444' : 
                                        currentPredictions?.status === 'WARNING' ? '#ff9900' : '#37bc12' 
                       }}></div>
-                      <div className="gauge-value">{formatValue(currentData.rpm_avg, 'RPM', '2,500')}</div>
-                      <div className="gauge-label">RPM</div>
+                      <div className="gauge-value" style={{ fontSize: spacing.fontSize }}>{formatValue(currentData.rpm_avg, 'RPM', '2,500')}</div>
+                      <div className="gauge-label" style={{ fontSize: `calc(${spacing.fontSize} * 0.7)` }}>RPM</div>
                     </div>
-                    <svg width="80px" height="40px" viewBox="0 0 80 40" style={{ marginTop: '5px' }}>
+                    <svg width={spacing.chartHeight} height={`calc(${spacing.chartHeight} / 2)`} viewBox="0 0 80 40" style={{ marginTop: '5px' }}>
                       {Array.from({ length: 5 }, (_, i) => (
                         <line key={i} x1="0" y1={5 + i * 7} x2="80" y2={5 + i * 7} stroke="rgba(104,111,120,0.3)" strokeWidth="0.5"/>
                       ))}
@@ -378,38 +375,40 @@ const Motor = () => {
                     </div>
                   </div>
 
-                  {/* Rotor Position */}
+                  {/* Rotor Position - Responsive */}
                   <div className="rotor-position">
-                    <div className="gauge-container">
-                      <div className="gauge-value">{rotorPosition}°</div>
-                      <div className="gauge-label">Rotor Position</div>
+                    <div className="gauge-container" style={{ width: spacing.gaugeSize, height: spacing.gaugeSize }}>
+                      <div className="gauge-value" style={{ fontSize: spacing.fontSize }}>XXX</div>
+                      <div className="gauge-label" style={{ fontSize: `calc(${spacing.fontSize} * 0.6)` }}>Rotor Position</div>
                     </div>
-                    <img src={require('./assets/graph.png')} alt="Graph" style={{ width: '120px', height: '60px', marginTop: '5px' }} />
+                    <img src={require('./assets/graph.png')} alt="Graph" style={{ width: `calc(${spacing.gaugeSize} * 1.3)`, height: spacing.chartHeight, marginTop: '5px' }} />
                   </div>
 
-                  {/* Insulation Resistance */}
+                  {/* Insulation Resistance - Responsive */}
                   <div className="insulation-resistance">
-                    <div className="gauge-container">
-                      <div className="gauge-value">{insulationResistance} MΩ</div>
-                      <div className="gauge-label">Insulation Resistance</div>
+                    <div className="gauge-container" style={{ width: spacing.gaugeSize, height: spacing.gaugeSize }}>
+                      <div className="gauge-value" style={{ fontSize: spacing.fontSize }}>XXX</div>
+                      <div className="gauge-label" style={{ fontSize: `calc(${spacing.fontSize} * 0.5)` }}>Insulation Resistance</div>
                     </div>
-                    <img src={require('./assets/graph2.png')} alt="Graph" style={{ width: '120px', height: '60px', marginTop: '5px' }} />
+                    <img src={require('./assets/graph2.png')} alt="Graph" style={{ width: `calc(${spacing.gaugeSize} * 1.3)`, height: spacing.chartHeight, marginTop: '5px' }} />
                   </div>
 
 
 
-                  {/* Torque Output */}
+                  {/* Torque Output - Responsive */}
                   <div className="torque-gauge">
-                    <div className="gauge-container">
+                    <div className="gauge-container" style={{ width: spacing.gaugeSize, height: spacing.gaugeSize }}>
                       <div className="gauge-arc" style={{ 
+                        width: spacing.gaugeSize,
+                        height: `calc(${spacing.gaugeSize} / 2)`,
                         borderTopColor: currentPredictions?.status === 'CRITICAL' ? '#ff4444' : 
                                        currentPredictions?.status === 'WARNING' ? '#ff9900' : '#37bc12' 
                       }}></div>
-                      <div className="gauge-value">{formatTorque(currentData.rpm_avg, currentData.performance_score)}</div>
-                      <div className="gauge-label">Torque Output</div>
-                      <div className="gauge-unit">{formatTorque(currentData.rpm_avg, currentData.performance_score)} Nm</div>
+                      <div className="gauge-value" style={{ fontSize: spacing.fontSize }}>{formatTorque(currentData.rpm_avg, currentData.performance_score)}</div>
+                      <div className="gauge-label" style={{ fontSize: `calc(${spacing.fontSize} * 0.7)` }}>Torque Output</div>
+                      <div className="gauge-unit" style={{ fontSize: `calc(${spacing.fontSize} * 0.6)` }}>{formatTorque(currentData.rpm_avg, currentData.performance_score)} Nm</div>
                     </div>
-                    <svg width="80px" height="40px" viewBox="0 0 80 40" style={{ marginTop: '5px' }}>
+                    <svg width={spacing.chartHeight} height={`calc(${spacing.chartHeight} / 2)`} viewBox="0 0 80 40" style={{ marginTop: '5px' }}>
                       {Array.from({ length: 5 }, (_, i) => (
                         <line key={i} x1="0" y1={5 + i * 7} x2="80" y2={5 + i * 7} stroke="rgba(104,111,120,0.3)" strokeWidth="0.5"/>
                       ))}
@@ -439,7 +438,7 @@ const Motor = () => {
                   </div>
 
                   {/* Bearing Health */}
-                  <div className="bearing-health">
+                  <div className="bearing-health" style={{ marginTop: '20px' }}>
                     <h3>Bearing Health</h3>
                     <div className="health-bars">
                       <div className="health-bar">
@@ -465,13 +464,21 @@ const Motor = () => {
                     </div>
                   </div>
 
-                  {/* Motor Temperature */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px', gridColumn: '3', gridRow: '2', transform: 'translateX(0px)', marginTop: '40px' }}>
+                  {/* Motor Temperature - Responsive */}
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '15px', 
+                    gridColumn: '3', 
+                    gridRow: '2', 
+                    transform: `translateX(${window.innerWidth >= 1920 ? '20px' : window.innerWidth >= 1400 ? '10px' : '0px'})`, 
+                    marginTop: `${window.innerWidth >= 1920 ? '10px' : window.innerWidth >= 1400 ? '-10px' : '-20px'}` 
+                  }}>
                     <div className="motor-temperature">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <img src={require('./assets/tempicon.png')} alt="Temperature" style={{ width: '20px', height: '28px' }} />
+                        <div className="temp-icon" style={{ fontSize: `calc(${spacing.fontSize} * 1.5)` }}>🌡️</div>
                         <div className="temp-value" style={{ 
-                          fontSize: '24px', 
+                          fontSize: `calc(${spacing.fontSize} * 1.7)`, 
                           fontWeight: '300',
                           color: currentPredictions?.temperature > 100 ? '#ff4444' : 
                                  currentPredictions?.temperature > 95 ? '#ff9900' : '#37bc12'
@@ -479,28 +486,21 @@ const Motor = () => {
                           {formatValue(currentData.engine_temp_c, '°C', '90°C')}
                         </div>
                       </div>
-                      <div className="temp-label">Motor Temperature</div>
+                      <div className="temp-label" style={{ fontSize: `calc(${spacing.fontSize} * 0.7)` }}>Motor Temperature</div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                      <svg width="100px" height="50px" viewBox="0 0 100 50">
-                        {Array.from({ length: 6 }, (_, i) => (
-                          <line key={i} x1="0" y1={5 + i * 8} x2="100" y2={5 + i * 8} stroke="rgba(104,111,120,0.3)" strokeWidth="0.5"/>
+                      <svg width={spacing.chartHeight} height={`calc(${spacing.chartHeight} / 2)`} viewBox="0 0 80 40">
+                        {Array.from({ length: 5 }, (_, i) => (
+                          <line key={i} x1="0" y1={5 + i * 7} x2="80" y2={5 + i * 7} stroke="rgba(104,111,120,0.3)" strokeWidth="0.5"/>
                         ))}
-                        <path
-                          d="M0,35 Q10,30 20,25 T40,20 Q50,18 60,15 T80,12 Q90,10 100,8"
+                        <polyline
+                          points="0,30 15,25 30,20 45,18 60,15 75,12"
                           fill="none"
                           stroke="#37bc12"
-                          strokeWidth="1.5"
-                        />
-                        <path
-                          d="M0,40 Q10,35 20,30 T40,25 Q50,23 60,20 T80,17 Q90,15 100,13"
-                          fill="none"
-                          stroke="#ff9900"
-                          strokeWidth="1.5"
-                          strokeDasharray="3,3"
+                          strokeWidth="1"
                         />
                       </svg>
-                      <div style={{ display: 'flex', gap: '8px', fontSize: '8px' }}>
+                      <div style={{ display: 'flex', gap: '8px', fontSize: `calc(${spacing.fontSize} * 0.6)` }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                           <span className="legend-color current"></span>
                           <span>Current</span>
@@ -521,9 +521,9 @@ const Motor = () => {
                   <h3>Electrical</h3>
                   <div className="electrical-metrics">
                     <div className="metric-item">
-                      <div className="metric-value">{electricalMetrics.phaseCurrent} A</div>
-                      <div className="metric-label">Phase Currents</div>
-                      <svg width="90px" height="45px" viewBox="0 0 90 45" style={{ marginTop: '5px' }}>
+                      <div className="metric-value" style={{ fontSize: spacing.fontSize }}>{electricalMetrics.phaseCurrent} A</div>
+                      <div className="metric-label" style={{ fontSize: `calc(${spacing.fontSize} * 0.7)` }}>Phase Currents</div>
+                      <svg width={`calc(${spacing.chartHeight} * 1.1)`} height={`calc(${spacing.chartHeight} * 0.9)`} viewBox="0 0 90 45" style={{ marginTop: '5px' }}>
                         {Array.from({ length: 5 }, (_, i) => (
                           <line key={i} x1="0" y1={8 + i * 8} x2="90" y2={8 + i * 8} stroke="rgba(104,111,120,0.3)" strokeWidth="0.5"/>
                         ))}
@@ -536,9 +536,9 @@ const Motor = () => {
                       </svg>
                     </div>
                     <div className="metric-item">
-                      <div className="metric-value">{electricalMetrics.busVoltage} V</div>
-                      <div className="metric-label">Bus Voltage</div>
-                      <svg width="90px" height="45px" viewBox="0 0 90 45" style={{ marginTop: '5px' }}>
+                      <div className="metric-value" style={{ fontSize: spacing.fontSize }}>{electricalMetrics.busVoltage} V</div>
+                      <div className="metric-label" style={{ fontSize: `calc(${spacing.fontSize} * 0.7)` }}>Bus Voltage</div>
+                      <svg width={`calc(${spacing.chartHeight} * 1.1)`} height={`calc(${spacing.chartHeight} * 0.9)`} viewBox="0 0 90 45" style={{ marginTop: '5px' }}>
                         {Array.from({ length: 5 }, (_, i) => (
                           <line key={i} x1="0" y1={8 + i * 8} x2="90" y2={8 + i * 8} stroke="rgba(104,111,120,0.3)" strokeWidth="0.5"/>
                         ))}
@@ -551,9 +551,9 @@ const Motor = () => {
                       </svg>
                     </div>
                     <div className="metric-item">
-                      <div className="metric-value">{electricalMetrics.motorVoltage} V</div>
-                      <div className="metric-label">Motor Voltage</div>
-                      <svg width="90px" height="45px" viewBox="0 0 90 45" style={{ marginTop: '5px' }}>
+                      <div className="metric-value" style={{ fontSize: spacing.fontSize }}>{electricalMetrics.motorVoltage} V</div>
+                      <div className="metric-label" style={{ fontSize: `calc(${spacing.fontSize} * 0.7)` }}>Motor Voltage</div>
+                      <svg width={`calc(${spacing.chartHeight} * 1.1)`} height={`calc(${spacing.chartHeight} * 0.9)`} viewBox="0 0 90 45" style={{ marginTop: '5px' }}>
                         {Array.from({ length: 5 }, (_, i) => (
                           <line key={i} x1="0" y1={8 + i * 8} x2="90" y2={8 + i * 8} stroke="rgba(104,111,120,0.3)" strokeWidth="0.5"/>
                         ))}
@@ -566,9 +566,9 @@ const Motor = () => {
                       </svg>
                     </div>
                     <div className="metric-item">
-                      <div className="metric-value">{electricalMetrics.powerOutput} kW</div>
-                      <div className="metric-label">Power Output</div>
-                      <svg width="90px" height="45px" viewBox="0 0 90 45" style={{ marginTop: '5px' }}>
+                      <div className="metric-value" style={{ fontSize: spacing.fontSize }}>{electricalMetrics.powerOutput} kW</div>
+                      <div className="metric-label" style={{ fontSize: `calc(${spacing.fontSize} * 0.7)` }}>Power Output</div>
+                      <svg width={`calc(${spacing.chartHeight} * 1.1)`} height={`calc(${spacing.chartHeight} * 0.9)`} viewBox="0 0 90 45" style={{ marginTop: '5px' }}>
                         {Array.from({ length: 5 }, (_, i) => (
                           <line key={i} x1="0" y1={8 + i * 8} x2="90" y2={8 + i * 8} stroke="rgba(104,111,120,0.3)" strokeWidth="0.5"/>
                         ))}
@@ -587,11 +587,11 @@ const Motor = () => {
                   <h3>Performance</h3>
                   <div style={{ display: 'flex', gap: '20px' }}>
                     <div className="metric-item" style={{ flex: '1', alignItems: 'flex-start', textAlign: 'left' }}>
-                      <div className="metric-value" style={{ textAlign: 'center', width: '90px' }}>
+                      <div className="metric-value" style={{ textAlign: 'center', width: spacing.chartHeight, fontSize: spacing.fontSize }}>
                         {formatValue(currentData.fuel_consumption_l100km, '', '8.5')} L/100km
                       </div>
-                      <div className="metric-label" style={{ textAlign: 'left' }}>Energy Consumption</div>
-                      <svg width="90px" height="80px" viewBox="0 0 90 80" style={{ marginTop: '8px', marginLeft: '0' }}>
+                      <div className="metric-label" style={{ textAlign: 'left', fontSize: `calc(${spacing.fontSize} * 0.7)` }}>Energy Consumption</div>
+                      <svg width={spacing.chartHeight} height={`calc(${spacing.chartHeight} * 1.6)`} viewBox="0 0 90 80" style={{ marginTop: '8px', marginLeft: '0' }}>
                         {Array.from({ length: 8 }, (_, i) => (
                           <line key={i} x1="0" y1={8 + i * 8} x2="90" y2={8 + i * 8} stroke="rgba(104,111,120,0.3)" strokeWidth="0.5"/>
                         ))}
@@ -605,42 +605,42 @@ const Motor = () => {
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', flex: '1' }}>
                       <div className="metric-item">
-                        <div className="metric-value" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        <div className="metric-value" style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: spacing.fontSize }}>
                           <span style={{ 
                             color: parseFloat(currentData.vibration_level) > 4 ? '#ff0000' : 
                                    parseFloat(currentData.vibration_level) > 3 ? '#ff9900' : '#37bc12', 
-                            fontSize: '8px' 
+                            fontSize: `calc(${spacing.fontSize} * 0.6)` 
                           }}>
                             {parseFloat(currentData.vibration_level) > 4 ? '↑' : 
                              parseFloat(currentData.vibration_level) > 3 ? '→' : '↓'}
                           </span>
                           {formatValue(currentData.vibration_level, '', '2.5')} g RMS
                         </div>
-                        <div className="metric-label">Vibration Levels</div>
+                        <div className="metric-label" style={{ fontSize: `calc(${spacing.fontSize} * 0.7)` }}>Vibration Levels</div>
                       </div>
                       <div className="metric-item">
-                        <div className="metric-value">{formatValue(currentData.oil_pressure_psi, 'PSI', '25.0 PSI')}</div>
-                        <div className="metric-label">Oil Pressure</div>
+                        <div className="metric-value" style={{ fontSize: spacing.fontSize }}>{formatValue(currentData.oil_pressure_psi, 'PSI', '25.0 PSI')}</div>
+                        <div className="metric-label" style={{ fontSize: `calc(${spacing.fontSize} * 0.7)` }}>Oil Pressure</div>
                       </div>
                       <div className="metric-item">
-                        <div className="metric-value" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        <div className="metric-value" style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: spacing.fontSize }}>
                           <span style={{ 
                             color: currentPredictions?.status === 'CRITICAL' ? '#ff0000' : 
                                    currentPredictions?.status === 'WARNING' ? '#ff9900' : '#37bc12', 
-                            fontSize: '8px' 
+                            fontSize: `calc(${spacing.fontSize} * 0.6)` 
                           }}>
                             {currentPredictions?.status === 'CRITICAL' ? '↑' : '→'}
                           </span>
                           {formatValue(currentData.performance_score, '', '95')}%
                         </div>
-                        <div className="metric-label">Performance Score</div>
+                        <div className="metric-label" style={{ fontSize: `calc(${spacing.fontSize} * 0.7)` }}>Performance Score</div>
                       </div>
                       <div className="metric-item">
-                        <div className="metric-value" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                          <span style={{ color: '#37bc12', fontSize: '8px' }}>→</span>
+                        <div className="metric-value" style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: spacing.fontSize }}>
+                          <span style={{ color: '#37bc12', fontSize: `calc(${spacing.fontSize} * 0.6)` }}>→</span>
                           {formatValue(currentData.speed_kmh, '', '65')} km/h
                         </div>
-                        <div className="metric-label">Current Speed</div>
+                        <div className="metric-label" style={{ fontSize: `calc(${spacing.fontSize} * 0.7)` }}>Current Speed</div>
                       </div>
                     </div>
                   </div>
@@ -650,20 +650,20 @@ const Motor = () => {
 
             {/* Right Panel */}
             <div className="right-panel">
-              <div className="motor-prediction">
+              <div className="battery-prediction">
                 <div className="prediction-header">
                   <h2>Motor Prediction</h2>
                   <img
                     src={require('./assets/warning.png')}
                     alt="Warning"
                     className="info-icon"
-                    style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                    style={{ width: '20px', height: '20px', cursor: 'pointer', zIndex: 9999, position: 'relative' }}
                     onClick={() => setShowModal(true)}
                   />
                 </div>
 
                 {/* Failure Prediction Chart */}
-                <div className="motor-prediction-container">
+                <div className="motor-prediction-container" style={{ paddingLeft: '30px' }}>
                   <div className="failure-prediction">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                       <h3 style={{ margin: 0 }}>Motor Failure Prediction</h3>
@@ -709,53 +709,46 @@ const Motor = () => {
                     <div className="prediction-legend">
                       <div className="legend-item">
                         <div style={{ width: '15px', height: '2px', backgroundColor: 'rgba(255,153,0,1)' }}></div>
-                        <span>Historical Health</span>
+                        <span>Past</span>
                       </div>
                       <div className="legend-item">
                         <div style={{ width: '15px', height: '2px', backgroundColor: 'rgba(56,239,125,1)', borderTop: '2px dashed rgba(56,239,125,1)', backgroundColor: 'transparent' }}></div>
-                        <span>Predicted Degradation</span>
-                      </div>
-                      <div className="legend-item">
-                        <div style={{ width: '15px', height: '2px', backgroundColor: 'rgba(255,68,68,1)' }}></div>
-                        <span>Failure Risk</span>
+                        <span>Predicted</span>
                       </div>
                     </div>
-                    <div style={{ position: 'relative' }}>
+                    <div style={{ position: 'relative', marginTop: '20px' }}>
+
                       <div className="prediction-chart">
-                        <svg width="300px" height="180px" viewBox="0 0 300 180">
-                        {/* Chart area background */}
-                        <rect x="35" y="25" width="220" height="120" fill="rgba(0,0,0,0.1)" stroke="rgba(104,111,120,0.3)" strokeWidth="1"/>
-                        
-                        {/* Horizontal grid lines - Y-axis intervals */}
-                        {[25, 45, 65, 85, 105, 125, 145].map((y, i) => (
-                          <line key={`h-${i}`} x1="35" y1={y} x2="255" y2={y} stroke="rgba(104,111,120,0.3)" strokeWidth="0.5"/>
+                        <svg width="290" height="180" viewBox="0 0 290 180">
+                        {/* Grid lines */}
+                        {Array.from({ length: 8 }, (_, i) => (
+                          <line key={i} x1="35" y1={20 + i * 20} x2="255" y2={20 + i * 20} stroke="rgba(104,111,120,0.3)" strokeWidth="0.5"/>
+                        ))}
+                        {Array.from({ length: 8 }, (_, i) => (
+                          <line key={i} x1={35 + i * 30} y1="20" x2={35 + i * 30} y2="160" stroke="rgba(104,111,120,0.3)" strokeWidth="0.5"/>
                         ))}
                         
-                        {/* Vertical grid lines - X-axis intervals */}
-                        {[35, 70, 105, 140, 175, 210, 245].map((x, i) => (
-                          <line key={`v-${i}`} x1={x} y1="25" x2={x} y2="145" stroke="rgba(104,111,120,0.3)" strokeWidth="0.5"/>
-                        ))}
+                        {/* Y-axis labels */}
+                        <text x="25" y="25" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">100</text>
+                        <text x="25" y="45" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">85</text>
+                        <text x="25" y="65" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">70</text>
+                        <text x="25" y="85" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">55</text>
+                        <text x="25" y="105" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">40</text>
+                        <text x="25" y="125" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">25</text>
+                        <text x="25" y="145" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">10</text>
                         
-                        {/* Y-axis labels (Health %) - Properly positioned */}
-                        <text x="30" y="30" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="end">100%</text>
-                        <text x="30" y="50" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="end">80%</text>
-                        <text x="30" y="70" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="end">60%</text>
-                        <text x="30" y="90" fill="rgba(255,153,0,0.9)" fontSize="8" textAnchor="end">40%</text>
-                        <text x="30" y="110" fill="rgba(255,68,68,0.9)" fontSize="8" textAnchor="end">20%</text>
-                        <text x="30" y="130" fill="rgba(255,68,68,0.9)" fontSize="8" textAnchor="end">0%</text>
-                        
-                        {/* X-axis labels (Days) - Properly positioned */}
-                        <text x="35" y="160" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">0</text>
-                        <text x="70" y="160" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">30</text>
-                        <text x="105" y="160" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">60</text>
-                        <text x="140" y="160" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">90</text>
-                        <text x="175" y="160" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">120</text>
-                        <text x="210" y="160" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">150</text>
-                        <text x="245" y="160" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">180</text>
+                        {/* X-axis labels */}
+                        <text x="35" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">0</text>
+                        <text x="65" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">30</text>
+                        <text x="95" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">60</text>
+                        <text x="125" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">90</text>
+                        <text x="155" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">120</text>
+                        <text x="185" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">150</text>
+                        <text x="215" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">180</text>
                         
                         {/* Axis labels */}
-                        <text x="145" y="175" fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="middle">Days</text>
-                        <text x="8" y="85" fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="middle" transform="rotate(-90 8 85)">Health %</text>
+                        <text x="145" y="190" fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="middle">Days</text>
+                        <text x="8" y="90" fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="middle" transform="rotate(-90 8 90)">Health %</text>
                         
                         {/* Critical failure threshold line */}
                         <line x1="35" y1="105" x2="255" y2="105" stroke="rgba(255,68,68,0.6)" strokeWidth="1" strokeDasharray="3,3"/>
@@ -839,16 +832,17 @@ const Motor = () => {
                   </div>
 
                   {/* Remaining Useful Life */}
-                  <div className="useful-life">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                      <span style={{ fontSize: '11px', color: 'white', fontWeight: '500' }}>Remaining Useful Life</span>
-                      <span style={{ fontSize: '16px', color: 'white', fontWeight: 'bold' }}>
+                  <div className="useful-life" style={{ marginBottom: '20px', marginTop: '-40px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
+                      <span style={{ fontSize: '10px', color: 'white' }}>Remaining useful life</span>
+                      <span style={{ fontSize: '12px', color: 'white', fontWeight: 'bold' }}>
                         {remainingLife}%
                       </span>
                     </div>
-                    <div className="life-bar">
+                    <div className="life-bar" style={{ borderRadius: '0' }}>
                       <div className="life-fill" style={{ 
-                        width: `${remainingLife}%`,
+                        width: `${remainingLife}%`, 
+                        borderRadius: '0',
                         background: remainingLife < 30 ? '#ff4444' : 
                                    remainingLife < 60 ? '#ff9900' : 
                                    'linear-gradient(90deg, #ff9900 0%, #37bc12 100%)'
@@ -857,18 +851,18 @@ const Motor = () => {
                   </div>
 
                   {/* GenAI Recommendations */}
-                  <div className="genai-recommendations">
+                  <div className="genai-recommendations" style={{ marginTop: '-10px' }}>
                     <h3>GenAI Recommendations</h3>
-                    <p>AI-powered motor optimization based on real-time performance data and predictive analytics.</p>
+                    <p>AI-powered motor optimization based on real-time performance data, driving patterns, and predictive analytics from sensor readings.</p>
                     
                     <div className="recommendations-list">
                       {aiRecommendations.slice(0, 3).map((rec, index) => (
-                        <div key={index} style={{ marginBottom: '8px' }}>
+                        <div key={index}>
                           <div className="recommendation-item">
                             <span className="warning-icon">
                               {rec.priority === 'URGENT' ? '🚨' : rec.priority === 'HIGH' ? '⚠️' : 'ℹ️'}
                             </span>
-                            <span style={{ flex: 1 }}>{rec.action}</span>
+                            <span>{rec.action}</span>
                           </div>
                           {rec.description && (
                             <div className="recommendation-details">
@@ -878,11 +872,9 @@ const Motor = () => {
                           )}
                         </div>
                       ))}
-                      {aiRecommendations.length > 3 && (
-                        <div className="more-link">
-                          +{aiRecommendations.length - 3} more recommendations...
-                        </div>
-                      )}
+                      <div className="more-link" style={{ color: '#ff9900', fontSize: '8px', fontStyle: 'italic' }}>
+                        More.....
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -890,8 +882,8 @@ const Motor = () => {
             </div>
           </div>
         </div>
-        <DataNeededModal open={showModal} onClose={() => setShowModal(false)} />
       </div>
+      <DataNeededModal open={showModal} onClose={() => setShowModal(false)} type="motor" />
     </div>
   );
 };

@@ -1,73 +1,32 @@
 .motor-page {
   width: 100vw;
   height: 100vh;
-  background: #000;
-  font-family: 'Amazon Ember', sans-serif;
   position: fixed;
   top: 0;
   left: 0;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  background: #000;
+  font-family: 'Amazon Ember', sans-serif;
 }
 
 .motor-container {
-  max-width: 1400px;
   width: 100%;
-  min-width: 1200px;
-  height: calc(100vh - 76px);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   background: #2d343d;
-  position: relative;
-  overflow: hidden;
-  border-radius: 8px;
+  overflow-y: auto;
 }
 
-@media (min-height: 900px) {
-  .motor-container {
-    height: 70vh;
-  }
-}
 
-@media (max-height: 800px) {
-  .motor-container {
-    height: calc(100vh - 50px);
-    min-height: 700px;
-  }
-}
-
-@media (max-height: 768px) {
-  .motor-container {
-    height: calc(100vh - 40px);
-    min-height: 650px;
-  }
-}
 
 .motor-layout {
-  display: grid;
-  grid-template-columns: calc(100% - 343px) 343px;
-  gap: 0;
-  height: calc(100vh - 180px);
+  display: flex;
+  gap: 32px;
+  width: 100%;
+  height: 100%;
   margin: -30px 0 20px 20px;
-  overflow: hidden;
-}
-
-@media (min-height: 900px) {
-  .motor-layout {
-    height: calc(70vh - 40px);
-  }
-}
-
-@media (max-height: 800px) {
-  .motor-layout {
-    height: calc(100vh - 140px);
-  }
-}
-
-@media (max-height: 768px) {
-  .motor-layout {
-    height: calc(100vh - 120px);
-  }
+  overflow: visible;
+  align-items: flex-start;
 }
 
 .nav-header {
@@ -108,26 +67,27 @@
 
 
 .motor-page .main-panel {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
   background: transparent;
   border: none;
   padding: 20px;
   overflow: hidden;
   position: relative;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+  height: auto;
 }
 
 .motor-page .right-panel {
+  flex: 1;
   background: #434a54;
-  overflow: hidden;
-  width: 343px;
-  position: absolute;
-  top: 60px;
-  right: 0px;
-  height: calc(100% - 60px);
-  display: flex;
-  flex-direction: column;
+  border-radius: 0;
+  padding: 24px;
+  min-width: 350px;
+  min-height: 0;
+  overflow: visible;
+  align-self: flex-start;
 }
 
 .data-container {
@@ -139,21 +99,24 @@
 
 .motor-page .bottom-containers {
   display: flex;
-  gap: 20px;
+  gap: 24px;
+  width: 100%;
 }
 
 .motor-page .bottom-containers .data-container:first-child {
-  flex: 2.0;
-  min-height: 200px;
-  max-height: 200px;
+  width: 65%;
+  flex: none;
+  min-height: 280px;
+  max-height: 280px;
   overflow: hidden;
   margin-left: -15px;
 }
 
 .motor-page .bottom-containers .data-container:last-child {
-  flex: 1.3;
-  min-height: 200px;
-  max-height: 200px;
+  width: 35%;
+  flex: none;
+  min-height: 280px;
+  max-height: 280px;
   overflow: hidden;
   transform: translateX(15px);
 }
@@ -203,6 +166,7 @@
 .rpm-gauge .gauge-container {
   width: 90px;
   height: 90px;
+  margin-left: -10px;
 }
 
 .gauge-arc {
@@ -300,6 +264,11 @@
 .rotor-position .gauge-container, .insulation-resistance .gauge-container {
   width: 90px;
   height: 90px;
+  margin-top: -30px;
+  margin-left: 25px;
+  position: relative;
+  z-index: 10;
+  align-items: flex-start;
 }
 
 .rotor-position .gauge-arc, .insulation-resistance .gauge-arc {
@@ -377,12 +346,12 @@
   align-items: flex-start;
   grid-column: 1;
   grid-row: 2;
-  transform: translateY(-20px);
 }
 
 .torque-gauge .gauge-container {
   width: 90px;
   height: 90px;
+  margin-left: -10px;
 }
 
 .torque-gauge .gauge-arc {
@@ -498,26 +467,24 @@
 
 /* Motor Prediction Panel */
 .motor-prediction {
-  background: #3a4149;
+  background: transparent;
   border-radius: 12px;
-  padding: 15px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  height: 100%;
 }
 
 .prediction-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
 .prediction-header h2 {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: normal;
   color: white;
-  margin: 0;
 }
 
 .info-icon {
@@ -527,35 +494,22 @@
 
 /* Failure Prediction */
 .failure-prediction {
-  margin-bottom: 15px;
-  flex: 1;
+  margin-bottom: 30px;
 }
 
 .failure-prediction h3 {
-  font-size: 13px;
-  margin-bottom: 8px;
-  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 10px;
+  position: relative;
+  top: 25px;
 }
 
 .prediction-legend {
   display: flex;
-  gap: 12px;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
-}
-
-.prediction-legend .legend-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 9px;
-  color: rgba(255,255,255,0.8);
-}
-
-.prediction-legend .legend-item div {
-  width: 12px;
-  height: 2px;
-  border-radius: 1px;
+  gap: 20px;
+  margin-bottom: 15px;
+  position: relative;
+  top: 25px;
 }
 
 .legend-color.past {
@@ -567,17 +521,15 @@
 }
 
 .prediction-chart {
-  height: 180px;
+  height: 420px;
   background: transparent;
   position: relative;
   overflow: visible;
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 8px 0;
-  border: 1px solid rgba(104,111,120,0.2);
-  border-radius: 4px;
-  padding: 5px;
+  margin-top: -60px;
+  padding-left: 10px;
 }
 
 .prediction-chart svg {
@@ -587,111 +539,99 @@
 
 /* Remaining Useful Life */
 .useful-life {
-  margin: 10px 0;
-  padding: 8px 0;
+  margin-top: -80px;
+  margin-bottom: -60px;
+  text-align: center;
+}
+
+@media (max-height: 800px) {
+  .useful-life {
+    margin-bottom: -15px;
+  }
+}
+
+@media (max-height: 768px) {
+  .useful-life {
+    margin-bottom: -10px;
+  }
 }
 
 .useful-life h3 {
-  font-size: 11px;
-  margin-bottom: 8px;
-  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 15px;
 }
 
 .life-percentage {
-  font-size: 24px;
+  font-size: 36px;
   font-weight: bold;
-  margin-bottom: 8px;
-  color: white;
+  margin-bottom: 15px;
 }
 
 .life-bar {
   width: 100%;
-  height: 15px;
+  height: 25px;
   background: #333;
   border: 1px solid #555;
-  border-radius: 2px;
+  border-radius: 0;
   overflow: hidden;
 }
 
 .life-fill {
+  width: 70%;
   height: 100%;
   background: linear-gradient(90deg, #ff9900 0%, #37bc12 100%);
-  border-radius: 1px;
-  transition: width 0.3s ease;
+  border-radius: 0;
 }
 
 .motor-prediction-container {
   background: #2d343d !important;
   border: 1px solid #3a4552;
-  margin: -5px -15px 10px -15px;
-  padding: 12px 15px;
+  margin: 0px -20px 30px -20px;
+  padding: 15px 20px;
   color: white;
-  border-radius: 6px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
 }
 
 /* GenAI Recommendations */
-.genai-recommendations {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
 .genai-recommendations h3 {
-  font-size: 13px;
-  margin-bottom: 8px;
-  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 15px;
 }
 
 .genai-recommendations p {
   font-size: 9px;
   color: #ccc;
-  line-height: 1.3;
-  margin: 0 0 10px 0;
+  line-height: 1.4;
+  margin: 0 5px 20px 5px;
 }
 
 .recommendations-list {
   background: #252b33;
-  border-radius: 4px;
-  padding: 8px;
-  margin: 0;
-  flex: 1;
-  overflow-y: auto;
-  max-height: 150px;
+  border-radius: 0;
+  padding: 5px;
+  margin: 0 -10px;
 }
 
 .recommendation-item {
   display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  margin-bottom: 8px;
-  font-size: 9px;
-  line-height: 1.2;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 5px;
+  font-size: 10px;
 }
 
 .warning-icon {
   color: #ff9900;
-  font-size: 10px;
-  margin-top: 1px;
-  flex-shrink: 0;
 }
 
 .recommendation-details {
-  font-size: 8px;
+  font-size: 11px;
   color: #ccc;
   line-height: 1.2;
-  margin-top: 2px;
+  margin-bottom: 3px;
 }
 
 .recommendation-details p {
-  margin: 2px 0;
-}
-
-.recommendation-details strong {
-  color: #fff;
-  font-weight: 500;
+  margin-bottom: 5px;
 }
 
 .more-link {
@@ -699,8 +639,6 @@
   font-size: 8px;
   cursor: pointer;
   text-align: right;
-  margin-top: 4px;
-  font-style: italic;
 }
 
 /* Bottom Panels */
@@ -776,37 +714,34 @@
   flex: 1;
 }
 
-/* Fixed sizing for consistency across all screens */
-.motor-page {
-  width: 100vw;
-  height: 100vh;
-  background: #000;
-  font-family: 'Amazon Ember', sans-serif;
-  position: fixed;
-  top: 0;
-  left: 0;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+
+
+/* Responsive Scaling */
+@media (min-width: 1400px) and (max-width: 1919px) {
+  .motor-container {
+    transform: scale(1.15);
+    transform-origin: top left;
+    width: calc(100% / 1.15);
+    height: calc(100% / 1.15);
+  }
 }
 
-.motor-container {
-  width: 1400px;
-  height: 800px;
-  background: #2d343d;
-  position: relative;
-  overflow: hidden;
-  border-radius: 0;
-}
-
-.motor-layout {
-  display: grid;
-  grid-template-columns: calc(100% - 343px) 343px;
-  gap: 0;
-  height: 720px;
-  margin: 20px 0 20px 20px;
-  overflow: hidden;
+@media (min-width: 1920px) {
+  .motor-container {
+    transform: scale(1.3);
+    transform-origin: top left;
+    width: calc(100% / 1.3);
+    height: calc(100% / 1.3);
+  }
+  
+  .metric-chart {
+    height: 60px;
+  }
+  
+  .electrical-metrics svg,
+  .performance-metrics svg {
+    transform: scale(1.4);
+  }
 }
 
 /* Responsive Design */

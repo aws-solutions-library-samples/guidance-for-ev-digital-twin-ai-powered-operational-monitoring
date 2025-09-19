@@ -90,9 +90,11 @@ const CarDetail = () => {
 
             {/* Vehicle Image - Right Side */}
             <div className="vehicle-image-section">
-              <div className="vehicle-image-placeholder">
-                Vehicle Image Placeholder
-              </div>
+              <img 
+                src={require('./assets/vehicledetail.png')} 
+                alt="Vehicle Detail" 
+                className="vehicle-detail-image"
+              />
             </div>
           </div>
 

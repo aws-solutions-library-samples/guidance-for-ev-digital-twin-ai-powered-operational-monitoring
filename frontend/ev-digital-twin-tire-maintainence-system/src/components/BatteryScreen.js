@@ -5,10 +5,20 @@ import './BatteryPack.css';
 const BatteryScreen = () => {
   const navigate = useNavigate();
   const { carId } = useParams();
+  
+  // Dynamic spacing based on screen width
+  const getResponsiveSpacing = () => {
+    const width = window.innerWidth;
+    if (width >= 2560) return { margin: '5px', padding: '10px', containerWidth: '420px', safetyWidth: '1100px' };
+    if (width >= 1920) return { margin: '10px', padding: '15px', containerWidth: '380px', safetyWidth: '950px' };
+    return { margin: '20px', padding: '20px', containerWidth: '330px', safetyWidth: '800px' };
+  };
+  
+  const spacing = getResponsiveSpacing();
 
   return (
     <div className="battery-page">
-      <div className="battery-container">
+      <div className="battery-container" style={{ overflowY: 'auto' }}>
       {/* Header */}
       <header className="header">
         <div className="header-left">
@@ -28,7 +38,7 @@ const BatteryScreen = () => {
       </header>
 
       {/* Navigation Header */}
-      <div className="nav-header" style={{ margin: '20px 20px 20px', borderBottom: 'none' }}>
+      <div className="nav-header" style={{ margin: '20px 20px 20px', borderBottom: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <button 
           className="back-button"
           onClick={() => navigate(`/car/${carId}`)}
@@ -48,15 +58,15 @@ const BatteryScreen = () => {
           <span>←</span>
           <span>Battery Digital Twin</span>
         </button>
-        <span className="vin-number">VIN Number: ###</span>
+        <span className="vin-number" style={{ transform: 'translateX(-100px)' }}>VIN Number: ###</span>
       </div>
 
-      <div style={{ margin: '10px 20px 5px' }}>
+      <div style={{ margin: '0px 20px 5px' }}>
       <div className="battery-layout">
         {/* Main Content */}
-        <div className="main-panel" style={{ marginTop: '-20px' }}>
+        <div className="main-panel" style={{ marginTop: '-40px' }}>
           {/* Battery Details Container - Top */}
-          <div className="data-container" style={{ marginBottom: '20px', marginTop: '0px', maxHeight: '400px', overflow: 'hidden', width: 'calc(100% + 30px)', marginLeft: '-15px' }}>
+          <div className="data-container" style={{ marginBottom: '20px', marginTop: '0px', maxHeight: '580px', overflow: 'hidden', width: 'calc(100% + 20px)', marginLeft: '-10px' }}>
             
             {/* Battery Visualization */}
             <div className="battery-visual">
@@ -118,16 +128,16 @@ const BatteryScreen = () => {
                   <span style={{ fontSize: '10px', color: 'white' }}>Total Charging Time:</span>
                   <span style={{ fontSize: '14px', fontWeight: '700', color: 'white' }}>00:02:32</span>
                 </div>
-                <span style={{ fontSize: '14px', fontWeight: '700', color: 'white' }}>75% Charged</span>
-                <img src={require('./assets/divider.png')} alt="Divider" style={{ width: '12px', height: '100px', position: 'relative', top: '-70px', left: '-50px' }} />
+                <span style={{ fontSize: '14px', fontWeight: '700', color: 'white', transform: 'translateX(200px)' }}>75% Charged</span>
+                <div style={{ width: '1px', height: '80px', backgroundColor: 'rgba(255,255,255,0.3)', position: 'relative', top: '-60px', left: '-50px' }}></div>
                 <span style={{ fontSize: '14px', fontWeight: '700', color: 'white', fontFamily: 'Amazon Ember', transform: 'translateY(-80px) translateX(-250px)', position: 'relative' }}>Charging Details</span>
               </div>
             </div>
           </div>
 
           {/* Bottom Containers */}
-          <div className="bottom-containers" style={{ marginBottom: '0', marginLeft: '-15px' }}>
-            <div className="data-container" style={{ minHeight: '200px', maxHeight: '200px', maxWidth: '300px' }}>
+          <div className="bottom-containers" style={{ marginBottom: '0' }}>
+            <div className="data-container" style={{ minHeight: '300px', maxHeight: '300px', marginLeft: '-10px' }}>
               <h3>Driving Details</h3>
               <div style={{ fontSize: '8px', color: 'rgba(255, 255, 255, 0.6)', marginTop: '5px' }}>Odometer: 50,546 Km</div>
               
@@ -151,7 +161,7 @@ const BatteryScreen = () => {
               </div>
             </div>
 
-            <div className="data-container" style={{ minHeight: '200px', maxHeight: '200px' }}>
+            <div className="data-container" style={{ minHeight: '300px', maxHeight: '300px' }}>
               
               {/* Safety & Control */}
               <div style={{ marginBottom: '20px', position: 'relative' }}>
@@ -284,7 +294,7 @@ const BatteryScreen = () => {
         </div>
 
         {/* Battery Prediction Panel */}
-        <div className="right-panel" style={{ position: 'absolute', top: '60px', right: '0px', height: 'calc(100% - 60px)' }}>
+        <div className="right-panel">
           <div className="battery-prediction">
             <div className="prediction-header">
               <h2>Battery Prediction</h2>
@@ -305,7 +315,7 @@ const BatteryScreen = () => {
                     <span>Predicted</span>
                   </div>
                 </div>
-                <div style={{ position: 'relative' }}>
+                <div style={{ position: 'relative', marginTop: '80px' }}>
                   <img 
                     src={require('./assets/stateofhealth.png')} 
                     alt="State of Health" 
@@ -319,7 +329,7 @@ const BatteryScreen = () => {
                     }} 
                   />
                   <div className="prediction-chart">
-                    <svg width="240px" height="240px" viewBox="0 0 240 240">
+                    <svg width="240px" height="300px" viewBox="0 0 240 300">
                   {/* Grid lines */}
                   {Array.from({ length: 11 }, (_, i) => (
                     <line key={i} x1="0" y1={20 + i * 18} x2="240" y2={20 + i * 18} stroke="rgba(104,111,120,1)" strokeWidth="0.5"/>
@@ -327,7 +337,7 @@ const BatteryScreen = () => {
                   
                   {/* Past data (orange) */}
                   <polyline
-                    points="0,200 18,195 36,190 54,185 72,180 90,175 108,170"
+                    points="0,30 18,40 36,50 54,60 72,70 90,80 108,90"
                     fill="none"
                     stroke="rgba(255,153,0,1)"
                     strokeWidth="2"
@@ -335,7 +345,7 @@ const BatteryScreen = () => {
                   
                   {/* Predicted data (green) */}
                   <polyline
-                    points="108,170 126,165 144,160 162,155 180,150 198,145 216,140 234,135"
+                    points="108,90 126,105 144,120 162,135 180,150 198,165 216,180 234,195"
                     fill="none"
                     stroke="rgba(56,239,125,1)"
                     strokeWidth="2"
@@ -344,7 +354,7 @@ const BatteryScreen = () => {
                   
                   {/* Data points */}
                   {Array.from({ length: 13 }, (_, i) => (
-                    <circle key={i} cx={i * 18} cy={200 - i * 5} r="2" fill={i < 6 ? "rgba(255,153,0,1)" : "rgba(56,239,125,1)"}/>
+                    <circle key={i} cx={i * 18} cy={30 + i * (i < 6 ? 10 : 15)} r="2" fill={i < 6 ? "rgba(255,153,0,1)" : "rgba(56,239,125,1)"}/>
                   ))}
                   
                   {/* X-axis labels */}
@@ -357,9 +367,14 @@ const BatteryScreen = () => {
                   </div>
                 </div>
               </div>
+              
+
 
               {/* Battery Bars */}
-              <div className="battery-bars" style={{ marginBottom: '20px', marginTop: '-100px' }}>
+              <div className="battery-bars" style={{ marginBottom: '20px', marginTop: '-120px' }}>
+                <div style={{ textAlign: 'center', marginBottom: '-5px' }}>
+                  <span style={{ fontSize: '10px', color: 'white' }}>Charging Cycle</span>
+                </div>
                 <div className="battery-bar-item" style={{ marginBottom: '25px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
                     <span style={{ fontSize: '10px', color: 'white' }}>State of Certified Energy</span>

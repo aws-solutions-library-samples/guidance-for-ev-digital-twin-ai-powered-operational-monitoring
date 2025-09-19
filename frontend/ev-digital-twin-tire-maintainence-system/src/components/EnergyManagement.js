@@ -1,10 +1,28 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "../css/energymanagement.css";
 
 const EnergyManagement = () => {
   const navigate = useNavigate();
   const { carId } = useParams();
+
+  // Responsive sizing functions
+  const spacing = useMemo(() => {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    
+    return {
+      fontSize: width < 1200 ? '12px' : width < 1400 ? '14px' : '16px',
+      smallFontSize: width < 1200 ? '8px' : width < 1400 ? '9px' : '10px',
+      titleFontSize: width < 1200 ? '14px' : width < 1400 ? '16px' : '18px',
+      gaugeSize: width < 1200 ? 80 : width < 1400 ? 90 : 100,
+      chartHeight: height < 800 ? 200 : height < 900 ? 220 : 240,
+      containerPadding: width < 1200 ? '10px' : '15px',
+      margin: width < 1200 ? '10px' : '15px',
+      thermalContainerHeight: `${Math.max(450, Math.min(600, height * 0.6))}px`,
+      regenerativeContainerHeight: `${Math.max(200, Math.min(300, height * 0.25))}px`
+    };
+  }, []);
 
   return (
     <div className="energymanagement-page">
@@ -17,7 +35,7 @@ const EnergyManagement = () => {
               <circle cx="32.5" cy="10.5" r="5.25" fill="#37bc12"/>
               <circle cx="10.5" cy="10.5" r="5.25" fill="#37bc12"/>
             </svg>
-            <h1 style={{ fontSize: '24px', fontWeight: '700', fontFamily: 'Amazon Ember', color: 'white' }}>EV Digital Twin</h1>
+            <h1 style={{ fontSize: spacing.titleFontSize, fontWeight: '700', fontFamily: 'Amazon Ember', color: 'white' }}>EV Digital Twin</h1>
           </div>
           <div className="header-right">
             <span className="user-profile">bhuser</span>
@@ -36,15 +54,15 @@ const EnergyManagement = () => {
             <span>←</span>
             <span>Energy Management</span>
           </button>
-          <span className="vin-number">VIN Number</span>
+          <span className="vin-number" style={{ transform: `translateX(-${window.innerWidth >= 1920 ? '500' : window.innerWidth >= 1400 ? '400' : '300'}px)` }}>VIN Number</span>
         </div>
 
-        <div style={{ margin: '-20px 20px 5px' }}>
+        <div style={{ margin: '10px 20px 5px' }}>
           <div className="energymanagement-layout">
           {/* Main Panel */}
-          <div className="main-panel">
+          <div className="main-panel" style={{ marginTop: '50px' }}>
             {/* Top Container: Thermal Values */}
-            <div className="data-container" style={{ height: "410px", marginBottom: "20px" }}>
+            <div className="data-container" style={{ height: spacing.thermalContainerHeight, marginBottom: "20px" }}>
               <h3>Thermal Values</h3>
               {/* Top Row - 4 items */}
               <div className="thermal-metrics-grid">
@@ -248,7 +266,7 @@ const EnergyManagement = () => {
             </div>
 
             {/* Bottom Container: Regenerative Data */}
-            <div className="data-container" style={{ height: "220px" }}>
+            <div className="data-container" style={{ height: spacing.regenerativeContainerHeight }}>
               <h3>Regenerative Data</h3>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div className="regenerative-metrics-grid">
@@ -314,16 +332,16 @@ const EnergyManagement = () => {
 
           {/* Right Panel */}
           <div className="right-panel">
-            <div className="invertor-prediction">
+            <div className="battery-prediction">
               <div className="prediction-header">
-                <h2>Energy Management Prediction</h2>
+                <h2 style={{ fontSize: '24px' }}>Energy Management Prediction</h2>
                 <img src={require('./assets/warning.png')} alt="Warning" className="info-icon" style={{ width: '20px', height: '20px' }} />
               </div>
 
               {/* Energy Management Prediction Container */}
-              <div className="invertor-prediction-container" style={{ paddingLeft: '30px' }}>
+              <div className="motor-prediction-container" style={{ paddingLeft: '30px' }}>
                 <div className="failure-prediction">
-                  <h3>Failure Prediction</h3>
+                  <h3 style={{ fontSize: spacing.fontSize }}>Failure Prediction</h3>
                   <div className="prediction-legend">
                     <div className="legend-item">
                       <div style={{ width: '15px', height: '2px', backgroundColor: 'rgba(255,153,0,1)' }}></div>
@@ -334,7 +352,7 @@ const EnergyManagement = () => {
                       <span>Predicted</span>
                     </div>
                   </div>
-                  <div style={{ position: 'relative' }}>
+                  <div style={{ position: 'relative', marginTop: '80px' }}>
                     <img 
                       src={require('./assets/stateofhealth.png')} 
                       alt="State of Health" 
@@ -348,15 +366,18 @@ const EnergyManagement = () => {
                       }} 
                     />
                     <div className="prediction-chart">
-                      <svg width="240px" height="240px" viewBox="0 0 240 240">
+                      <svg width={window.innerWidth >= 1920 ? "320px" : window.innerWidth >= 1400 ? "280px" : "240px"} height="300px" viewBox={window.innerWidth >= 1920 ? "0 0 320 300" : window.innerWidth >= 1400 ? "0 0 280 300" : "0 0 240 300"}>
                         {/* Grid lines */}
-                        {Array.from({ length: 11 }, (_, i) => (
-                          <line key={i} x1="0" y1={20 + i * 18} x2="240" y2={20 + i * 18} stroke="rgba(104,111,120,1)" strokeWidth="0.5"/>
-                        ))}
+                        {Array.from({ length: 11 }, (_, i) => {
+                          const chartWidth = window.innerWidth >= 1920 ? 320 : window.innerWidth >= 1400 ? 280 : 240;
+                          return (
+                            <line key={i} x1="30" y1={20 + i * 18} x2={chartWidth} y2={20 + i * 18} stroke="rgba(104,111,120,1)" strokeWidth="0.5"/>
+                          );
+                        })}
                         
                         {/* Past data (orange) */}
                         <polyline
-                          points="0,200 18,195 36,190 54,185 72,180 90,175 108,170"
+                          points={window.innerWidth >= 1920 ? "30,30 54,40 78,50 102,60 126,70 150,80 174,90" : window.innerWidth >= 1400 ? "30,30 51,40 72,50 93,60 114,70 135,80 156,90" : "30,30 48,40 66,50 84,60 102,70 120,80 138,90"}
                           fill="none"
                           stroke="rgba(255,153,0,1)"
                           strokeWidth="2"
@@ -364,7 +385,7 @@ const EnergyManagement = () => {
                         
                         {/* Predicted data (green) */}
                         <polyline
-                          points="108,170 126,165 144,160 162,155 180,150 198,145 216,140 234,135"
+                          points={window.innerWidth >= 1920 ? "174,90 198,105 222,120 246,135 270,150 294,165" : window.innerWidth >= 1400 ? "156,90 177,105 198,120 219,135 240,150 261,165" : "138,90 156,105 174,120 192,135 210,150 228,165"}
                           fill="none"
                           stroke="rgba(56,239,125,1)"
                           strokeWidth="2"
@@ -372,45 +393,66 @@ const EnergyManagement = () => {
                         />
                         
                         {/* Data points */}
-                        {Array.from({ length: 13 }, (_, i) => (
-                          <circle key={i} cx={i * 18} cy={200 - i * 5} r="2" fill={i < 6 ? "rgba(255,153,0,1)" : "rgba(56,239,125,1)"}/>
-                        ))}
+                        {Array.from({ length: 11 }, (_, i) => {
+                          const spacing = window.innerWidth >= 1920 ? 24 : window.innerWidth >= 1400 ? 21 : 18;
+                          return (
+                            <circle key={i} cx={30 + i * spacing} cy={30 + i * (i < 6 ? 10 : 15)} r="2" fill={i < 6 ? "rgba(255,153,0,1)" : "rgba(56,239,125,1)"}/>
+                          );
+                        })}
                         
-                        {/* X-axis labels */}
-                        {[0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40].map((value, i) => (
-                          <text key={i} x={value * 6} y="215" fill="rgba(255,255,255,0.6)" fontSize="8" textAnchor="middle">
+                        {/* Y-axis labels */}
+                        {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map((value, i) => (
+                          <text key={i} x="15" y={200 - (value * 1.8)} fill="rgba(255,255,255,0.6)" fontSize="8" textAnchor="middle">
                             {value}
                           </text>
                         ))}
+                        
+                        {/* X-axis labels */}
+                        {[0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40].map((value, i) => {
+                          const xSpacing = window.innerWidth >= 1920 ? 8 : window.innerWidth >= 1400 ? 7 : 6;
+                          return (
+                            <text key={i} x={30 + value * xSpacing} y="215" fill="rgba(255,255,255,0.6)" fontSize="8" textAnchor="middle">
+                              {value}
+                            </text>
+                          );
+                        })}
                       </svg>
                     </div>
                   </div>
                 </div>
 
                 {/* Remaining Useful Life */}
-                <div className="useful-life" style={{ marginBottom: '-80px', marginTop: '-100px' }}>
+                <div className="useful-life" style={{ marginBottom: '20px', marginTop: '-120px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
-                    <span style={{ fontSize: '10px', color: 'white' }}>Remaining useful life</span>
-                    <span style={{ fontSize: '12px', color: 'white', fontWeight: 'bold' }}>60%</span>
+                    <span style={{ fontSize: spacing.smallFontSize, color: 'white' }}>Remaining useful life</span>
+                    <span style={{ fontSize: spacing.fontSize, color: 'white', fontWeight: 'bold' }}>60%</span>
                   </div>
                   <div className="life-bar" style={{ borderRadius: '0' }}>
-                    <div className="life-fill" style={{ width: '60%', borderRadius: '0' }}></div>
+                    <div className="life-fill" style={{ 
+                      width: '60%', 
+                      borderRadius: '0',
+                      background: 60 < 30 ? '#ff4444' : 
+                                 60 < 60 ? '#ff9900' : 
+                                 'linear-gradient(90deg, #ff9900 0%, #37bc12 100%)'
+                    }}></div>
                   </div>
                 </div>
 
                 {/* GenAI Recommendations */}
-                <div className="genai-recommendations">
-                  <h3>GenAI Recommendations</h3>
-                  <p>Use real-time vehicle speed, acceleration, battery SOC and health, environmental data and driving habits to implement energy-saving strategies.</p>
+                <div className="genai-recommendations" style={{ marginTop: '-10px' }}>
+                  <h3 style={{ fontSize: spacing.fontSize }}>GenAI Recommendations</h3>
+                  <p style={{ fontSize: spacing.smallFontSize }}>Use real-time vehicle speed, acceleration, battery SOC and health, environmental data and driving habits to implement energy-saving strategies.</p>
                   
                   <div className="recommendations-list">
-                    <div className="recommendation-item">
-                      <span className="warning-icon">⚠️</span>
-                      <span>Dynamic Energy Distribution</span>
-                    </div>
-                    <div className="recommendation-details">
-                      <p><strong>Step 1:</strong> Set up dynamic load balancing and configure power distribution algorithms</p>
-                      <p><strong>Step 2:</strong> Track energy efficiency metrics and evaluate system response time</p>
+                    <div>
+                      <div className="recommendation-item">
+                        <span className="warning-icon">⚠️</span>
+                        <span>Dynamic Energy Distribution</span>
+                      </div>
+                      <div className="recommendation-details">
+                        <p><strong>Step 1:</strong> Set up dynamic load balancing and configure power distribution algorithms</p>
+                        <p><strong>Step 2:</strong> Track energy efficiency metrics and evaluate system response time</p>
+                      </div>
                     </div>
                     <div className="more-link">More.....</div>
                   </div>

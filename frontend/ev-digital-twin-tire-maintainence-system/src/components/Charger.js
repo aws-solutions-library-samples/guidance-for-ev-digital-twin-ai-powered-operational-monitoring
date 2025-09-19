@@ -1,10 +1,24 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "../css/charger.css";
 
 const Charger = () => {
   const navigate = useNavigate();
   const { carId } = useParams();
+
+  // Responsive sizing functions
+  const spacing = useMemo(() => {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    
+    return {
+      fontSize: width < 1200 ? '12px' : width < 1400 ? '14px' : '16px',
+      smallFontSize: width < 1200 ? '8px' : width < 1400 ? '9px' : '10px',
+      titleFontSize: width < 1200 ? '14px' : width < 1400 ? '16px' : '18px',
+      chargingContainerHeight: `${Math.max(350, Math.min(450, height * 0.5))}px`,
+      efficiencyContainerHeight: `${Math.max(200, Math.min(280, height * 0.25))}px`
+    };
+  }, []);
 
   return (
     <div className="charger-page">
@@ -33,18 +47,20 @@ const Charger = () => {
             <span>←</span>
             <span>On Board Chargers</span>
           </button>
-          <span className="vin-number">VIN Number</span>
         </div>
+        
+        <span className="vin-number" style={{ position: 'absolute', right: '420px', top: '140px', color: 'rgba(255, 255, 255, 0.6)', fontSize: '8px', zIndex: 10 }}>VIN Number</span>
 
-        <div className="charger-layout">
-          {/* Main Panel */}
-          <div className="main-panel">
-            {/* Top Container: Charging Sessions */}
-            <div className="data-container" style={{ height: "410px", marginBottom: "20px", marginTop: "-20px" }}>
+        <div style={{ margin: '10px 20px 5px' }}>
+          <div className="charger-layout">
+            {/* Main Panel */}
+            <div className="main-panel" style={{ marginTop: '50px' }}>
+              {/* Top Container: Charging Sessions */}
+              <div className="data-container" style={{ height: spacing.chargingContainerHeight, marginBottom: "20px", marginTop: "0px" }}>
               <h3>Charging Sessions</h3>
               <span className="charger-status in-use">In Use</span>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '20px' }}>
-                <div className="charger-metrics-grid">
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '30px', height: 'calc(100% - 60px)', width: '100%' }}>
+                <div className="charger-metrics-grid" style={{ flex: '0 0 380px' }}>
                 <div className="charger-gauge">
                   <div className="gauge-container">
                     <div className="gauge-arc"></div>
@@ -103,13 +119,13 @@ const Charger = () => {
                 </div>
                 </div>
                 
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <img src={require('./assets/divider.png')} alt="Divider" style={{ width: '10px', height: '250px' }} />
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>
+                  <img src={require('./assets/divider.png')} alt="Divider" style={{ width: '10px', height: '200px' }} />
                 </div>
                 
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginLeft: '40px', marginTop: '30px', flex: '1' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', marginLeft: '30px', marginTop: '10px', flex: '1' }}>
                   <div style={{ fontSize: '12px', color: 'white', marginBottom: '10px' }}>Charger Efficiency: 85%</div>
-                  <img src={require('./assets/chargericon.png')} alt="Charger Icon" style={{ width: '280px', height: 'auto' }} />
+                  <img src={require('./assets/chargericon.png')} alt="Charger Icon" style={{ width: `${window.innerWidth >= 1920 ? '300px' : window.innerWidth >= 1400 ? '250px' : '220px'}`, height: 'auto', maxHeight: window.innerWidth >= 1920 ? '220px' : window.innerWidth >= 1400 ? '190px' : '170px' }} />
                   <div className="charger-metrics-row" style={{ marginTop: '20px' }}>
                     <div className="charger-metric">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -138,11 +154,11 @@ const Charger = () => {
 
             </div>
 
-            {/* Bottom Container: Charge Efficiency */}
-            <div className="data-container" style={{ height: "220px" }}>
+              {/* Bottom Container: Charge Efficiency */}
+              <div className="data-container" style={{ height: spacing.efficiencyContainerHeight }}>
               <h3>Charge Efficiency</h3>
-              <div style={{ background: 'transparent', width: '100%', height: '150px', marginTop: '20px' }}>
-                <svg width="100%" height="150" viewBox="0 0 1000 150">
+              <div style={{ background: 'transparent', width: '100%', height: 'calc(100% - 60px)', marginTop: '10px' }}>
+                <svg width="100%" height="100%" viewBox="0 0 1000 150" preserveAspectRatio="xMidYMid meet">
                   <line x1="50" y1="30" x2="950" y2="30" stroke="rgba(104,111,120,0.3)" strokeWidth="1"/>
                   <line x1="50" y1="60" x2="950" y2="60" stroke="rgba(104,111,120,0.3)" strokeWidth="1"/>
                   <line x1="50" y1="90" x2="950" y2="90" stroke="rgba(104,111,120,0.3)" strokeWidth="1"/>
@@ -169,21 +185,21 @@ const Charger = () => {
                   <text x="45" y="25" fill="#fff" fontSize="8" textAnchor="end">100</text>
                 </svg>
               </div>
+              </div>
             </div>
-          </div>
 
-          {/* Right Panel */}
-          <div className="right-panel">
-            <div className="invertor-prediction">
+            {/* Right Panel */}
+            <div className="right-panel">
+            <div className="battery-prediction">
               <div className="prediction-header">
-                <h2>On Board Chargers Prediction</h2>
+                <h2 style={{ fontSize: '24px' }}>On Board Chargers Prediction</h2>
                 <img src={require('./assets/warning.png')} alt="Warning" className="info-icon" style={{ width: '20px', height: '20px' }} />
               </div>
 
               {/* Charger Prediction Container */}
-              <div className="invertor-prediction-container" style={{ paddingLeft: '30px' }}>
+              <div className="motor-prediction-container" style={{ paddingLeft: '30px' }}>
                 <div className="failure-prediction">
-                  <h3>Failure Prediction</h3>
+                  <h3 style={{ fontSize: spacing.fontSize }}>Failure Prediction</h3>
                   <div className="prediction-legend">
                     <div className="legend-item">
                       <div style={{ width: '15px', height: '2px', backgroundColor: 'rgba(255,153,0,1)' }}></div>
@@ -194,7 +210,7 @@ const Charger = () => {
                       <span>Predicted</span>
                     </div>
                   </div>
-                  <div style={{ position: 'relative' }}>
+                  <div style={{ position: 'relative', marginTop: '80px' }}>
                     <img 
                       src={require('./assets/stateofhealth.png')} 
                       alt="State of Health" 
@@ -208,20 +224,18 @@ const Charger = () => {
                       }} 
                     />
                     <div className="prediction-chart">
-                      <svg width="240px" height="240px" viewBox="0 0 240 240">
+                      <svg width={window.innerWidth >= 1920 ? "320px" : window.innerWidth >= 1400 ? "280px" : "240px"} height="300px" viewBox={window.innerWidth >= 1920 ? "0 0 320 300" : window.innerWidth >= 1400 ? "0 0 280 300" : "0 0 240 300"}>
                         {/* Grid lines */}
-                        {Array.from({ length: 11 }, (_, i) => (
-                          <line key={i} x1="0" y1={20 + i * 18} x2="240" y2={20 + i * 18} stroke="rgba(104,111,120,1)" strokeWidth="0.5"/>
-                        ))}
-                        
-                        {/* Y-axis labels */}
-                        {[100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 0].map((value, i) => (
-                          <text key={i} x="15" y={25 + i * 18} fill="#fff" fontSize="8" textAnchor="end">{value}</text>
-                        ))}
+                        {Array.from({ length: 11 }, (_, i) => {
+                          const chartWidth = window.innerWidth >= 1920 ? 320 : window.innerWidth >= 1400 ? 280 : 240;
+                          return (
+                            <line key={i} x1="30" y1={20 + i * 18} x2={chartWidth} y2={20 + i * 18} stroke="rgba(104,111,120,1)" strokeWidth="0.5"/>
+                          );
+                        })}
                         
                         {/* Past data (orange) */}
                         <polyline
-                          points="0,200 18,195 36,190 54,185 72,180 90,175 108,170"
+                          points={window.innerWidth >= 1920 ? "30,30 54,40 78,50 102,60 126,70 150,80 174,90" : window.innerWidth >= 1400 ? "30,30 51,40 72,50 93,60 114,70 135,80 156,90" : "30,30 48,40 66,50 84,60 102,70 120,80 138,90"}
                           fill="none"
                           stroke="rgba(255,153,0,1)"
                           strokeWidth="2"
@@ -229,42 +243,63 @@ const Charger = () => {
                         
                         {/* Predicted data (green) */}
                         <polyline
-                          points="108,170 126,165 144,160 162,155 180,150 198,145 216,140 234,135"
+                          points={window.innerWidth >= 1920 ? "174,90 198,105 222,120 246,135 270,150 294,165" : window.innerWidth >= 1400 ? "156,90 177,105 198,120 219,135 240,150 261,165" : "138,90 156,105 174,120 192,135 210,150 228,165"}
                           fill="none"
                           stroke="rgba(56,239,125,1)"
                           strokeWidth="2"
                           strokeDasharray="4,4"
                         />
                         
-                        {/* X-axis labels */}
-                        {Array.from({ length: 21 }, (_, i) => (
-                          <text key={i} x={i * 12} y="215" fill="#fff" fontSize="8" textAnchor="middle">{i * 2}</text>
+                        {/* Data points */}
+                        {Array.from({ length: 11 }, (_, i) => {
+                          const spacing = window.innerWidth >= 1920 ? 24 : window.innerWidth >= 1400 ? 21 : 18;
+                          return (
+                            <circle key={i} cx={30 + i * spacing} cy={30 + i * (i < 6 ? 10 : 15)} r="2" fill={i < 6 ? "rgba(255,153,0,1)" : "rgba(56,239,125,1)"}/>
+                          );
+                        })}
+                        
+                        {/* Y-axis labels */}
+                        {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map((value, i) => (
+                          <text key={i} x="15" y={200 - (value * 1.8)} fill="rgba(255,255,255,0.6)" fontSize="8" textAnchor="middle">
+                            {value}
+                          </text>
                         ))}
                         
-                        {/* Data points */}
-                        {Array.from({ length: 13 }, (_, i) => (
-                          <circle key={i} cx={i * 18} cy={200 - i * 5} r="2" fill={i < 6 ? "rgba(255,153,0,1)" : "rgba(56,239,125,1)"}/>
-                        ))}
+                        {/* X-axis labels */}
+                        {[0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40].map((value, i) => {
+                          const xSpacing = window.innerWidth >= 1920 ? 8 : window.innerWidth >= 1400 ? 7 : 6;
+                          return (
+                            <text key={i} x={30 + value * xSpacing} y="215" fill="rgba(255,255,255,0.6)" fontSize="8" textAnchor="middle">
+                              {value}
+                            </text>
+                          );
+                        })}
                       </svg>
                     </div>
                   </div>
                 </div>
 
                 {/* Remaining Useful Life */}
-                <div className="useful-life" style={{ marginBottom: '-80px', marginTop: '-100px' }}>
+                <div className="useful-life" style={{ marginBottom: '20px', marginTop: '-120px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
-                    <span style={{ fontSize: '10px', color: 'white' }}>Remaining useful life</span>
-                    <span style={{ fontSize: '12px', color: 'white', fontWeight: 'bold' }}>60%</span>
+                    <span style={{ fontSize: spacing.smallFontSize, color: 'white' }}>Remaining useful life</span>
+                    <span style={{ fontSize: spacing.fontSize, color: 'white', fontWeight: 'bold' }}>60%</span>
                   </div>
                   <div className="life-bar" style={{ borderRadius: '0' }}>
-                    <div className="life-fill" style={{ width: '60%', borderRadius: '0' }}></div>
+                    <div className="life-fill" style={{ 
+                      width: '60%', 
+                      borderRadius: '0',
+                      background: 60 < 30 ? '#ff4444' : 
+                                 60 < 60 ? '#ff9900' : 
+                                 'linear-gradient(90deg, #ff9900 0%, #37bc12 100%)'
+                    }}></div>
                   </div>
                 </div>
 
                 {/* GenAI Recommendations */}
-                <div className="genai-recommendations">
-                  <h3>GenAI Recommendations</h3>
-                  <p>Use Battery health, SOC, Temperature and environmental data, Charging station load, Real-time traffic and user location data to dynamic power adjustment during charging</p>
+                <div className="genai-recommendations" style={{ marginTop: '-10px' }}>
+                  <h3 style={{ fontSize: spacing.fontSize }}>GenAI Recommendations</h3>
+                  <p style={{ fontSize: spacing.smallFontSize }}>Use Battery health, SOC, Temperature and environmental data, Charging station load, Real-time traffic and user location data to dynamic power adjustment during charging</p>
                   
                   <div className="recommendations-list">
                     <div className="recommendation-item">
@@ -279,6 +314,7 @@ const Charger = () => {
                   </div>
                 </div>
               </div>
+            </div>
             </div>
           </div>
         </div>
