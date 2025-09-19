@@ -203,7 +203,7 @@
   position: fixed;
   top: 0;
   left: 0;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 @media (min-width: 1600px) and (max-width: 1919px) {
@@ -253,7 +253,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: 100%;
+  min-height: 100%;
 }
 
 .image-metrics-section {
@@ -296,14 +296,63 @@
     position: relative;
     top: 60px;
     max-height: 380px;
+    width: 60%;
   }
   
-  .vehicle-metrics .metric-value {
-    font-size: 28px;
+  .car-detail .vehicle-metrics {
+    gap: 30px;
   }
   
-  .vehicle-metrics .metric-label {
-    font-size: 12px;
+  .car-detail .vehicle-metrics .metric-value {
+    font-size: 36px;
+    margin-bottom: 10px;
+  }
+  
+  .car-detail .vehicle-metrics .metric-label {
+    font-size: 15px;
+  }
+
+  .car-detail .safety-items {
+    gap: 14px;
+  }
+
+  .car-detail .safety-status {
+    font-size: 11px;
+    padding: 11px 33px;
+  }
+
+  .car-detail .safety-label {
+    font-size: 13px;
+  }
+
+  .car-detail .fault-status {
+    font-size: 15px;
+    padding: 11px 75px;
+  }
+
+  .car-detail .safety-checks h3,
+  .car-detail .faults-section h3 {
+    font-size: 17px;
+  }
+
+  .car-detail .motor-efficiency .metric-value {
+    font-size: 36px;
+  }
+
+  .car-detail .motor-efficiency .metric-label {
+    font-size: 16px;
+  }
+
+  .car-detail .component-card {
+    height: 150px;
+  }
+
+  .car-detail .error-code-box {
+    padding: 16px;
+  }
+
+  .car-detail .error-code-box p {
+    font-size: 18px;
   }
 }
 
@@ -356,7 +405,7 @@
   display: flex;
   align-items: flex-start;
   gap: 40px;
-  margin: 15vh 0 15px;
+  margin: 5vh 0 15px;
   padding: 15px 0;
 }
 

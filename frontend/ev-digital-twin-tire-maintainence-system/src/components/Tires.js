@@ -650,7 +650,14 @@ const TiresPage = () => {
 
           {/* Bottom Containers */}
           <div style={{ display: 'flex', gap: '24px', width: '100%' }}>
-            <div style={{ background: '#1b1e20', border: '1px solid #3a4552', padding: '20px', color: 'white', flex: 1.5 }}>
+            <div style={{ 
+              background: '#1b1e20', 
+              border: '1px solid #3a4552', 
+              padding: '20px', 
+              color: 'white', 
+              flex: 1.5,
+              height: window.innerWidth >= 2560 ? '400px' : window.innerWidth >= 1920 ? '360px' : window.innerWidth >= 1400 ? '300px' : '240px'
+            }}>
               <h3>Road Surface Conditions</h3>
               <div className="surface-graph">
                 {/* DYNAMIC CSV DATA: Distance from mileage field converted to miles */}
@@ -661,7 +668,14 @@ const TiresPage = () => {
               </div>
             </div>
 
-            <div style={{ background: '#1b1e20', border: '1px solid #3a4552', padding: '20px', color: 'white', flex: 0.8 }}>
+            <div style={{ 
+              background: '#1b1e20', 
+              border: '1px solid #3a4552', 
+              padding: '20px', 
+              color: 'white', 
+              flex: 0.8,
+              height: window.innerWidth >= 2560 ? '400px' : window.innerWidth >= 1920 ? '360px' : window.innerWidth >= 1400 ? '300px' : '240px'
+            }}>
               <h3>Vibration/Frequency Signatures</h3>
               <div className="vibration-graph">
                 {/* DYNAMIC VIBRATION: Changes every 30 seconds based on CSV tire data */}
