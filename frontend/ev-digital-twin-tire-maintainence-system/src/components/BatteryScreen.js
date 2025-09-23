@@ -1,10 +1,62 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import './BatteryPack.css';
 
 const BatteryScreen = () => {
   const navigate = useNavigate();
   const { carId } = useParams();
+  
+  // State for fault detection simulation
+  const [simulateAnomalies, setSimulateAnomalies] = useState(false);
+  const [visibleAnomalies, setVisibleAnomalies] = useState(new Set());
+  
+  // Define fault detection items with their anomaly status and delay
+  const faultDetectionItems = [
+    { name: 'Accelerated Aging', hasAnomaly: false, delay: 0 },
+    { name: 'Thermal Energy', hasAnomaly: true, delay: 500 },
+    { name: 'External Short Circuit', hasAnomaly: false, delay: 0 },
+    { name: 'Over Temp', hasAnomaly: true, delay: 1200 },
+    { name: 'Voltage Draft', hasAnomaly: false, delay: 0 },
+    { name: 'Deep Temp Charge', hasAnomaly: false, delay: 0 },
+    { name: 'Internal Short Circuit', hasAnomaly: true, delay: 800 },
+    { name: 'Overvoltage', hasAnomaly: false, delay: 0 },
+    { name: 'Deep Discharge', hasAnomaly: false, delay: 0 },
+    { name: 'Overcurrent', hasAnomaly: false, delay: 0 }
+  ];
+  
+  // Effect to handle delayed anomaly appearance
+  useEffect(() => {
+    if (simulateAnomalies) {
+      // Clear previous anomalies
+      setVisibleAnomalies(new Set());
+      
+      // Set up delayed timers for each anomaly
+      const timers = [];
+      faultDetectionItems.forEach((item, index) => {
+        if (item.hasAnomaly) {
+          const timer = setTimeout(() => {
+            setVisibleAnomalies(prev => new Set([...prev, index]));
+          }, item.delay);
+          timers.push(timer);
+        }
+      });
+      
+      // Cleanup timers
+      return () => {
+        timers.forEach(timer => clearTimeout(timer));
+      };
+    } else {
+      // Immediately clear all anomalies when turned off
+      setVisibleAnomalies(new Set());
+    }
+  }, [simulateAnomalies]);
+  
+  // Function to get box color based on anomaly status with delayed visibility
+  const getBoxColor = (hasAnomaly, index) => {
+    if (!simulateAnomalies) return '#37bc12'; // All green when simulation is off
+    if (hasAnomaly && visibleAnomalies.has(index)) return '#ff4444'; // Red for visible anomalies
+    return '#37bc12'; // Green for normal or not-yet-visible anomalies
+  };
   
   // Dynamic spacing based on screen width
   const getResponsiveSpacing = () => {
@@ -60,6 +112,8 @@ const BatteryScreen = () => {
         </button>
         <span className="vin-number" style={{ transform: 'translateX(-100px)' }}>VIN Number: ###</span>
       </div>
+
+
 
       <div style={{ margin: '0px 20px 5px' }}>
       <div className="battery-layout">
@@ -132,6 +186,83 @@ const BatteryScreen = () => {
                 <div style={{ width: '1px', height: '80px', backgroundColor: 'rgba(255,255,255,0.3)', position: 'relative', top: '-60px', left: '-50px' }}></div>
                 <span style={{ fontSize: '14px', fontWeight: '700', color: 'white', fontFamily: 'Amazon Ember', transform: 'translateY(-80px) translateX(-250px)', position: 'relative' }}>Charging Details</span>
               </div>
+
+              {/* Charging Cycles Chart - Aligned with Charging Details Header */}
+              <div style={{ 
+                position: 'relative',
+                marginTop: '-60px', 
+                transform: 'translateX(-250px)',
+                width: '280px',
+                padding: '10px 12px', 
+                backgroundColor: 'rgba(0,0,0,0.4)', 
+                borderRadius: '6px',
+                border: '1px solid rgba(255,255,255,0.1)',
+                marginLeft: 'auto'
+              }}>
+                <div style={{ display: 'flex', marginBottom: '8px', paddingBottom: '4px', borderBottom: '1px solid rgba(255,255,255,0.2)' }}>
+                  <div style={{ fontSize: '10px', fontWeight: '600', color: 'rgba(255,255,255,0.9)', width: '50px' }}># Cycles</div>
+                  <div style={{ fontSize: '10px', fontWeight: '600', color: 'rgba(255,255,255,0.9)', flex: 1 }}>Charge Type</div>
+                </div>
+                
+                {/* Chart Rows */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  {/* Fast Charge 350kW */}
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <div style={{ fontSize: '10px', color: 'white', width: '50px' }}>30</div>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.9)', minWidth: '100px' }}>Fast Charge (350kW)</span>
+                      <div style={{ 
+                        height: '12px', 
+                        backgroundColor: '#37bc12', 
+                        width: '20px',
+                        borderRadius: '2px'
+                      }}></div>
+                    </div>
+                  </div>
+                  
+                  {/* Fast Charge 150kW */}
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <div style={{ fontSize: '10px', color: 'white', width: '50px' }}>90</div>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.9)', minWidth: '100px' }}>Fast Charge (150kW)</span>
+                      <div style={{ 
+                        height: '12px', 
+                        backgroundColor: '#37bc12', 
+                        width: '45px',
+                        borderRadius: '2px'
+                      }}></div>
+                    </div>
+                  </div>
+                  
+                  {/* L2 22kW */}
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <div style={{ fontSize: '10px', color: 'white', width: '50px' }}>210</div>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.9)', minWidth: '100px' }}>L2 (22kW)</span>
+                      <div style={{ 
+                        height: '12px', 
+                        backgroundColor: '#37bc12', 
+                        width: '80px',
+                        borderRadius: '2px'
+                      }}></div>
+                    </div>
+                  </div>
+                  
+                  {/* 30 11kW */}
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <div style={{ fontSize: '10px', color: 'white', width: '50px' }}>30</div>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.9)', minWidth: '100px' }}>30 (11kW)</span>
+                      <div style={{ 
+                        height: '12px', 
+                        backgroundColor: '#37bc12', 
+                        width: '20px',
+                        borderRadius: '2px'
+                      }}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -170,46 +301,99 @@ const BatteryScreen = () => {
                 <img src={require('./assets/divider.png')} alt="Divider" style={{ width: '12px', height: '120px', position: 'absolute', left: '30%', top: '30px' }} />
                 <span style={{ fontSize: '14px', fontWeight: '700', color: 'white', fontFamily: 'Amazon Ember', position: 'absolute', left: '35%', top: '0px' }}>Fault Detection</span>
                 
-                {/* First Row of Fault Detection Items */}
+                {/* First Row of Fault Detection Items - 4 boxes */}
                 <div style={{ position: 'absolute', left: '35%', top: '25px', width: '60%', display: 'flex', gap: '3px' }}>
-                  <div style={{ padding: '3px', textAlign: 'center', flex: 1, border: '1px solid rgba(255,255,255,0.3)', borderRadius: '8px' }}>
-                    <span style={{ fontSize: '8px', color: 'white' }}>Accelerated Aging</span>
-                  </div>
-                  <div style={{ padding: '3px', textAlign: 'center', flex: 1, border: '1px solid rgba(255,255,255,0.3)', borderRadius: '8px' }}>
-                    <span style={{ fontSize: '8px', color: 'white' }}>Thermal Energy</span>
-                  </div>
-                  <div style={{ padding: '3px', textAlign: 'center', flex: 1, border: '1px solid rgba(255,255,255,0.3)', borderRadius: '8px' }}>
-                    <span style={{ fontSize: '8px', color: 'white' }}>External Short Circuit</span>
-                  </div>
-                  <div style={{ padding: '3px', textAlign: 'center', flex: 1, border: '1px solid rgba(255,255,255,0.3)', borderRadius: '8px' }}>
-                    <span style={{ fontSize: '8px', color: 'white' }}>Over Temp</span>
-                  </div>
+                  {faultDetectionItems.slice(0, 4).map((item, index) => (
+                    <div key={index} style={{ 
+                      padding: '6px 3px', 
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      textAlign: 'center', 
+                      flex: 1, 
+                      backgroundColor: getBoxColor(item.hasAnomaly, index),
+                      border: '1px solid rgba(255,255,255,0.8)',
+                      borderRadius: '8px',
+                      transition: 'all 0.5s ease',
+                      minHeight: '22px'
+                    }}>
+                      <span style={{ fontSize: '8px', color: 'white', fontWeight: '600', lineHeight: '1.2' }}>{item.name}</span>
+                    </div>
+                  ))}
                 </div>
                 
-                {/* Second Row of Fault Detection Items */}
-                <div style={{ position: 'absolute', left: '35%', top: '75px', width: '60%', display: 'flex', gap: '3px' }}>
-                  <div style={{ padding: '3px', textAlign: 'center', flex: 1, border: '1px solid rgba(255,255,255,0.3)', borderRadius: '8px' }}>
-                    <span style={{ fontSize: '8px', color: 'white' }}>Voltage Draft</span>
-                  </div>
-                  <div style={{ padding: '3px', textAlign: 'center', flex: 1, border: '1px solid rgba(255,255,255,0.3)', borderRadius: '8px' }}>
-                    <span style={{ fontSize: '8px', color: 'white' }}>Deep Temp Charge</span>
-                  </div>
-                  <div style={{ padding: '3px', textAlign: 'center', flex: 1, border: '1px solid rgba(255,255,255,0.3)', borderRadius: '8px' }}>
-                    <span style={{ fontSize: '8px', color: 'white' }}>Internal Short Circuit</span>
-                  </div>
-                  <div style={{ padding: '3px', textAlign: 'center', flex: 1, border: '1px solid rgba(255,255,255,0.3)', borderRadius: '8px' }}>
-                    <span style={{ fontSize: '8px', color: 'white' }}>Overvoltage</span>
-                  </div>
+                {/* Second Row of Fault Detection Items - 4 boxes */}
+                <div style={{ position: 'absolute', left: '35%', top: '65px', width: '60%', display: 'flex', gap: '3px' }}>
+                  {faultDetectionItems.slice(4, 8).map((item, index) => (
+                    <div key={index + 4} style={{ 
+                      padding: '6px 3px', 
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      textAlign: 'center', 
+                      flex: 1, 
+                      backgroundColor: getBoxColor(item.hasAnomaly, index + 4),
+                      border: '1px solid rgba(255,255,255,0.8)',
+                      borderRadius: '8px',
+                      transition: 'all 0.5s ease',
+                      minHeight: '22px'
+                    }}>
+                      <span style={{ fontSize: '8px', color: 'white', fontWeight: '600', lineHeight: '1.2' }}>{item.name}</span>
+                    </div>
+                  ))}
                 </div>
                 
-                {/* Third Row of Fault Detection Items */}
-                <div style={{ position: 'absolute', left: '35%', top: '125px', width: '30%', display: 'flex', gap: '3px' }}>
-                  <div style={{ padding: '3px', textAlign: 'center', flex: 1, border: '1px solid rgba(255,255,255,0.3)', borderRadius: '8px' }}>
-                    <span style={{ fontSize: '8px', color: 'white' }}>Deep Discharge</span>
-                  </div>
-                  <div style={{ padding: '3px', textAlign: 'center', flex: 1, border: '1px solid rgba(255,255,255,0.3)', borderRadius: '8px' }}>
-                    <span style={{ fontSize: '8px', color: 'white' }}>Overcurrent</span>
-                  </div>
+                {/* Third Row of Fault Detection Items - 2 boxes (left-aligned) */}
+                <div style={{ position: 'absolute', left: '35%', top: '105px', width: '30%', display: 'flex', gap: '3px' }}>
+                  {faultDetectionItems.slice(8, 10).map((item, index) => (
+                    <div key={index + 8} style={{ 
+                      padding: '6px 3px', 
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      textAlign: 'center', 
+                      flex: 1, 
+                      backgroundColor: getBoxColor(item.hasAnomaly, index + 8),
+                      border: '1px solid rgba(255,255,255,0.8)',
+                      borderRadius: '8px',
+                      transition: 'all 0.5s ease',
+                      minHeight: '22px'
+                    }}>
+                      <span style={{ fontSize: '8px', color: 'white', fontWeight: '600', lineHeight: '1.2' }}>{item.name}</span>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Anomaly Toggle Button - Bottom Right */}
+                <div style={{ position: 'absolute', right: '5%', top: '135px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.8)' }}>
+                    {simulateAnomalies ? 'Normal Operation' : 'Anomaly Simulation'}
+                  </span>
+                  <button
+                    onClick={() => setSimulateAnomalies(!simulateAnomalies)}
+                    style={{
+                      background: simulateAnomalies ? '#37bc12' : 'rgba(128,128,128,0.6)',
+                      border: 'none',
+                      borderRadius: '16px',
+                      padding: '6px 12px',
+                      color: 'white',
+                      fontSize: '9px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                    }}
+                    onMouseOver={(e) => {
+                      e.target.style.transform = 'translateY(-1px)';
+                      e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.target.style.transform = 'translateY(0)';
+                      e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                    }}
+                  >
+                    {simulateAnomalies ? 'OFF' : 'ON'}
+                  </button>
                 </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={{ fontSize: '12px', color: 'white' }}>Cell Balancing</span>
@@ -422,6 +606,48 @@ const BatteryScreen = () => {
                   </div>
                 </div>
               </div>
+
+              {/* AWS Battery Digital Twin Link */}
+              <div style={{ 
+                marginTop: '25px', 
+                padding: '15px', 
+                backgroundColor: 'rgba(55, 188, 18, 0.15)', 
+                border: '1px solid rgba(55, 188, 18, 0.3)', 
+                borderRadius: '8px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '12px', color: '#37bc12', fontWeight: '600', marginBottom: '8px' }}>
+                  🚀 Advanced Analytics
+                </div>
+                <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.8)', marginBottom: '12px', lineHeight: '1.3' }}>
+                  Access the full AWS Battery Digital Twin with ML-powered predictions and advanced monitoring
+                </div>
+                <button
+                  onClick={() => window.open('https://d641sgdoddhxl.cloudfront.net/dashboard', '_blank')}
+                  style={{
+                    background: '#37bc12',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '8px 16px',
+                    color: 'white',
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    width: '100%'
+                  }}
+                  onMouseOver={(e) => {
+                    e.target.style.background = '#2d9a0f';
+                  }}
+                  onMouseOut={(e) => {
+                    e.target.style.background = '#37bc12';
+                  }}
+                >
+                  Launch Battery Twin →
+                </button>
+              </div>
+
+
 
             </div>
           </div>
