@@ -9,19 +9,7 @@ const Dashboard = () => {
     charging: false
   });
 
-  // Simulate real-time data updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setEvData(prev => ({
-        ...prev,
-        battery: Math.max(0, prev.battery + (Math.random() - 0.5) * 2),
-        speed: Math.max(0, prev.speed + (Math.random() - 0.5) * 10),
-        temperature: prev.temperature + (Math.random() - 0.5) * 2
-      }));
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, []);
+  // Static data - no auto-refresh
 
   return (
     <div className="dashboard-grid">

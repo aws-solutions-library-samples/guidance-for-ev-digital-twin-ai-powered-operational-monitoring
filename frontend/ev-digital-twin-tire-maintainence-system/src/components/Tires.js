@@ -21,7 +21,7 @@ import DataNeededModal from "./DataNeededModal";
 const TiresPage = () => {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
-  const [displayTirePrediction, setDisplayTirePrediction] = useState(true);
+  const [displayTirePrediction, setDisplayTirePrediction] = useState(false);
   const [tireAnimationStep, setTireAnimationStep] = useState(0);
   const [csvData, setCsvData] = useState([]);
   const [dataIndex, setDataIndex] = useState(0);
@@ -49,14 +49,7 @@ const TiresPage = () => {
       .catch(err => console.log('ML results not available:', err));
   }, []);
 
-  useEffect(() => {
-    if (csvData.length > 0) {
-      const interval = setInterval(() => {
-        setDataIndex(prev => (prev + 1) % csvData.length);
-      }, 10000);
-      return () => clearInterval(interval);
-    }
-  }, [csvData]);
+  // Data index remains static - no auto-refresh
 
   // Tire prediction animation effect
   useEffect(() => {

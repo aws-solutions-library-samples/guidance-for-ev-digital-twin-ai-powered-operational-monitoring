@@ -12,8 +12,8 @@ const Motor = () => {
   const [csvData, setCsvData] = useState([]);
   const [dataIndex, setDataIndex] = useState(0);
   const [mlResults, setMlResults] = useState([]);
-  const [lastRefresh, setLastRefresh] = useState(new Date());
-  const [showPrediction, setShowPrediction] = useState(true);
+
+  const [showPrediction, setShowPrediction] = useState(false);
   const [animationProgress, setAnimationProgress] = useState(0);
   
   // Memoized responsive sizing - only recalculates on window resize
@@ -71,12 +71,9 @@ const Motor = () => {
       const interval = setInterval(() => {
         setDataIndex(prev => {
           const newIndex = (prev + 1) % csvData.length;
-          console.log(`🔄 Motor Auto-refresh: Updated to data index ${newIndex} (Vehicle ${csvData[newIndex]?.vehicle_id || 'N/A'})`);
+          console.log(`Motor data updated to index ${newIndex} (Vehicle ${csvData[newIndex]?.vehicle_id || 'N/A'})`);
           return newIndex;
         });
-        
-        // Update refresh timestamp
-        setLastRefresh(new Date());
         
         // Force component re-render for fresh data
         setMlResults(prev => [...prev]);
@@ -267,11 +264,42 @@ const Motor = () => {
     };
   };
 
+  // Calculate rotor position based on RPM and performance
+  const calculateRotorPosition = (rpm, performanceScore) => {
+    const rpmVal = parseFloat(rpm) || 2500;
+    const perfVal = parseFloat(performanceScore) || 95;
+    
+    // Rotor position in degrees (0-360°)
+    // Base position varies with RPM, performance affects accuracy
+    const basePosition = (rpmVal / 10) % 360;
+    const performanceOffset = (100 - perfVal) * 2; // Poor performance = position drift
+    const finalPosition = (basePosition + performanceOffset) % 360;
+    
+    return Math.round(finalPosition);
+  };
+
+  // Calculate insulation resistance based on temperature and performance
+  const calculateInsulationResistance = (temperature, performanceScore) => {
+    const temp = parseFloat(temperature) || 90;
+    const perf = parseFloat(performanceScore) || 95;
+    
+    // Insulation resistance in MΩ (Megohms)
+    // Higher temperature = lower resistance, better performance = higher resistance
+    const baseResistance = 500; // 500 MΩ baseline
+    const tempEffect = Math.max(0, (120 - temp) * 4); // Decreases with temperature
+    const perfEffect = (perf / 100) * 200; // Increases with performance
+    
+    const finalResistance = baseResistance + tempEffect + perfEffect;
+    return Math.round(finalResistance);
+  };
+
   // ML INTEGRATION COMPLETE - Using real predictions from motor data
   const remainingLife = getRemainingLife();
   const aiRecommendations = getAiRecommendations();
   const electricalMetrics = formatElectricalMetrics(currentData.rpm_avg, currentData.performance_score);
   const bearingHealth = calculateBearingHealth(currentData.vibration_level, currentData.performance_score);
+  const rotorPosition = calculateRotorPosition(currentData.rpm_avg, currentData.performance_score);
+  const insulationResistance = calculateInsulationResistance(currentData.engine_temp_c, currentData.performance_score);
   
   // Enhanced debug info with ML integration
   const currentPredictions = calculateDynamicMotorPredictions(currentData);
@@ -279,6 +307,7 @@ const Motor = () => {
   console.log('Vehicle:', currentData.vehicle_id, '| Index:', dataIndex, '| Performance:', remainingLife + '%');
   console.log('CSV Temp:', currentPredictions?.temperature + '°C', '| CSV Status:', currentPredictions?.status);
   console.log('Oil Pressure:', currentPredictions?.oil_pressure + ' PSI', '| RPM:', currentData.rpm_avg);
+  console.log('Rotor Position:', rotorPosition + '°', '| Insulation:', insulationResistance + ' MΩ');
   console.log('Vibration:', currentData.vibration_level, '| Anomaly:', currentPredictions?.has_anomaly);
   console.log('ML Data Available:', !!currentMlData, '| Recommendations:', aiRecommendations.length);
   console.log('=======================');
@@ -322,11 +351,7 @@ const Motor = () => {
             <div className="main-panel" style={{ marginTop: '60px' }}>
               {/* Motor Performance Container - Top */}
               <div className="data-container" style={{ marginBottom: '20px', marginTop: '0px', height: '320px', overflow: 'hidden', width: 'calc(100% + 30px)', marginLeft: '-15px' }}>
-                <h3 style={{ color: 'white' }}>Motor Performance 
-                  <span style={{ fontSize: '12px', color: '#37bc12', marginLeft: '10px' }}>
-                    🔄 Auto-refresh: {lastRefresh.toLocaleTimeString()}
-                  </span>
-                </h3>
+                <h3 style={{ color: 'white' }}>Motor Performance</h3>
                 <span className="last-updated">Last Updated: {getLastUpdated()}</span>
                 
                 <div className="performance-grid" style={{ position: 'relative' }}>
@@ -378,7 +403,7 @@ const Motor = () => {
                   {/* Rotor Position - Responsive */}
                   <div className="rotor-position">
                     <div className="gauge-container" style={{ width: spacing.gaugeSize, height: spacing.gaugeSize }}>
-                      <div className="gauge-value" style={{ fontSize: spacing.fontSize }}>XXX</div>
+                      <div className="gauge-value" style={{ fontSize: spacing.fontSize }}>{rotorPosition}°</div>
                       <div className="gauge-label" style={{ fontSize: `calc(${spacing.fontSize} * 0.6)` }}>Rotor Position</div>
                     </div>
                     <img src={require('./assets/graph.png')} alt="Graph" style={{ width: `calc(${spacing.gaugeSize} * 1.3)`, height: spacing.chartHeight, marginTop: '5px' }} />
@@ -387,7 +412,7 @@ const Motor = () => {
                   {/* Insulation Resistance - Responsive */}
                   <div className="insulation-resistance">
                     <div className="gauge-container" style={{ width: spacing.gaugeSize, height: spacing.gaugeSize }}>
-                      <div className="gauge-value" style={{ fontSize: spacing.fontSize }}>XXX</div>
+                      <div className="gauge-value" style={{ fontSize: spacing.fontSize }}>{insulationResistance} MΩ</div>
                       <div className="gauge-label" style={{ fontSize: `calc(${spacing.fontSize} * 0.5)` }}>Insulation Resistance</div>
                     </div>
                     <img src={require('./assets/graph2.png')} alt="Graph" style={{ width: `calc(${spacing.gaugeSize} * 1.3)`, height: spacing.chartHeight, marginTop: '5px' }} />
