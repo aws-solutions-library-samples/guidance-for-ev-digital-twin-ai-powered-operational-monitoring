@@ -9,6 +9,8 @@ import Motor from './components/motor';
 import Invertor from './components/Invertor';
 import EnergyManagement from './components/EnergyManagement';
 import Charger from './components/Charger';
+import Fleet from './components/fleet/FleetMgmt';
+import FleetPortal from './components/fleet/FleetPortal';
 
 function App() {
   return (
@@ -22,6 +24,8 @@ function App() {
         <Route path="/car/:carId/invertor" element={<Invertor />} />
         <Route path="/car/:carId/energymanagement" element={<EnergyManagement />} />
         <Route path="/car/:carId/charger" element={<Charger />} />
+        <Route path="/fleet" element={<Fleet />} />
+        <Route path="/fleet/portal" element={<FleetPortal />} />
       </Routes>
     </div>
   );

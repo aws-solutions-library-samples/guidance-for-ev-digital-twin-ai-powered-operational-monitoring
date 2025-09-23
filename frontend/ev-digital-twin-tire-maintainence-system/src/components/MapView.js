@@ -69,9 +69,9 @@ const MapView = () => {
         </svg>
       </div>
       
-      <div className="map-legend">
+      <div className="map-legend" style={{ background: '#333740' }}>
         <h3>Connected Vehicles</h3>
-        <div className="legend-item" style={{ position: 'absolute', top: '1px', right: '0px', background: '#1b1e20', padding: '16px 50px 16px 32px', borderRadius: '4px', height: '96px', width: '220px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <div className="legend-item" style={{ position: 'absolute', top: '1px', right: '0px', background: '#1b1e20', padding: '16px 50px 16px 32px', borderRadius: '4px', height: '100px', width: '220px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <div className="legend-label">Total Vehicles</div>
           <div className="legend-count">0{vehicles.length}</div>
         </div>

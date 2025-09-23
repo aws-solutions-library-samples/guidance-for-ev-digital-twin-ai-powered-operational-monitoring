@@ -266,7 +266,9 @@ const Invertor = () => {
                 {/* Failure Prediction Chart */}
                 <div className="motor-prediction-container" style={{ paddingLeft: '30px' }}>
                   <div className="failure-prediction">
-                    <h3 style={{ fontSize: spacing.fontSize }}>Failure Prediction</h3>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <h3 style={{ margin: 0, fontSize: '20px' }}>Inverter Failure Prediction</h3>
+                    </div>
                     <div className="prediction-legend">
                       <div className="legend-item">
                         <div style={{ width: '15px', height: '2px', backgroundColor: 'rgba(255,153,0,1)' }}></div>
@@ -277,77 +279,94 @@ const Invertor = () => {
                         <span>Predicted</span>
                       </div>
                     </div>
-                    <div style={{ position: 'relative', marginTop: '80px' }}>
-                      <img 
-                        src={require('./assets/stateofhealth.png')} 
-                        alt="State of Health" 
-                        style={{
-                          position: 'absolute',
-                          left: '-15px',
-                          top: '120px',
-                          width: '20px',
-                          height: 'auto',
-                          zIndex: 10
-                        }} 
-                      />
+                    <div style={{ position: 'relative', marginTop: '100px' }}>
                       <div className="prediction-chart">
-                        <svg width={window.innerWidth >= 1920 ? "320px" : window.innerWidth >= 1400 ? "280px" : "240px"} height="300px" viewBox={window.innerWidth >= 1920 ? "0 0 320 300" : window.innerWidth >= 1400 ? "0 0 280 300" : "0 0 240 300"}>
-                          {/* Grid lines */}
-                          {Array.from({ length: 11 }, (_, i) => {
-                            const chartWidth = window.innerWidth >= 1920 ? 320 : window.innerWidth >= 1400 ? 280 : 240;
-                            return (
-                              <line key={i} x1="30" y1={20 + i * 18} x2={chartWidth} y2={20 + i * 18} stroke="rgba(104,111,120,1)" strokeWidth="0.5"/>
-                            );
-                          })}
-                          
-                          {/* Past data (orange) */}
-                          <polyline
-                            points={window.innerWidth >= 1920 ? "30,30 54,40 78,50 102,60 126,70 150,80 174,90" : window.innerWidth >= 1400 ? "30,30 51,40 72,50 93,60 114,70 135,80 156,90" : "30,30 48,40 66,50 84,60 102,70 120,80 138,90"}
-                            fill="none"
-                            stroke="rgba(255,153,0,1)"
-                            strokeWidth="2"
-                          />
-                          
-                          {/* Predicted data (green) */}
-                          <polyline
-                            points={window.innerWidth >= 1920 ? "174,90 198,105 222,120 246,135 270,150 294,165 318,180 342,195" : window.innerWidth >= 1400 ? "156,90 177,105 198,120 219,135 240,150 261,165 282,180 303,195" : "138,90 156,105 174,120 192,135 210,150 228,165 246,180 264,195"}
-                            fill="none"
-                            stroke="rgba(56,239,125,1)"
-                            strokeWidth="2"
-                            strokeDasharray="4,4"
-                          />
-                          
-                          {/* Data points */}
-                          {Array.from({ length: 13 }, (_, i) => {
-                            const spacing = window.innerWidth >= 1920 ? 24 : window.innerWidth >= 1400 ? 21 : 18;
-                            return (
-                              <circle key={i} cx={30 + i * spacing} cy={30 + i * (i < 6 ? 10 : 15)} r="2" fill={i < 6 ? "rgba(255,153,0,1)" : "rgba(56,239,125,1)"}/>
-                            );
-                          })}
-                          
-                          {/* Y-axis labels */}
-                          {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map((value, i) => (
-                            <text key={i} x="15" y={200 - (value * 1.8)} fill="rgba(255,255,255,0.6)" fontSize="8" textAnchor="middle">
-                              {value}
-                            </text>
-                          ))}
-                          
-                          {/* X-axis labels */}
-                          {[0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40].map((value, i) => {
-                            const xSpacing = window.innerWidth >= 1920 ? 8 : window.innerWidth >= 1400 ? 7 : 6;
-                            return (
-                              <text key={i} x={30 + value * xSpacing} y="215" fill="rgba(255,255,255,0.6)" fontSize="8" textAnchor="middle">
-                                {value}
-                              </text>
-                            );
-                          })}
+                        <svg width="290" height="180" viewBox="0 0 290 180">
+                        {/* Grid lines */}
+                        {Array.from({ length: 8 }, (_, i) => (
+                          <line key={i} x1="35" y1={20 + i * 20} x2="255" y2={20 + i * 20} stroke="rgba(104,111,120,0.3)" strokeWidth="0.5"/>
+                        ))}
+                        {Array.from({ length: 8 }, (_, i) => (
+                          <line key={i} x1={35 + i * 30} y1="20" x2={35 + i * 30} y2="160" stroke="rgba(104,111,120,0.3)" strokeWidth="0.5"/>
+                        ))}
+                        
+                        {/* Y-axis labels */}
+                        <text x="25" y="25" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">100</text>
+                        <text x="25" y="45" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">85</text>
+                        <text x="25" y="65" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">70</text>
+                        <text x="25" y="85" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">55</text>
+                        <text x="25" y="105" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">40</text>
+                        <text x="25" y="125" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">25</text>
+                        <text x="25" y="145" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">10</text>
+                        
+                        {/* X-axis labels */}
+                        <text x="35" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">0</text>
+                        <text x="65" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">30</text>
+                        <text x="95" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">60</text>
+                        <text x="125" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">90</text>
+                        <text x="155" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">120</text>
+                        <text x="185" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">150</text>
+                        <text x="215" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">180</text>
+                        
+                        {/* Axis labels */}
+                        <text x="145" y="190" fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="middle">Days</text>
+                        <text x="8" y="90" fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="middle" transform="rotate(-90 8 90)">Health %</text>
+                        
+                        {/* Critical failure threshold line */}
+                        <line x1="35" y1="105" x2="255" y2="105" stroke="rgba(255,68,68,0.6)" strokeWidth="1" strokeDasharray="3,3"/>
+                        <text x="260" y="110" fill="rgba(255,68,68,0.9)" fontSize="7">Critical</text>
+                        
+                        {/* Warning threshold line */}
+                        <line x1="35" y1="85" x2="255" y2="85" stroke="rgba(255,153,0,0.6)" strokeWidth="1" strokeDasharray="3,3"/>
+                        <text x="260" y="90" fill="rgba(255,153,0,0.9)" fontSize="7">Warning</text>
+                        
+                        {/* Past data (orange) - Declining health: 95% → 83% */}
+                        <polyline
+                          points="35,25 50,30 65,35 80,40 95,45 110,50 125,55"
+                          fill="none"
+                          stroke="rgba(255,153,0,1)"
+                          strokeWidth="2"
+                        />
+                        
+                        {/* Predicted data (green) - Static prediction */}
+                        <polyline
+                          points="125,55 140,60 155,65 170,70 185,75 200,80 215,85"
+                          fill="none"
+                          stroke="rgba(56,239,125,1)"
+                          strokeWidth="2"
+                          strokeDasharray="4,4"
+                        />
+                        
+                        {/* Data points - Historical */}
+                        <circle cx="35" cy="25" r="1.5" fill="rgba(255,153,0,1)"/>
+                        <circle cx="50" cy="30" r="1.5" fill="rgba(255,153,0,1)"/>
+                        <circle cx="65" cy="35" r="1.5" fill="rgba(255,153,0,1)"/>
+                        <circle cx="80" cy="40" r="1.5" fill="rgba(255,153,0,1)"/>
+                        <circle cx="95" cy="45" r="1.5" fill="rgba(255,153,0,1)"/>
+                        <circle cx="110" cy="50" r="1.5" fill="rgba(255,153,0,1)"/>
+                        
+                        {/* Current point - Highlighted */}
+                        <circle cx="125" cy="55" r="2.5" fill="rgba(255,153,0,1)" stroke="white" strokeWidth="1.5"/>
+                        
+                        {/* Data points - Predicted */}
+                        <circle cx="140" cy="60" r="1.5" fill="rgba(56,239,125,1)"/>
+                        <circle cx="155" cy="65" r="1.5" fill="rgba(56,239,125,1)"/>
+                        <circle cx="170" cy="70" r="1.5" fill="rgba(56,239,125,1)"/>
+                        <circle cx="185" cy="75" r="1.5" fill="rgba(56,239,125,1)"/>
+                        <circle cx="200" cy="80" r="1.5" fill="rgba(56,239,125,1)"/>
+                        <circle cx="215" cy="85" r="1.5" fill="rgba(255,153,0,1)"/>
+                        
+                        {/* Annotations */}
+                        <text x="125" y="48" fill="rgba(255,255,255,0.9)" fontSize="7" textAnchor="middle" fontWeight="bold">NOW</text>
+                        <text x="170" y="63" fill="rgba(56,239,125,0.9)" fontSize="6" textAnchor="middle">Stable</text>
+                        <text x="215" y="78" fill="rgba(255,153,0,0.9)" fontSize="6" textAnchor="middle">Monitor</text>
                         </svg>
                       </div>
                     </div>
                   </div>
 
                   {/* Remaining Useful Life */}
-                  <div className="useful-life" style={{ marginBottom: '20px', marginTop: '-120px' }}>
+                  <div className="useful-life" style={{ marginBottom: '20px', marginTop: '-40px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
                       <span style={{ fontSize: spacing.smallFontSize, color: 'white' }}>Remaining useful life</span>
                       <span style={{ fontSize: spacing.fontSize, color: 'white', fontWeight: 'bold' }}>83%</span>
@@ -364,22 +383,47 @@ const Invertor = () => {
                   </div>
 
                   {/* GenAI Recommendations */}
-                  <div className="genai-recommendations" style={{ marginTop: '-10px' }}>
-                    <h3 style={{ fontSize: spacing.fontSize }}>GenAI Recommendations</h3>
-                    <p style={{ fontSize: spacing.smallFontSize }}>Use driving behavior, speed patterns, battery state of charge (SOC), ambient temperature, road conditions, and power demand from the motor to generate adaptive inverter control strategies to improve energy efficiency based on driving conditions.</p>
+                  <div className="genai-recommendations" style={{ marginTop: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                      <h3 style={{ fontSize: '16px', margin: 0 }}>GenAI Recommendations</h3>
+                    </div>
+                    <p style={{ 
+                      fontSize: spacing.smallFontSize, 
+                      color: 'rgba(255,255,255,0.8)', 
+                      lineHeight: '1.4',
+                      marginBottom: '20px'
+                    }}>Use driving behavior, speed patterns, battery state of charge (SOC), ambient temperature, road conditions, and power demand from the motor to generate adaptive inverter control strategies to improve energy efficiency based on driving conditions.</p>
                     
-                    <div className="recommendations-list">
-                      <div>
-                        <div className="recommendation-item">
-                          <span className="warning-icon">⚠️</span>
+                    <div className="recommendations-list" style={{ marginTop: '15px' }}>
+                      <div style={{ marginBottom: '15px' }}>
+                        <div className="recommendation-item" style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '8px',
+                          marginBottom: '10px',
+                          fontSize: spacing.fontSize,
+                          fontWeight: '600'
+                        }}>
+                          <span className="warning-icon" style={{ fontSize: '14px' }}>⚠️</span>
                           <span>Inverter Efficiency Tuning</span>
                         </div>
-                        <div className="recommendation-details">
-                          <p><strong>Step 1:</strong> Initial Assessment – Measure baseline inverter efficiency and review current operating parameters</p>
-                          <p><strong>Step 2:</strong> Adjust switching frequency and fine-tune PWM settings</p>
+                        <div className="recommendation-details" style={{ 
+                          paddingLeft: '22px',
+                          fontSize: spacing.smallFontSize,
+                          color: 'rgba(255,255,255,0.7)',
+                          lineHeight: '1.3'
+                        }}>
+                          <p style={{ margin: '5px 0' }}><strong style={{ color: 'rgba(255,255,255,0.9)' }}>Step 1:</strong> Initial Assessment – Measure baseline inverter efficiency and review current operating parameters</p>
+                          <p style={{ margin: '5px 0' }}><strong style={{ color: 'rgba(255,255,255,0.9)' }}>Step 2:</strong> Adjust switching frequency and fine-tune PWM settings</p>
                         </div>
                       </div>
-                      <div className="more-link">More.....</div>
+                      <div className="more-link" style={{ 
+                        fontSize: spacing.smallFontSize,
+                        color: '#ff9900',
+                        cursor: 'pointer',
+                        textAlign: 'right',
+                        marginTop: '10px'
+                      }}>More.....</div>
                     </div>
                   </div>
                 </div>
