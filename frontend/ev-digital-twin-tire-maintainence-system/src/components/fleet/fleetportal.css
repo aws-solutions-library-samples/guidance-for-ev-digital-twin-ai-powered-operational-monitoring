@@ -676,6 +676,16 @@
   font-weight: 500;
 }
 
+@media (min-width: 1920px) {
+  .type-row {
+    font-size: 16px;
+  }
+  
+  .type-row span:last-child {
+    font-size: 18px;
+  }
+}
+
 .recommendation, .maintenance-item {
   padding: 15px 0;
   border-bottom: 1px solid #444;

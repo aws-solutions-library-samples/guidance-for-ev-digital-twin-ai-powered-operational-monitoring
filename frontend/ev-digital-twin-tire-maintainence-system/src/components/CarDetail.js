@@ -160,17 +160,29 @@ const CarDetail = () => {
               <p className="error-text" style={{ marginTop: '15px' }}>Phase currents are imbalanced</p>
             </div>
             <div className="component-card clickable" onClick={() => navigate(`/car/${carId}/tires`)}>
-              <h4>Tires</h4>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '-20px' }}>
+                <img src={require('./assets/icons/tireicon.png')} alt="Tires" style={{ width: '20px', height: '20px' }} />
+                <h4 style={{ margin: 0 }}>Tires</h4>
+              </div>
             </div>
             <div className="component-card clickable" onClick={() => navigate(`/car/${carId}/invertor`)}>
-              <h4>Inverter</h4>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '-20px' }}>
+                <img src={require('./assets/icons/invertoricon.png')} alt="Inverter" style={{ width: '20px', height: '20px' }} />
+                <h4 style={{ margin: 0 }}>Inverter</h4>
+              </div>
             </div>
             <div className="component-card clickable" onClick={() => navigate(`/car/${carId}/energymanagement`)}>
-              <h4>Energy Management</h4>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '-20px' }}>
+                <img src={require('./assets/icons/energyicon.png')} alt="Energy Management" style={{ width: '20px', height: '20px' }} />
+                <h4 style={{ margin: 0 }}>Energy Management</h4>
+              </div>
             </div>
             <div className="component-card clickable" onClick={() => navigate(`/car/${carId}/charger`)}>
-              <h4>On-Board Chargers</h4>
-              <p>Charger in use</p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '-20px' }}>
+                <img src={require('./assets/icons/chargericon.png')} alt="On-Board Chargers" style={{ width: '20px', height: '20px' }} />
+                <h4 style={{ margin: 0 }}>On-Board Chargers</h4>
+              </div>
+              <p style={{ marginTop: '15px' }}>Charger in use</p>
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
-# Homemade EV Digital Twin
+# EV Digital Twin - Comprehensive Vehicle Management System
 
-A comprehensive EV digital twin dashboard built from scratch with React. Features interactive vehicle mapping, detailed component monitoring, predictive analytics, and real-time diagnostics across all major EV systems.
+A comprehensive Electric Vehicle Digital Twin system featuring real-time monitoring, predictive analytics, and component-specific dashboards for complete EV fleet management and maintenance optimization. Built with React and featuring responsive design for all screen sizes.
 
 ## 📋 Requirements
 
@@ -52,7 +52,7 @@ git --version   # Should show git version
 **4. Clone & Setup Project:**
 ```bash
 git clone <this-repo>
-cd homemade-ev-digital-twin
+cd frontend/ev-digital-twin-tire-maintainence-system
 npm install     # Install all dependencies
 npm start       # Start development server
 ```
@@ -95,33 +95,47 @@ npm start       # Start development server
 
 ## ✨ Features
 
-- **Interactive Map** - Click vehicle markers to view details
-- **Real-time Data** - Live battery percentages and status updates
-- **Component Monitoring** - Motor, Battery, Invertor, Energy Management, Charger, and Tire systems
-- **Predictive Analytics** - Failure prediction charts with remaining useful life indicators
-- **GenAI Recommendations** - AI-powered optimization suggestions
-- **Data Requirements Modal** - Component-specific data collection requirements
-- **Responsive Design** - Fully responsive layout that adapts to all screen sizes
-- **AWS Ready** - Amplify integration prepared
+### Fleet Management
+- **Interactive Fleet Map** - Visual overview of all vehicles with real-time status indicators
+- **Vehicle Status Tracking** - Charging, idle, low battery, and operational status monitoring
+- **Quick Vehicle Access** - Click any vehicle marker to access detailed dashboards
+- **Fleet-wide Health Monitoring** - Aggregate health metrics across entire vehicle fleet
+
+### Vehicle Monitoring
+- **Real-time Dashboards** - Live vehicle metrics, sensor data, and component status tracking
+- **Component-Specific Views** - Dedicated interfaces for Battery, Motor, Tires, Inverter, Energy Management, and Chargers
+- **Predictive Analytics** - ML-powered failure prediction and health monitoring across all systems
+- **Safety Systems** - Comprehensive safety checks and fault monitoring
+- **Service Integration** - Service history tracking and appointment scheduling
+
+### Advanced Features
+- **GenAI Recommendations** - AI-powered optimization suggestions for each component
+- **Cross-System Analysis** - Unified data flow and correlation between all vehicle components
+- **Responsive Design** - Fully responsive layout optimized for both large monitors and smaller screens
+- **Modern UI/UX** - Clean interface with component-specific icons and intuitive navigation
 
 ## 🏗️ Architecture
 
-**Core Components:**
-- `MapView.js` - Main map interface with 5 vehicle markers
-- `CarDetail.js` - Vehicle overview with navigation to subsystems
-- `Motor.js` - Motor performance, electrical data, and bearing health
-- `BatteryScreen.js` - Battery visualization, charging, and safety controls
-- `Invertor.js` - Power metrics with rainbow gauge arcs and temperature monitoring
-- `EnergyManagement.js` - Thermal management and regenerative braking data
-- `Charger.js` - Charging sessions, efficiency metrics, and temperature monitoring
-- `Tires.js` - Tire pressure, temperature, wear patterns, and road conditions
-- `DataNeededModal.js` - Dynamic modal showing required data points per component
+**Fleet Management Layer:**
+- `MapView.js` - Interactive fleet map with 5 vehicle markers, status indicators (charging/idle/low battery), and quick access to vehicle details
+
+**Vehicle Management Layer:**
+- `CarDetail.js` - Comprehensive vehicle dashboard with real-time metrics, safety checks, component navigation, and service history
+
+**Component Monitoring Layer:**
+- `Motor.js` - Motor performance monitoring with electrical data, bearing health, and efficiency tracking
+- `BatteryScreen.js` - Battery pack visualization with 32-module monitoring, charging controls, and safety systems
+- `Invertor.js` - Power electronics monitoring with temperature control, fault diagnostics, and DC link voltage
+- `EnergyManagement.js` - Thermal management with regenerative braking analytics and efficiency optimization
+- `Charger.js` - Charging session tracking with efficiency monitoring, power management, and temperature control
+- `Tires.js` - Tire health monitoring with wear analysis, pressure tracking, and road condition assessment
 
 **Tech Stack:**
-- React 18.2.0 + React Router
-- Pure CSS with component-specific stylesheets
-- SVG-based charts and visualizations
-- AWS Amplify (ready for deployment)
+- React 18.2.0 with React Router for navigation
+- Component-specific CSS with responsive design patterns
+- SVG-based charts and real-time data visualization
+- Responsive layout system optimized for multiple screen sizes
+- Component icons and modern UI elements
 
 ## 📋 Documentation
 
