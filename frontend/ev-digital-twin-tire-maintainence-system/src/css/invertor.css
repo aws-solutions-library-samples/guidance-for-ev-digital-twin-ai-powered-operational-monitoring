@@ -192,8 +192,8 @@
 
 @media (min-width: 1920px) {
   .invertor-metrics-grid {
-    gap: 16px;
-    transform: scale(1.2);
+    gap: 20px;
+    transform: scale(1.4) translate(20px, 20px);
   }
 }
 
@@ -255,8 +255,8 @@
 
 .invertor-image-positioned {
   position: absolute;
-  right: 40px;
-  top: 60px;
+  right: 120px;
+  top: 100px;
   width: 200px;
   height: auto;
   z-index: 1;
@@ -271,7 +271,8 @@
 @media (min-width: 1920px) {
   .invertor-image-positioned {
     right: 300px;
-    width: 350px;
+    top: 40px;
+    width: 450px;
   }
 }
 

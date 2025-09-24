@@ -47,15 +47,15 @@ const FleetPortal = () => {
             <div className="map-legend fleet-legend">
               <div className="legend-item">
                 <div className="legend-dot green"></div>
-                <span>Charging (3)</span>
+                <span className="legend-text">Charging (3)</span>
               </div>
               <div className="legend-item">
                 <div className="legend-dot orange"></div>
-                <span>Below 20%</span>
+                <span className="legend-text">Below 20%</span>
               </div>
               <div className="legend-item">
                 <div className="legend-dot" style={{background: '#666'}}></div>
-                <span>Not Charging</span>
+                <span className="legend-text">Not Charging</span>
               </div>
             </div>
           </div>

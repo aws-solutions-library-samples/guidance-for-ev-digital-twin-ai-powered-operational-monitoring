@@ -222,7 +222,7 @@ const Invertor = () => {
                 </div>
 
                 {/* Temperature */}
-                <div className="invertor-center-section" style={{ transform: 'translate(150px, -60px)' }}>
+                <div className="invertor-center-section" style={{ transform: 'translate(150px, -40px)' }}>
                   <div className="invertor-temp" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                       <span className="invertor-temp-icon">🌡️</span>
@@ -231,7 +231,7 @@ const Invertor = () => {
                     <div className="invertor-temp-label" style={{ fontSize: spacing.fontSize }}>Inverter Temperature</div>
                   </div>
                 </div>
-                <div className="invertor-dc-link" style={{ position: 'absolute', right: '20px', top: '360px', fontSize: spacing.smallFontSize }}>DC Link Voltage: XXX</div>
+                <div className="invertor-dc-link" style={{ position: 'absolute', right: '20px', top: '400px', fontSize: spacing.smallFontSize }}>DC Link Voltage: XXX</div>
               </div>
 
               {/* Bottom Containers */}

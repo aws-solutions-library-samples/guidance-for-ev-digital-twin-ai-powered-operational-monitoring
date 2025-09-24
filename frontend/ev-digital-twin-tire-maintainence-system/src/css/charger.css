@@ -172,7 +172,7 @@
 
 @media (min-width: 1920px) {
   .charger-page .main-panel .data-container:first-child {
-    min-height: 450px;
+    min-height: 500px;
   }
   
   .charger-page .main-panel .data-container:last-child {
@@ -185,6 +185,17 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
+}
+
+@media (min-width: 1920px) {
+  .charger-gauge {
+    transform: scale(1.3);
+  }
+  
+  .charger-metrics-grid {
+    gap: 50px 60px;
+    margin-left: 40px;
+  }
 }
 
 .gauge-container {

@@ -1,15 +1,23 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "../css/charger.css";
 
 const Charger = () => {
   const navigate = useNavigate();
   const { carId } = useParams();
+  const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Responsive sizing functions
   const spacing = useMemo(() => {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
+    const { width, height } = windowSize;
     
     return {
       fontSize: width < 1200 ? '12px' : width < 1400 ? '14px' : '16px',
@@ -18,7 +26,7 @@ const Charger = () => {
       chargingContainerHeight: `${Math.max(350, Math.min(450, height * 0.5))}px`,
       efficiencyContainerHeight: `${Math.max(200, Math.min(280, height * 0.25))}px`
     };
-  }, []);
+  }, [windowSize]);
 
   return (
     <div className="charger-page">
@@ -119,13 +127,11 @@ const Charger = () => {
                 </div>
                 </div>
                 
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>
-                  <img src={require('./assets/divider.png')} alt="Divider" style={{ width: '10px', height: '200px' }} />
-                </div>
+                <div style={{ width: '1px', height: '300px', backgroundColor: '#3a4552', margin: '0 30px' }}></div>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', marginLeft: '30px', marginTop: '10px', flex: '1' }}>
                   <div style={{ fontSize: '12px', color: 'white', marginBottom: '10px' }}>Charger Efficiency: 85%</div>
-                  <img src={require('./assets/chargericon.png')} alt="Charger Icon" style={{ width: `${window.innerWidth >= 1920 ? '300px' : window.innerWidth >= 1400 ? '250px' : '220px'}`, height: 'auto', maxHeight: window.innerWidth >= 1920 ? '220px' : window.innerWidth >= 1400 ? '190px' : '170px' }} />
+                  <img src={require('./assets/chargericon.png')} alt="Charger Icon" style={{ width: `${windowSize.width >= 1920 ? '450px' : windowSize.width >= 1400 ? '250px' : '220px'}`, height: 'auto', maxHeight: windowSize.width >= 1920 ? '250px' : windowSize.width >= 1400 ? '190px' : '170px' }} />
                   <div className="charger-metrics-row" style={{ marginTop: '20px' }}>
                     <div className="charger-metric">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -155,7 +161,7 @@ const Charger = () => {
             </div>
 
               {/* Bottom Container: Charge Efficiency */}
-              <div className="data-container" style={{ height: spacing.efficiencyContainerHeight }}>
+              <div className="data-container" style={{ height: windowSize.width < 1200 ? '80px' : spacing.efficiencyContainerHeight }}>
               <h3>Charge Efficiency</h3>
               <div style={{ background: 'transparent', width: '100%', height: 'calc(100% - 60px)', marginTop: '10px' }}>
                 <svg width="100%" height="100%" viewBox="0 0 1000 150" preserveAspectRatio="xMidYMid meet">

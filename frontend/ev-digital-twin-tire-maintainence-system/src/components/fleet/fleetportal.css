@@ -206,6 +206,16 @@
   justify-content: center;
 }
 
+.legend-text {
+  font-size: 10px;
+}
+
+@media (min-width: 1920px) {
+  .legend-text {
+    font-size: 16px;
+  }
+}
+
 @media (min-width: 1400px) and (max-width: 1919px) {
   .map-legend {
     font-size: 18px;
@@ -589,7 +599,7 @@
 }
 
 .capacity-column {
-  width: 80px;
+  width: 60px;
   height: 40px;
   display: block;
   border-radius: 0;
@@ -598,7 +608,7 @@
 }
 
 .capacity-assigned {
-  width: 50px;
+  width: 30px;
   height: 80%;
   background: #ffa500;
   display: inline-block;
@@ -606,7 +616,7 @@
 }
 
 .capacity-max {
-  width: 50px;
+  width: 30px;
   height: 100%;
   background: #666;
   display: inline-block;
@@ -765,7 +775,18 @@
   }
 }
 
-.btn-dismiss, .btn-reject, .btn-approve {
+.btn-dismiss {
+  padding: 4px 8px;
+  border: none;
+  border-radius: 3px;
+  font-size: 9px;
+  cursor: pointer;
+  font-weight: 500;
+  background: transparent;
+  color: #ffa500;
+}
+
+.btn-reject, .btn-approve {
   padding: 4px 8px;
   border: 1px solid #555;
   border-radius: 3px;
