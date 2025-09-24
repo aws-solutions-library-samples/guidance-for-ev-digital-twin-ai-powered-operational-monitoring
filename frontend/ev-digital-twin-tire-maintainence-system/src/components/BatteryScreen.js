@@ -10,6 +10,28 @@ const BatteryScreen = () => {
   const [simulateAnomalies, setSimulateAnomalies] = useState(false);
   const [visibleAnomalies, setVisibleAnomalies] = useState(new Set());
   
+  // State for dynamic battery health prediction
+  const [showHealthPrediction, setShowHealthPrediction] = useState(false);
+  const [healthAnimationProgress, setHealthAnimationProgress] = useState(0);
+  const [currentHealthData, setCurrentHealthData] = useState({
+    currentHealth: 92,
+    predictedHealth: 78,
+    cycleCount: 360,
+    temperature: 32,
+    chargingCycles: {
+      fastCharge350: 30,
+      fastCharge150: 90,
+      l2_22kw: 210,
+      l1_11kw: 30
+    }
+  });
+
+  // State for toggle buttons
+  const [isCharging, setIsCharging] = useState(true);
+  const [cellBalancing, setCellBalancing] = useState(true);
+  const [startCooling, setStartCooling] = useState(false);
+  const [startHeating, setStartHeating] = useState(true);
+  
   // Define fault detection items with their anomaly status and delay
   const faultDetectionItems = [
     { name: 'Accelerated Aging', hasAnomaly: false, delay: 0 },
@@ -50,6 +72,53 @@ const BatteryScreen = () => {
       setVisibleAnomalies(new Set());
     }
   }, [simulateAnomalies]);
+
+  // Effect for health prediction animation
+  useEffect(() => {
+    if (showHealthPrediction) {
+      setHealthAnimationProgress(0);
+      const animationInterval = setInterval(() => {
+        setHealthAnimationProgress(prev => {
+          if (prev >= 1) {
+            clearInterval(animationInterval);
+            return 1;
+          }
+          return prev + 0.02;
+        });
+      }, 50);
+      return () => clearInterval(animationInterval);
+    }
+  }, [showHealthPrediction]);
+
+  // Simulate dynamic battery data updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentHealthData(prev => {
+        let tempChange = (Math.random() - 0.5) * 2;
+        
+        // Adjust temperature based on cooling/heating state
+        if (startCooling && !startHeating) {
+          tempChange -= 1.5; // Cooling effect
+        } else if (startHeating && !startCooling) {
+          tempChange += 1.5; // Heating effect
+        }
+        
+        // Charging affects temperature slightly
+        if (isCharging) {
+          tempChange += 0.5;
+        }
+        
+        return {
+          ...prev,
+          currentHealth: Math.max(70, prev.currentHealth + (Math.random() - 0.5) * 2),
+          predictedHealth: Math.max(60, prev.predictedHealth + (Math.random() - 0.5) * 1.5),
+          temperature: Math.max(15, Math.min(45, prev.temperature + tempChange)),
+          cycleCount: prev.cycleCount + (isCharging ? Math.floor(Math.random() * 2) : 0)
+        };
+      });
+    }, 15000); // Update every 15 seconds
+    return () => clearInterval(interval);
+  }, [startCooling, startHeating, isCharging]);
   
   // Function to get box color based on anomaly status with delayed visibility
   const getBoxColor = (hasAnomaly, index) => {
@@ -141,125 +210,175 @@ const BatteryScreen = () => {
             <div className="charging-section" style={{ marginTop: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <h4>Charging</h4>
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  backgroundColor: 'rgba(45,52,61,1)', 
-                  borderRadius: '12px', 
-                  padding: '2px', 
-                  width: '48px', 
-                  height: '24px',
-                  position: 'relative'
-                }}>
-                  <svg width="20" height="20" viewBox="0 0 20 20" style={{ position: 'absolute', right: '2px' }}>
-                    <circle cx="10" cy="10" r="10" fill="rgba(0,136,0,1)" />
+                <div 
+                  onClick={() => setIsCharging(!isCharging)}
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    backgroundColor: 'rgba(45,52,61,1)', 
+                    borderRadius: '12px', 
+                    padding: '2px', 
+                    width: '48px', 
+                    height: '24px',
+                    position: 'relative',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 20 20" style={{ 
+                    position: 'absolute', 
+                    right: isCharging ? '2px' : 'auto',
+                    left: isCharging ? 'auto' : '2px',
+                    transition: 'all 0.3s ease'
+                  }}>
+                    <circle cx="10" cy="10" r="10" fill={isCharging ? "rgba(0,136,0,1)" : "rgba(128,128,128,1)"} />
                   </svg>
                   <span style={{ 
                     fontSize: '10px', 
                     fontWeight: '700', 
                     color: 'white',
                     position: 'absolute',
-                    right: '6px',
-                    top: '7px'
-                  }}>On</span>
+                    right: isCharging ? '6px' : 'auto',
+                    left: isCharging ? 'auto' : '5px',
+                    top: '7px',
+                    transition: 'all 0.3s ease'
+                  }}>{isCharging ? 'On' : 'Off'}</span>
                 </div>
               </div>
               <div className="charging-info">
-                <span>Charging Current 53A</span>
-                <span style={{ fontSize: '8px', transform: 'translateX(-245px)', position: 'relative' }}>Fast Charge Duration 00:34:34</span>
+                <span>{isCharging ? 'Charging Current 53A' : 'Charging Stopped'}</span>
+                <span style={{ 
+                  fontSize: '8px', 
+                  position: 'relative', 
+                  display: 'block', 
+                  marginTop: '5px',
+                  transform: 'translateX(220px)'
+                }}>
+                  {isCharging ? 'Fast Charge Duration 00:34:34' : 'Not Charging'}
+                </span>
               </div>
               <div style={{ marginTop: '-40px' }}>
                 <div style={{ marginBottom: '5px', textAlign: 'center' }}>
-                  <h4 style={{ margin: '0 0 5px 0', fontSize: '10px' }}>Charge time to Target</h4>
-                  <div style={{ fontSize: '14px', fontWeight: '700', color: 'white' }}>00:00:32</div>
+                  <h4 style={{ margin: '0 0 5px 0', fontSize: '10px' }}>
+                    {isCharging ? 'Charge time to Target' : 'Charging Paused'}
+                  </h4>
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: isCharging ? 'white' : 'rgba(255,255,255,0.5)' }}>
+                    {isCharging ? '00:00:32' : '--:--:--'}
+                  </div>
                 </div>
                 <div className="charging-bar" style={{ width: '50%', borderRadius: '0' }}>
-                  <div className="charging-fill" style={{ width: '75%', borderRadius: '0' }}></div>
+                  <div className="charging-fill" style={{ 
+                    width: '75%', 
+                    borderRadius: '0',
+                    backgroundColor: isCharging ? '#37bc12' : 'rgba(55, 188, 18, 0.5)'
+                  }}></div>
                 </div>
               </div>
               <div className="charging-details" style={{ display: 'flex !important', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255, 255, 255, 0.6)', flexDirection: 'row !important' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <span style={{ fontSize: '10px', color: 'white' }}>Total Charging Time:</span>
-                  <span style={{ fontSize: '14px', fontWeight: '700', color: 'white' }}>00:02:32</span>
+                  <span style={{ fontSize: '14px', fontWeight: '700', color: isCharging ? 'white' : 'rgba(255,255,255,0.5)' }}>
+                    {isCharging ? '00:02:32' : 'Paused'}
+                  </span>
                 </div>
-                <span style={{ fontSize: '14px', fontWeight: '700', color: 'white', transform: 'translateX(200px)' }}>75% Charged</span>
+                <span style={{ 
+                  fontSize: '14px', 
+                  fontWeight: '700', 
+                  color: isCharging ? 'white' : 'rgba(255,255,255,0.5)', 
+                  transform: 'translateX(200px)' 
+                }}>
+                  75% {isCharging ? 'Charging' : 'Paused'}
+                </span>
                 <div style={{ width: '1px', height: '80px', backgroundColor: 'rgba(255,255,255,0.3)', position: 'relative', top: '-60px', left: '-50px' }}></div>
-                <span style={{ fontSize: '14px', fontWeight: '700', color: 'white', fontFamily: 'Amazon Ember', transform: 'translateY(-80px) translateX(-250px)', position: 'relative' }}>Charging Details</span>
-              </div>
-
-              {/* Charging Cycles Chart - Aligned with Charging Details Header */}
-              <div style={{ 
-                position: 'relative',
-                marginTop: '-60px', 
-                transform: 'translateX(-250px)',
-                width: '280px',
-                padding: '10px 12px', 
-                backgroundColor: 'rgba(0,0,0,0.4)', 
-                borderRadius: '6px',
-                border: '1px solid rgba(255,255,255,0.1)',
-                marginLeft: 'auto'
-              }}>
-                <div style={{ display: 'flex', marginBottom: '8px', paddingBottom: '4px', borderBottom: '1px solid rgba(255,255,255,0.2)' }}>
-                  <div style={{ fontSize: '10px', fontWeight: '600', color: 'rgba(255,255,255,0.9)', width: '50px' }}># Cycles</div>
-                  <div style={{ fontSize: '10px', fontWeight: '600', color: 'rgba(255,255,255,0.9)', flex: 1 }}>Charge Type</div>
-                </div>
                 
-                {/* Chart Rows */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  {/* Fast Charge 350kW */}
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <div style={{ fontSize: '10px', color: 'white', width: '50px' }}>30</div>
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.9)', minWidth: '100px' }}>Fast Charge (350kW)</span>
-                      <div style={{ 
-                        height: '12px', 
-                        backgroundColor: '#37bc12', 
-                        width: '20px',
-                        borderRadius: '2px'
-                      }}></div>
-                    </div>
+                {/* Charging Details Section - Properly aligned */}
+                <div style={{ 
+                  position: 'relative',
+                  marginTop: '-80px', 
+                  marginLeft: 'auto',
+                  width: '300px',
+                  transform: 'translateX(-80px)'
+                }}>
+                  <span style={{ 
+                    fontSize: '14px', 
+                    fontWeight: '700', 
+                    color: 'white', 
+                    fontFamily: 'Amazon Ember',
+                    display: 'block',
+                    marginBottom: '10px'
+                  }}>Charging Details</span>
+                  
+                  {/* Charging Cycles Chart - Aligned with title */}
+                  <div style={{ 
+                    width: '280px',
+                    padding: '10px 12px', 
+                    backgroundColor: 'rgba(0,0,0,0.4)', 
+                    borderRadius: '6px',
+                    border: '1px solid rgba(255,255,255,0.1)'
+                  }}>
+                  <div style={{ display: 'flex', marginBottom: '8px', paddingBottom: '4px', borderBottom: '1px solid rgba(255,255,255,0.2)' }}>
+                    <div style={{ fontSize: '10px', fontWeight: '600', color: 'rgba(255,255,255,0.9)', width: '50px' }}># Cycles</div>
+                    <div style={{ fontSize: '10px', fontWeight: '600', color: 'rgba(255,255,255,0.9)', flex: 1 }}>Charge Type</div>
                   </div>
                   
-                  {/* Fast Charge 150kW */}
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <div style={{ fontSize: '10px', color: 'white', width: '50px' }}>90</div>
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.9)', minWidth: '100px' }}>Fast Charge (150kW)</span>
-                      <div style={{ 
-                        height: '12px', 
-                        backgroundColor: '#37bc12', 
-                        width: '45px',
-                        borderRadius: '2px'
-                      }}></div>
+                  {/* Chart Rows */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                    {/* Fast Charge 350kW */}
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <div style={{ fontSize: '10px', color: 'white', width: '50px' }}>{currentHealthData.chargingCycles.fastCharge350}</div>
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.9)', minWidth: '100px' }}>Fast Charge (350kW)</span>
+                        <div style={{ 
+                          height: '12px', 
+                          backgroundColor: '#37bc12', 
+                          width: `${Math.min(80, currentHealthData.chargingCycles.fastCharge350 / 3)}px`,
+                          borderRadius: '2px'
+                        }}></div>
+                      </div>
+                    </div>
+                    
+                    {/* Fast Charge 150kW */}
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <div style={{ fontSize: '10px', color: 'white', width: '50px' }}>{currentHealthData.chargingCycles.fastCharge150}</div>
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.9)', minWidth: '100px' }}>Fast Charge (150kW)</span>
+                        <div style={{ 
+                          height: '12px', 
+                          backgroundColor: '#37bc12', 
+                          width: `${Math.min(80, currentHealthData.chargingCycles.fastCharge150 / 3)}px`,
+                          borderRadius: '2px'
+                        }}></div>
+                      </div>
+                    </div>
+                    
+                    {/* L2 22kW */}
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <div style={{ fontSize: '10px', color: 'white', width: '50px' }}>{currentHealthData.chargingCycles.l2_22kw}</div>
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.9)', minWidth: '100px' }}>L2 (22kW)</span>
+                        <div style={{ 
+                          height: '12px', 
+                          backgroundColor: '#37bc12', 
+                          width: `${Math.min(80, currentHealthData.chargingCycles.l2_22kw / 3)}px`,
+                          borderRadius: '2px'
+                        }}></div>
+                      </div>
+                    </div>
+                    
+                    {/* L1 11kW */}
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <div style={{ fontSize: '10px', color: 'white', width: '50px' }}>{currentHealthData.chargingCycles.l1_11kw}</div>
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.9)', minWidth: '100px' }}>L1 (11kW)</span>
+                        <div style={{ 
+                          height: '12px', 
+                          backgroundColor: '#37bc12', 
+                          width: `${Math.min(80, currentHealthData.chargingCycles.l1_11kw / 3)}px`,
+                          borderRadius: '2px'
+                        }}></div>
+                      </div>
                     </div>
                   </div>
-                  
-                  {/* L2 22kW */}
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <div style={{ fontSize: '10px', color: 'white', width: '50px' }}>210</div>
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.9)', minWidth: '100px' }}>L2 (22kW)</span>
-                      <div style={{ 
-                        height: '12px', 
-                        backgroundColor: '#37bc12', 
-                        width: '80px',
-                        borderRadius: '2px'
-                      }}></div>
-                    </div>
-                  </div>
-                  
-                  {/* 30 11kW */}
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <div style={{ fontSize: '10px', color: 'white', width: '50px' }}>30</div>
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.9)', minWidth: '100px' }}>30 (11kW)</span>
-                      <div style={{ 
-                        height: '12px', 
-                        backgroundColor: '#37bc12', 
-                        width: '20px',
-                        borderRadius: '2px'
-                      }}></div>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -397,77 +516,113 @@ const BatteryScreen = () => {
                 </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={{ fontSize: '12px', color: 'white' }}>Cell Balancing</span>
-                    <div style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      backgroundColor: 'rgba(45,52,61,1)', 
-                      borderRadius: '12px', 
-                      padding: '2px', 
-                      width: '48px', 
-                      height: '24px',
-                      position: 'relative'
-                    }}>
-                      <svg width="20" height="20" viewBox="0 0 20 20" style={{ position: 'absolute', right: '2px' }}>
-                        <circle cx="10" cy="10" r="10" fill="rgba(0,136,0,1)" />
+                    <div 
+                      onClick={() => setCellBalancing(!cellBalancing)}
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        backgroundColor: 'rgba(45,52,61,1)', 
+                        borderRadius: '12px', 
+                        padding: '2px', 
+                        width: '48px', 
+                        height: '24px',
+                        position: 'relative',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 20 20" style={{ 
+                        position: 'absolute', 
+                        right: cellBalancing ? '2px' : 'auto',
+                        left: cellBalancing ? 'auto' : '2px',
+                        transition: 'all 0.3s ease'
+                      }}>
+                        <circle cx="10" cy="10" r="10" fill={cellBalancing ? "rgba(0,136,0,1)" : "rgba(128,128,128,1)"} />
                       </svg>
                       <span style={{ 
                         fontSize: '10px', 
                         fontWeight: '700', 
                         color: 'white',
                         position: 'absolute',
-                        right: '6px',
-                        top: '7px'
-                      }}>On</span>
+                        right: cellBalancing ? '6px' : 'auto',
+                        left: cellBalancing ? 'auto' : '5px',
+                        top: '7px',
+                        transition: 'all 0.3s ease'
+                      }}>{cellBalancing ? 'On' : 'Off'}</span>
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={{ fontSize: '12px', color: 'white' }}>Start Cooling</span>
-                    <div style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      backgroundColor: 'rgba(45,52,61,1)', 
-                      borderRadius: '12px', 
-                      padding: '2px', 
-                      width: '48px', 
-                      height: '24px',
-                      position: 'relative'
-                    }}>
-                      <svg width="20" height="20" viewBox="0 0 20 20" style={{ position: 'absolute', left: '2px' }}>
-                        <circle cx="10" cy="10" r="10" fill="rgba(128,128,128,1)" />
+                    <div 
+                      onClick={() => setStartCooling(!startCooling)}
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        backgroundColor: 'rgba(45,52,61,1)', 
+                        borderRadius: '12px', 
+                        padding: '2px', 
+                        width: '48px', 
+                        height: '24px',
+                        position: 'relative',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 20 20" style={{ 
+                        position: 'absolute', 
+                        right: startCooling ? '2px' : 'auto',
+                        left: startCooling ? 'auto' : '2px',
+                        transition: 'all 0.3s ease'
+                      }}>
+                        <circle cx="10" cy="10" r="10" fill={startCooling ? "rgba(0,136,0,1)" : "rgba(128,128,128,1)"} />
                       </svg>
                       <span style={{ 
                         fontSize: '10px', 
                         fontWeight: '700', 
                         color: 'white',
                         position: 'absolute',
-                        left: '5px',
-                        top: '7px'
-                      }}>Off</span>
+                        right: startCooling ? '6px' : 'auto',
+                        left: startCooling ? 'auto' : '5px',
+                        top: '7px',
+                        transition: 'all 0.3s ease'
+                      }}>{startCooling ? 'On' : 'Off'}</span>
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={{ fontSize: '12px', color: 'white' }}>Start Heating</span>
-                    <div style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      backgroundColor: 'rgba(45,52,61,1)', 
-                      borderRadius: '12px', 
-                      padding: '2px', 
-                      width: '48px', 
-                      height: '24px',
-                      position: 'relative'
-                    }}>
-                      <svg width="20" height="20" viewBox="0 0 20 20" style={{ position: 'absolute', right: '2px' }}>
-                        <circle cx="10" cy="10" r="10" fill="rgba(0,136,0,1)" />
+                    <div 
+                      onClick={() => setStartHeating(!startHeating)}
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        backgroundColor: 'rgba(45,52,61,1)', 
+                        borderRadius: '12px', 
+                        padding: '2px', 
+                        width: '48px', 
+                        height: '24px',
+                        position: 'relative',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 20 20" style={{ 
+                        position: 'absolute', 
+                        right: startHeating ? '2px' : 'auto',
+                        left: startHeating ? 'auto' : '2px',
+                        transition: 'all 0.3s ease'
+                      }}>
+                        <circle cx="10" cy="10" r="10" fill={startHeating ? "rgba(0,136,0,1)" : "rgba(128,128,128,1)"} />
                       </svg>
                       <span style={{ 
                         fontSize: '10px', 
                         fontWeight: '700', 
                         color: 'white',
                         position: 'absolute',
-                        right: '6px',
-                        top: '7px'
-                      }}>On</span>
+                        right: startHeating ? '6px' : 'auto',
+                        left: startHeating ? 'auto' : '5px',
+                        top: '7px',
+                        transition: 'all 0.3s ease'
+                      }}>{startHeating ? 'On' : 'Off'}</span>
                     </div>
                   </div>
                 </div>
@@ -488,15 +643,33 @@ const BatteryScreen = () => {
             {/* Health Prediction Chart */}
             <div className="motor-prediction-container" style={{ paddingLeft: '30px' }}>
               <div className="failure-prediction">
-                <h3>State of Health</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <h3>State of Health</h3>
+                  <button
+                    onClick={() => setShowHealthPrediction(!showHealthPrediction)}
+                    style={{
+                      background: showHealthPrediction ? '#37bc12' : 'rgba(128,128,128,0.6)',
+                      border: 'none',
+                      borderRadius: '16px',
+                      padding: '6px 12px',
+                      color: 'white',
+                      fontSize: '9px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    {showHealthPrediction ? 'Hide Prediction' : 'Show Prediction'}
+                  </button>
+                </div>
                 <div className="prediction-legend">
                   <div className="legend-item">
                     <div style={{ width: '15px', height: '2px', backgroundColor: 'rgba(255,153,0,1)' }}></div>
-                    <span>Past</span>
+                    <span>Historical</span>
                   </div>
                   <div className="legend-item">
                     <div style={{ width: '15px', height: '2px', backgroundColor: 'rgba(56,239,125,1)', borderTop: '2px dashed rgba(56,239,125,1)', backgroundColor: 'transparent' }}></div>
-                    <span>Predicted</span>
+                    <span>ML Prediction</span>
                   </div>
                 </div>
                 <div style={{ position: 'relative', marginTop: '80px' }}>
@@ -513,41 +686,161 @@ const BatteryScreen = () => {
                     }} 
                   />
                   <div className="prediction-chart">
-                    <svg width="240px" height="300px" viewBox="0 0 240 300">
-                  {/* Grid lines */}
-                  {Array.from({ length: 11 }, (_, i) => (
-                    <line key={i} x1="0" y1={20 + i * 18} x2="240" y2={20 + i * 18} stroke="rgba(104,111,120,1)" strokeWidth="0.5"/>
-                  ))}
-                  
-                  {/* Past data (orange) */}
-                  <polyline
-                    points="0,30 18,40 36,50 54,60 72,70 90,80 108,90"
-                    fill="none"
-                    stroke="rgba(255,153,0,1)"
-                    strokeWidth="2"
-                  />
-                  
-                  {/* Predicted data (green) */}
-                  <polyline
-                    points="108,90 126,105 144,120 162,135 180,150 198,165 216,180 234,195"
-                    fill="none"
-                    stroke="rgba(56,239,125,1)"
-                    strokeWidth="2"
-                    strokeDasharray="4,4"
-                  />
-                  
-                  {/* Data points */}
-                  {Array.from({ length: 13 }, (_, i) => (
-                    <circle key={i} cx={i * 18} cy={30 + i * (i < 6 ? 10 : 15)} r="2" fill={i < 6 ? "rgba(255,153,0,1)" : "rgba(56,239,125,1)"}/>
-                  ))}
-                  
-                  {/* X-axis labels */}
-                  {[0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40].map((value, i) => (
-                    <text key={i} x={value * 6} y="215" fill="rgba(255,255,255,0.6)" fontSize="8" textAnchor="middle">
-                      {value}
-                    </text>
-                  ))}
+                    <svg width="320px" height="300px" viewBox="0 0 320 300">
+                      {/* Grid lines */}
+                      {Array.from({ length: 11 }, (_, i) => (
+                        <line key={i} x1="40" y1={20 + i * 16} x2="310" y2={20 + i * 16} stroke="rgba(104,111,120,1)" strokeWidth="0.5"/>
+                      ))}
+                      
+                      {/* Y-axis labels (State of Health %) */}
+                      {[100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 0].map((value, i) => (
+                        <text key={i} x="35" y={25 + i * 16} fill="rgba(255,255,255,0.6)" fontSize="8" textAnchor="end">
+                          {value}%
+                        </text>
+                      ))}
+                      
+                      {/* Calculate positions: X-axis = cycles, Y-axis = health % */}
+                      {(() => {
+                        const maxCycles = 2000;
+                        const chartWidth = 270;
+                        const chartHeight = 160;
+                        const baseX = 40;
+                        const baseY = 180;
+                        
+                        // Historical data points (health decreasing as cycles increase)
+                        const historicalData = [
+                          { cycles: 0, health: 100 },
+                          { cycles: 50, health: 98 },
+                          { cycles: 100, health: 96 },
+                          { cycles: 200, health: 94 },
+                          { cycles: 300, health: currentHealthData.currentHealth + 2 },
+                          { cycles: currentHealthData.cycleCount - 20, health: currentHealthData.currentHealth + 1 },
+                          { cycles: currentHealthData.cycleCount, health: currentHealthData.currentHealth }
+                        ];
+                        
+                        const historicalPoints = historicalData.map(point => {
+                          const x = baseX + (point.cycles / maxCycles) * chartWidth;
+                          const y = baseY - (point.health / 100) * chartHeight;
+                          return `${x},${y}`;
+                        }).join(' ');
+                        
+                        // Predicted data points (continuing degradation)
+                        const predictedData = [
+                          { cycles: currentHealthData.cycleCount, health: currentHealthData.currentHealth },
+                          { cycles: currentHealthData.cycleCount + 200, health: currentHealthData.predictedHealth + 8 },
+                          { cycles: currentHealthData.cycleCount + 400, health: currentHealthData.predictedHealth + 4 },
+                          { cycles: currentHealthData.cycleCount + 600, health: currentHealthData.predictedHealth },
+                          { cycles: currentHealthData.cycleCount + 800, health: Math.max(20, currentHealthData.predictedHealth - 5) },
+                          { cycles: currentHealthData.cycleCount + 1000, health: Math.max(10, currentHealthData.predictedHealth - 15) }
+                        ];
+                        
+                        const predictedPoints = predictedData.map(point => {
+                          const x = baseX + (point.cycles / maxCycles) * chartWidth;
+                          const y = baseY - (point.health / 100) * chartHeight;
+                          return `${x},${y}`;
+                        }).join(' ');
+                        
+                        return (
+                          <>
+                            {/* Historical data (orange) - smooth connected line */}
+                            <polyline
+                              points={historicalPoints}
+                              fill="none"
+                              stroke="rgba(255,153,0,1)"
+                              strokeWidth="2"
+                            />
+                            
+                            {/* Predicted data (green) - connected to historical data */}
+                            {showHealthPrediction && (
+                              <polyline
+                                points={predictedPoints}
+                                fill="none"
+                                stroke="rgba(56,239,125,1)"
+                                strokeWidth="2"
+                                strokeDasharray="4,4"
+                                opacity={healthAnimationProgress}
+                              />
+                            )}
+                            
+                            {/* Data points - Historical */}
+                            {historicalData.map((point, i) => (
+                              <circle 
+                                key={i} 
+                                cx={baseX + (point.cycles / maxCycles) * chartWidth} 
+                                cy={baseY - (point.health / 100) * chartHeight} 
+                                r="3" 
+                                fill="rgba(255,153,0,1)"
+                              />
+                            ))}
+                            
+                            {/* Data points - Predicted */}
+                            {showHealthPrediction && predictedData.map((point, i) => (
+                              <circle 
+                                key={i + 7} 
+                                cx={baseX + (point.cycles / maxCycles) * chartWidth} 
+                                cy={baseY - (point.health / 100) * chartHeight} 
+                                r="3" 
+                                fill="rgba(56,239,125,1)"
+                                opacity={healthAnimationProgress}
+                              />
+                            ))}
+                          </>
+                        );
+                      })()}
+                      
+                      {/* X-axis labels (Charge Cycles) */}
+                      {[0, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000].map((value, i) => (
+                        <text key={i} x={40 + (value / 2000) * 270} y="200" fill="rgba(255,255,255,0.6)" fontSize="8" textAnchor="middle">
+                          {value}
+                        </text>
+                      ))}
+                      
+                      {/* Current cycle indicator */}
+                      <line 
+                        x1={40 + (currentHealthData.cycleCount / 2000) * 270} 
+                        y1="20" 
+                        x2={40 + (currentHealthData.cycleCount / 2000) * 270} 
+                        y2="180" 
+                        stroke="rgba(255,255,255,0.5)" 
+                        strokeWidth="1" 
+                        strokeDasharray="2,2"
+                      />
+                      <text 
+                        x={45 + (currentHealthData.cycleCount / 2000) * 270} 
+                        y="15" 
+                        fill="rgba(255,255,255,0.8)" 
+                        fontSize="8"
+                      >
+                        Now: {currentHealthData.cycleCount} cycles
+                      </text>
+                      
+                      {/* Y-axis line */}
+                      <line x1="40" y1="20" x2="40" y2="180" stroke="rgba(255,255,255,0.3)" strokeWidth="1"/>
+                      
+                      {/* X-axis line */}
+                      <line x1="40" y1="180" x2="310" y2="180" stroke="rgba(255,255,255,0.3)" strokeWidth="1"/>
+                      
+                      {/* Axis labels */}
+                      <text x="175" y="220" fill="rgba(255,255,255,0.8)" fontSize="10" textAnchor="middle">Charge Cycles</text>
+                      <text x="15" y="100" fill="rgba(255,255,255,0.8)" fontSize="10" textAnchor="middle" transform="rotate(-90, 15, 100)">Health %</text>
                     </svg>
+                  </div>
+                  
+                  {/* Real-time battery metrics */}
+                  <div style={{ 
+                    position: 'absolute', 
+                    right: '10px', 
+                    top: '10px', 
+                    backgroundColor: 'rgba(0,0,0,0.6)', 
+                    padding: '8px', 
+                    borderRadius: '6px',
+                    fontSize: '9px',
+                    color: 'white'
+                  }}>
+                    <div>Current Cycles: {currentHealthData.cycleCount}</div>
+                    <div>Remaining: {Math.max(0, 2000 - currentHealthData.cycleCount)}</div>
+                    <div>Health: {Math.round(currentHealthData.currentHealth)}%</div>
+                    <div>Temp: {Math.round(currentHealthData.temperature)}°C</div>
                   </div>
                 </div>
               </div>
@@ -557,35 +850,35 @@ const BatteryScreen = () => {
               {/* Battery Bars */}
               <div className="battery-bars" style={{ marginBottom: '20px', marginTop: '-120px' }}>
                 <div style={{ textAlign: 'center', marginBottom: '-5px' }}>
-                  <span style={{ fontSize: '10px', color: 'white' }}>Charging Cycle</span>
+                  <span style={{ fontSize: '10px', color: 'white' }}>Battery Metrics</span>
                 </div>
                 <div className="battery-bar-item" style={{ marginBottom: '25px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
                     <span style={{ fontSize: '10px', color: 'white' }}>State of Certified Energy</span>
-                    <span style={{ fontSize: '12px', color: 'white', fontWeight: 'bold' }}>85%</span>
+                    <span style={{ fontSize: '12px', color: 'white', fontWeight: 'bold' }}>{Math.round(currentHealthData.currentHealth - 5)}%</span>
                   </div>
                   <div className="life-bar" style={{ borderRadius: '0', height: '20px' }}>
-                    <div className="life-fill" style={{ width: '85%', borderRadius: '0' }}></div>
+                    <div className="life-fill" style={{ width: `${currentHealthData.currentHealth - 5}%`, borderRadius: '0' }}></div>
                   </div>
                 </div>
                 
                 <div className="battery-bar-item" style={{ marginBottom: '25px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
                     <span style={{ fontSize: '10px', color: 'white' }}>State of Power</span>
-                    <span style={{ fontSize: '12px', color: 'white', fontWeight: 'bold' }}>75%</span>
+                    <span style={{ fontSize: '12px', color: 'white', fontWeight: 'bold' }}>{Math.round(currentHealthData.currentHealth - 10)}%</span>
                   </div>
                   <div className="life-bar" style={{ borderRadius: '0', height: '20px' }}>
-                    <div className="life-fill" style={{ width: '75%', borderRadius: '0' }}></div>
+                    <div className="life-fill" style={{ width: `${currentHealthData.currentHealth - 10}%`, borderRadius: '0' }}></div>
                   </div>
                 </div>
                 
                 <div className="battery-bar-item" style={{ marginBottom: '30px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
                     <span style={{ fontSize: '10px', color: 'white' }}>Remaining Useful Life</span>
-                    <span style={{ fontSize: '12px', color: 'white', fontWeight: 'bold' }}>70%</span>
+                    <span style={{ fontSize: '12px', color: 'white', fontWeight: 'bold' }}>{Math.round(currentHealthData.predictedHealth)}%</span>
                   </div>
                   <div className="life-bar" style={{ borderRadius: '0', height: '20px' }}>
-                    <div className="life-fill" style={{ width: '70%', borderRadius: '0' }}></div>
+                    <div className="life-fill" style={{ width: `${currentHealthData.predictedHealth}%`, borderRadius: '0' }}></div>
                   </div>
                 </div>
               </div>
@@ -595,14 +888,14 @@ const BatteryScreen = () => {
                 <div style={{ fontSize: '8px', color: 'white' }}>Expected End of Life</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '5px', fontSize: '18px', color: 'white' }}>
                   <img src={require('./assets/batterycrossed.png')} alt="Battery Crossed" style={{ width: '20px', height: '20px' }} />
-                  <span>2,000 <span style={{ fontSize: '12px' }}>cycle</span></span>
+                  <span>{Math.round(2000 - (currentHealthData.cycleCount * 0.8))} <span style={{ fontSize: '12px' }}>cycles left</span></span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'red' }}></div>
-                    <span>1/1/2026</span>
+                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: currentHealthData.currentHealth < 80 ? 'red' : 'orange' }}></div>
+                    <span style={{ fontSize: '12px' }}>{currentHealthData.currentHealth < 80 ? 'Critical' : 'Warning'}</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                     <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'green' }}></div>
-                    <span>1/4/2026</span>
+                    <span style={{ fontSize: '12px' }}>Optimal</span>
                   </div>
                 </div>
               </div>
