@@ -8,6 +8,7 @@ import '../css/motor.css';
 const Motor = () => {
   const navigate = useNavigate();
   const { carId } = useParams();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [csvData, setCsvData] = useState([]);
   const [dataIndex, setDataIndex] = useState(0);
@@ -326,10 +327,49 @@ const Motor = () => {
             <h1 style={{ fontSize: '24px', fontWeight: '700', fontFamily: 'Amazon Ember' }}>EV Digital Twin</h1>
           </div>
           <div className="header-right">
-            <span className="user-profile">bhuser</span>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-            </svg>
+            <div className="user-dropdown" style={{ position: 'relative' }}>
+              <div 
+                className="user-profile-container" 
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
+              >
+                <span className="user-profile">bhuser</span>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="white" style={{ transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+                  <path d="M7 10l5 5 5-5z"/>
+                </svg>
+              </div>
+              {dropdownOpen && (
+                <div className="dropdown-menu" style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: '0',
+                  background: '#1b1e20',
+                  border: '1px solid #444',
+                  borderRadius: '4px',
+                  minWidth: '250px',
+                  zIndex: 1000,
+                  marginTop: '5px'
+                }}>
+                  <div className="dropdown-item" onClick={() => navigate('/')} style={{ padding: '10px 15px', cursor: 'pointer', borderBottom: '1px solid #444', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <img src={require('./assets/car.png')} alt="Car" style={{ width: '16px', height: '16px' }} />
+                    Connected Vehicles
+                  </div>
+                  <div className="dropdown-item" onClick={() => navigate('/fleet')} style={{ padding: '10px 15px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5">
+                      <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/>
+                      <path d="M15 18H9"/>
+                      <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/>
+                      <circle cx="17" cy="18" r="2"/>
+                      <circle cx="7" cy="18" r="2"/>
+                    </svg>
+                    Fleet
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
