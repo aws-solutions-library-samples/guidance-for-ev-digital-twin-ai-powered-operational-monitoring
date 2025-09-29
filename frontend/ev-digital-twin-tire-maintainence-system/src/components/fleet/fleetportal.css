@@ -294,6 +294,12 @@
   color: #ffa500;
   font-weight: 600;
   margin-bottom: 2px;
+  cursor: pointer;
+}
+
+.vehicle-id:hover {
+  color: #37bc12;
+  text-decoration: underline;
 }
 
 @media (min-width: 1400px) {

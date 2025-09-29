@@ -65,7 +65,7 @@ const FleetPortal = () => {
           <div className="vehicle-list">
             <div className="vehicle-row">
               <div className="vehicle-info">
-                <div className="vehicle-id">1C4BJWCG8DL501255</div>
+                <div className="vehicle-id" onClick={() => navigate('/car/1')}>1C4BJWCG8DL501255</div>
                 <div className="vehicle-address">1779 Dale Avenue</div>
               </div>
               <div className="battery-section">
@@ -80,7 +80,7 @@ const FleetPortal = () => {
             </div>
             <div className="vehicle-row">
               <div className="vehicle-info">
-                <div className="vehicle-id">1FVHG3DX3DHFE3747</div>
+                <div className="vehicle-id" onClick={() => navigate('/car/2')}>1FVHG3DX3DHFE3747</div>
                 <div className="vehicle-address">Address</div>
               </div>
               <div className="battery-section">
@@ -95,7 +95,7 @@ const FleetPortal = () => {
             </div>
             <div className="vehicle-row">
               <div className="vehicle-info">
-                <div className="vehicle-id">1GCEC14W6TZ225573</div>
+                <div className="vehicle-id" onClick={() => navigate('/car/3')}>1GCEC14W6TZ225573</div>
                 <div className="vehicle-address">Address</div>
               </div>
               <div className="battery-section">
@@ -110,7 +110,7 @@ const FleetPortal = () => {
             </div>
             <div className="vehicle-row">
               <div className="vehicle-info">
-                <div className="vehicle-id">3B7HC13Z7TG112627</div>
+                <div className="vehicle-id" onClick={() => navigate('/car/4')}>3B7HC13Z7TG112627</div>
                 <div className="vehicle-address">Address</div>
               </div>
               <div className="battery-section">
@@ -125,7 +125,7 @@ const FleetPortal = () => {
             </div>
             <div className="vehicle-row">
               <div className="vehicle-info">
-                <div className="vehicle-id">WAUHGAFC6DN030356</div>
+                <div className="vehicle-id" onClick={() => navigate('/car/5')}>WAUHGAFC6DN030356</div>
                 <div className="vehicle-address">Address</div>
               </div>
               <div className="battery-section">

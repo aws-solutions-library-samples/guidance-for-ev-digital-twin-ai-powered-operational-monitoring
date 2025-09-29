@@ -972,6 +972,42 @@
   flex-direction: column;
 }
 
+@media (min-width: 1400px) and (max-width: 1919px) {
+  .battery-container {
+    transform: scale(1.15);
+    transform-origin: top left;
+    width: calc(100% / 1.15);
+    height: calc(100% / 1.15);
+  }
+}
+
+@media (min-width: 1920px) {
+  .battery-container {
+    transform: scale(1.3);
+    transform-origin: top left;
+    width: calc(100% / 1.3);
+    height: calc(100% / 1.3);
+  }
+}
+
+@media (min-width: 1400px) and (max-width: 1919px) {
+  .battery-container {
+    transform: scale(1.15);
+    transform-origin: top left;
+    width: calc(100% / 1.15);
+    height: calc(100% / 1.15);
+  }
+}
+
+@media (min-width: 1920px) {
+  .battery-container {
+    transform: scale(1.3);
+    transform-origin: top left;
+    width: calc(100% / 1.3);
+    height: calc(100% / 1.3);
+  }
+}
+
 .battery-layout {
   display: flex;
   gap: 32px;

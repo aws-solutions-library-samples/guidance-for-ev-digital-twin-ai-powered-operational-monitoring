@@ -128,9 +128,20 @@ const BatteryScreen = () => {
     return '#37bc12'; // Green for normal or not-yet-visible anomalies
   };
   
+  // State for window size tracking
+  const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Dynamic spacing based on screen width
   const getResponsiveSpacing = () => {
-    const width = window.innerWidth;
+    const width = windowSize.width;
     if (width >= 2560) return { margin: '5px', padding: '10px', containerWidth: '420px', safetyWidth: '1100px' };
     if (width >= 1920) return { margin: '10px', padding: '15px', containerWidth: '380px', safetyWidth: '950px' };
     return { margin: '20px', padding: '20px', containerWidth: '330px', safetyWidth: '800px' };
@@ -325,7 +336,7 @@ const BatteryScreen = () => {
                   fontSize: '14px', 
                   fontWeight: '700', 
                   color: isCharging ? 'white' : 'rgba(255,255,255,0.5)', 
-                  transform: 'translateX(200px)' 
+                  transform: windowSize.width < 1600 ? 'translateX(150px)' : 'translateX(200px)'
                 }}>
                   75% {isCharging ? 'Charging' : 'Paused'}
                 </span>
@@ -336,8 +347,8 @@ const BatteryScreen = () => {
                   position: 'relative',
                   marginTop: '-80px', 
                   marginLeft: 'auto',
-                  width: '300px',
-                  transform: 'translateX(-80px)'
+                  width: windowSize.width < 1600 ? '280px' : '300px',
+                  transform: windowSize.width < 1600 ? 'translateX(0px)' : 'translateX(-80px)'
                 }}>
                   <span style={{ 
                     fontSize: '14px', 
@@ -713,28 +724,16 @@ const BatteryScreen = () => {
                   </div>
                 </div>
                 <div style={{ position: 'relative', marginTop: '80px' }}>
-                  <img 
-                    src={require('./assets/stateofhealth.png')} 
-                    alt="State of Health" 
-                    style={{
-                      position: 'absolute',
-                      left: '-25px',
-                      top: '120px',
-                      width: '20px',
-                      height: 'auto',
-                      zIndex: 10
-                    }} 
-                  />
                   <div className="prediction-chart">
-                    <svg width="320px" height="300px" viewBox="0 0 320 300">
+                    <svg width="350px" height="350px" viewBox="0 0 350 350">
                       {/* Grid lines */}
                       {Array.from({ length: 11 }, (_, i) => (
-                        <line key={i} x1="40" y1={20 + i * 16} x2="310" y2={20 + i * 16} stroke="rgba(104,111,120,1)" strokeWidth="0.5"/>
+                        <line key={i} x1="40" y1={30 + i * 20} x2="320" y2={30 + i * 20} stroke="rgba(104,111,120,1)" strokeWidth="0.5"/>
                       ))}
                       
                       {/* Y-axis labels (State of Health %) */}
                       {[100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 0].map((value, i) => (
-                        <text key={i} x="35" y={25 + i * 16} fill="rgba(255,255,255,0.6)" fontSize="8" textAnchor="end">
+                        <text key={i} x="35" y={35 + i * 20} fill="rgba(255,255,255,0.6)" fontSize="10" textAnchor="end">
                           {value}%
                         </text>
                       ))}
@@ -742,10 +741,10 @@ const BatteryScreen = () => {
                       {/* Calculate positions: X-axis = cycles, Y-axis = health % */}
                       {(() => {
                         const maxCycles = 2000;
-                        const chartWidth = 270;
-                        const chartHeight = 160;
+                        const chartWidth = 280;
+                        const chartHeight = 200;
                         const baseX = 40;
-                        const baseY = 180;
+                        const baseY = 230;
                         
                         // Historical data points (health decreasing as cycles increase)
                         const historicalData = [
@@ -830,39 +829,39 @@ const BatteryScreen = () => {
                       
                       {/* X-axis labels (Charge Cycles) */}
                       {[0, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000].map((value, i) => (
-                        <text key={i} x={40 + (value / 2000) * 270} y="200" fill="rgba(255,255,255,0.6)" fontSize="8" textAnchor="middle">
+                        <text key={i} x={40 + (value / 2000) * 280} y="250" fill="rgba(255,255,255,0.6)" fontSize="10" textAnchor="middle">
                           {value}
                         </text>
                       ))}
                       
                       {/* Current cycle indicator */}
                       <line 
-                        x1={40 + (currentHealthData.cycleCount / 2000) * 270} 
-                        y1="20" 
-                        x2={40 + (currentHealthData.cycleCount / 2000) * 270} 
-                        y2="180" 
+                        x1={40 + (currentHealthData.cycleCount / 2000) * 280} 
+                        y1="30" 
+                        x2={40 + (currentHealthData.cycleCount / 2000) * 280} 
+                        y2="230" 
                         stroke="rgba(255,255,255,0.5)" 
                         strokeWidth="1" 
                         strokeDasharray="2,2"
                       />
                       <text 
-                        x={45 + (currentHealthData.cycleCount / 2000) * 270} 
-                        y="15" 
+                        x={45 + (currentHealthData.cycleCount / 2000) * 280} 
+                        y="25" 
                         fill="rgba(255,255,255,0.8)" 
-                        fontSize="8"
+                        fontSize="10"
                       >
                         Now: {currentHealthData.cycleCount} cycles
                       </text>
                       
                       {/* Y-axis line */}
-                      <line x1="40" y1="20" x2="40" y2="180" stroke="rgba(255,255,255,0.3)" strokeWidth="1"/>
+                      <line x1="40" y1="30" x2="40" y2="230" stroke="rgba(255,255,255,0.3)" strokeWidth="1"/>
                       
                       {/* X-axis line */}
-                      <line x1="40" y1="180" x2="310" y2="180" stroke="rgba(255,255,255,0.3)" strokeWidth="1"/>
+                      <line x1="40" y1="230" x2="320" y2="230" stroke="rgba(255,255,255,0.3)" strokeWidth="1"/>
                       
                       {/* Axis labels */}
-                      <text x="175" y="220" fill="rgba(255,255,255,0.8)" fontSize="10" textAnchor="middle">Charge Cycles</text>
-                      <text x="15" y="100" fill="rgba(255,255,255,0.8)" fontSize="10" textAnchor="middle" transform="rotate(-90, 15, 100)">Health %</text>
+                      <text x="180" y="280" fill="rgba(255,255,255,0.8)" fontSize="12" textAnchor="middle">Charge Cycles</text>
+                      <text x="10" y="130" fill="rgba(255,255,255,0.8)" fontSize="12" textAnchor="middle" transform="rotate(-90, 10, 130)">Health %</text>
                     </svg>
                   </div>
                   
@@ -888,7 +887,7 @@ const BatteryScreen = () => {
 
 
               {/* Battery Bars */}
-              <div className="battery-bars" style={{ marginBottom: '20px', marginTop: '-120px' }}>
+              <div className="battery-bars" style={{ marginBottom: '20px', marginTop: '-80px' }}>
                 <div style={{ textAlign: 'center', marginBottom: '-5px' }}>
                   <span style={{ fontSize: '10px', color: 'white' }}>Battery Metrics</span>
                 </div>
