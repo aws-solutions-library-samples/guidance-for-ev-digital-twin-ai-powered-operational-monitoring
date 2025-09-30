@@ -1,13 +1,26 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'EV Digital Twin ECS Infrastructure'
+Description: 'EV Digital Twin - Backend Stack (ECS + ALB)'
 
 Parameters:
-  ImageURI:
+  ProjectName:
     Type: String
-    Description: ECR Image URI
+    Default: ev-digital-twin
+    Description: Name of the project
   
+  Environment:
+    Type: String
+    Default: demo
+    Description: Environment name
+    
+  ECRImageURI:
+    Type: String
+    Description: ECR Image URI for the backend container
+
 Resources:
-  # VPC and Networking
+  # ============================================================================
+  # NETWORKING
+  # ============================================================================
+  
   VPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -16,7 +29,22 @@ Resources:
       EnableDnsSupport: true
       Tags:
         - Key: Name
-          Value: ev-digital-twin-vpc
+          Value: !Sub "${ProjectName}-vpc"
+        - Key: Environment
+          Value: !Ref Environment
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-igw"
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
 
   PublicSubnet1:
     Type: AWS::EC2::Subnet
@@ -27,7 +55,7 @@ Resources:
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: ev-digital-twin-public-subnet-1
+          Value: !Sub "${ProjectName}-public-subnet-1"
 
   PublicSubnet2:
     Type: AWS::EC2::Subnet
@@ -38,20 +66,7 @@ Resources:
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: ev-digital-twin-public-subnet-2
-
-  InternetGateway:
-    Type: AWS::EC2::InternetGateway
-    Properties:
-      Tags:
-        - Key: Name
-          Value: ev-digital-twin-igw
-
-  AttachGateway:
-    Type: AWS::EC2::VPCGatewayAttachment
-    Properties:
-      VpcId: !Ref VPC
-      InternetGatewayId: !Ref InternetGateway
+          Value: !Sub "${ProjectName}-public-subnet-2"
 
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
@@ -59,7 +74,7 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: ev-digital-twin-public-rt
+          Value: !Sub "${ProjectName}-public-rt"
 
   PublicRoute:
     Type: AWS::EC2::Route
@@ -81,7 +96,10 @@ Resources:
       SubnetId: !Ref PublicSubnet2
       RouteTableId: !Ref PublicRouteTable
 
-  # Security Groups
+  # ============================================================================
+  # SECURITY GROUPS
+  # ============================================================================
+
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -92,13 +110,15 @@ Resources:
           FromPort: 80
           ToPort: 80
           CidrIp: 0.0.0.0/0
+          Description: HTTP access from internet
         - IpProtocol: tcp
           FromPort: 443
           ToPort: 443
           CidrIp: 0.0.0.0/0
+          Description: HTTPS access from internet
       Tags:
         - Key: Name
-          Value: ev-digital-twin-alb-sg
+          Value: !Sub "${ProjectName}-alb-sg"
 
   ECSSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -110,15 +130,19 @@ Resources:
           FromPort: 8000
           ToPort: 8000
           SourceSecurityGroupId: !Ref ALBSecurityGroup
+          Description: Access from ALB
       Tags:
         - Key: Name
-          Value: ev-digital-twin-ecs-sg
+          Value: !Sub "${ProjectName}-ecs-sg"
 
-  # Application Load Balancer
+  # ============================================================================
+  # APPLICATION LOAD BALANCER
+  # ============================================================================
+
   ApplicationLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: ev-digital-twin-alb
+      Name: !Sub "${ProjectName}-alb"
       Scheme: internet-facing
       Type: application
       Subnets:
@@ -128,12 +152,12 @@ Resources:
         - !Ref ALBSecurityGroup
       Tags:
         - Key: Name
-          Value: ev-digital-twin-alb
+          Value: !Sub "${ProjectName}-alb"
 
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: ev-digital-twin-tg
+      Name: !Sub "${ProjectName}-tg"
       Port: 8000
       Protocol: HTTP
       VpcId: !Ref VPC
@@ -141,9 +165,12 @@ Resources:
       HealthCheckPath: /health
       HealthCheckProtocol: HTTP
       HealthCheckIntervalSeconds: 30
-      HealthCheckTimeoutSeconds: 10
+      HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 5
+      UnhealthyThresholdCount: 3
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-tg"
 
   Listener:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -155,22 +182,67 @@ Resources:
       Port: 80
       Protocol: HTTP
 
-  # ECS Cluster
+  # ============================================================================
+  # ECS CLUSTER AND SERVICE
+  # ============================================================================
+
   ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
-      ClusterName: ev-digital-twin-cluster
+      ClusterName: !Sub "${ProjectName}-cluster"
       CapacityProviders:
         - FARGATE
       DefaultCapacityProviderStrategy:
         - CapacityProvider: FARGATE
           Weight: 1
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-cluster"
 
-  # ECS Task Definition
+  ExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-execution-role"
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-task-role"
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: TaskRolePolicy
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/ecs/${ProjectName}"
+      RetentionInDays: 7
+
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Family: ev-digital-twin-task
+      Family: !Sub "${ProjectName}-task"
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
@@ -179,8 +251,8 @@ Resources:
       ExecutionRoleArn: !Ref ExecutionRole
       TaskRoleArn: !Ref TaskRole
       ContainerDefinitions:
-        - Name: ev-digital-twin-backend
-          Image: !Ref ImageURI
+        - Name: !Sub "${ProjectName}-backend"
+          Image: !Ref ECRImageURI
           PortMappings:
             - ContainerPort: 8000
               Protocol: tcp
@@ -198,16 +270,15 @@ Resources:
               - CMD-SHELL
               - "curl -f http://localhost:8000/health || exit 1"
             Interval: 30
-            Timeout: 10
-            Retries: 5
-            StartPeriod: 120
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 60
 
-  # ECS Service
   ECSService:
     Type: AWS::ECS::Service
     DependsOn: Listener
     Properties:
-      ServiceName: ev-digital-twin-service
+      ServiceName: !Sub "${ProjectName}-service"
       Cluster: !Ref ECSCluster
       TaskDefinition: !Ref TaskDefinition
       DesiredCount: 2
@@ -221,60 +292,55 @@ Resources:
             - !Ref PublicSubnet2
           AssignPublicIp: ENABLED
       LoadBalancers:
-        - ContainerName: ev-digital-twin-backend
+        - ContainerName: !Sub "${ProjectName}-backend"
           ContainerPort: 8000
           TargetGroupArn: !Ref TargetGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-service"
 
-  # IAM Roles
-  ExecutionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: ev-digital-twin-execution-role
-      AssumeRolePolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: ecs-tasks.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
-
-  TaskRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: ev-digital-twin-task-role
-      AssumeRolePolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: ecs-tasks.amazonaws.com
-            Action: sts:AssumeRole
-      Policies:
-        - PolicyName: BedrockAccess
-          PolicyDocument:
-            Statement:
-              - Effect: Allow
-                Action:
-                  - bedrock:InvokeModel
-                  - bedrock:InvokeModelWithResponseStream
-                Resource: "*"
-
-  # CloudWatch Log Group
-  LogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: /ecs/ev-digital-twin
-      RetentionInDays: 7
+# ============================================================================
+# OUTPUTS
+# ============================================================================
 
 Outputs:
+  # Networking
+  VPCId:
+    Description: ID of the VPC
+    Value: !Ref VPC
+    Export:
+      Name: !Sub "${ProjectName}-vpc-id"
+
+  PublicSubnet1Id:
+    Description: ID of Public Subnet 1
+    Value: !Ref PublicSubnet1
+    Export:
+      Name: !Sub "${ProjectName}-public-subnet-1-id"
+
+  PublicSubnet2Id:
+    Description: ID of Public Subnet 2
+    Value: !Ref PublicSubnet2
+    Export:
+      Name: !Sub "${ProjectName}-public-subnet-2-id"
+
+  # Backend
   LoadBalancerDNS:
     Description: DNS name of the load balancer
     Value: !GetAtt ApplicationLoadBalancer.DNSName
     Export:
-      Name: ev-digital-twin-alb-dns
-  
+      Name: !Sub "${ProjectName}-alb-dns"
+
   ClusterName:
     Description: Name of the ECS cluster
     Value: !Ref ECSCluster
     Export:
-      Name: ev-digital-twin-cluster-name
+      Name: !Sub "${ProjectName}-cluster-name"
+
+  # Application URLs
+  BackendURL:
+    Description: Backend API URL
+    Value: !Sub "http://${ApplicationLoadBalancer.DNSName}"
+
+  HealthCheckURL:
+    Description: Backend health check URL
+    Value: !Sub "http://${ApplicationLoadBalancer.DNSName}/health"

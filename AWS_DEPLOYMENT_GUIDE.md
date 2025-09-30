@@ -32,9 +32,9 @@ Internet → ALB → ECS Fargate (Backend API) → ECR (Docker Images)
 
 ## 🚀 Quick Deployment
 
-### Option 1: Automated Deployment (Recommended)
+### Automated Deployment with Nested Stacks (Recommended)
 
-Use our tested deployment script that automates the entire process:
+Use our tested deployment script that deploys three separate CloudFormation stacks for easier debugging:
 
 ```bash
 # Make the script executable
@@ -45,15 +45,21 @@ chmod +x deploy-aws.sh
 ```
 
 This script will:
-1. ✅ Create ECR repository and push Docker image
-2. ✅ Set up VPC, subnets, and security groups
-3. ✅ Create Application Load Balancer
-4. ✅ Deploy ECS Fargate cluster and service
-5. ✅ Create S3 bucket and CloudFront distribution
-6. ✅ Build and deploy React frontend
-7. ✅ Configure secure access with Origin Access Control
+1. ✅ Create ECR repository and push Docker image (with correct platform)
+2. ✅ Deploy Cognito stack (Authentication)
+3. ✅ Deploy Backend stack (ECS + ALB + VPC)
+4. ✅ Deploy Frontend stack (S3 + CloudFront with OAC)
+5. ✅ Create demo admin user
+6. ✅ Build and deploy React frontend with authentication
+7. ✅ Test the complete system
 
 **Deployment time:** ~15-20 minutes
+
+**Benefits of Nested Stack Approach:**
+- ✅ **Easier Debugging** - Each component can be debugged separately
+- ✅ **Faster Updates** - Update only the stack that changed
+- ✅ **Better Error Isolation** - Failures don't affect other components
+- ✅ **Modular Architecture** - Clean separation of concerns
 
 ### Option 2: Manual Step-by-Step Deployment
 
@@ -299,9 +305,36 @@ aws ecs create-service \
     --load-balancers "targetGroupArn=$TG_ARN,containerName=ev-digital-twin-backend,containerPort=8000"
 ```
 
-### Phase 3: Frontend Deployment
+### Phase 3: Authentication Setup
 
-#### Step 3.1: Create S3 Bucket
+#### Step 3.1: Create Cognito User Pool
+```bash
+# Deploy Cognito infrastructure
+aws cloudformation deploy \
+    --template-file infrastructure/cognito-infrastructure.yaml \
+    --stack-name ev-digital-twin-cognito \
+    --parameter-overrides ProjectName=ev-digital-twin \
+    --capabilities CAPABILITY_NAMED_IAM \
+    --region us-east-1
+
+# Get Cognito details
+USER_POOL_ID=$(aws cloudformation describe-stacks \
+    --stack-name ev-digital-twin-cognito \
+    --query 'Stacks[0].Outputs[?OutputKey==`UserPoolId`].OutputValue' \
+    --output text)
+
+USER_POOL_CLIENT_ID=$(aws cloudformation describe-stacks \
+    --stack-name ev-digital-twin-cognito \
+    --query 'Stacks[0].Outputs[?OutputKey==`UserPoolClientId`].OutputValue' \
+    --output text)
+
+echo "User Pool ID: $USER_POOL_ID"
+echo "Client ID: $USER_POOL_CLIENT_ID"
+```
+
+### Phase 4: Frontend Deployment
+
+#### Step 4.1: Create S3 Bucket
 ```bash
 # Create S3 bucket for frontend
 BUCKET_NAME="ev-digital-twin-frontend-$AWS_ACCOUNT_ID-us-east-1"
@@ -313,7 +346,7 @@ aws s3api put-public-access-block \
     --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
 ```
 
-#### Step 3.2: Create CloudFront Distribution with Origin Access Control
+#### Step 4.2: Create CloudFront Distribution with Origin Access Control
 ```bash
 # Create Origin Access Control
 OAC_ID=$(aws cloudfront create-origin-access-control --origin-access-control-config '{
@@ -399,9 +432,37 @@ aws s3api put-bucket-policy --bucket $BUCKET_NAME --policy '{
 }'
 ```
 
-#### Step 3.3: Build and Deploy Frontend
+#### Step 4.3: Build and Deploy Frontend with Authentication
 ```bash
 cd frontend/ev-digital-twin-tire-maintainence-system
+
+# Update AWS exports with Cognito configuration
+cat > src/aws-exports.js << EOF
+const awsmobile = {
+  "aws_project_region": "us-east-1",
+  "aws_cognito_region": "us-east-1",
+  "aws_user_pools_id": "$USER_POOL_ID",
+  "aws_user_pools_web_client_id": "$USER_POOL_CLIENT_ID",
+  "oauth": {},
+  "aws_cognito_username_attributes": ["EMAIL"],
+  "aws_cognito_social_providers": [],
+  "aws_cognito_signup_attributes": ["EMAIL"],
+  "aws_cognito_mfa_configuration": "OFF",
+  "aws_cognito_mfa_types": ["SMS"],
+  "aws_cognito_password_protection_settings": {
+    "passwordPolicyMinLength": 8,
+    "passwordPolicyCharacters": [
+      "REQUIRES_LOWERCASE",
+      "REQUIRES_UPPERCASE", 
+      "REQUIRES_NUMBERS",
+      "REQUIRES_SYMBOLS"
+    ]
+  },
+  "aws_cognito_verification_mechanisms": ["EMAIL"],
+  "aws_cognito_signup_disabled": true
+};
+export default awsmobile;
+EOF
 
 # Create production environment file with backend API URL
 echo "REACT_APP_API_URL=http://$ALB_DNS" > .env.production
@@ -419,9 +480,9 @@ aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/
 cd ../..
 ```
 
-### Phase 4: Testing and Verification
+### Phase 5: Testing and Verification
 
-#### Step 4.1: Test Backend
+#### Step 5.1: Test Backend
 ```bash
 # Test health endpoint
 curl http://$ALB_DNS/health
@@ -430,13 +491,20 @@ curl http://$ALB_DNS/health
 curl http://$ALB_DNS/api/vehicles
 ```
 
-#### Step 4.2: Test Frontend
+#### Step 5.2: Test Frontend and Authentication
 ```bash
 # Test CloudFront distribution
 curl -I https://$CLOUDFRONT_DOMAIN/
 
 # Test static assets
 curl -I https://$CLOUDFRONT_DOMAIN/static/css/main.*.css
+
+# Test authentication - visit the frontend URL
+echo "Visit https://$CLOUDFRONT_DOMAIN to test login"
+echo "Demo Credentials:"
+echo "Username: admin"
+echo "Email: admin@example.com" 
+echo "Temporary Password: TempPass123!"
 ```
 
 ## 📊 Deployment Results
@@ -447,6 +515,52 @@ After successful deployment, you'll have:
 - **Backend API URL**: `http://$ALB_DNS`
 - **Health Check**: `http://$ALB_DNS/health`
 - **API Endpoints**: `http://$ALB_DNS/api/vehicles`
+
+## 🔐 Authentication & User Management
+
+### Demo Credentials
+- **Username**: `admin`
+- **Email**: `admin@example.com`
+- **Temporary Password**: `TempPass123!`
+
+### Security Architecture
+- ✅ **Admin-Only User Creation** - Self-registration is disabled
+- ✅ **Strong Password Policy** - 8+ chars with uppercase, lowercase, numbers, symbols
+- ✅ **Email Verification** - Required for account recovery
+- ✅ **Secure Authentication** - AWS Cognito with SRP protocol
+
+### Creating Additional Users
+
+#### Via AWS Console:
+1. Go to AWS Console > Cognito > User Pools
+2. Select `ev-digital-twin-user-pool`
+3. Click "Create user"
+4. Enter username and email
+5. Set temporary password or let AWS generate one
+6. User will receive email with login instructions
+
+#### Via AWS CLI:
+```bash
+# Create a new user
+aws cognito-idp admin-create-user \
+    --user-pool-id $USER_POOL_ID \
+    --username "newuser" \
+    --user-attributes Name=email,Value=user@company.com Name=given_name,Value=John Name=family_name,Value=Doe \
+    --temporary-password "TempPass456!" \
+    --message-action SUPPRESS
+
+# Set permanent password (optional)
+aws cognito-idp admin-set-user-password \
+    --user-pool-id $USER_POOL_ID \
+    --username "newuser" \
+    --password "PermanentPass123!" \
+    --permanent
+```
+
+### Password Management
+- **First Login**: Users must change temporary password
+- **Password Reset**: Users can reset via "Forgot Password" link
+- **Admin Reset**: Admins can reset passwords via AWS Console/CLI
 
 ## 🔄 Updating the Deployment
 

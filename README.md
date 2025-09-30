@@ -35,16 +35,30 @@ python cli_interface.py
 ```
 
 ### AWS Cloud Deployment
-For production deployment on AWS, see our comprehensive [AWS Deployment Guide](AWS_DEPLOYMENT_GUIDE.md).
+Deploy the complete solution using Infrastructure as Code with nested CloudFormation stacks.
 
-**Quick Deploy Summary:**
-- **Frontend**: React app hosted on S3 + CloudFront
+**Architecture:**
+- **Frontend**: React app with Cognito authentication hosted on S3 + CloudFront
 - **Backend**: Flask API on ECS Fargate with Application Load Balancer
-- **Architecture**: Serverless, scalable, and secure
+- **Authentication**: AWS Cognito with admin-only user creation
+- **Infrastructure**: Three separate CloudFormation stacks for easier debugging
 
 ```bash
-# Deploy to AWS (requires AWS CLI configured)
+# Deploy complete infrastructure (requires AWS CLI configured)
 ./deploy-aws.sh
+```
+
+**🔐 Security Note**: The demo is architected with self-registration disabled. Only administrators can add users to access the web application. Create users via AWS Console after deployment.
+
+**🏗️ Infrastructure Management:**
+```bash
+# Clean up all resources
+./cleanup-cloudformation.sh
+
+# Deploy individual stacks for debugging
+aws cloudformation deploy --template-file infrastructure/cognito-stack.yaml --stack-name ev-digital-twin-cognito --capabilities CAPABILITY_NAMED_IAM
+aws cloudformation deploy --template-file infrastructure/backend-stack.yaml --stack-name ev-digital-twin-backend --capabilities CAPABILITY_NAMED_IAM
+aws cloudformation deploy --template-file infrastructure/frontend-stack.yaml --stack-name ev-digital-twin-frontend --capabilities CAPABILITY_NAMED_IAM
 ```
 
 ### First Run
@@ -267,11 +281,12 @@ When deployed to AWS, the solution uses a modern, scalable architecture:
 ```
 
 **Key Components:**
-- **Frontend**: React app served via CloudFront + S3 with Origin Access Control
+- **Frontend**: React app with AWS Cognito authentication served via CloudFront + S3 with Origin Access Control
 - **Backend**: Flask API on ECS Fargate with auto-scaling
+- **Authentication**: AWS Cognito User Pool with admin-only user creation
 - **Load Balancer**: Application Load Balancer for high availability
 - **Container Registry**: ECR for Docker image storage
-- **Security**: VPC, Security Groups, IAM roles with least privilege
+- **Security**: VPC, Security Groups, IAM roles with least privilege, secure login
 
 **Benefits:**
 - 🚀 **Scalable**: Auto-scaling based on demand

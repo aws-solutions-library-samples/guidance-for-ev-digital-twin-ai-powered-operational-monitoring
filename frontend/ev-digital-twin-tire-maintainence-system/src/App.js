@@ -1,31 +1,93 @@
-import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { Amplify } from 'aws-amplify';
+import { getCurrentUser, signOut } from 'aws-amplify/auth';
 import './App.css';
-import MapView from './components/MapView';
-import CarDetail from './components/CarDetail';
-import TiresPage from './components/Tires';
-import BatteryScreen from './components/BatteryScreen';
-import Motor from './components/motor';
-import Invertor from './components/Invertor';
-import EnergyManagement from './components/EnergyManagement';
-import Charger from './components/Charger';
-import Fleet from './components/fleet/FleetMgmt';
-import FleetPortal from './components/fleet/FleetPortal';
+import Login from './components/Login';
+import Dashboard from './components/Dashboard';
+import ProtectedRoute from './components/ProtectedRoute';
+import awsExports from './aws-exports';
+
+// Configure Amplify
+Amplify.configure(awsExports);
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    checkAuthState();
+  }, []);
+
+  const checkAuthState = async () => {
+    try {
+      const currentUser = await getCurrentUser();
+      setUser(currentUser);
+      setIsAuthenticated(true);
+    } catch (error) {
+      console.log('User not authenticated:', error);
+      setIsAuthenticated(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignIn = (user) => {
+    setUser(user);
+    setIsAuthenticated(true);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      setUser(null);
+      setIsAuthenticated(false);
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="app loading">
+        <div className="loading-spinner">
+          <div className="spinner"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       <Routes>
-        <Route path="/" element={<MapView />} />
-        <Route path="/car/:carId" element={<CarDetail />} />
-        <Route path="/car/:carId/tires" element={<TiresPage />} />
-        <Route path="/car/:carId/battery" element={<BatteryScreen />} />
-        <Route path="/car/:carId/motor" element={<Motor />} />
-        <Route path="/car/:carId/invertor" element={<Invertor />} />
-        <Route path="/car/:carId/energymanagement" element={<EnergyManagement />} />
-        <Route path="/car/:carId/charger" element={<Charger />} />
-        <Route path="/fleet" element={<Fleet />} />
-        <Route path="/fleet/portal" element={<FleetPortal />} />
+        <Route 
+          path="/login" 
+          element={
+            isAuthenticated ? 
+            <Navigate to="/" replace /> : 
+            <Login onSignIn={handleSignIn} />
+          } 
+        />
+        <Route 
+          path="/*" 
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <div className="dashboard-container">
+                {isAuthenticated && (
+                  <div className="user-info">
+                    <span>Welcome, {user?.username || 'User'}</span>
+                    <button onClick={handleSignOut} className="sign-out-button">
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+                <Dashboard />
+              </div>
+            </ProtectedRoute>
+          } 
+        />
       </Routes>
     </div>
   );
