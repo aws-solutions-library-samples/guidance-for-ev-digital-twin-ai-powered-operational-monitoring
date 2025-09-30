@@ -22,7 +22,7 @@ A comprehensive Proof of Concept for integrated vehicle maintenance management u
 
 ## 🚀 Quick Start
 
-### Installation
+### Local Development
 ```bash
 # Navigate to project directory
 cd vehicle-maintenance-system
@@ -34,11 +34,24 @@ pip install -r requirements.txt
 python cli_interface.py
 ```
 
+### AWS Cloud Deployment
+For production deployment on AWS, see our comprehensive [AWS Deployment Guide](AWS_DEPLOYMENT_GUIDE.md).
+
+**Quick Deploy Summary:**
+- **Frontend**: React app hosted on S3 + CloudFront
+- **Backend**: Flask API on ECS Fargate with Application Load Balancer
+- **Architecture**: Serverless, scalable, and secure
+
+```bash
+# Deploy to AWS (requires AWS CLI configured)
+./deploy-aws.sh
+```
+
 ### First Run
 The system will automatically:
 1. Generate sample tire and motor data for 5 vehicles over 180 days (including verified Honda Civic 2020)
 2. Train machine learning models for both tire and motor systems
-3. Launch the interactive unified CLI
+3. Launch the interactive unified CLI (local) or web interface (AWS)
 
 ## 📋 CLI Menu Options
 
@@ -233,6 +246,39 @@ Raw Data → Feature Engineering → Model Training → Predictions → Agent An
 - **Automated Scheduling**: Streamlined appointment booking
 - **Data-Driven Decisions**: Evidence-based maintenance planning
 - **Resource Allocation**: Optimize service bay utilization
+
+## ☁️ AWS Cloud Architecture
+
+When deployed to AWS, the solution uses a modern, scalable architecture:
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   CloudFront    │────│   S3 Bucket      │    │   ECS Fargate   │
+│   (Frontend)    │    │   (React App)    │    │   (Flask API)   │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+         │                        │                       │
+         │                        │                       │
+         └────────────────────────┼───────────────────────┘
+                                  │
+                            ┌──────────────┐
+                            │ Application  │
+                            │ Load Balancer│
+                            └──────────────┘
+```
+
+**Key Components:**
+- **Frontend**: React app served via CloudFront + S3 with Origin Access Control
+- **Backend**: Flask API on ECS Fargate with auto-scaling
+- **Load Balancer**: Application Load Balancer for high availability
+- **Container Registry**: ECR for Docker image storage
+- **Security**: VPC, Security Groups, IAM roles with least privilege
+
+**Benefits:**
+- 🚀 **Scalable**: Auto-scaling based on demand
+- 🔒 **Secure**: Private networking with HTTPS encryption
+- 💰 **Cost-effective**: Pay only for what you use
+- 🌍 **Global**: CloudFront edge locations worldwide
+- 📊 **Monitored**: CloudWatch logging and metrics
 
 ## 🔮 Future Enhancements
 
