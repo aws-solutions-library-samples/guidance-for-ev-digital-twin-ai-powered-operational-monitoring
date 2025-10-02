@@ -40,7 +40,7 @@ const CarDetail = () => {
               onClick={() => setDropdownOpen(!dropdownOpen)}
               style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
             >
-              <span className="user-profile">bhuser</span>
+              <span className="user-profile">newuser</span>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
                 <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
               </svg>
@@ -181,10 +181,10 @@ const CarDetail = () => {
             </div>
           </div>
 
-          <div className="spacer"></div>
+          <div className="spacer" style={{ height: window.innerWidth < 1600 ? '10px' : 'auto' }}></div>
 
           {/* Component Status Cards */}
-          <div className="component-status">
+          <div className="component-status" style={{ marginTop: window.innerWidth < 1600 ? '-50px' : '0' }}>
             <div className="component-card clickable" onClick={() => navigate(`/car/${carId}/battery`)}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '-20px' }}>
                 <img src={require('./assets/battery.png')} alt="Battery" style={{ width: '20px', height: '20px' }} />
