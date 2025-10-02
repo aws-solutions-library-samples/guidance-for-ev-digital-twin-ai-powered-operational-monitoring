@@ -1,9 +1,20 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './fleetportal.css';
 
 const FleetPortal = () => {
   const navigate = useNavigate();
+  
+  // State for window size tracking
+  const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
     <div className="fleet-portal">
@@ -17,10 +28,13 @@ const FleetPortal = () => {
           <h1 style={{ fontSize: '24px', fontWeight: '700', fontFamily: 'Amazon Ember' }}>Fleet Management Portal</h1>
         </div>
         <div className="header-right">
-          <span className="username">bhuser</span>
-          <div className="user-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span className="username">newuser</span>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
               <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            </svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
+              <path d="M7 10l5 5 5-5z"/>
             </svg>
           </div>
         </div>
@@ -33,7 +47,7 @@ const FleetPortal = () => {
       </div>
 
       <div className="dashboard-content">
-        <div className="left-panel">
+        <div className="left-panel" style={{ marginTop: windowSize.width < 1600 ? '-20px' : '0', height: windowSize.width < 1600 ? 'calc(100vh - 140px)' : 'auto' }}>
           <div className="panel-title">Vehicles (10)</div>
           <div className="map-container">
             <div className="mini-map">
@@ -44,7 +58,7 @@ const FleetPortal = () => {
               <div className="marker orange" style={{top: '80%', left: '70%'}}></div>
               <div className="marker gray" style={{top: '50%', left: '40%'}}></div>
             </div>
-            <div className="map-legend fleet-legend">
+            <div className="map-legend fleet-legend" style={{ marginTop: windowSize.width < 1600 ? '80px' : '40px', paddingTop: '0', width: '120%' }}>
               <div className="legend-item">
                 <div className="legend-dot green"></div>
                 <span className="legend-text">Charging (3)</span>
@@ -59,10 +73,10 @@ const FleetPortal = () => {
               </div>
             </div>
           </div>
-          <div className="search-section">
+          <div className="search-section" style={{ marginTop: windowSize.width < 1600 ? '-78px' : '0' }}>
             <input type="text" placeholder="Search for vehicle" />
           </div>
-          <div className="vehicle-list">
+          <div className="vehicle-list" style={{ marginTop: windowSize.width < 1600 ? '-68px' : '0', paddingTop: windowSize.width < 1600 ? '95px' : '0' }}>
             <div className="vehicle-row">
               <div className="vehicle-info">
                 <div className="vehicle-id" onClick={() => navigate('/car/1')}>1C4BJWCG8DL501255</div>
@@ -141,7 +155,7 @@ const FleetPortal = () => {
           </div>
         </div>
 
-        <div className="center-panel">
+        <div className="center-panel" style={{ marginTop: windowSize.width < 1600 ? '-20px' : '0', height: windowSize.width < 1600 ? 'calc(100vh - 140px)' : 'auto' }}>
           <div className="panel-title">Resource Allocation</div>
           <div className="top-sections">
             <div className="resource-section">
@@ -150,10 +164,22 @@ const FleetPortal = () => {
                 <span className="count-badge">4</span>
               </div>
               <div className="shipment-list">
-                <div>A-B: 12 tons → 1C4BJWCG8DL501255</div>
-                <div>A-C: 6 tons → 1FVHG3DX3DHFE3747</div>
-                <div>C-B: 8 tons → 1GCEC14W6TZ225573</div>
-                <div>B-D: 4 tons → 3B7HC13Z7TG112627</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: windowSize.width < 1600 ? '12px' : '10px' }}>
+                  <span>A-B: 12 tons</span>
+                  <span>1C4BJWCG8DL501255</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: windowSize.width < 1600 ? '12px' : '10px' }}>
+                  <span>A-C: 6 tons</span>
+                  <span>1FVHG3DX3DHFE3747</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: windowSize.width < 1600 ? '12px' : '10px' }}>
+                  <span>C-B: 8 tons</span>
+                  <span>1GCEC14W6TZ225573</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: windowSize.width < 1600 ? '12px' : '10px' }}>
+                  <span>B-D: 4 tons</span>
+                  <span>3B7HC13Z7TG112627</span>
+                </div>
               </div>
             </div>
             <div className="resource-section">
@@ -202,19 +228,19 @@ const FleetPortal = () => {
           </div>
           <div className="recommendations-section">
             <h4>💡 Recommended Reassignments</h4>
-            <div className="recommendation">
+            <div className="recommendation" style={{ padding: windowSize.width < 1600 ? '5px 0' : '15px 0' }}>
               <div className="rec-vehicle">1C4BJWCG8DL501255</div>
               <div className="rec-text">Showing Low SoC, charge needed. Replace by 1FVHG3DX3DHFE3747</div>
-              <div className="rec-actions">
+              <div className="rec-actions" style={{ marginBottom: windowSize.width < 1600 ? '0px' : '30px' }}>
                 <button className="btn-dismiss">Dismiss</button>
                 <button className="btn-reject">🔄 Reject</button>
                 <button className="btn-approve">👍 Approve</button>
               </div>
             </div>
-            <div className="recommendation">
+            <div className="recommendation" style={{ padding: windowSize.width < 1600 ? '5px 0' : '15px 0' }}>
               <div className="rec-vehicle">1GCEC14W6TZ225573</div>
               <div className="rec-text">Schedule for maintenance (Brake check)</div>
-              <div className="rec-actions">
+              <div className="rec-actions" style={{ marginBottom: windowSize.width < 1600 ? '0px' : '30px' }}>
                 <button className="btn-dismiss">Dismiss</button>
                 <button className="btn-reject">🔄 Reject</button>
                 <button className="btn-approve">👍 Approve</button>
@@ -223,7 +249,7 @@ const FleetPortal = () => {
           </div>
         </div>
 
-        <div className="right-panel">
+        <div className="right-panel" style={{ marginTop: windowSize.width < 1600 ? '-20px' : '0', height: windowSize.width < 1600 ? 'calc(100vh - 140px)' : 'auto' }}>
           <div className="panel-title">Maintenance</div>
           <div className="maintenance-top-sections">
             <div className="maintenance-section">

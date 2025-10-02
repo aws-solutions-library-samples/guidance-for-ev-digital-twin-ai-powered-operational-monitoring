@@ -103,7 +103,7 @@ const FleetMgmt = () => {
         </div>
       </div>
 
-      <div className="map-legend" style={{ background: '#333740' }}>
+      <div className="map-legend" style={{ background: '#333740', position: 'fixed', bottom: '0', left: '0', right: '0', height: '100px' }}>
         <h3>Vehicles in Fleet</h3>
         <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', margin: '40px 0 0 10px' }}>Click on region to view fleet details</p>
         <div className="legend-item" style={{ position: 'absolute', top: '1px', right: '0px', background: '#1b1e20', padding: '16px 50px 16px 32px', borderRadius: '4px', height: '98px', width: '220px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
