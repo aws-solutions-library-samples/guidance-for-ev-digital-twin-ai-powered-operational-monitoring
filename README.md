@@ -22,7 +22,7 @@ A comprehensive Proof of Concept for integrated vehicle maintenance management u
 
 ## 🚀 Quick Start
 
-### Installation
+### Local Development
 ```bash
 # Navigate to project directory
 cd vehicle-maintenance-system
@@ -34,11 +34,38 @@ pip install -r requirements.txt
 python cli_interface.py
 ```
 
+### AWS Cloud Deployment
+Deploy the complete solution using Infrastructure as Code with nested CloudFormation stacks.
+
+**Architecture:**
+- **Frontend**: React app with Cognito authentication hosted on S3 + CloudFront
+- **Backend**: Flask API on ECS Fargate with Application Load Balancer
+- **Authentication**: AWS Cognito with admin-only user creation
+- **Infrastructure**: Three separate CloudFormation stacks for easier debugging
+
+```bash
+# Deploy complete infrastructure (requires AWS CLI configured)
+./deploy-aws.sh
+```
+
+**🔐 Security Note**: The demo is architected with self-registration disabled. Only administrators can add users to access the web application. Create users via AWS Console after deployment.
+
+**🏗️ Infrastructure Management:**
+```bash
+# Clean up all resources
+./cleanup-cloudformation.sh
+
+# Deploy individual stacks for debugging
+aws cloudformation deploy --template-file infrastructure/cognito-stack.yaml --stack-name ev-digital-twin-cognito --capabilities CAPABILITY_NAMED_IAM
+aws cloudformation deploy --template-file infrastructure/backend-stack.yaml --stack-name ev-digital-twin-backend --capabilities CAPABILITY_NAMED_IAM
+aws cloudformation deploy --template-file infrastructure/frontend-stack.yaml --stack-name ev-digital-twin-frontend --capabilities CAPABILITY_NAMED_IAM
+```
+
 ### First Run
 The system will automatically:
 1. Generate sample tire and motor data for 5 vehicles over 180 days (including verified Honda Civic 2020)
 2. Train machine learning models for both tire and motor systems
-3. Launch the interactive unified CLI
+3. Launch the interactive unified CLI (local) or web interface (AWS)
 
 ## 📋 CLI Menu Options
 
@@ -233,6 +260,40 @@ Raw Data → Feature Engineering → Model Training → Predictions → Agent An
 - **Automated Scheduling**: Streamlined appointment booking
 - **Data-Driven Decisions**: Evidence-based maintenance planning
 - **Resource Allocation**: Optimize service bay utilization
+
+## ☁️ AWS Cloud Architecture
+
+When deployed to AWS, the solution uses a modern, scalable architecture:
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   CloudFront    │────│   S3 Bucket      │    │   ECS Fargate   │
+│   (Frontend)    │    │   (React App)    │    │   (Flask API)   │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+         │                        │                       │
+         │                        │                       │
+         └────────────────────────┼───────────────────────┘
+                                  │
+                            ┌──────────────┐
+                            │ Application  │
+                            │ Load Balancer│
+                            └──────────────┘
+```
+
+**Key Components:**
+- **Frontend**: React app with AWS Cognito authentication served via CloudFront + S3 with Origin Access Control
+- **Backend**: Flask API on ECS Fargate with auto-scaling
+- **Authentication**: AWS Cognito User Pool with admin-only user creation
+- **Load Balancer**: Application Load Balancer for high availability
+- **Container Registry**: ECR for Docker image storage
+- **Security**: VPC, Security Groups, IAM roles with least privilege, secure login
+
+**Benefits:**
+- 🚀 **Scalable**: Auto-scaling based on demand
+- 🔒 **Secure**: Private networking with HTTPS encryption
+- 💰 **Cost-effective**: Pay only for what you use
+- 🌍 **Global**: CloudFront edge locations worldwide
+- 📊 **Monitored**: CloudWatch logging and metrics
 
 ## 🔮 Future Enhancements
 

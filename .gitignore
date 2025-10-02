@@ -54,6 +54,15 @@ tire_wear_data.csv
 !car_manual_specs.csv
 !manuals/manual_sources.csv
 
+# CloudFormation temporary files
+current-distribution-config.json
+temp-distribution-config.json
+*-temp.*
+
+# AWS deployment artifacts
+task-definition.json
+bucket-policy.json
+
 # Logs
 *.log
 logs/
