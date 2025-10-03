@@ -1648,6 +1648,20 @@
   z-index: 10;
 }
 
+@media (max-width: 1599px) {
+  .vehicle-center {
+    top: 50%;
+    left: 47%;
+  }
+}
+
+@media (max-width: 1399px) {
+  .vehicle-center {
+    top: 48%;
+    left: 46%;
+  }
+}
+
 .vehicle-image {
   width: 120px;
   height: auto;

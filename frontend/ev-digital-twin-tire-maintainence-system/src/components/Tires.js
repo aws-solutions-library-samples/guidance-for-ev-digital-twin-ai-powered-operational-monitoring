@@ -3,6 +3,40 @@ import { useNavigate } from 'react-router-dom';
 import Papa from 'papaparse';
 import DataNeededModal from "./DataNeededModal";
 
+const VehicleSVG = (props) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="300.000000pt"
+    height="416.000000pt"
+    viewBox="0 0 300.000000 416.000000"
+    preserveAspectRatio="xMidYMid meet"
+    {...props}
+  >
+    <g
+      transform="translate(0.000000,416.000000) scale(0.100000,-0.100000)"
+      fill="#3a4552"
+      stroke="#000000"
+      strokeWidth="35"
+      strokeLinejoin="round"
+      strokeLinecap="round"
+    >
+      <path d="M280 3930 c-75 -6 -100 -18 -135 -64 l-25 -33 -1 -381 c-1 -376 -1 -382 21 -417 37 -60 67 -70 222 -72 151 -3 177 3 225 49 34 33 46 77 47 173 l1 50 60 6 c33 4 68 10 77 14 24 10 48 67 48 113 0 27 5 42 16 46 29 11 192 7 196 -5 3 -9 10 -9 26 0 25 13 280 14 302 1 16 -10 21 -2665 5 -2687 -9 -12 -41 -14 -173 -11 -89 2 -163 0 -165 -3 -1 -3 -47 -3 -102 0 l-100 6 -6 60 c-9 79 -37 105 -114 105 -32 0 -57 5 -62 13 -4 6 -10 46 -13 88 -5 56 -12 84 -29 107 -38 55 -76 64 -243 60 -163 -3 -183 -10 -222 -78 -18 -30 -19 -56 -19 -405 0 -422 -1 -418 79 -462 35 -20 53 -23 178 -23 131 0 142 1 182 25 24 14 49 36 56 48 7 12 15 63 18 112 l5 90 60 5 c33 3 70 11 82 18 21 12 39 52 45 102 3 24 6 25 98 31 52 3 100 3 105 0 6 -3 116 -4 245 -1 129 3 309 3 400 0 91 -3 170 -3 175 0 10 5 207 0 213 -5 1 -1 5 -20 7 -41 6 -47 22 -80 44 -90 9 -4 43 -10 76 -13 l60 -6 6 -88 c6 -94 18 -121 73 -161 24 -18 45 -21 164 -24 92 -3 149 1 175 9 51 17 94 68 102 121 3 24 5 198 3 388 -2 263 -6 351 -16 371 -8 14 -32 38 -55 53 -42 27 -43 27 -197 24 -137 -3 -158 -5 -182 -23 -43 -32 -59 -70 -65 -150 -3 -41 -11 -79 -17 -84 -7 -6 -38 -11 -70 -13 -71 -4 -93 -26 -100 -102 -2 -26 -8 -52 -13 -56 -7 -7 -180 -16 -208 -11 -5 1 -87 2 -181 1 -130 -1 -173 2 -182 12 -7 10 -11 393 -11 1346 0 1320 0 1332 20 1343 24 12 306 10 332 -3 11 -6 17 -5 17 2 0 12 204 10 216 -3 4 -4 9 -31 12 -61 6 -75 32 -99 115 -106 l62 -5 5 -85 c7 -96 16 -118 66 -157 34 -25 44 -27 157 -31 191 -7 262 20 287 109 13 44 13 703 0 748 -5 19 -20 45 -32 59 -45 47 -71 54 -219 54 -126 0 -142 -3 -180 -24 -54 -30 -76 -75 -78 -163 -2 -38 -4 -71 -6 -73 -1 -2 -25 -5 -51 -8 -99 -9 -119 -24 -128 -97 -3 -21 -8 -42 -11 -47 -8 -13 -215 -12 -215 1 0 6 -6 6 -17 0 -23 -11 -739 -12 -770 0 -14 5 -23 5 -23 -1 0 -15 -183 -13 -198 2 -7 7 -12 27 -12 44 0 20 -10 44 -26 63 -23 28 -32 31 -79 31 -72 0 -85 14 -85 93 0 71 -20 120 -63 151 -22 16 -48 22 -125 26 -53 3 -126 3 -162 0z" stroke="#000000" strokeWidth="3" />
+      <path d="M225 3858 c-34 -18 -45 -40 -45 -92 l0 -50 30 29 c23 22 33 26 42 17 6 -6 10 -13 7 -15 -2 -2 -21 -16 -41 -31 -36 -27 -37 -29 -40 -102 -2 -41 -1 -74 3 -74 3 0 20 16 39 35 19 19 40 35 47 35 27 0 11 -30 -37 -70 l-50 -42 0 -76 1 -77 22 28 c22 26 57 37 57 17 0 -5 -18 -24 -40 -41 l-40 -32 0 -76 0 -75 43 42 c41 40 57 45 57 16 0 -6 -22 -29 -50 -50 -35 -27 -50 -45 -50 -62 0 -57 49 -92 130 -92 l50 0 0 425 0 425 -57 0 c-32 0 -67 -6 -78 -12z" />
+      <path d="M390 3445 l0 -425 50 0 c56 0 104 20 120 49 16 30 12 69 -8 83 -58 41 -84 69 -78 85 6 13 15 9 51 -27 l45 -44 0 76 c0 76 0 78 -35 105 -35 28 -46 53 -23 53 6 0 22 -10 35 -22 l23 -21 0 74 0 74 -50 40 c-39 31 -47 42 -38 52 9 11 19 7 50 -24 l38 -37 0 76 c0 75 0 76 -35 102 -36 28 -46 56 -21 56 8 0 24 -12 35 -27 l20 -28 1 48 c0 41 -5 53 -29 78 -26 26 -36 29 -90 29 l-61 0 0 -425z" />
+      <path d="M2364 3860 c-33 -13 -54 -50 -54 -92 0 -43 9 -47 35 -18 19 21 45 27 45 11 0 -5 -18 -25 -40 -44 -40 -34 -40 -34 -40 -107 l0 -74 40 39 c32 32 42 37 52 26 11 -10 4 -20 -32 -52 -25 -21 -48 -39 -52 -39 -5 0 -8 -34 -8 -75 0 -75 10 -93 30 -55 11 20 50 28 50 11 0 -5 -18 -24 -40 -41 l-40 -32 0 -76 0 -76 43 42 c47 46 52 49 61 27 3 -9 -14 -29 -49 -57 -64 -50 -69 -72 -26 -120 25 -29 35 -32 95 -36 l66 -4 0 426 0 426 -57 -1 c-32 0 -68 -4 -79 -9z" />
+      <path d="M2520 3444 l0 -426 66 4 c60 4 70 7 95 36 41 46 37 64 -26 114 -30 23 -55 48 -55 55 0 26 19 20 55 -17 22 -22 43 -40 47 -40 4 0 8 31 8 70 l0 69 -45 38 c-25 20 -45 41 -45 45 0 17 35 6 62 -19 l28 -27 0 75 0 74 -55 45 c-57 47 -62 54 -44 66 6 3 27 -10 48 -30 20 -20 40 -36 44 -36 4 0 7 30 7 68 l0 67 -47 42 c-42 37 -46 42 -29 49 14 5 25 0 42 -19 13 -15 26 -27 29 -27 11 0 4 73 -10 101 -19 37 -50 49 -121 49 l-54 0 0 -426z" />
+      <path d="M600 3450 l0 -150 69 0 c46 0 72 5 80 14 8 9 11 57 9 147 l-3 134 -77 3 -78 3 0 -151z" />
+      <path d="M2132 3453 l3 -148 78 -3 77 -3 0 151 0 150 -80 0 -81 0 3 -147z" />
+      <path d="M211 1064 c-27 -23 -31 -32 -31 -77 l0 -51 30 29 c24 23 33 26 43 16 9 -10 9 -15 -4 -24 -68 -52 -67 -50 -71 -125 -1 -40 -1 -72 3 -72 3 0 20 16 39 35 19 19 40 35 47 35 27 0 11 -30 -37 -70 l-50 -42 0 -76 1 -77 24 28 c23 26 55 37 55 17 0 -5 -18 -24 -40 -41 l-40 -32 0 -76 0 -75 38 37 c21 20 43 37 50 37 27 0 9 -31 -38 -67 -57 -44 -64 -75 -26 -119 20 -24 32 -28 90 -32 l66 -4 0 426 0 426 -59 0 c-49 0 -65 -4 -90 -26z" />
+      <path d="M390 665 l0 -427 66 4 c58 4 70 8 90 32 39 45 32 78 -26 122 -27 21 -50 43 -50 49 0 28 17 23 57 -17 l43 -42 0 76 c0 76 0 77 -35 104 -34 26 -46 54 -23 54 6 0 22 -10 35 -22 l23 -21 0 74 -1 74 -49 39 c-40 31 -48 42 -38 53 9 11 18 7 50 -24 l38 -37 0 76 c0 75 0 76 -35 102 -33 26 -47 56 -25 56 6 0 22 -12 35 -27 l24 -28 1 47 c0 73 -29 101 -114 106 l-66 4 0 -427z" />
+      <path d="M2363 1080 c-29 -12 -53 -60 -53 -106 l0 -38 30 29 c23 22 33 26 42 17 11 -11 3 -20 -59 -67 -10 -8 -13 -31 -11 -83 l3 -73 38 37 c30 29 40 35 50 25 9 -10 1 -22 -41 -59 l-52 -47 0 -67 c0 -38 4 -68 8 -68 5 0 17 9 27 20 19 21 45 27 45 10 0 -5 -18 -24 -40 -41 l-40 -32 0 -76 0 -75 39 38 c29 28 45 37 58 32 15 -6 10 -14 -32 -51 -28 -24 -53 -44 -57 -45 -12 0 -10 -35 3 -63 17 -37 60 -57 123 -57 l56 0 0 425 0 425 -57 -1 c-32 0 -68 -4 -80 -9z" />
+      <path d="M2520 665 l0 -425 56 0 c63 0 106 20 123 57 18 40 13 50 -44 95 -53 41 -69 68 -42 68 7 0 28 -16 47 -35 19 -19 38 -35 42 -35 4 0 8 30 8 68 l0 67 -47 42 c-40 35 -45 43 -30 49 13 4 28 -2 48 -22 l29 -28 0 75 0 74 -55 44 c-30 24 -55 48 -55 52 0 24 26 17 59 -15 20 -20 40 -36 44 -36 4 0 7 30 7 68 l0 67 -47 42 c-41 35 -45 42 -30 48 12 5 24 -1 40 -19 13 -14 26 -26 30 -26 13 0 7 71 -8 101 -19 37 -50 49 -121 49 l-54 0 0 -425z" />
+      <path d="M600 670 l0 -150 75 0 c90 0 87 -7 83 170 l-3 125 -77 3 -78 3 0 -151z" />
+      <path d="M2132 673 l3 -148 78 -3 77 -3 0 151 0 150 -80 0 -81 0 3 -147z" />
+    </g>
+  </svg>
+);
+
 // BACKEND INTEGRATION - Uncomment when API is ready
 // const [tireData, setTireData] = useState(null);
 
@@ -565,13 +599,13 @@ const TiresPage = () => {
           <div className="tire-grid" style={{ marginTop: '15px' }}>
             {/* Vehicle Image in Center */}
             <div className="vehicle-center">
-              <img src={require('./assets/vehicle.png')} alt="Vehicle" className="vehicle-image" />
+              <VehicleSVG className="vehicle-image" style={{ width: '120px', height: 'auto' }} />
             </div>
             
             {/* Front Tires */}
             <div className="tire-row">
-              <div className="tire-info front-left">
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
+              <div className="tire-info front-left" style={{ width: windowWidth < 1600 ? '105%' : 'auto', display: windowWidth < 1600 ? 'flex' : 'block', justifyContent: windowWidth < 1600 ? 'flex-end' : 'normal' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', width: windowWidth < 1600 ? '95%' : '100%' }}>
                   <div>
                     <div className="tire-position">Front Left</div>
                     {/* CSV DATA: Load from curb_weight_lbs */}
@@ -598,8 +632,8 @@ const TiresPage = () => {
                 </div>
               </div>
               <div className="tire-diagram"></div>
-              <div className="tire-info front-right">
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', textAlign: 'right', marginLeft: window.innerWidth >= 1400 ? '60px' : '0px' }}>
+              <div className="tire-info front-right" style={{ marginLeft: windowWidth < 1600 ? '5%' : '0' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', textAlign: 'right', marginLeft: window.innerWidth >= 1400 ? '60px' : '0px', transform: windowWidth < 1600 ? 'translateX(-30px)' : 'none' }}>
                   <div style={{ marginRight: '20px' }}>
                     {/* CSV DATA: Pressure from pressure_psi */}
                     <div className="load">{formatValue(currentData.pressure_psi, '', '35')}</div>
@@ -629,8 +663,8 @@ const TiresPage = () => {
 
             {/* Rear Tires */}
             <div className="tire-row">
-              <div className="tire-info rear-left">
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
+              <div className="tire-info rear-left" style={{ width: windowWidth < 1600 ? '105%' : 'auto', display: windowWidth < 1600 ? 'flex' : 'block', justifyContent: windowWidth < 1600 ? 'flex-end' : 'normal' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', width: windowWidth < 1600 ? '95%' : '100%' }}>
                   <div>
                     <div className="tire-position">Rear Left</div>
                     {/* CSV DATA: Load from curb_weight_lbs */}
@@ -657,8 +691,8 @@ const TiresPage = () => {
                 </div>
               </div>
               <div className="tire-diagram"></div>
-              <div className="tire-info rear-right">
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', textAlign: 'right', marginLeft: window.innerWidth >= 1400 ? '60px' : '0px' }}>
+              <div className="tire-info rear-right" style={{ marginLeft: windowWidth < 1600 ? '5%' : '0' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', textAlign: 'right', marginLeft: window.innerWidth >= 1400 ? '60px' : '0px', transform: windowWidth < 1600 ? 'translateX(-30px)' : 'none' }}>
                   <div style={{ marginRight: '20px' }}>
                     {/* CSV DATA: Pressure from pressure_psi */}
                     <div className="load">{formatValue(currentData.pressure_psi, '', '35')}</div>
