@@ -1,0 +1,38 @@
+default_agent: vehicle_maintenance_agent
+agents:
+  vehicle_maintenance_agent:
+    name: vehicle_maintenance_agent
+    entrypoint: agentcore_runtime_app.py
+    platform: linux/arm64
+    container_runtime: docker
+    aws:
+      execution_role: arn:aws:iam::009296485814:role/AmazonBedrockAgentCoreSDKRuntime-us-east-1-cdd8445f6e
+      execution_role_auto_create: false
+      account: 009296485814
+      region: us-east-1
+      ecr_repository: 009296485814.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-vehicle_maintenance_agent
+      ecr_auto_create: false
+      network_configuration:
+        network_mode: PUBLIC
+      protocol_configuration:
+        server_protocol: HTTP
+      observability:
+        enabled: true
+    bedrock_agentcore:
+      agent_id: vehicle_maintenance_agent-kH9hYvFcCD
+      agent_arn: arn:aws:bedrock-agentcore:us-east-1:009296485814:runtime/vehicle_maintenance_agent-kH9hYvFcCD
+      agent_session_id: null
+    codebuild:
+      project_name: bedrock-agentcore-vehicle_maintenance_agent-builder
+      execution_role: arn:aws:iam::009296485814:role/AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-cdd8445f6e
+      source_bucket: bedrock-agentcore-codebuild-sources-009296485814-us-east-1
+    memory:
+      mode: STM_ONLY
+      memory_id: vehicle_maintenance_agent_mem-Zz75E62LMt
+      memory_arn: arn:aws:bedrock-agentcore:us-east-1:009296485814:memory/vehicle_maintenance_agent_mem-Zz75E62LMt
+      memory_name: vehicle_maintenance_agent_mem
+      event_expiry_days: 30
+      first_invoke_memory_check_done: false
+    authorizer_configuration: null
+    request_header_configuration: null
+    oauth_configuration: null
