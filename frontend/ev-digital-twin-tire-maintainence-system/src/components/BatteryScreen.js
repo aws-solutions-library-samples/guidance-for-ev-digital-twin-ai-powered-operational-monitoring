@@ -228,7 +228,7 @@ const BatteryScreen = () => {
           }}
         >
           <span>←</span>
-          <span>Battery Digital Twin</span>
+          <span>Battery Digital Twin Test</span>
         </button>
         <span className="vin-number" style={{ transform: 'translateX(-100px)' }}>VIN Number: ###</span>
       </div>
