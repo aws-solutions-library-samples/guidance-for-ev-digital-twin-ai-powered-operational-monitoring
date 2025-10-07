@@ -157,6 +157,14 @@
   transform: translateX(15px);
 }
 
+@media (min-width: 1701px) and (max-width: 1815px) {
+  .invertor-page .bottom-containers .data-container:first-child,
+  .invertor-page .bottom-containers .data-container:last-child {
+    min-height: 400px;
+    max-height: 400px;
+  }
+}
+
 @media (max-height: 900px) {
   .invertor-page .bottom-containers .data-container:first-child,
   .invertor-page .bottom-containers .data-container:last-child {
