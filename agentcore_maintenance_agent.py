@@ -1,0 +1,707 @@
+"""
+AgentCore-powered Vehicle Maintenance Agent
+Integrates Bedrock AgentCore capabilities with tire and motor maintenance system
+"""
+
+from strands.tools import tool
+from strands import Agent
+import pandas as pd
+import numpy as np
+from datetime import datetime, timedelta
+import json
+from tire_predictor import TirePredictor
+import boto3
+
+# Model configuration
+MODEL_ID = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
+
+# System prompt for the vehicle maintenance agent
+SYSTEM_PROMPT = """You are a fast, efficient vehicle maintenance assistant. 
+
+When asked for a quick check or brief status:
+1. Use ONLY the quick_vehicle_check tool - it's the fastest
+2. Return the tool's response directly without adding extra text
+3. Be EXTREMELY brief - maximum 1 sentence
+
+For detailed analysis, use the other tools. But for quick checks, ONLY use quick_vehicle_check."""
+
+
+class AgentCoreMaintenanceAgent:
+    """Enhanced maintenance agent with Bedrock AgentCore capabilities"""
+    
+    def __init__(self):
+        self.predictor = TirePredictor()
+        try:
+            self.predictor.load_models()
+            print("✓ ML models loaded successfully")
+        except Exception as e:
+            print(f"⚠ Warning: Could not load models - {e}")
+        
+        self.appointments = []
+        self.tire_data = None
+        self.motor_data = None
+        self.manual_data = None
+        
+    def load_data(self):
+        """Load tire, motor, and manual data"""
+        try:
+            self.tire_data = pd.read_csv('tire_wear_data.csv')
+            self.motor_data = pd.read_csv('motor_sensor_data.csv')
+            self.manual_data = pd.read_csv('car_manual_specs.csv')
+            print("✓ Data loaded successfully")
+        except Exception as e:
+            print(f"⚠ Error loading data: {e}")
+    
+    def create_agent(self):
+        """Create AgentCore agent with maintenance tools"""
+        agent = Agent(
+            model=MODEL_ID,  # Use 'model' parameter instead of 'model_id'
+            system_prompt=SYSTEM_PROMPT,
+            tools=[
+                quick_vehicle_check,  # Fast tool for quick checks
+                analyze_tire_condition,
+                analyze_motor_performance,
+                predict_tire_wear,
+                predict_motor_failure,
+                detect_tire_anomalies,
+                detect_motor_anomalies,
+                schedule_appointment,
+                get_fleet_status,
+                cross_system_analysis,
+                generate_maintenance_report
+            ]
+        )
+        return agent
+    
+    async def invoke_async(self, query: str) -> str:
+        """Async invoke method for the agent"""
+        agent = self.create_agent()
+        result = await agent.invoke_async(query)
+        # Extract text from AgentResult
+        if hasattr(result, 'text'):
+            return result.text
+        elif hasattr(result, 'content'):
+            return result.content
+        else:
+            return str(result)
+    
+    def invoke(self, query: str) -> str:
+        """Synchronous invoke method for the agent"""
+        import asyncio
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        
+        return loop.run_until_complete(self.invoke_async(query))
+
+
+# Initialize global agent instance
+agent_instance = AgentCoreMaintenanceAgent()
+
+
+@tool
+def quick_vehicle_check(vehicle_id: int) -> str:
+    """
+    Quick health check for a vehicle - returns brief status.
+    
+    Args:
+        vehicle_id: The vehicle ID to check
+        
+    Returns:
+        Brief one-sentence status of the most critical issue or "All systems normal"
+    """
+    try:
+        if agent_instance.tire_data is None:
+            agent_instance.load_data()
+        
+        # Get latest tire data
+        tire_data = agent_instance.tire_data[agent_instance.tire_data['vehicle_id'] == vehicle_id]
+        if not tire_data.empty:
+            latest_tires = tire_data.groupby('position').last().reset_index()
+            
+            # Check for critical tire issues
+            min_pressure = latest_tires['pressure_psi'].min()
+            min_tread = latest_tires['tread_depth_mm'].min()
+            
+            if min_tread < 2.0:
+                return f"CRITICAL: Tire tread depth below safe minimum ({min_tread:.1f}mm) - immediate replacement required"
+            elif min_pressure < 28.0:
+                return f"WARNING: Low tire pressure detected ({min_pressure:.1f} PSI) - inflate to 32 PSI"
+            elif min_tread < 4.0:
+                return f"ATTENTION: Tire tread wearing thin ({min_tread:.1f}mm) - schedule replacement soon"
+        
+        # Check motor data
+        motor_data = agent_instance.motor_data[agent_instance.motor_data['vehicle_id'] == vehicle_id]
+        if not motor_data.empty:
+            latest_motor = motor_data.iloc[-1]
+            perf_score = float(latest_motor['performance_score'])
+            
+            if perf_score < 80:
+                return f"WARNING: Motor performance declining ({perf_score:.1f}/100) - schedule maintenance"
+        
+        return "All systems normal"
+        
+    except Exception as e:
+        return f"Error checking vehicle: {str(e)}"
+
+
+@tool
+def analyze_tire_condition(vehicle_id: int) -> str:
+    """
+    Analyze current tire condition for a specific vehicle.
+    
+    Args:
+        vehicle_id: The vehicle ID to analyze
+        
+    Returns:
+        Comprehensive tire condition analysis including tread depth, pressure, and wear percentage
+    """
+    try:
+        if agent_instance.tire_data is None:
+            agent_instance.load_data()
+        
+        vehicle_data = agent_instance.tire_data[agent_instance.tire_data['vehicle_id'] == vehicle_id]
+        
+        if vehicle_data.empty:
+            return json.dumps({"error": f"No tire data found for vehicle {vehicle_id}"})
+        
+        # Get latest readings for each tire position
+        latest_data = vehicle_data.groupby('position').last().reset_index()
+        
+        # Get vehicle info
+        vehicle_info = latest_data.iloc[0]
+        
+        # Get manual specs
+        manual_spec = agent_instance.manual_data[
+            (agent_instance.manual_data['make'] == vehicle_info['make']) & 
+            (agent_instance.manual_data['model'] == vehicle_info['model']) &
+            (agent_instance.manual_data['year'] == vehicle_info['year'])
+        ]
+        
+        if manual_spec.empty:
+            manual_spec = agent_instance.manual_data.iloc[0]
+        else:
+            manual_spec = manual_spec.iloc[0]
+        
+        analysis = {
+            "vehicle_info": {
+                "vehicle_id": int(vehicle_id),
+                "make": str(vehicle_info['make']),
+                "model": str(vehicle_info['model']),
+                "year": int(vehicle_info['year']),
+                "tire_size": str(vehicle_info['tire_size']),
+                "tire_brand": str(vehicle_info['tire_brand'])
+            },
+            "tire_conditions": {}
+        }
+        
+        # Analyze each tire
+        for _, tire in latest_data.iterrows():
+            position = tire['position']
+            tread_depth = float(tire['tread_depth_mm'])
+            pressure = float(tire['pressure_psi'])
+            
+            # Calculate wear percentage
+            max_depth = 10.0  # New tire depth
+            min_depth = float(manual_spec['min_tread_depth_mm'])
+            wear_pct = ((max_depth - tread_depth) / (max_depth - min_depth)) * 100
+            
+            # Assess status
+            if tread_depth < min_depth:
+                status = "CRITICAL - Replace immediately"
+            elif tread_depth < float(manual_spec['replacement_threshold_mm']):
+                status = "WARNING - Replacement recommended"
+            elif wear_pct > 70:
+                status = "ATTENTION - Monitor closely"
+            else:
+                status = "GOOD"
+            
+            analysis["tire_conditions"][position] = {
+                "tread_depth_mm": round(tread_depth, 2),
+                "pressure_psi": round(pressure, 1),
+                "temperature_c": round(float(tire['temperature_c']), 1),
+                "wear_percentage": round(wear_pct, 1),
+                "status": status,
+                "recommended_pressure": float(manual_spec['recommended_pressure_psi'])
+            }
+        
+        return json.dumps(analysis, indent=2)
+        
+    except Exception as e:
+        return json.dumps({"error": f"Analysis failed: {str(e)}"})
+
+
+@tool
+def analyze_motor_performance(vehicle_id: int) -> str:
+    """
+    Analyze motor performance and health for a specific vehicle.
+    
+    Args:
+        vehicle_id: The vehicle ID to analyze
+        
+    Returns:
+        Motor performance analysis including temperature, oil pressure, vibration, and performance score
+    """
+    try:
+        if agent_instance.motor_data is None:
+            agent_instance.load_data()
+        
+        vehicle_data = agent_instance.motor_data[agent_instance.motor_data['vehicle_id'] == vehicle_id]
+        
+        if vehicle_data.empty:
+            return json.dumps({"error": f"No motor data found for vehicle {vehicle_id}"})
+        
+        # Get latest reading
+        latest = vehicle_data.iloc[-1]
+        
+        # Assess motor health
+        temp = float(latest['engine_temp_c'])
+        oil_pressure = float(latest['oil_pressure_psi'])
+        vibration = float(latest['vibration_level'])
+        performance = float(latest['performance_score'])
+        
+        # Determine status
+        if performance < 70:
+            status = "CRITICAL - Immediate attention required"
+        elif performance < 80:
+            status = "WARNING - Schedule maintenance soon"
+        elif performance < 90:
+            status = "ATTENTION - Monitor performance"
+        else:
+            status = "GOOD"
+        
+        # Assess failure risk
+        failure_risk = int(latest['failure_risk'])
+        risk_level = ["LOW", "MEDIUM", "HIGH"][failure_risk]
+        
+        analysis = {
+            "vehicle_info": {
+                "vehicle_id": int(vehicle_id),
+                "make": str(latest['make']),
+                "model": str(latest['model']),
+                "year": int(latest['year']),
+                "engine_type": str(latest['engine_type']),
+                "fuel_type": str(latest['fuel_type'])
+            },
+            "motor_health": {
+                "engine_temperature_c": round(temp, 1),
+                "oil_pressure_psi": round(oil_pressure, 1),
+                "vibration_level": round(vibration, 2),
+                "performance_score": round(performance, 1),
+                "rpm_average": int(latest['rpm_avg']),
+                "fuel_consumption_l100km": round(float(latest['fuel_consumption_l100km']), 1),
+                "mileage": int(latest['mileage']),
+                "status": status,
+                "failure_risk": risk_level
+            }
+        }
+        
+        return json.dumps(analysis, indent=2)
+        
+    except Exception as e:
+        return json.dumps({"error": f"Analysis failed: {str(e)}"})
+
+
+@tool
+def predict_tire_wear(vehicle_id: int, days_ahead: int = 90) -> str:
+    """
+    Predict future tire wear patterns using machine learning.
+    
+    Args:
+        vehicle_id: The vehicle ID to predict for
+        days_ahead: Number of days to predict ahead (default 90)
+        
+    Returns:
+        Tire wear predictions with maintenance timeline
+    """
+    try:
+        if agent_instance.tire_data is None or agent_instance.predictor.wear_model is None:
+            return json.dumps({"error": "Prediction model not available"})
+        
+        vehicle_data = agent_instance.tire_data[agent_instance.tire_data['vehicle_id'] == vehicle_id]
+        
+        if vehicle_data.empty:
+            return json.dumps({"error": f"No data found for vehicle {vehicle_id}"})
+        
+        predictions = agent_instance.predictor.predict_future_wear(vehicle_data, days_ahead=days_ahead)
+        
+        # Format predictions
+        result = {
+            "vehicle_id": int(vehicle_id),
+            "prediction_period_days": days_ahead,
+            "predictions": {}
+        }
+        
+        for position in predictions['position'].unique():
+            pos_data = predictions[predictions['position'] == position]
+            result["predictions"][position] = {
+                "current_depth_mm": round(float(pos_data.iloc[0]['predicted_tread_depth']), 2),
+                "predicted_depth_mm": round(float(pos_data.iloc[-1]['predicted_tread_depth']), 2),
+                "wear_rate_mm_per_day": round(float(pos_data['predicted_tread_depth'].diff().mean()), 4),
+                "days_until_replacement": int((pos_data.iloc[-1]['predicted_tread_depth'] - 2.0) / abs(pos_data['predicted_tread_depth'].diff().mean()))
+            }
+        
+        return json.dumps(result, indent=2)
+        
+    except Exception as e:
+        return json.dumps({"error": f"Prediction failed: {str(e)}"})
+
+
+@tool
+def predict_motor_failure(vehicle_id: int) -> str:
+    """
+    Predict motor failure risk and maintenance needs.
+    
+    Args:
+        vehicle_id: The vehicle ID to analyze
+        
+    Returns:
+        Motor failure prediction with risk assessment
+    """
+    try:
+        if agent_instance.motor_data is None:
+            agent_instance.load_data()
+        
+        vehicle_data = agent_instance.motor_data[agent_instance.motor_data['vehicle_id'] == vehicle_id]
+        
+        if vehicle_data.empty:
+            return json.dumps({"error": f"No data found for vehicle {vehicle_id}"})
+        
+        # Get recent trend
+        recent = vehicle_data.tail(10)
+        
+        # Calculate trends
+        perf_trend = recent['performance_score'].diff().mean()
+        temp_trend = recent['engine_temp_c'].diff().mean()
+        
+        latest = recent.iloc[-1]
+        
+        result = {
+            "vehicle_id": int(vehicle_id),
+            "current_failure_risk": ["LOW", "MEDIUM", "HIGH"][int(latest['failure_risk'])],
+            "performance_trend": "DECLINING" if perf_trend < -0.5 else "STABLE" if abs(perf_trend) < 0.5 else "IMPROVING",
+            "temperature_trend": "INCREASING" if temp_trend > 0.5 else "STABLE" if abs(temp_trend) < 0.5 else "DECREASING",
+            "maintenance_recommendation": "Schedule inspection within 30 days" if int(latest['failure_risk']) > 0 else "Continue regular maintenance schedule"
+        }
+        
+        return json.dumps(result, indent=2)
+        
+    except Exception as e:
+        return json.dumps({"error": f"Prediction failed: {str(e)}"})
+
+
+@tool
+def detect_tire_anomalies(vehicle_id: int) -> str:
+    """
+    Detect unusual tire wear patterns and anomalies.
+    
+    Args:
+        vehicle_id: The vehicle ID to check
+        
+    Returns:
+        List of detected anomalies with severity levels
+    """
+    try:
+        if agent_instance.tire_data is None or agent_instance.predictor.anomaly_model is None:
+            return json.dumps({"error": "Anomaly detection model not available"})
+        
+        vehicle_data = agent_instance.tire_data[agent_instance.tire_data['vehicle_id'] == vehicle_id]
+        
+        if vehicle_data.empty:
+            return json.dumps({"error": f"No data found for vehicle {vehicle_id}"})
+        
+        anomalies = agent_instance.predictor.detect_anomalies(vehicle_data)
+        
+        if anomalies.empty:
+            return json.dumps({"vehicle_id": int(vehicle_id), "anomalies": [], "status": "No anomalies detected"})
+        
+        result = {
+            "vehicle_id": int(vehicle_id),
+            "anomalies_detected": len(anomalies),
+            "anomalies": []
+        }
+        
+        for _, anomaly in anomalies.iterrows():
+            result["anomalies"].append({
+                "date": str(anomaly['date']),
+                "position": str(anomaly['position']),
+                "type": str(anomaly['anomaly_type']),
+                "tread_depth_mm": round(float(anomaly['tread_depth_mm']), 2),
+                "pressure_psi": round(float(anomaly['pressure_psi']), 1),
+                "severity": "HIGH" if anomaly['anomaly_type'] != 'normal' else "MEDIUM"
+            })
+        
+        return json.dumps(result, indent=2)
+        
+    except Exception as e:
+        return json.dumps({"error": f"Detection failed: {str(e)}"})
+
+
+@tool
+def detect_motor_anomalies(vehicle_id: int) -> str:
+    """
+    Detect motor performance anomalies and issues.
+    
+    Args:
+        vehicle_id: The vehicle ID to check
+        
+    Returns:
+        List of detected motor anomalies
+    """
+    try:
+        if agent_instance.motor_data is None:
+            agent_instance.load_data()
+        
+        vehicle_data = agent_instance.motor_data[agent_instance.motor_data['vehicle_id'] == vehicle_id]
+        
+        if vehicle_data.empty:
+            return json.dumps({"error": f"No data found for vehicle {vehicle_id}"})
+        
+        # Filter for anomalies
+        anomalies = vehicle_data[vehicle_data['motor_anomaly'] == True]
+        
+        if anomalies.empty:
+            return json.dumps({"vehicle_id": int(vehicle_id), "anomalies": [], "status": "No motor anomalies detected"})
+        
+        result = {
+            "vehicle_id": int(vehicle_id),
+            "anomalies_detected": len(anomalies),
+            "anomalies": []
+        }
+        
+        for _, anomaly in anomalies.iterrows():
+            result["anomalies"].append({
+                "date": str(anomaly['date']),
+                "type": str(anomaly['anomaly_type']),
+                "engine_temp_c": round(float(anomaly['engine_temp_c']), 1),
+                "oil_pressure_psi": round(float(anomaly['oil_pressure_psi']), 1),
+                "vibration_level": round(float(anomaly['vibration_level']), 2),
+                "performance_score": round(float(anomaly['performance_score']), 1),
+                "severity": "HIGH" if anomaly['failure_risk'] == 2 else "MEDIUM"
+            })
+        
+        return json.dumps(result, indent=2)
+        
+    except Exception as e:
+        return json.dumps({"error": f"Detection failed: {str(e)}"})
+
+
+@tool
+def schedule_appointment(vehicle_id: int, service_type: str, preferred_date: str, notes: str = "") -> str:
+    """
+    Schedule a maintenance appointment for a vehicle.
+    
+    Args:
+        vehicle_id: The vehicle ID
+        service_type: Type of service (tire_replacement, tire_rotation, motor_maintenance, oil_change, inspection)
+        preferred_date: Preferred date in YYYY-MM-DD format
+        notes: Additional notes or concerns
+        
+    Returns:
+        Appointment confirmation details
+    """
+    try:
+        appointment = {
+            "appointment_id": len(agent_instance.appointments) + 1,
+            "vehicle_id": int(vehicle_id),
+            "service_type": service_type,
+            "scheduled_date": preferred_date,
+            "status": "SCHEDULED",
+            "notes": notes,
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        
+        agent_instance.appointments.append(appointment)
+        
+        return json.dumps({
+            "success": True,
+            "appointment": appointment,
+            "message": f"Appointment scheduled successfully for vehicle {vehicle_id}"
+        }, indent=2)
+        
+    except Exception as e:
+        return json.dumps({"error": f"Scheduling failed: {str(e)}"})
+
+
+@tool
+def get_fleet_status() -> str:
+    """
+    Get overall fleet health status across all vehicles.
+    
+    Returns:
+        Fleet-wide health summary with vehicle counts by status
+    """
+    try:
+        if agent_instance.tire_data is None:
+            agent_instance.load_data()
+        
+        vehicles = agent_instance.tire_data['vehicle_id'].unique()
+        
+        fleet_status = {
+            "total_vehicles": len(vehicles),
+            "vehicles_by_status": {
+                "good": 0,
+                "attention": 0,
+                "warning": 0,
+                "critical": 0
+            },
+            "vehicles": []
+        }
+        
+        for vid in vehicles:
+            vehicle_data = agent_instance.tire_data[agent_instance.tire_data['vehicle_id'] == vid]
+            latest = vehicle_data.groupby('position').last().reset_index()
+            
+            # Simple status assessment
+            min_depth = latest['tread_depth_mm'].min()
+            
+            if min_depth < 2.0:
+                status = "critical"
+            elif min_depth < 4.0:
+                status = "warning"
+            elif min_depth < 6.0:
+                status = "attention"
+            else:
+                status = "good"
+            
+            fleet_status["vehicles_by_status"][status] += 1
+            
+            vehicle_info = latest.iloc[0]
+            fleet_status["vehicles"].append({
+                "vehicle_id": int(vid),
+                "make": str(vehicle_info['make']),
+                "model": str(vehicle_info['model']),
+                "year": int(vehicle_info['year']),
+                "status": status.upper(),
+                "min_tread_depth_mm": round(min_depth, 2)
+            })
+        
+        return json.dumps(fleet_status, indent=2)
+        
+    except Exception as e:
+        return json.dumps({"error": f"Fleet status retrieval failed: {str(e)}"})
+
+
+@tool
+def cross_system_analysis(vehicle_id: int) -> str:
+    """
+    Perform cross-system analysis correlating tire and motor issues.
+    
+    Args:
+        vehicle_id: The vehicle ID to analyze
+        
+    Returns:
+        Comprehensive analysis of both tire and motor systems with correlations
+    """
+    try:
+        # Get both tire and motor analysis
+        tire_analysis = json.loads(analyze_tire_condition(vehicle_id))
+        motor_analysis = json.loads(analyze_motor_performance(vehicle_id))
+        
+        if "error" in tire_analysis or "error" in motor_analysis:
+            return json.dumps({"error": "Unable to perform cross-system analysis"})
+        
+        # Correlate issues
+        correlations = []
+        
+        # Check if both systems have issues
+        tire_issues = any("WARNING" in str(t.get("status", "")) or "CRITICAL" in str(t.get("status", "")) 
+                         for t in tire_analysis.get("tire_conditions", {}).values())
+        motor_issues = "WARNING" in motor_analysis.get("motor_health", {}).get("status", "") or \
+                      "CRITICAL" in motor_analysis.get("motor_health", {}).get("status", "")
+        
+        if tire_issues and motor_issues:
+            correlations.append("Both tire and motor systems showing degradation - may indicate aggressive driving patterns")
+        
+        result = {
+            "vehicle_id": int(vehicle_id),
+            "tire_system": tire_analysis,
+            "motor_system": motor_analysis,
+            "correlations": correlations,
+            "overall_health": "CRITICAL" if tire_issues and motor_issues else "ATTENTION" if tire_issues or motor_issues else "GOOD"
+        }
+        
+        return json.dumps(result, indent=2)
+        
+    except Exception as e:
+        return json.dumps({"error": f"Cross-system analysis failed: {str(e)}"})
+
+
+@tool
+def generate_maintenance_report(vehicle_id: int) -> str:
+    """
+    Generate a comprehensive maintenance report for a vehicle.
+    
+    Args:
+        vehicle_id: The vehicle ID
+        
+    Returns:
+        Detailed maintenance report with recommendations and cost estimates
+    """
+    try:
+        # Gather all analyses
+        cross_analysis = json.loads(cross_system_analysis(vehicle_id))
+        tire_predictions = json.loads(predict_tire_wear(vehicle_id, 90))
+        motor_prediction = json.loads(predict_motor_failure(vehicle_id))
+        tire_anomalies = json.loads(detect_tire_anomalies(vehicle_id))
+        motor_anomalies = json.loads(detect_motor_anomalies(vehicle_id))
+        
+        report = {
+            "report_generated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "vehicle_id": int(vehicle_id),
+            "executive_summary": {
+                "overall_health": cross_analysis.get("overall_health", "UNKNOWN"),
+                "tire_anomalies": tire_anomalies.get("anomalies_detected", 0),
+                "motor_anomalies": motor_anomalies.get("anomalies_detected", 0),
+                "immediate_action_required": cross_analysis.get("overall_health") == "CRITICAL"
+            },
+            "detailed_analysis": cross_analysis,
+            "predictions": {
+                "tire_wear": tire_predictions,
+                "motor_failure": motor_prediction
+            },
+            "anomalies": {
+                "tire": tire_anomalies,
+                "motor": motor_anomalies
+            },
+            "recommendations": [
+                "Schedule comprehensive inspection within 30 days" if cross_analysis.get("overall_health") != "GOOD" else "Continue regular maintenance schedule",
+                "Monitor tire pressure weekly",
+                "Check motor oil levels regularly"
+            ]
+        }
+        
+        return json.dumps(report, indent=2)
+        
+    except Exception as e:
+        return json.dumps({"error": f"Report generation failed: {str(e)}"})
+
+
+def main():
+    """Main function to demonstrate AgentCore capabilities"""
+    print("🚗 AgentCore Vehicle Maintenance Agent")
+    print("=" * 50)
+    
+    # Initialize agent
+    agent = agent_instance.create_agent()
+    agent_instance.load_data()
+    
+    print("\n✓ Agent initialized with Bedrock AgentCore")
+    print(f"✓ Model: {MODEL_ID}")
+    print(f"✓ Tools available: {len(agent.tools)}")
+    
+    # Example interaction
+    print("\n" + "=" * 50)
+    print("Example: Analyzing vehicle 1")
+    print("=" * 50)
+    
+    response = agent.invoke("Analyze the complete health of vehicle 1, including both tire and motor systems")
+    
+    print("\nAgent Response:")
+    print(response)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,5 +1,5 @@
-# Use Python 3.11 slim image
-FROM python:3.11-slim
+# Use Python 3.11 slim image from AWS ECR Public (avoids Docker Hub rate limits)
+FROM public.ecr.aws/docker/library/python:3.11-slim
 
 # Set working directory
 WORKDIR /app
@@ -12,23 +12,25 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
-COPY requirements.txt .
+COPY requirements-agentcore.txt .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements-agentcore.txt
 
 # Copy application code
-COPY . .
+COPY agentcore_runtime_app.py .
+COPY agentcore_maintenance_agent.py .
+COPY tire_predictor.py .
+COPY tire_wear_data.csv .
+COPY motor_sensor_data.csv .
+COPY car_manual_specs.csv .
+COPY tire_models_*.pkl .
 
 # Create directory for models if they don't exist
 RUN mkdir -p models
 
-# Expose port
-EXPOSE 8000
+# Expose port (AgentCore Runtime uses 8080)
+EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
-
-# Run the application
-CMD ["python", "app.py"]
+# Run the AgentCore Runtime application
+CMD ["python", "agentcore_runtime_app.py"]

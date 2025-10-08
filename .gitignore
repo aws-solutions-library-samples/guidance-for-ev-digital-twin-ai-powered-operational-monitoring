@@ -44,20 +44,21 @@ venv.bak/
 ehthumbs.db
 Thumbs.db
 
-# Project specific - Generated files
-*.pkl
-tire_models_*.pkl
+# Project specific - Keep data files and models for deployment
+# These are needed for the AgentCore Runtime
 maintenance_report_*.json
-tire_wear_data.csv
 
 # Keep important project files
-!car_manual_specs.csv
-!manuals/manual_sources.csv
+# CSV data files are needed for the agent
+# PKL model files are needed for predictions
 
 # CloudFormation temporary files
 current-distribution-config.json
 temp-distribution-config.json
 *-temp.*
+
+# Cleanup scripts (temporary)
+cleanup_redundant_files.sh
 
 # AWS deployment artifacts
 task-definition.json
