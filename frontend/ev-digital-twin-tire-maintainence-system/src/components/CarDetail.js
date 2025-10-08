@@ -184,7 +184,7 @@ const CarDetail = () => {
           <div className="spacer" style={{ height: window.innerWidth <= 1800 ? '10px' : 'auto' }}></div>
 
           {/* Component Status Cards */}
-          <div className="component-status" style={{ marginTop: window.innerWidth <= 1800 ? '-50px' : '0' }}>
+          <div className="component-status" style={{ marginTop: window.innerWidth <= 1800 ? '-50px' : '-40px' }}>
             <div className="component-card clickable" onClick={() => navigate(`/car/${carId}/battery`)}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '-20px' }}>
                 <img src={require('./assets/battery.png')} alt="Battery" style={{ width: '20px', height: '20px' }} />

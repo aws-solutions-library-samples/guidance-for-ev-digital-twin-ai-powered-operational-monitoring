@@ -37,19 +37,6 @@ const VehicleSVG = (props) => (
   </svg>
 );
 
-// BACKEND INTEGRATION - Uncomment when API is ready
-// const [tireData, setTireData] = useState(null);
-
-// useEffect(() => {
-//   fetch('https://your-api-gateway-url/vehicles/123/tires')
-//     .then(res => res.json())
-//     .then(data => setTireData(data));
-// }, []);
-
-// Replace static values:
-// "234kg" → {tireData?.frontLeft?.load || "234kg"}
-// "60%" → {tireData?.remainingLife || 60}%
-// "25 miles" → {tireData?.surfaceDistance || "25 miles"}
 
 // tire data rotates through csv entries every 30 seconds
 const TiresPage = () => {
@@ -566,7 +553,7 @@ const TiresPage = () => {
       {/* Navigation Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '20px', paddingBottom: '15px' }}>
         <div 
-          onClick={() => window.location.href = '/car/123'}
+          onClick={() => navigate('/car/123')}
           style={{
             background: 'none',
             border: 'none',
