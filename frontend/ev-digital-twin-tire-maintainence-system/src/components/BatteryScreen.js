@@ -153,7 +153,7 @@ const BatteryScreen = () => {
 
   return (
     <div className="battery-page">
-      <div className="battery-container" style={{ overflowY: windowSize.width <= 1700 ? 'hidden' : windowSize.width <= 1815 ? 'auto' : 'auto' }}>
+      <div className="battery-container" style={{ overflowY: windowSize.width <= 1700 ? 'auto' : windowSize.width <= 1815 ? 'auto' : 'auto', height: windowSize.width <= 1700 ? '100vh' : 'auto' }}>
       {/* Header */}
       <header className="header" style={{ height: windowSize.width <= 1700 ? '50px' : windowSize.width <= 1815 ? '60px' : 'auto', padding: windowSize.width <= 1700 ? '10px 20px' : windowSize.width <= 1815 ? '15px 20px' : '20px' }}>
         <div className="header-left">
