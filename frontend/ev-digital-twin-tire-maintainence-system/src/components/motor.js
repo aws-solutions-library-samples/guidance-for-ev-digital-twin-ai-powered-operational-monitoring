@@ -323,11 +323,15 @@ const Motor = () => {
 
   return (
     <div className="motor-page">
-      <div className="motor-container" style={{ 
-        overflowY: windowWidth <= 1700 ? 'auto' : windowWidth <= 1815 ? 'auto' : 'hidden'
+      <div className="motor-container" style={{
+        transform: windowWidth <= 1024 ? `scale(${windowWidth / 1440})` : (windowWidth > 2560 ? `scale(${windowWidth / 1920})` : undefined),
+        transformOrigin: (windowWidth <= 1024 || windowWidth > 2560) ? 'top left' : undefined,
+        width: windowWidth <= 1024 ? `${100 / (windowWidth / 1440)}%` : (windowWidth > 2560 ? `${100 / (windowWidth / 1920)}%` : undefined),
+        height: windowWidth <= 1024 ? `${100 / (windowWidth / 1440)}%` : (windowWidth > 2560 ? `${100 / (windowWidth / 1920)}%` : (windowWidth <= 1440 ? '100vh' : windowWidth <= 1700 ? '100vh' : 'auto')),
+        overflowY: windowWidth <= 1440 ? 'auto' : windowWidth <= 1700 ? 'auto' : windowWidth <= 1815 ? 'auto' : 'hidden'
       }}>
         {/* Header */}
-        <header className="header" style={{ height: windowWidth <= 1700 ? '50px' : windowWidth <= 1815 ? '60px' : 'auto', padding: windowWidth <= 1700 ? '10px 20px' : windowWidth <= 1815 ? '15px 20px' : '20px' }}>
+        <header className="header" style={{ height: windowWidth <= 1440 ? '45px' : windowWidth <= 1700 ? '50px' : windowWidth <= 1815 ? '60px' : 'auto', padding: windowWidth <= 1440 ? '8px 15px' : windowWidth <= 1700 ? '10px 20px' : windowWidth <= 1815 ? '15px 20px' : '20px' }}>
           <div className="header-left">
             <svg width="43px" height="20px" viewBox="0 0 43 20" style={{ marginRight: '8px' }}>
               <path d="M4.94797 15.7069C4.9294 15.7069 4.91155 15.7069 4.89299 15.7055L2.88435 15.5905C2.10174 15.5834 1.42482 15.3042 0.924977 14.7815C-0.045425 13.7661 -0.00543786 12.2002 0.00241676 12.0245C0.0452601 11.0727 0.283755 10.3158 0.712903 9.77598C0.742179 9.73885 0.771455 9.70458 0.800732 9.67102C0.692195 8.92483 1.01209 8.46426 1.09492 8.3593C1.11634 8.33288 1.13848 8.30717 1.16276 8.28289C2.7958 6.61986 7.60712 5.66159 10.3298 5.23887C11.2152 5.10106 12.07 4.87042 12.8711 4.55266C14.0008 4.10352 15.3054 3.43659 16.45 2.72182C18.3144 1.55791 20.3494 0.773878 22.4995 0.393286C25.1943 -0.0844178 33.9429 -0.0251512 38.9178 0.0526809C41.1885 0.0883838 43.0357 1.96492 43.0357 4.23562C43.0357 6.50632 41.1592 8.41928 38.8521 8.41928L31.7686 8.41928C31.2402 8.41928 30.8111 7.99084 30.8111 7.46173C30.8111 6.93261 31.2395 6.50418 31.7686 6.50418L38.8521 6.50418C40.1031 6.50418 41.1206 5.48665 41.1206 4.23562C41.1206 2.9846 40.1188 1.98635 38.8878 1.96707C30.5383 1.83639 24.6866 1.94993 22.8336 2.27839C20.9264 2.61614 19.1198 3.31163 17.4639 4.34559C16.7363 4.79973 15.2647 5.66159 13.5773 6.33209C12.6434 6.70269 11.6501 6.97117 10.624 7.13041C6.82094 7.72164 3.7862 8.62136 2.71155 9.46323C2.72297 9.50179 2.74082 9.55248 2.77081 9.61532C2.8922 9.87024 2.89434 10.1659 2.77724 10.4229C2.67441 10.6486 2.48805 10.8249 2.26026 10.9156C2.16601 10.992 1.95036 11.3255 1.91537 12.1109C1.90752 12.343 1.96321 13.1021 2.31167 13.4619C2.40093 13.5541 2.56017 13.6769 2.91434 13.6769C2.9329 13.6769 2.95075 13.6769 2.96932 13.6783L4.11895 13.744C4.58951 11.3291 6.72169 9.50036 9.27158 9.50036C11.8215 9.50036 13.8644 11.2327 14.3928 13.5862L32.8526 13.1813C33.1403 12.2623 33.6802 11.4319 34.4164 10.7907C35.3718 9.95878 36.5957 9.50036 37.8638 9.50036C40.3759 9.50036 42.5437 11.2884 43.0186 13.7526C43.1186 14.2717 42.7787 14.7737 42.2595 14.8736C41.7404 14.9736 41.2384 14.6337 41.1385 14.1146C40.8371 12.5508 39.4604 11.4155 37.8638 11.4155C36.2672 11.4155 34.8012 12.6393 34.5634 14.2617C34.4956 14.7237 34.1043 15.07 33.6373 15.08L13.5809 15.5199C13.0604 15.5341 12.6262 15.1243 12.6034 14.6037C12.5262 12.8157 11.0631 11.4155 9.27158 11.4155C7.48001 11.4155 5.93694 12.9114 5.93622 14.7501C5.93622 15.2678 5.52421 15.6919 5.00652 15.7069L4.9751 15.7069C4.96582 15.7084 4.95725 15.7084 4.94797 15.7084L4.94797 15.7069Z" fill="#37bc12"/>
@@ -400,7 +404,7 @@ const Motor = () => {
             {/* Main Content */}
             <div className="main-panel" style={{ marginTop: '60px' }}>
               {/* Motor Performance Container - Top */}
-              <div className="data-container" style={{ marginBottom: '20px', marginTop: windowWidth <= 1700 ? '-10px' : windowWidth <= 1815 ? '-5px' : '0px', height: '320px', overflow: 'hidden', width: 'calc(100% + 30px)', marginLeft: '-15px' }}>
+              <div className="data-container" style={{ marginBottom: '20px', marginTop: windowWidth <= 1440 ? '-15px' : windowWidth <= 1700 ? '-10px' : windowWidth <= 1815 ? '-5px' : '0px', height: '320px', overflow: 'hidden', width: 'calc(100% + 30px)', marginLeft: '-15px' }}>
                 <h3 style={{ color: 'white' }}>Motor Performance</h3>
                 
                 <div className="performance-grid" style={{ position: 'relative' }}>
@@ -592,8 +596,8 @@ const Motor = () => {
               {/* Bottom Containers */}
               <div className="bottom-containers" style={{ 
                 marginBottom: '0',
-                marginTop: windowWidth <= 1700 ? '-30px' : windowWidth <= 1815 ? '-15px' : '0',
-                transform: windowWidth <= 1700 ? 'scaleY(0.8)' : windowWidth <= 1815 ? 'scaleY(0.9)' : 'none',
+                marginTop: windowWidth <= 1440 ? '-40px' : windowWidth <= 1700 ? '-30px' : windowWidth <= 1815 ? '-15px' : '0',
+                transform: windowWidth <= 1440 ? 'scaleY(0.75)' : windowWidth <= 1700 ? 'scaleY(0.8)' : windowWidth <= 1815 ? 'scaleY(0.9)' : 'none',
                 transformOrigin: 'top'
               }}>
                 <div className="data-container">
@@ -731,7 +735,7 @@ const Motor = () => {
             <div className="right-panel">
               <div className="battery-prediction">
                 <div className="prediction-header">
-                  <h2 style={{ fontSize: windowWidth <= 1700 ? '18px' : windowWidth <= 1815 ? '22px' : '24px', marginTop: windowWidth <= 1700 ? '-20px' : windowWidth <= 1815 ? '-10px' : '0' }}>Motor Prediction</h2>
+                  <h2 style={{ fontSize: windowWidth <= 1440 ? '16px' : windowWidth <= 1700 ? '18px' : windowWidth <= 1815 ? '22px' : '24px', marginTop: windowWidth <= 1440 ? '-25px' : windowWidth <= 1700 ? '-20px' : windowWidth <= 1815 ? '-10px' : '0' }}>Motor Prediction</h2>
                   <img
                     src={require('./assets/warning.png')}
                     alt="Warning"
@@ -742,10 +746,10 @@ const Motor = () => {
                 </div>
 
                 {/* Failure Prediction Chart */}
-                <div className="motor-prediction-container" style={{ paddingLeft: '30px', marginTop: windowWidth <= 1700 ? '-20px' : windowWidth <= 1815 ? '-10px' : '0' }}>
-                  <div className="failure-prediction" style={{ marginTop: windowWidth <= 1700 ? '-10px' : windowWidth <= 1815 ? '-5px' : '0' }}>
+                <div className="motor-prediction-container" style={{ paddingLeft: '30px', marginTop: windowWidth <= 1440 ? '-25px' : windowWidth <= 1700 ? '-20px' : windowWidth <= 1815 ? '-10px' : '0' }}>
+                  <div className="failure-prediction" style={{ marginTop: windowWidth <= 1440 ? '-15px' : windowWidth <= 1700 ? '-10px' : windowWidth <= 1815 ? '-5px' : '0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                      <h3 style={{ margin: 0, fontSize: windowWidth <= 1700 ? '12px' : windowWidth <= 1815 ? '13px' : '14px' }}>Motor Failure Prediction</h3>
+                      <h3 style={{ margin: 0, fontSize: windowWidth <= 1440 ? '11px' : windowWidth <= 1700 ? '12px' : windowWidth <= 1815 ? '13px' : '14px' }}>Motor Failure Prediction</h3>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.7)' }}>
                           Show Prediction
@@ -797,7 +801,7 @@ const Motor = () => {
                     </div>
                     <div style={{ position: 'relative', marginTop: '20px' }}>
 
-                      <div className="prediction-chart" style={{ marginTop: windowWidth <= 1700 ? '-100px' : windowWidth <= 1815 ? '-60px' : '0' }}>
+                      <div className="prediction-chart" style={{ marginTop: windowWidth <= 1440 ? '-120px' : windowWidth <= 1700 ? '-100px' : windowWidth <= 1815 ? '-60px' : '0' }}>
                         <svg width="290" height="180" viewBox="0 0 290 180">
                         {/* Grid lines */}
                         {Array.from({ length: 8 }, (_, i) => (
@@ -911,7 +915,7 @@ const Motor = () => {
                   </div>
 
                   {/* Remaining Useful Life */}
-                  <div className="useful-life" style={{ marginBottom: '20px', marginTop: windowWidth <= 1700 ? '-100px' : windowWidth <= 1815 ? '-60px' : '-40px' }}>
+                  <div className="useful-life" style={{ marginBottom: '20px', marginTop: windowWidth <= 1440 ? '-120px' : windowWidth <= 1700 ? '-100px' : windowWidth <= 1815 ? '-60px' : '-40px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
                       <span style={{ fontSize: '10px', color: 'white' }}>Remaining useful life</span>
                       <span style={{ fontSize: '12px', color: 'white', fontWeight: 'bold' }}>
@@ -930,7 +934,7 @@ const Motor = () => {
                   </div>
 
                   {/* GenAI Recommendations */}
-                  <div className="genai-recommendations" style={{ marginTop: windowWidth <= 1700 ? '-20px' : windowWidth <= 1815 ? '-10px' : '-10px' }}>
+                  <div className="genai-recommendations" style={{ marginTop: windowWidth <= 1440 ? '-25px' : windowWidth <= 1700 ? '-20px' : windowWidth <= 1815 ? '-10px' : '-10px' }}>
                     <h3>GenAI Recommendations</h3>
                     <p>AI-powered motor optimization based on real-time performance data, driving patterns, and predictive analytics from sensor readings.</p>
                     

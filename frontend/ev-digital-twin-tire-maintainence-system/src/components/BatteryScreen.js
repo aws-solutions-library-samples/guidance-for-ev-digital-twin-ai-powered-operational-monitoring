@@ -153,7 +153,13 @@ const BatteryScreen = () => {
 
   return (
     <div className="battery-page">
-      <div className="battery-container" style={{ overflowY: windowSize.width <= 1700 ? 'auto' : windowSize.width <= 1815 ? 'auto' : 'auto', height: windowSize.width <= 1700 ? '100vh' : 'auto' }}>
+      <div className="battery-container" style={{
+        transform: windowSize.width <= 1024 ? `scale(${windowSize.width / 1440})` : (windowSize.width > 2560 ? `scale(${windowSize.width / 1920})` : undefined),
+        transformOrigin: (windowSize.width <= 1024 || windowSize.width > 2560) ? 'top left' : undefined,
+        width: windowSize.width <= 1024 ? `${100 / (windowSize.width / 1440)}%` : (windowSize.width > 2560 ? `${100 / (windowSize.width / 1920)}%` : undefined),
+        height: windowSize.width <= 1024 ? `${100 / (windowSize.width / 1440)}%` : (windowSize.width > 2560 ? `${100 / (windowSize.width / 1920)}%` : (windowSize.width <= 1700 ? '100vh' : 'auto')),
+        overflowY: windowSize.width <= 1700 ? 'auto' : 'auto'
+      }}>
       {/* Header */}
       <header className="header" style={{ height: windowSize.width <= 1700 ? '50px' : windowSize.width <= 1815 ? '60px' : 'auto', padding: windowSize.width <= 1700 ? '10px 20px' : windowSize.width <= 1815 ? '15px 20px' : '20px' }}>
         <div className="header-left">
@@ -242,7 +248,7 @@ const BatteryScreen = () => {
         {/* Main Content */}
         <div className="main-panel" style={{ marginTop: '-40px' }}>
           {/* Battery Details Container - Top */}
-          <div className="data-container" style={{ marginBottom: windowSize.width <= 1700 ? '10px' : windowSize.width <= 1815 ? '15px' : '20px', marginTop: '0px', maxHeight: windowSize.width <= 1700 ? '470px' : windowSize.width <= 1815 ? '520px' : '580px', overflow: 'hidden', width: 'calc(100% + 20px)', marginLeft: '-10px', transform: windowSize.width <= 1700 ? 'scaleX(1) scaleY(0.9)' : windowSize.width <= 1815 ? 'scaleX(1) scaleY(0.95)' : 'scale(1)', transformOrigin: 'top left' }}>
+          <div className="data-container" style={{ marginBottom: windowSize.width <= 1700 ? '10px' : windowSize.width <= 1815 ? '15px' : '20px', marginTop: '0px', maxHeight: windowSize.width <= 1700 ? '470px' : windowSize.width <= 1815 ? '520px' : '580px', overflow: 'hidden', width: 'calc(100% + 20px)', marginLeft: '-10px', transform: windowSize.width <= 1440 ? 'scaleX(1) scaleY(0.85)' : windowSize.width <= 1700 ? 'scaleX(1) scaleY(0.9)' : windowSize.width <= 1815 ? 'scaleX(1) scaleY(0.95)' : 'scale(1)', transformOrigin: 'top left' }}>
             
             {/* Battery Visualization */}
             <div className="battery-visual">
@@ -726,7 +732,7 @@ const BatteryScreen = () => {
                   </div>
                 </div>
                 <div style={{ position: 'relative', marginTop: windowSize.width <= 1700 ? '60px' : windowSize.width <= 1815 ? '70px' : '80px' }}>
-                  <div className="prediction-chart" style={{ transform: windowSize.width <= 1700 ? 'scaleX(0.9) scaleY(0.8)' : windowSize.width <= 1815 ? 'scaleX(0.95) scaleY(0.9)' : 'scale(1)', transformOrigin: 'top left' }}>
+                  <div className="prediction-chart" style={{ transform: windowSize.width <= 1440 ? 'scaleX(0.85) scaleY(0.75)' : windowSize.width <= 1700 ? 'scaleX(0.9) scaleY(0.8)' : windowSize.width <= 1815 ? 'scaleX(0.95) scaleY(0.9)' : 'scale(1)', transformOrigin: 'top left' }}>
                     <svg width="350px" height="350px" viewBox="0 0 350 350">
                       {/* Grid lines */}
                       {Array.from({ length: 11 }, (_, i) => (

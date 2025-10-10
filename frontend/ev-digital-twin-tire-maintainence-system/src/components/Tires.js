@@ -492,16 +492,22 @@ const TiresPage = () => {
 
   return (
     <div style={{ width: '100vw', height: '100vh', background: '#000', fontFamily: 'Amazon Ember', position: 'fixed', top: 0, left: 0, overflow: 'hidden' }}>
-      <div className="tires-container" style={{ overflowY: windowWidth <= 1700 ? 'auto' : windowWidth <= 1815 ? 'auto' : 'hidden' }}>
+      <div className="tires-container" style={{
+        transform: windowWidth <= 1024 ? `scale(${windowWidth / 1440})` : (windowWidth >= 2685 ? `scale(${windowWidth / 1920})` : undefined),
+        transformOrigin: windowWidth <= 1024 ? 'top left' : (windowWidth >= 2685 ? 'top left' : undefined),
+        width: windowWidth <= 1024 ? `${100 / (windowWidth / 1440)}%` : (windowWidth >= 2685 ? `${100 / (windowWidth / 1920)}%` : undefined),
+        height: windowWidth <= 1024 ? `${100 / (windowWidth / 1440)}%` : (windowWidth >= 2685 ? `${100 / (windowWidth / 1920)}%` : (windowWidth <= 1700 ? '100vh' : 'auto')),
+        overflowY: windowWidth <= 1700 ? 'auto' : 'hidden'
+      }}>
       {/* Header */}
-      <header className="header" style={{ height: windowWidth <= 1700 ? '50px' : windowWidth <= 1815 ? '60px' : 'auto', padding: windowWidth <= 1700 ? '10px 20px' : windowWidth <= 1815 ? '15px 20px' : '20px' }}>
+      <header className="header" style={{ height: windowWidth <= 1440 ? '45px' : windowWidth <= 1700 ? '50px' : windowWidth <= 1815 ? '60px' : 'auto', padding: windowWidth <= 1440 ? '8px 15px' : windowWidth <= 1700 ? '10px 20px' : windowWidth <= 1815 ? '15px 20px' : '20px' }}>
         <div className="header-left">
           <svg width="43px" height="20px" viewBox="0 0 43 20" style={{ marginRight: '8px' }}>
             <path d="M4.94797 15.7069C4.9294 15.7069 4.91155 15.7069 4.89299 15.7055L2.88435 15.5905C2.10174 15.5834 1.42482 15.3042 0.924977 14.7815C-0.045425 13.7661 -0.00543786 12.2002 0.00241676 12.0245C0.0452601 11.0727 0.283755 10.3158 0.712903 9.77598C0.742179 9.73885 0.771455 9.70458 0.800732 9.67102C0.692195 8.92483 1.01209 8.46426 1.09492 8.3593C1.11634 8.33288 1.13848 8.30717 1.16276 8.28289C2.7958 6.61986 7.60712 5.66159 10.3298 5.23887C11.2152 5.10106 12.07 4.87042 12.8711 4.55266C14.0008 4.10352 15.3054 3.43659 16.45 2.72182C18.3144 1.55791 20.3494 0.773878 22.4995 0.393286C25.1943 -0.0844178 33.9429 -0.0251512 38.9178 0.0526809C41.1885 0.0883838 43.0357 1.96492 43.0357 4.23562C43.0357 6.50632 41.1592 8.41928 38.8521 8.41928L31.7686 8.41928C31.2402 8.41928 30.8111 7.99084 30.8111 7.46173C30.8111 6.93261 31.2395 6.50418 31.7686 6.50418L38.8521 6.50418C40.1031 6.50418 41.1206 5.48665 41.1206 4.23562C41.1206 2.9846 40.1188 1.98635 38.8878 1.96707C30.5383 1.83639 24.6866 1.94993 22.8336 2.27839C20.9264 2.61614 19.1198 3.31163 17.4639 4.34559C16.7363 4.79973 15.2647 5.66159 13.5773 6.33209C12.6434 6.70269 11.6501 6.97117 10.624 7.13041C6.82094 7.72164 3.7862 8.62136 2.71155 9.46323C2.72297 9.50179 2.74082 9.55248 2.77081 9.61532C2.8922 9.87024 2.89434 10.1659 2.77724 10.4229C2.67441 10.6486 2.48805 10.8249 2.26026 10.9156C2.16601 10.992 1.95036 11.3255 1.91537 12.1109C1.90752 12.343 1.96321 13.1021 2.31167 13.4619C2.40093 13.5541 2.56017 13.6769 2.91434 13.6769C2.9329 13.6769 2.95075 13.6769 2.96932 13.6783L4.11895 13.744C4.58951 11.3291 6.72169 9.50036 9.27158 9.50036C11.8215 9.50036 13.8644 11.2327 14.3928 13.5862L32.8526 13.1813C33.1403 12.2623 33.6802 11.4319 34.4164 10.7907C35.3718 9.95878 36.5957 9.50036 37.8638 9.50036C40.3759 9.50036 42.5437 11.2884 43.0186 13.7526C43.1186 14.2717 42.7787 14.7737 42.2595 14.8736C41.7404 14.9736 41.2384 14.6337 41.1385 14.1146C40.8371 12.5508 39.4604 11.4155 37.8638 11.4155C36.2672 11.4155 34.8012 12.6393 34.5634 14.2617C34.4956 14.7237 34.1043 15.07 33.6373 15.08L13.5809 15.5199C13.0604 15.5341 12.6262 15.1243 12.6034 14.6037C12.5262 12.8157 11.0631 11.4155 9.27158 11.4155C7.48001 11.4155 5.93694 12.9114 5.93622 14.7501C5.93622 15.2678 5.52421 15.6919 5.00652 15.7069L4.9751 15.7069C4.96582 15.7084 4.95725 15.7084 4.94797 15.7084L4.94797 15.7069Z" fill="#37bc12"/>
             <circle cx="32.5" cy="10.5" r="5.25" fill="#37bc12"/>
             <circle cx="10.5" cy="10.5" r="5.25" fill="#37bc12"/>
           </svg>
-          <h1 style={{ fontSize: windowWidth <= 1700 ? '20px' : windowWidth <= 1815 ? '22px' : '24px', fontWeight: '700', fontFamily: 'Amazon Ember' }}>EV Digital Twin</h1>
+          <h1 style={{ fontSize: windowWidth <= 1440 ? '18px' : windowWidth <= 1700 ? '20px' : windowWidth <= 1815 ? '22px' : '24px', fontWeight: '700', fontFamily: 'Amazon Ember' }}>EV Digital Twin</h1>
         </div>
         <div className="header-right">
           <div className="user-dropdown" style={{ position: 'relative' }}>
@@ -581,7 +587,7 @@ const TiresPage = () => {
         <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: '24px', marginTop: '60px' }}>
           {/* Details Container */}
           <div style={{ background: '#1b1e20', border: '1px solid #3a4552', padding: '20px', color: 'white' }}>
-          <h3 style={{ color: 'white', fontSize: windowWidth <= 1700 ? '16px' : windowWidth <= 1815 ? '18px' : '20px' }}>Details</h3>
+          <h3 style={{ color: 'white', fontSize: windowWidth <= 1440 ? '14px' : windowWidth <= 1700 ? '16px' : windowWidth <= 1815 ? '18px' : '20px' }}>Details</h3>
 
           <div className="tire-grid" style={{ marginTop: '15px' }}>
             {/* Vehicle Image in Center */}
@@ -591,8 +597,8 @@ const TiresPage = () => {
             
             {/* Front Tires */}
             <div className="tire-row">
-              <div className="tire-info front-left" style={{ width: windowWidth <= 1700 ? '105%' : 'auto', display: windowWidth <= 1700 ? 'flex' : 'block', justifyContent: windowWidth <= 1700 ? 'flex-end' : 'normal' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', width: windowWidth <= 1700 ? '95%' : '100%' }}>
+              <div className="tire-info front-left" style={{ width: windowWidth <= 1440 ? '110%' : windowWidth <= 1700 ? '105%' : 'auto', display: windowWidth <= 1440 ? 'flex' : windowWidth <= 1700 ? 'flex' : 'block', justifyContent: windowWidth <= 1440 ? 'flex-end' : windowWidth <= 1700 ? 'flex-end' : 'normal' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', width: windowWidth <= 1440 ? '90%' : windowWidth <= 1700 ? '95%' : '100%' }}>
                   <div>
                     <div className="tire-position">Front Left</div>
                     {/* CSV DATA: Load from curb_weight_lbs */}
@@ -619,8 +625,8 @@ const TiresPage = () => {
                 </div>
               </div>
               <div className="tire-diagram"></div>
-              <div className="tire-info front-right" style={{ marginLeft: windowWidth <= 1700 ? '5%' : '0' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', textAlign: 'right', marginLeft: window.innerWidth >= 1400 ? '60px' : '0px', transform: windowWidth <= 1700 ? 'translateX(-30px)' : 'none' }}>
+              <div className="tire-info front-right" style={{ marginLeft: windowWidth <= 1440 ? '8%' : windowWidth <= 1700 ? '5%' : '0' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', textAlign: 'right', marginLeft: window.innerWidth >= 1400 ? '60px' : '0px', transform: windowWidth <= 1440 ? 'translateX(-40px)' : windowWidth <= 1700 ? 'translateX(-30px)' : 'none' }}>
                   <div style={{ marginRight: '20px' }}>
                     {/* CSV DATA: Pressure from pressure_psi */}
                     <div className="load">{formatValue(currentData.pressure_psi, '', '35')}</div>
@@ -650,8 +656,8 @@ const TiresPage = () => {
 
             {/* Rear Tires */}
             <div className="tire-row">
-              <div className="tire-info rear-left" style={{ width: windowWidth <= 1700 ? '105%' : 'auto', display: windowWidth <= 1700 ? 'flex' : 'block', justifyContent: windowWidth <= 1700 ? 'flex-end' : 'normal' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', width: windowWidth <= 1700 ? '95%' : '100%' }}>
+              <div className="tire-info rear-left" style={{ width: windowWidth <= 1440 ? '110%' : windowWidth <= 1700 ? '105%' : 'auto', display: windowWidth <= 1440 ? 'flex' : windowWidth <= 1700 ? 'flex' : 'block', justifyContent: windowWidth <= 1440 ? 'flex-end' : windowWidth <= 1700 ? 'flex-end' : 'normal' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', width: windowWidth <= 1440 ? '90%' : windowWidth <= 1700 ? '95%' : '100%' }}>
                   <div>
                     <div className="tire-position">Rear Left</div>
                     {/* CSV DATA: Load from curb_weight_lbs */}
@@ -678,8 +684,8 @@ const TiresPage = () => {
                 </div>
               </div>
               <div className="tire-diagram"></div>
-              <div className="tire-info rear-right" style={{ marginLeft: windowWidth <= 1700 ? '5%' : '0' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', textAlign: 'right', marginLeft: window.innerWidth >= 1400 ? '60px' : '0px', transform: windowWidth <= 1700 ? 'translateX(-30px)' : 'none' }}>
+              <div className="tire-info rear-right" style={{ marginLeft: windowWidth <= 1440 ? '8%' : windowWidth <= 1700 ? '5%' : '0' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', textAlign: 'right', marginLeft: window.innerWidth >= 1400 ? '60px' : '0px', transform: windowWidth <= 1440 ? 'translateX(-40px)' : windowWidth <= 1700 ? 'translateX(-30px)' : 'none' }}>
                   <div style={{ marginRight: '20px' }}>
                     {/* CSV DATA: Pressure from pressure_psi */}
                     <div className="load">{formatValue(currentData.pressure_psi, '', '35')}</div>
@@ -710,7 +716,7 @@ const TiresPage = () => {
         </div>
 
           {/* Bottom Containers */}
-          <div style={{ display: 'flex', gap: '24px', width: '100%', marginTop: windowWidth <= 1700 ? '-15px' : windowWidth <= 1815 ? '-10px' : '0' }}>
+          <div style={{ display: 'flex', gap: '24px', width: '100%', marginTop: windowWidth <= 1440 ? '-20px' : windowWidth <= 1700 ? '-15px' : windowWidth <= 1815 ? '-10px' : '0' }}>
             <div style={{ 
               background: '#1b1e20', 
               border: '1px solid #3a4552', 
@@ -719,7 +725,7 @@ const TiresPage = () => {
               flex: 1.5,
               height: window.innerWidth >= 2560 ? '380px' : window.innerWidth >= 1920 ? '340px' : window.innerWidth >= 1400 ? '280px' : '220px'
             }}>
-              <h3 style={{ fontSize: windowWidth <= 1700 ? '16px' : windowWidth <= 1815 ? '18px' : '20px' }}>Road Surface Conditions</h3>
+              <h3 style={{ fontSize: windowWidth <= 1440 ? '14px' : windowWidth <= 1700 ? '16px' : windowWidth <= 1815 ? '18px' : '20px' }}>Road Surface Conditions</h3>
               <div className="surface-graph">
                 {/* DYNAMIC CSV DATA: Distance from mileage field converted to miles */}
                 <div className="surface-metric">{currentData.mileage ? `${Math.round(currentData.mileage * 0.621371)} miles` : '25 miles' /* Static fallback */}</div>
@@ -737,7 +743,7 @@ const TiresPage = () => {
               flex: 0.8,
               height: window.innerWidth >= 2560 ? '380px' : window.innerWidth >= 1920 ? '340px' : window.innerWidth >= 1400 ? '280px' : '220px'
             }}>
-              <h3 style={{ fontSize: windowWidth <= 1700 ? '16px' : windowWidth <= 1815 ? '18px' : '20px' }}>Vibration/Frequency Signatures</h3>
+              <h3 style={{ fontSize: windowWidth <= 1440 ? '14px' : windowWidth <= 1700 ? '16px' : windowWidth <= 1815 ? '18px' : '20px' }}>Vibration/Frequency Signatures</h3>
               <div className="vibration-graph">
                 {/* DYNAMIC VIBRATION: Changes every 30 seconds based on CSV tire data */}
                 <div className="vibration-metric">{currentVibrationHz} Hz</div>
@@ -752,21 +758,21 @@ const TiresPage = () => {
         <div style={{ flex: 1, background: '#434a54', borderRadius: 0, padding: '24px', minWidth: '350px', minHeight: 0, alignSelf: 'flex-start' }}>
             <div className="motor-prediction">
               <div className="prediction-header">
-                <h2 style={{ fontSize: windowWidth <= 1700 ? '18px' : windowWidth <= 1815 ? '22px' : '24px', marginTop: windowWidth <= 1700 ? '-20px' : windowWidth <= 1815 ? '-10px' : '0' }}>Tire Prediction</h2>
+                <h2 style={{ fontSize: windowWidth <= 1440 ? '16px' : windowWidth <= 1700 ? '18px' : windowWidth <= 1815 ? '22px' : '24px', marginTop: windowWidth <= 1440 ? '-25px' : windowWidth <= 1700 ? '-20px' : windowWidth <= 1815 ? '-10px' : '0' }}>Tire Prediction</h2>
                 <img
                   src={require('./assets/warning.png')}
                   alt="Warning"
                   className="info-icon"
-                  style={{ width: '20px', height: '20px', cursor: 'pointer', marginTop: windowWidth <= 1700 ? '-20px' : windowWidth <= 1815 ? '-10px' : '0' }}
+                  style={{ width: '20px', height: '20px', cursor: 'pointer', marginTop: windowWidth <= 1440 ? '-25px' : windowWidth <= 1700 ? '-20px' : windowWidth <= 1815 ? '-10px' : '0' }}
                   onClick={() => setShowModal(true)}
                 />
               </div>
 
               {/* Failure Prediction Chart */}
-              <div className="motor-prediction-container" style={{ paddingLeft: '30px', marginTop: windowWidth <= 1700 ? '-20px' : windowWidth <= 1815 ? '-10px' : '0' }}>
-                <div className="failure-prediction" style={{ marginTop: windowWidth <= 1700 ? '-10px' : windowWidth <= 1815 ? '-5px' : '0' }}>
+              <div className="motor-prediction-container" style={{ paddingLeft: '30px', marginTop: windowWidth <= 1440 ? '-25px' : windowWidth <= 1700 ? '-20px' : windowWidth <= 1815 ? '-10px' : '0' }}>
+                <div className="failure-prediction" style={{ marginTop: windowWidth <= 1440 ? '-15px' : windowWidth <= 1700 ? '-10px' : windowWidth <= 1815 ? '-5px' : '0' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <h3 style={{ margin: 0, fontSize: windowWidth <= 1700 ? '12px' : windowWidth <= 1815 ? '13px' : '14px' }}>Tire Failure Prediction</h3>
+                    <h3 style={{ margin: 0, fontSize: windowWidth <= 1440 ? '11px' : windowWidth <= 1700 ? '12px' : windowWidth <= 1815 ? '13px' : '14px' }}>Tire Failure Prediction</h3>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.7)' }}>
                         Show Prediction

@@ -142,7 +142,12 @@ const FleetPortal = () => {
   };
 
   return (
-    <div className="fleet-portal">
+    <div className="fleet-portal" style={{
+      transform: windowSize.width <= 1920 ? `scale(${windowSize.width / 1600})` : `scale(${windowSize.width / 2200})`,
+      transformOrigin: 'top left',
+      width: windowSize.width <= 1920 ? `${100 / (windowSize.width / 1600)}%` : `${100 / (windowSize.width / 2200)}%`,
+      height: windowSize.width <= 1920 ? `${100 / (windowSize.width / 1600)}%` : `${100 / (windowSize.width / 2200)}%`
+    }}>
       <header className="main-header">
         <div className="header-left">
           <svg width="43px" height="20px" viewBox="0 0 43 20" style={{ marginRight: '8px' }}>

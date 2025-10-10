@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
 const CarDetail = () => {
@@ -20,9 +20,29 @@ const CarDetail = () => {
 
   const vehicle = getVehicleData(carId);
 
+   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const getScale = () => {
+    if (windowWidth <= 1024) return windowWidth / 1440;
+    if (windowWidth <= 1700) return 1;
+    if (windowWidth <= 1815) return 1.05;
+    return windowWidth / 1920;
+  };
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <div className="car-detail">
-      <div className="car-detail-container">
+      <div className="car-detail-container" style={{
+        transform: `scale(${getScale()})`,
+        transformOrigin: 'top left',
+        width: `${100 / getScale()}%`,
+        height: `${100 / getScale()}%`,
+        overflowY: windowWidth <= 1700 ? 'auto' : 'hidden'
+      }}>
       {/* Header */}
       <header className="header">
         <div className="header-left">
@@ -31,7 +51,7 @@ const CarDetail = () => {
             <circle cx="32.5" cy="10.5" r="5.25" fill="#37bc12"/>
             <circle cx="10.5" cy="10.5" r="5.25" fill="#37bc12"/>
           </svg>
-          <h1 style={{ fontSize: '24px', fontWeight: '700', fontFamily: 'Amazon Ember' }}>EV Digital Twin</h1>
+          <h1 style={{ fontSize: windowWidth >= 3600 ? '30px' : windowWidth >= 2700 ? '27px' : '24px', fontWeight: '700', fontFamily: 'Amazon Ember' }}>EV Digital Twin</h1>
         </div>
         <div className="header-right">
           <div className="user-dropdown" style={{ position: 'relative' }}>
@@ -81,7 +101,7 @@ const CarDetail = () => {
       </header>
 
       {/* VIN Header - Outside the container */}
-      <div className="vin-header" style={{ margin: '30px 20px 20px' }}>
+      <div className="vin-header" style={{ margin: windowWidth >= 3600 ? '40px 30px 30px' : windowWidth >= 2700 ? '35px 25px 25px' : '30px 20px 20px' }}>
         <button 
           className="back-button"
           onClick={() => navigate('/')}
@@ -93,7 +113,7 @@ const CarDetail = () => {
             alignItems: 'center',
             gap: '10px',
             cursor: 'pointer',
-            fontSize: '20px',
+            fontSize: windowWidth >= 3600 ? '26px' : windowWidth >= 2700 ? '23px' : '20px',
             padding: '0',
             margin: '0'
           }}
@@ -103,7 +123,7 @@ const CarDetail = () => {
         </button>
       </div>
 
-      <div className="detail-layout" style={{ margin: '-30px 20px 20px' }}>
+      <div className="detail-layout" style={{ margin: windowWidth >= 3600 ? '-40px 30px 30px' : windowWidth >= 2700 ? '-35px 25px 25px' : '-30px 20px 20px' }}>
         {/* Main Content Panel */}
         <div className="main-panel">
           {/* Vehicle Image and Metrics Section */}
@@ -181,10 +201,10 @@ const CarDetail = () => {
             </div>
           </div>
 
-          <div className="spacer" style={{ height: window.innerWidth <= 1800 ? '10px' : 'auto' }}></div>
+          <div className="spacer" style={{ height: window.innerWidth >= 3600 ? '20px' : window.innerWidth >= 2700 ? '15px' : window.innerWidth <= 1440 ? '5px' : window.innerWidth <= 1800 ? '10px' : 'auto' }}></div>
 
           {/* Component Status Cards */}
-          <div className="component-status" style={{ marginTop: window.innerWidth <= 1800 ? '-50px' : '-40px' }}>
+          <div className="component-status" style={{ marginTop: windowWidth >= 3600 ? '-20px' : windowWidth >= 2700 ? '-30px' : windowWidth <= 1440 ? '-100px' : windowWidth <= 1700 ? '-80px' : '-40px' }}>
             <div className="component-card clickable" onClick={() => navigate(`/car/${carId}/battery`)}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '-20px' }}>
                 <img src={require('./assets/battery.png')} alt="Battery" style={{ width: '20px', height: '20px' }} />
@@ -232,7 +252,7 @@ const CarDetail = () => {
           {/* Powertrain & Energy Management Box */}
           <div className="panel-section">
             <h3>Powertrain & Energy Management</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', padding: '8px 0' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: windowWidth >= 3600 ? '18px' : windowWidth >= 2700 ? '15px' : '12px', padding: windowWidth >= 3600 ? '12px 0' : windowWidth >= 2700 ? '10px 0' : '8px 0' }}>
               <div className="energy-item">
                 <div className="energy-value">2.4mile/kWH</div>
                 <div className="energy-label">Energy Consumption</div>
@@ -252,10 +272,10 @@ const CarDetail = () => {
             </div>
             
             {/* Battery Details */}
-            <div style={{ border: '0.5px solid #545b64', padding: '8px', marginTop: '12px' }}>
+            <div style={{ border: '0.5px solid #545b64', padding: windowWidth >= 3600 ? '12px' : windowWidth >= 2700 ? '10px' : '8px', marginTop: windowWidth >= 3600 ? '18px' : windowWidth >= 2700 ? '15px' : '12px' }}>
               <h3 style={{ margin: '0 0 8px 0' }}>Battery Details</h3>
               <div className="battery-soh" style={{ marginBottom: '8px' }}>Battery SoH: 98.1%</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: windowWidth >= 3600 ? '12px' : windowWidth >= 2700 ? '10px' : '8px' }}>
                 <div className="battery-item">
                   <div className="battery-value">78°F</div>
                   <div className="battery-label">Temperature</div>
