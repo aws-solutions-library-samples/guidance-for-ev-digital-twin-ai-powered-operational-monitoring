@@ -326,7 +326,7 @@ const Invertor = () => {
             </div>
 
             {/* Right Panel */}
-            <div className="right-panel">
+            <div className="right-panel" style={{ overflow: 'hidden' }}>
               <div className="battery-prediction">
                 <div className="prediction-header">
                   <h2 style={{ fontSize: windowWidth <= 1440 ? '16px' : windowWidth <= 1700 ? '18px' : windowWidth <= 1815 ? '22px' : '24px', marginTop: windowWidth <= 1440 ? '-25px' : windowWidth <= 1700 ? '-20px' : windowWidth <= 1815 ? '-10px' : '0' }}>Inverter Prediction</h2>

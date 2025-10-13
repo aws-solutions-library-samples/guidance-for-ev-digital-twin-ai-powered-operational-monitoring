@@ -3,7 +3,7 @@
   min-height: 100vh;
   background: #2d343d;
   font-family: 'Amazon Ember', sans-serif;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .energymanagement-container {
