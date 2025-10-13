@@ -27,12 +27,10 @@ const Charger = () => {
 
   return (
     <div className="charger-page">
-o      <div className="charger-container" style={{ 
-        transform: windowWidth <= 1024 ? `scale(${windowWidth / 1440})` : (windowWidth >= 2685 ? `scale(${windowWidth / 1920})` : undefined),
-        transformOrigin: windowWidth <= 1024 ? 'top left' : (windowWidth >= 2685 ? 'top left' : undefined),
-        width: windowWidth <= 1024 ? `${100 / (windowWidth / 1440)}%` : (windowWidth >= 2685 ? `${100 / (windowWidth / 1920)}%` : undefined),
-        height: windowWidth <= 1024 ? `${100 / (windowWidth / 1440)}%` : (windowWidth >= 2685 ? `${100 / (windowWidth / 1920)}%` : (windowWidth <= 1700 ? '100vh' : 'auto')),
-        overflowY: windowWidth <= 1700 ? 'auto' : 'hidden'
+      <div className="charger-container" style={{ 
+        zoom: windowWidth <= 1024 ? windowWidth / 1440 : (windowWidth >= 2685 ? Math.min(windowWidth / 1920, 1.4) : undefined),
+        overflowY: 'auto',
+        overflowX: 'hidden'
       }}>
         {/* Header */}
         <header className="header" style={{ height: windowWidth <= 1440 ? '45px' : windowWidth <= 1700 ? '50px' : windowWidth <= 1815 ? '60px' : 'auto', padding: windowWidth <= 1440 ? '8px 15px' : windowWidth <= 1700 ? '10px 20px' : windowWidth <= 1815 ? '15px 20px' : '20px' }}>
@@ -203,7 +201,7 @@ o      <div className="charger-container" style={{
             </div>
 
               {/* Bottom Container: Charge Efficiency */}
-              <div className="data-container">
+              <div className="data-container" style={{ marginTop: '-30px' }}>
               <h3>Charge Efficiency</h3>
               <div style={{ background: 'transparent', width: '100%', height: 'calc(100% - 60px)', marginTop: '10px' }}>
                 <svg width="100%" height="100%" viewBox="0 0 1000 150" preserveAspectRatio="xMidYMid meet">

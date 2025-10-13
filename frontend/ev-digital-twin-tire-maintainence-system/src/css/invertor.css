@@ -1,5 +1,5 @@
 .invertor-page {
-  width: 100vw;
+  width: 100%;
   min-height: 100vh;
   background: #2d343d;
   font-family: 'Amazon Ember', sans-serif;
@@ -12,6 +12,7 @@
   display: flex;
   flex-direction: column;
   background: #2d343d;
+  overflow-x: hidden;
 }
 
 /* Header Styles */
@@ -109,7 +110,7 @@
   padding: 20px;
   overflow: hidden;
   position: relative;
-  height: 100%;
+  height: auto;
   margin-top: 90px;
 }
 
@@ -139,7 +140,7 @@
 .invertor-page .bottom-containers .data-container:first-child {
   width: 65%;
   flex: none;
-  min-height: 300px;
+  min-height: 260px;
   overflow: visible;
   margin-left: -15px;
 }
@@ -147,14 +148,15 @@
 @media (min-width: 1441px) and (max-width: 2500px) {
   .invertor-page .bottom-containers .data-container:first-child,
   .invertor-page .bottom-containers .data-container:last-child {
-    max-height: 300px;
+    max-height: 260px;
+    min-height: 260px;
   }
 }
 
 .invertor-page .bottom-containers .data-container:last-child {
   width: 35%;
   flex: none;
-  min-height: 300px;
+  min-height: 260px;
   overflow: visible;
   transform: translateX(15px);
 }

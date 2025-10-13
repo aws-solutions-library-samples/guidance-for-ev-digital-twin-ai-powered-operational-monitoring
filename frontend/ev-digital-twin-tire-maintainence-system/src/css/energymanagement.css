@@ -1,5 +1,5 @@
 .energymanagement-page {
-  width: 100vw;
+  width: 100%;
   min-height: 100vh;
   background: #2d343d;
   font-family: 'Amazon Ember', sans-serif;
@@ -12,6 +12,7 @@
   display: flex;
   flex-direction: column;
   background: #2d343d;
+  overflow-x: hidden;
 }
 
 
@@ -86,20 +87,23 @@
   }
   
   .energymanagement-page .main-panel .data-container:last-child {
-    max-height: 120px !important;
+    max-height: 280px !important;
     overflow: hidden !important;
     margin-bottom: -40px !important;
   }
-  
-
 }
 
 .energymanagement-page .main-panel .data-container:last-child {
-  min-height: 380px !important;
-  height: 380px !important;
+  max-height: 300px !important;
+  overflow: hidden !important;
 }
 
 @media (min-width: 1920px) {
+  .energymanagement-page .main-panel .data-container:last-child {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  
   .regenerative-gauge .gauge-value {
     font-size: 55px !important;
   }
@@ -131,11 +135,7 @@
   }
 }
 
-@media (min-width: 1400px) {
-  .energymanagement-page .main-panel .data-container:last-child {
-    height: 450px !important;
-  }
-  
+@media (min-width: 1400px) and (max-width: 1919px) {
   .regenerative-gauge .gauge-value {
     font-size: 28px !important;
   }
@@ -150,10 +150,6 @@
 }
 
 @media (min-width: 1920px) {
-  .energymanagement-page .main-panel .data-container:last-child {
-    height: 520px !important;
-  }
-  
   .regenerative-gauge .gauge-value {
     font-size: 32px !important;
   }

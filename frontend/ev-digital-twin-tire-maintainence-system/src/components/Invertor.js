@@ -8,6 +8,9 @@ const Invertor = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
+  // Calculate clamped scale - grows with screen but never too big
+
+
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
@@ -34,11 +37,9 @@ const Invertor = () => {
   return (
     <div className="invertor-page">
       <div className="invertor-container" style={{ 
-        transform: windowWidth <= 1024 ? `scale(${windowWidth / 1440})` : (windowWidth >= 2685 ? `scale(${windowWidth / 1920})` : undefined),
-        transformOrigin: windowWidth <= 1024 ? 'top left' : (windowWidth >= 2685 ? 'top left' : undefined),
-        width: windowWidth <= 1024 ? `${100 / (windowWidth / 1440)}%` : (windowWidth >= 2685 ? `${100 / (windowWidth / 1920)}%` : undefined),
-        height: windowWidth <= 1024 ? `${100 / (windowWidth / 1440)}%` : (windowWidth >= 2685 ? `${100 / (windowWidth / 1920)}%` : (windowWidth <= 1700 ? '100vh' : 'auto')),
-        overflowY: windowWidth <= 1700 ? 'auto' : 'hidden'
+        zoom: windowWidth <= 1024 ? windowWidth / 1440 : (windowWidth >= 2685 ? windowWidth / 1920 : undefined),
+        overflowY: 'hidden',
+        overflowX: 'hidden'
       }}>
         {/* Header */}
         <header className="header" style={{ height: windowWidth <= 1440 ? '45px' : windowWidth <= 1700 ? '50px' : windowWidth <= 1815 ? '60px' : 'auto', padding: windowWidth <= 1440 ? '8px 15px' : windowWidth <= 1700 ? '10px 20px' : windowWidth <= 1815 ? '15px 20px' : '20px' }}>
@@ -273,21 +274,38 @@ const Invertor = () => {
                   </div>
                 </div>
 
-                {/* Temperature */}
-                <div className="invertor-center-section" style={{ transform: 'translate(150px, -40px)' }}>
-                  <div className="invertor-temp" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                {/* Temperature & DC Link Box */}
+                <div style={{ 
+                  position: 'absolute', 
+                  right: windowWidth <= 1440 ? '20px' : windowWidth <= 1700 ? '80px' : windowWidth <= 1815 ? '100px' : '150px', 
+                  top: windowWidth <= 1440 ? '350px' : windowWidth <= 1700 ? '360px' : windowWidth <= 1815 ? '370px' : '380px',
+                  background: '#000',
+                  border: '1px solid #3a4552',
+                  borderRadius: '8px',
+                  padding: '15px 20px',
+                  display: 'flex',
+                  gap: '30px'
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <span className="invertor-temp-icon" style={{ fontSize: windowWidth <= 1440 ? '13px' : windowWidth <= 1700 ? '14px' : windowWidth <= 1815 ? '15px' : '16px' }}>🌡️</span>
-                      <div className="invertor-temp-value" style={{ fontSize: windowWidth <= 1440 ? '13px' : windowWidth <= 1700 ? '14px' : windowWidth <= 1815 ? '16px' : spacing.titleFontSize }}><span style={{ fontSize: windowWidth <= 1440 ? '18px' : windowWidth <= 1700 ? '20px' : windowWidth <= 1815 ? '22px' : `calc(${spacing.titleFontSize} * 1.5)` }}>54</span>°C</div>
+                      <span style={{ fontSize: windowWidth <= 1440 ? '13px' : windowWidth <= 1700 ? '14px' : windowWidth <= 1815 ? '15px' : '16px' }}>🌡️</span>
+                      <div style={{ fontSize: windowWidth <= 1440 ? '13px' : windowWidth <= 1700 ? '14px' : windowWidth <= 1815 ? '16px' : spacing.titleFontSize }}><span style={{ fontSize: windowWidth <= 1440 ? '18px' : windowWidth <= 1700 ? '20px' : windowWidth <= 1815 ? '22px' : `calc(${spacing.titleFontSize} * 1.5)` }}>54</span>°C</div>
                     </div>
-                    <div className="invertor-temp-label" style={{ fontSize: windowWidth <= 1440 ? '9px' : windowWidth <= 1700 ? '10px' : windowWidth <= 1815 ? '11px' : spacing.fontSize }}>Inverter Temperature</div>
+                    <div style={{ fontSize: windowWidth <= 1440 ? '9px' : windowWidth <= 1700 ? '10px' : windowWidth <= 1815 ? '11px' : spacing.fontSize }}>Inverter Temperature</div>
+                  </div>
+                  <div style={{ borderLeft: '1px solid #3a4552', paddingLeft: '30px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <div style={{ fontSize: spacing.smallFontSize }}>DC Link Voltage: XXX</div>
                   </div>
                 </div>
-                <div className="invertor-dc-link" style={{ position: 'absolute', right: '20px', top: '400px', fontSize: spacing.smallFontSize }}>DC Link Voltage: XXX</div>
               </div>
 
               {/* Bottom Containers */}
-              <div className="bottom-containers" style={{ marginBottom: '0', marginTop: '20px' }}>
+              <div className="bottom-containers" style={{ 
+                marginBottom: '0',
+                marginTop: '-30px',
+                transform: windowWidth <= 1440 ? 'scaleY(0.75)' : windowWidth <= 1700 ? 'scaleY(0.8)' : windowWidth <= 1815 ? 'scaleY(0.9)' : 'none',
+                transformOrigin: 'top'
+              }}>
                 <div className="data-container" style={{ height: windowWidth <= 1700 ? spacing.bottomContainerHeight : windowWidth <= 1815 ? '350px !important' : '450px', minHeight: windowWidth <= 1700 ? 'auto' : windowWidth <= 1815 ? '350px !important' : 'auto', maxHeight: windowWidth <= 1700 ? 'auto' : windowWidth <= 1815 ? '350px !important' : 'auto', display: 'flex', flexDirection: 'column', justifyContent: windowWidth >= 1600 ? 'flex-start' : 'normal' }}>
                   <h4 style={{ fontSize: spacing.titleFontSize }}>Pulse with Modulations</h4>
                   <img src={require('./assets/pulsemod.png')} alt="Pulse Modulation" style={{ width: '100%', height: 'auto', marginTop: '10px' }} />
@@ -332,7 +350,7 @@ const Invertor = () => {
                       </div>
                     </div>
                     <div style={{ position: 'relative', marginTop: '100px' }}>
-                      <div className="prediction-chart" style={{ marginTop: windowWidth <= 1440 ? '-170px' : windowWidth <= 1700 ? '-150px' : windowWidth <= 1815 ? '-80px' : '0' }}>
+                      <div className="prediction-chart" style={{ marginTop: windowWidth <= 1440 ? '-170px' : windowWidth <= 1700 ? '-150px' : windowWidth <= 1815 ? '-80px' : windowWidth >= 2560 ? '-100px' : '0' }}>
                         <svg width="290" height="180" viewBox="0 0 290 180">
                         {/* Grid lines */}
                         {Array.from({ length: 8 }, (_, i) => (
@@ -418,7 +436,7 @@ const Invertor = () => {
                   </div>
 
                   {/* Remaining Useful Life */}
-                  <div className="useful-life" style={{ marginBottom: '20px', marginTop: windowWidth <= 1440 ? '-100px' : windowWidth <= 1700 ? '-80px' : windowWidth <= 1815 ? '-40px' : '20px' }}>
+                  <div className="useful-life" style={{ marginBottom: '20px', marginTop: windowWidth <= 1440 ? '-100px' : windowWidth <= 1700 ? '-80px' : windowWidth <= 1815 ? '-40px' : windowWidth >= 2560 ? '80px' : '20px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
                       <span style={{ fontSize: spacing.smallFontSize, color: 'white' }}>Remaining useful life</span>
                       <span style={{ fontSize: spacing.fontSize, color: 'white', fontWeight: 'bold' }}>83%</span>

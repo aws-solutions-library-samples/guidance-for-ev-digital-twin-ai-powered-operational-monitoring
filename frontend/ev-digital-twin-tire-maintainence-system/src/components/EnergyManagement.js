@@ -35,11 +35,9 @@ const EnergyManagement = () => {
   return (
     <div className="energymanagement-page">
       <div className="energymanagement-container" style={{ 
-        transform: windowWidth <= 1024 ? `scale(${windowWidth / 1440})` : (windowWidth >= 2685 ? `scale(${windowWidth / 1920})` : undefined),
-        transformOrigin: windowWidth <= 1024 ? 'top left' : (windowWidth >= 2685 ? 'top left' : undefined),
-        width: windowWidth <= 1024 ? `${100 / (windowWidth / 1440)}%` : (windowWidth >= 2685 ? `${100 / (windowWidth / 1920)}%` : undefined),
-        height: windowWidth <= 1024 ? `${100 / (windowWidth / 1440)}%` : (windowWidth >= 2685 ? `${100 / (windowWidth / 1920)}%` : (windowWidth <= 1700 ? '100vh' : 'auto')),
-        overflowY: windowWidth <= 1700 ? 'auto' : 'hidden'
+        zoom: windowWidth <= 1024 ? windowWidth / 1440 : (windowWidth >= 2685 ? Math.min(windowWidth / 1920, 1.4) : undefined),
+        overflowY: 'auto',
+        overflowX: 'hidden'
       }}>
         {/* Header */}
         <header className="header" style={{ height: windowWidth <= 1440 ? '45px' : windowWidth <= 1700 ? '50px' : windowWidth <= 1815 ? '60px' : 'auto', padding: windowWidth <= 1440 ? '8px 15px' : windowWidth <= 1700 ? '10px 20px' : windowWidth <= 1815 ? '15px 20px' : '20px' }}>

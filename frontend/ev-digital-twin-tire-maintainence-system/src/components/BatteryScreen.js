@@ -139,6 +139,19 @@ const BatteryScreen = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Hybrid scaling function
+  const getScale = () => {
+    const width = windowSize.width;
+    
+    if (width <= 1024) return width / 1440;      // Mobile: scale down
+    if (width <= 1512) return width / 1650;      // Small laptop: scale down 8%
+    if (width <= 1800) return width / 1750;      // Medium laptop: scale down 3%
+    if (width <= 2560) return width / 2650;      // Large screen: scale down 3.4%
+    return width / 2200;                         // Ultra-wide
+  };
+  
+  const scale = getScale();
+  
   // Dynamic spacing based on screen width
   const getResponsiveSpacing = () => {
     const width = windowSize.width;
@@ -154,11 +167,11 @@ const BatteryScreen = () => {
   return (
     <div className="battery-page">
       <div className="battery-container" style={{
-        transform: windowSize.width <= 1024 ? `scale(${windowSize.width / 1440})` : (windowSize.width > 2560 ? `scale(${windowSize.width / 1920})` : undefined),
-        transformOrigin: (windowSize.width <= 1024 || windowSize.width > 2560) ? 'top left' : undefined,
-        width: windowSize.width <= 1024 ? `${100 / (windowSize.width / 1440)}%` : (windowSize.width > 2560 ? `${100 / (windowSize.width / 1920)}%` : undefined),
-        height: windowSize.width <= 1024 ? `${100 / (windowSize.width / 1440)}%` : (windowSize.width > 2560 ? `${100 / (windowSize.width / 1920)}%` : (windowSize.width <= 1700 ? '100vh' : 'auto')),
-        overflowY: windowSize.width <= 1700 ? 'auto' : 'auto'
+        transform: scale !== 1 ? `scale(${scale})` : undefined,
+        transformOrigin: scale !== 1 ? 'top left' : undefined,
+        width: scale !== 1 ? `${100 / scale}%` : undefined,
+        height: scale !== 1 ? `${100 / scale}%` : undefined,
+        overflowY: 'auto'
       }}>
       {/* Header */}
       <header className="header" style={{ height: windowSize.width <= 1700 ? '50px' : windowSize.width <= 1815 ? '60px' : 'auto', padding: windowSize.width <= 1700 ? '10px 20px' : windowSize.width <= 1815 ? '15px 20px' : '20px' }}>
@@ -731,7 +744,7 @@ const BatteryScreen = () => {
                     <span>ML Prediction</span>
                   </div>
                 </div>
-                <div style={{ position: 'relative', marginTop: windowSize.width <= 1700 ? '60px' : windowSize.width <= 1815 ? '70px' : '80px' }}>
+                <div style={{ position: 'relative', marginTop: windowSize.width <= 1512 ? '100px' : windowSize.width <= 1700 ? '90px' : windowSize.width <= 1815 ? '80px' : '80px' }}>
                   <div className="prediction-chart" style={{ transform: windowSize.width <= 1440 ? 'scaleX(0.85) scaleY(0.75)' : windowSize.width <= 1700 ? 'scaleX(0.9) scaleY(0.8)' : windowSize.width <= 1815 ? 'scaleX(0.95) scaleY(0.9)' : 'scale(1)', transformOrigin: 'top left' }}>
                     <svg width="350px" height="350px" viewBox="0 0 350 350">
                       {/* Grid lines */}
@@ -895,7 +908,7 @@ const BatteryScreen = () => {
 
 
               {/* Battery Bars */}
-              <div className="battery-bars" style={{ marginBottom: '20px', marginTop: windowSize.width <= 1700 ? '-170px' : windowSize.width <= 1815 ? '-120px' : '-80px' }}>
+              <div className="battery-bars" style={{ marginBottom: '20px', marginTop: windowSize.width <= 1512 ? '-150px' : windowSize.width <= 1700 ? '-160px' : windowSize.width <= 1815 ? '-120px' : '-80px' }}>
                 <div style={{ textAlign: 'center', marginBottom: '-5px' }}>
                   <span style={{ fontSize: '10px', color: 'white' }}>Battery Metrics</span>
                 </div>

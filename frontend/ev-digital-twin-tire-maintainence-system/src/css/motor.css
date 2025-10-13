@@ -103,19 +103,19 @@
 .motor-page .bottom-containers .data-container:first-child {
   width: 65%;
   flex: none;
-  min-height: 280px;
-  max-height: 280px;
+  min-height: 230px;
+  max-height: 230px;
   overflow: hidden;
   margin-left: -15px;
 }
 
 .motor-page .bottom-containers .data-container:last-child {
-  width: 35%;
+  width: 37.5%;
   flex: none;
-  min-height: 280px;
-  max-height: 280px;
+  min-height: 230px;
+  max-height: 230px;
   overflow: hidden;
-  transform: translateX(15px);
+  transform: translateX(-15px);
 }
 
 

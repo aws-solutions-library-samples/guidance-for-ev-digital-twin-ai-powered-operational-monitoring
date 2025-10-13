@@ -4,6 +4,8 @@ const AGENTCORE_API_ENDPOINT = "https://b4blc4xmh4.execute-api.us-east-1.amazona
 class AgentCoreService {
   constructor() {
     this.sessionId = null;
+    this.cache = new Map();
+    this.CACHE_TTL = 60000; // 60 seconds
   }
 
   /**
@@ -54,8 +56,27 @@ class AgentCoreService {
    * @returns {Promise<string>} - Maintenance recommendations
    */
   async getMaintenanceRecommendations(vehicleId) {
+    // Check cache first
+    const cacheKey = `vehicle_${vehicleId}`;
+    const cached = this.cache.get(cacheKey);
+    
+    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+      console.log(`Using cached data for vehicle ${vehicleId} (age: ${Math.round((Date.now() - cached.timestamp) / 1000)}s)`);
+      return cached.data;
+    }
+
+    // Not cached or expired - fetch fresh
+    console.log(`Fetching fresh data for vehicle ${vehicleId}`);
     const prompt = `Check vehicle ${vehicleId} tire and motor status. Give me ONE brief sentence about the most important issue or say "All systems normal". Be extremely concise.`;
-    return await this.chat(prompt);
+    const response = await this.chat(prompt);
+    
+    // Store in cache
+    this.cache.set(cacheKey, {
+      data: response,
+      timestamp: Date.now()
+    });
+    
+    return response;
   }
 
   /**
