@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import MapView from './MapView';
 import CarDetail from './CarDetail';
+import ConnVehicle from './ConnVehicle';
 import TiresPage from './Tires';
 import BatteryScreen from './BatteryScreen';
 import Motor from './motor';
@@ -15,7 +16,8 @@ const Dashboard = () => {
   return (
     <Routes>
       <Route path="/" element={<MapView />} />
-      <Route path="/car/:carId" element={<CarDetail />} />
+      <Route path="/car/:carId" element={<ConnVehicle />} />
+      <Route path="/car/:carId/old" element={<CarDetail />} />
       <Route path="/car/:carId/tires" element={<TiresPage />} />
       <Route path="/car/:carId/battery" element={<BatteryScreen />} />
       <Route path="/car/:carId/motor" element={<Motor />} />

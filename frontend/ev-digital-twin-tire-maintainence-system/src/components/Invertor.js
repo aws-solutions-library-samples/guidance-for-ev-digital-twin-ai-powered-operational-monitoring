@@ -38,8 +38,9 @@ const Invertor = () => {
     <div className="invertor-page">
       <div className="invertor-container" style={{ 
         zoom: windowWidth <= 1024 ? windowWidth / 1440 : (windowWidth >= 2685 ? windowWidth / 1920 : undefined),
-        overflowY: 'hidden',
-        overflowX: 'hidden'
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        minHeight: '100vh'
       }}>
         {/* Header */}
         <header className="header" style={{ height: windowWidth <= 1440 ? '45px' : windowWidth <= 1700 ? '50px' : windowWidth <= 1815 ? '60px' : 'auto', padding: windowWidth <= 1440 ? '8px 15px' : windowWidth <= 1700 ? '10px 20px' : windowWidth <= 1815 ? '15px 20px' : '20px' }}>

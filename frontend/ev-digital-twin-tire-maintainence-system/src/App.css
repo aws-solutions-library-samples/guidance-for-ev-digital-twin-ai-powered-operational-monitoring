@@ -785,6 +785,24 @@
   flex-direction: column;
 }
 
+@media (min-width: 1920px) and (max-width: 2559px) {
+  .car-detail-container {
+    transform: scale(1.2);
+    transform-origin: top left;
+    width: calc(100% / 1.2);
+    height: calc(100% / 1.2);
+  }
+}
+
+@media (min-width: 2560px) {
+  .car-detail-container {
+    transform: scale(1.4);
+    transform-origin: top left;
+    width: calc(100% / 1.4);
+    height: calc(100% / 1.4);
+  }
+}
+
 .tires-layout {
   display: grid;
   grid-template-columns: calc(100% - 343px) 343px;

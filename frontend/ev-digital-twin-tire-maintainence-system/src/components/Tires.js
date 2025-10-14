@@ -491,13 +491,14 @@ const TiresPage = () => {
   const currentPredictions = calculateDynamicPredictions(currentData);
 
   return (
-    <div style={{ width: '100vw', height: '100vh', background: '#000', fontFamily: 'Amazon Ember', position: 'fixed', top: 0, left: 0, overflow: 'hidden' }}>
+    <div style={{ width: '100%', minHeight: '100vh', background: '#000', fontFamily: 'Amazon Ember' }}>
       <div className="tires-container" style={{
         transform: windowWidth <= 1024 ? `scale(${windowWidth / 1440})` : (windowWidth >= 2685 ? `scale(${windowWidth / 1920})` : undefined),
         transformOrigin: windowWidth <= 1024 ? 'top left' : (windowWidth >= 2685 ? 'top left' : undefined),
         width: windowWidth <= 1024 ? `${100 / (windowWidth / 1440)}%` : (windowWidth >= 2685 ? `${100 / (windowWidth / 1920)}%` : undefined),
-        height: windowWidth <= 1024 ? `${100 / (windowWidth / 1440)}%` : (windowWidth >= 2685 ? `${100 / (windowWidth / 1920)}%` : (windowWidth <= 1700 ? '100vh' : 'auto')),
-        overflowY: windowWidth <= 1700 ? 'auto' : 'hidden'
+        minHeight: '100vh',
+        overflowY: 'auto',
+        overflowX: 'hidden'
       }}>
       {/* Header */}
       <header className="header" style={{ height: windowWidth <= 1440 ? '45px' : windowWidth <= 1700 ? '50px' : windowWidth <= 1815 ? '60px' : 'auto', padding: windowWidth <= 1440 ? '8px 15px' : windowWidth <= 1700 ? '10px 20px' : windowWidth <= 1815 ? '15px 20px' : '20px' }}>
@@ -723,7 +724,7 @@ const TiresPage = () => {
               padding: '20px', 
               color: 'white', 
               flex: 1.5,
-              height: window.innerWidth >= 2560 ? '380px' : window.innerWidth >= 1920 ? '340px' : window.innerWidth >= 1400 ? '280px' : '220px'
+              height: window.innerWidth >= 2560 ? '380px' : window.innerWidth >= 1920 ? '340px' : window.innerWidth >= 1400 && window.innerWidth <= 1600 ? '240px' : window.innerWidth >= 1400 ? '280px' : '220px'
             }}>
               <h3 style={{ fontSize: windowWidth <= 1440 ? '14px' : windowWidth <= 1700 ? '16px' : windowWidth <= 1815 ? '18px' : '20px' }}>Road Surface Conditions</h3>
               <div className="surface-graph">
@@ -741,7 +742,7 @@ const TiresPage = () => {
               padding: '20px', 
               color: 'white', 
               flex: 0.8,
-              height: window.innerWidth >= 2560 ? '380px' : window.innerWidth >= 1920 ? '340px' : window.innerWidth >= 1400 ? '280px' : '220px'
+              height: window.innerWidth >= 2560 ? '380px' : window.innerWidth >= 1920 ? '340px' : window.innerWidth >= 1400 && window.innerWidth <= 1600 ? '240px' : window.innerWidth >= 1400 ? '280px' : '220px'
             }}>
               <h3 style={{ fontSize: windowWidth <= 1440 ? '14px' : windowWidth <= 1700 ? '16px' : windowWidth <= 1815 ? '18px' : '20px' }}>Vibration/Frequency Signatures</h3>
               <div className="vibration-graph">

@@ -1,0 +1,483 @@
+/* ConnVehicle - Height Matching v3 */
+
+.connvehicle-page {
+  width: 100vw;
+  height: 100vh;
+  background: #2d343d;
+  font-family: 'Amazon Ember', sans-serif;
+  overflow-y: auto;
+}
+
+.connvehicle-container {
+  width: 100%;
+  height: 100vh;
+  background: #2d343d;
+  display: flex;
+  flex-direction: column;
+  font-size: calc(14px + 0.3vw);
+  overflow-y: auto;
+}
+
+/* Header */
+.connvehicle-header {
+  width: 100%;
+  height: 56px;
+  background: #1b1e20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  flex-shrink: 0;
+}
+
+.connvehicle-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.connvehicle-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: white;
+}
+
+/* VIN Header */
+.connvehicle-vin {
+  padding: 20px;
+}
+
+.connvehicle-back-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Main Layout */
+.connvehicle-layout {
+  display: grid;
+  grid-template-columns: 1fr calc(380px + 8vw);
+  gap: 1vw;
+  padding: 1vw;
+  padding-top: 0.5vw;
+  align-items: stretch;
+}
+
+/* Left Panel */
+.connvehicle-left {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.connvehicle-box {
+  background: #1b1e20;
+  border: 1px solid #3a4552;
+  padding: 2vh 1.5vw;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  justify-content: space-between;
+  height: 100%;
+}
+
+/* Vehicle Metrics */
+.connvehicle-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2vh 3vw;
+  position: absolute;
+  top: 2vh;
+  left: 2vw;
+  max-width: 400px;
+  z-index: 2;
+}
+
+.connvehicle-metric {
+  text-align: left;
+  color: white;
+}
+
+.connvehicle-metric-value {
+  font-size: calc(24px + 0.6vw);
+  font-weight: 300;
+  margin-bottom: 8px;
+}
+
+.connvehicle-metric-label {
+  font-size: calc(10px + 0.15vw);
+  font-weight: 700;
+  opacity: 0.8;
+}
+
+/* Vehicle Image */
+.connvehicle-vehicle-img {
+  width: 100%;
+  max-width: 45vw;
+  max-height: 32vh;
+  height: auto;
+  margin: 1vh auto;
+  display: block;
+  object-fit: contain;
+  position: relative;
+  right: -50px;
+}
+
+/* Safety & Faults */
+.connvehicle-safety-row {
+  display: flex;
+  gap: 2vw;
+  align-items: center;
+  margin: 2vh 0 1.5vh 0;
+}
+
+.connvehicle-safety-checks {
+  flex: 1;
+}
+
+.connvehicle-safety-title {
+  color: white;
+  font-size: calc(12px + 0.2vw);
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.connvehicle-safety-items {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.8vw;
+}
+
+.connvehicle-safety-item {
+  text-align: center;
+}
+
+.connvehicle-safety-badge {
+  background: #37bc12;
+  border: 1px solid white;
+  color: white;
+  padding: calc(8px + 0.3vh) calc(20px + 0.5vw);
+  border-radius: 4px;
+  font-size: calc(10px + 0.2vw);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.connvehicle-safety-label {
+  font-size: calc(10px + 0.15vw);
+  color: white;
+  font-weight: 700;
+}
+
+.connvehicle-divider {
+  width: 3px;
+  height: 80px;
+  background: white;
+}
+
+.connvehicle-fault-badge {
+  background: #ff9900;
+  border: 1px solid #f60e0e;
+  color: white;
+  padding: calc(8px + 0.3vh) calc(36px + 0.7vw);
+  border-radius: 4px;
+  font-size: calc(12px + 0.25vw);
+  font-weight: 700;
+  max-width: 350px;
+}
+
+.connvehicle-motor-eff {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: white;
+  font-size: calc(28px + 0.5vw);
+  font-weight: 300;
+  max-width: 250px;
+}
+
+/* Component Cards */
+.connvehicle-components {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: calc(0.6vw + 2px);
+  margin-top: 11vh;
+}
+
+.connvehicle-card {
+  background: #2d343d;
+  border-radius: 8px;
+  padding: calc(1vh + 2px) calc(0.7vw + 2px);
+  text-align: center;
+  cursor: pointer;
+  min-height: calc(7vh + 5px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: transform 0.2s;
+}
+
+.connvehicle-card:hover {
+  transform: translateY(-2px);
+}
+
+.connvehicle-card-title {
+  color: white;
+  font-size: calc(12px + 0.2vw);
+  font-weight: 700;
+  margin: 8px 0;
+}
+
+.connvehicle-card-text {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: calc(9px + 0.1vw);
+}
+
+.connvehicle-card-error {
+  color: #e60909;
+  font-size: calc(11px + 0.15vw);
+}
+
+/* Right Panel - Individual Boxes */
+.connvehicle-right {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5vh;
+  height: 100%;
+  justify-content: space-between;
+}
+
+.connvehicle-right-box {
+  background: #1b1e20;
+  border: 1px solid #3a4552;
+  padding: calc(10px + 0.3vh);
+  border-radius: 4px;
+  flex: 1;
+}
+
+.connvehicle-right-title {
+  color: white;
+  font-size: calc(12px + 0.2vw);
+  font-weight: 700;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.connvehicle-view-all {
+  color: #ff9900;
+  font-size: calc(11px + 0.15vw);
+  cursor: pointer;
+}
+
+/* Energy Grid */
+.connvehicle-energy-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.connvehicle-energy-item {
+  text-align: center;
+}
+
+.connvehicle-energy-value {
+  color: white;
+  font-size: calc(16px + 0.25vw);
+  font-weight: 300;
+  margin-bottom: 5px;
+}
+
+.connvehicle-energy-label {
+  color: white;
+  font-size: calc(9px + 0.1vw);
+  font-weight: 700;
+}
+
+/* Battery Details */
+.connvehicle-battery-box {
+  border: 1px solid #545b64;
+  padding: 12px;
+  margin-top: 10px;
+}
+
+.connvehicle-battery-soh {
+  text-align: right;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 10px;
+  margin-bottom: 8px;
+}
+
+.connvehicle-battery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+/* Service Box */
+.connvehicle-service-box {
+  background: transparent;
+  border: 1px solid #3a4552;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+.connvehicle-service-box h4 {
+  color: white;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.connvehicle-service-box p {
+  color: white;
+  font-size: 11px;
+  margin: 5px 0;
+}
+
+/* Error Code Box */
+.connvehicle-error-box {
+  background: transparent;
+  border: 1px solid #3a4552;
+  padding: 10px;
+  margin-top: 10px;
+  color: white;
+  font-size: 14px;
+  text-align: center;
+}
+
+/* Software Version */
+.connvehicle-version {
+  position: absolute;
+  top: 1vw;
+  right: 1vw;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 8px;
+  z-index: 10;
+}
+
+/* Responsive Scaling */
+@media (max-width: 1799px) {
+  .connvehicle-layout {
+    grid-template-columns: 1fr calc(340px + 3vw);
+  }
+}
+
+@media (max-width: 1550px) {
+  .connvehicle-components {
+    margin-top: 14vh;
+  }
+  
+  .connvehicle-card {
+    min-height: calc(10vh + 8px);
+  }
+}
+
+@media (max-width: 1600px) {
+  .connvehicle-box {
+    padding: 1.5vh 1.2vw;
+  }
+  
+  .connvehicle-metrics {
+    gap: 1.5vh 2.5vw;
+    top: 1.5vh;
+  }
+  
+  .connvehicle-vehicle-img {
+    max-height: 28vh;
+  }
+  
+  .connvehicle-components {
+    margin-top: 12vh;
+  }
+  
+  .connvehicle-card {
+    min-height: calc(9vh + 8px);
+  }
+  
+  .connvehicle-right-box {
+    padding: calc(8px + 0.2vh);
+  }
+}
+
+@media (min-width: 1800px) {
+  .connvehicle-safety-row {
+    gap: 1vw;
+    margin: 3vh 0 2vh 0;
+  }
+  
+  .connvehicle-card {
+    min-height: calc(9vh + 10px);
+  }
+  
+  .connvehicle-components {
+    margin-top: 15vh;
+  }
+  
+  .connvehicle-vehicle-img {
+    max-width: 48vw;
+    max-height: 35vh;
+    right: -70px;
+  }
+}
+
+@media (max-width: 1352px) {
+  .connvehicle-components {
+    margin-top: 5vh;
+  }
+  
+  .connvehicle-right-box {
+    padding: calc(8px + 0.2vh);
+  }
+  
+  .connvehicle-right-title {
+    font-size: calc(11px + 0.15vw);
+    margin-bottom: 8px;
+  }
+  
+  .connvehicle-energy-grid {
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  
+  .connvehicle-energy-value {
+    font-size: calc(14px + 0.2vw);
+  }
+  
+  .connvehicle-battery-box {
+    padding: 8px;
+    margin-top: 8px;
+  }
+  
+  .connvehicle-service-box {
+    padding: 8px;
+    margin-top: 8px;
+  }
+  
+  .connvehicle-error-box {
+    padding: 8px;
+    margin-top: 8px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .connvehicle-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .connvehicle-right {
+    order: 2;
+  }
+  
+  .connvehicle-components {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
