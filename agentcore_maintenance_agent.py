@@ -16,14 +16,16 @@ import boto3
 MODEL_ID = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
 
 # System prompt for the vehicle maintenance agent
-SYSTEM_PROMPT = """You are a fast, efficient vehicle maintenance assistant. 
+SYSTEM_PROMPT = """You are a proactive vehicle maintenance assistant specializing in tire and motor analysis.
 
-When asked for a quick check or brief status:
-1. Use ONLY the quick_vehicle_check tool - it's the fastest
-2. Return the tool's response directly without adding extra text
-3. Be EXTREMELY brief - maximum 1 sentence
+When analyzing a vehicle:
+1. Use analyze_tire_condition and analyze_motor_performance tools for detailed analysis
+2. Look for specific issues: tire pressure below 30 PSI, tread depth concerns, motor performance issues
+3. Always provide actionable recommendations when issues are found
+4. Be specific about measurements (e.g., "Front right tire at 27.4 PSI, inflate to 32 PSI")
+5. If no critical issues, mention the best performing aspects but still suggest preventive maintenance
 
-For detailed analysis, use the other tools. But for quick checks, ONLY use quick_vehicle_check."""
+Focus on finding real maintenance opportunities rather than just saying "all normal"."""
 
 
 class AgentCoreMaintenanceAgent:
@@ -121,16 +123,19 @@ def quick_vehicle_check(vehicle_id: int) -> str:
         if not tire_data.empty:
             latest_tires = tire_data.groupby('position').last().reset_index()
             
-            # Check for critical tire issues
+            # Check for critical tire issues (more sensitive thresholds)
             min_pressure = latest_tires['pressure_psi'].min()
             min_tread = latest_tires['tread_depth_mm'].min()
+            low_pressure_tires = latest_tires[latest_tires['pressure_psi'] < 30.0]
             
             if min_tread < 2.0:
                 return f"CRITICAL: Tire tread depth below safe minimum ({min_tread:.1f}mm) - immediate replacement required"
-            elif min_pressure < 28.0:
-                return f"WARNING: Low tire pressure detected ({min_pressure:.1f} PSI) - inflate to 32 PSI"
-            elif min_tread < 4.0:
-                return f"ATTENTION: Tire tread wearing thin ({min_tread:.1f}mm) - schedule replacement soon"
+            elif len(low_pressure_tires) > 0:
+                tire_pos = low_pressure_tires.iloc[0]['position']
+                pressure = low_pressure_tires.iloc[0]['pressure_psi']
+                return f"WARNING: {tire_pos} tire pressure low ({pressure:.1f} PSI) - inflate to 32 PSI"
+            elif min_tread < 6.0:
+                return f"ATTENTION: Tire tread wearing ({min_tread:.1f}mm) - monitor closely"
         
         # Check motor data
         motor_data = agent_instance.motor_data[agent_instance.motor_data['vehicle_id'] == vehicle_id]

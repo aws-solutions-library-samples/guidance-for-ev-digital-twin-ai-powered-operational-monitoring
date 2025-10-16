@@ -65,9 +65,9 @@ class AgentCoreService {
       return cached.data;
     }
 
-    // Not cached or expired - fetch fresh
+    // Not cached or expired - fetch fresh with improved prompt
     console.log(`Fetching fresh data for vehicle ${vehicleId}`);
-    const prompt = `Check vehicle ${vehicleId} tire and motor status. Give me ONE brief sentence about the most important issue or say "All systems normal". Be extremely concise.`;
+    const prompt = `Analyze vehicle ${vehicleId} using analyze_tire_condition and analyze_motor_performance tools. Look for tire pressure issues (below 30 PSI), low tread depth, motor performance problems. Give me specific maintenance recommendations in 1-2 sentences. If you find any tire pressure below 30 PSI or tread depth issues, mention them specifically.`;
     const response = await this.chat(prompt);
     
     // Store in cache

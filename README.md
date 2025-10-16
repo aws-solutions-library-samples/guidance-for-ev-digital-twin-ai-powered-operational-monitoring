@@ -30,8 +30,8 @@ cd vehicle-maintenance-system
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the CLI interface
-python cli_interface.py
+# Run the interactive CLI
+python3 cli.py
 ```
 
 ### AWS Cloud Deployment
