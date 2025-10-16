@@ -144,10 +144,10 @@ const BatteryScreen = () => {
     const width = windowSize.width;
     
     if (width <= 1024) return width / 1440;      // Mobile: scale down
-    if (width <= 1512) return width / 1650;      // Small laptop: scale down 8%
-    if (width <= 1800) return width / 1750;      // Medium laptop: scale down 3%
-    if (width <= 2560) return width / 2650;      // Large screen: scale down 3.4%
-    return width / 2200;                         // Ultra-wide
+    if (width <= 1550) return width / 1550;      // Small laptop: 1440-1550 range
+    if (width <= 1920) return 1.05;              // Medium screens: 5% bigger
+    if (width <= 2560) return width / 2200;      // Large screens: bigger (was 2650)
+    return width / 1900;                         // Ultra-wide: bigger (was 2200)
   };
   
   const scale = getScale();
@@ -261,7 +261,7 @@ const BatteryScreen = () => {
         {/* Main Content */}
         <div className="main-panel" style={{ marginTop: '-40px' }}>
           {/* Battery Details Container - Top */}
-          <div className="data-container" style={{ marginBottom: windowSize.width <= 1700 ? '10px' : windowSize.width <= 1815 ? '15px' : '20px', marginTop: '0px', maxHeight: windowSize.width <= 1700 ? '470px' : windowSize.width <= 1815 ? '520px' : '580px', overflow: 'hidden', width: 'calc(100% + 20px)', marginLeft: '-10px', transform: windowSize.width <= 1440 ? 'scaleX(1) scaleY(0.85)' : windowSize.width <= 1700 ? 'scaleX(1) scaleY(0.9)' : windowSize.width <= 1815 ? 'scaleX(1) scaleY(0.95)' : 'scale(1)', transformOrigin: 'top left' }}>
+          <div className="data-container" style={{ marginBottom: windowSize.width <= 1700 ? '10px' : windowSize.width <= 1815 ? '15px' : windowSize.width >= 2010 ? '5px' : '20px', marginTop: '0px', maxHeight: windowSize.width <= 1700 ? '470px' : windowSize.width <= 1815 ? '520px' : windowSize.width <= 1920 ? '510px' : '520px', overflow: 'hidden', width: 'calc(100% + 20px)', marginLeft: '-10px', transform: windowSize.width <= 1440 ? 'scaleX(1) scaleY(0.85)' : windowSize.width <= 1700 ? 'scaleX(1) scaleY(0.9)' : windowSize.width <= 1815 ? 'scaleX(1) scaleY(0.95)' : 'scale(1)', transformOrigin: 'top left' }}>
             
             {/* Battery Visualization */}
             <div className="battery-visual">
@@ -458,7 +458,7 @@ const BatteryScreen = () => {
           </div>
 
           {/* Bottom Containers */}
-          <div className="bottom-containers" style={{ marginBottom: '0', position: 'relative', top: windowSize.width <= 1700 ? '-60px' : windowSize.width <= 1815 ? '-30px' : '0' }}>
+          <div className="bottom-containers" style={{ marginBottom: '0', position: 'relative', top: windowSize.width <= 1700 ? '-60px' : windowSize.width <= 1920 ? '-50px' : '-30px' }}>
             <div className="data-container" style={{ minHeight: windowSize.width <= 1700 ? '200px' : windowSize.width <= 1815 ? '250px' : '300px', maxHeight: windowSize.width <= 1700 ? '200px' : windowSize.width <= 1815 ? '250px' : '300px', marginLeft: '-10px', width: windowSize.width <= 1700 ? 'calc(100% + 20px)' : 'auto' }}>
               <h3>Driving Details</h3>
               <div style={{ fontSize: '8px', color: 'rgba(255, 255, 255, 0.6)', marginTop: '5px' }}>Odometer: 50,546 Km</div>
@@ -467,18 +467,18 @@ const BatteryScreen = () => {
               <div className="driving-details" style={{ display: 'flex', gap: '30px', marginTop: '15px', justifyContent: 'space-around' }}>
                 <div style={{ position: 'relative', textAlign: 'center' }}>
                   <img src={require('./assets/car.png')} alt="Car" style={{ width: '25px', height: '25px' }} />
-                  <div style={{ position: 'absolute', bottom: '-20px', left: '50%', transform: 'translateX(-50%)', fontSize: '8px', color: 'white' }}>Driving Score</div>
-                  <div style={{ position: 'absolute', bottom: '-45px', left: '50%', transform: 'translateX(-50%)', fontSize: '18px', fontWeight: '700', color: 'white' }}>86%</div>
+                  <div style={{ position: 'absolute', bottom: '-20px', left: '50%', transform: 'translateX(-50%)', fontSize: windowSize.width >= 1900 ? '9px' : '8px', color: 'white' }}>Driving Score</div>
+                  <div style={{ position: 'absolute', bottom: '-45px', left: '50%', transform: 'translateX(-50%)', fontSize: windowSize.width >= 1900 ? '20px' : '18px', fontWeight: '700', color: 'white' }}>86%</div>
                 </div>
                 <div style={{ position: 'relative', textAlign: 'center' }}>
                   <div style={{ fontSize: '25px' }}>🌡️</div>
-                  <div style={{ position: 'absolute', bottom: '-20px', left: '50%', transform: 'translateX(-50%)', fontSize: '8px', color: 'white' }}>Ambient Temperature</div>
-                  <div style={{ position: 'absolute', bottom: '-45px', left: '50%', transform: 'translateX(-50%)', fontSize: '18px', fontWeight: '700', color: 'white' }}>72°F</div>
+                  <div style={{ position: 'absolute', bottom: '-20px', left: '50%', transform: 'translateX(-50%)', fontSize: windowSize.width >= 1900 ? '9px' : '8px', color: 'white' }}>Ambient Temperature</div>
+                  <div style={{ position: 'absolute', bottom: '-45px', left: '50%', transform: 'translateX(-50%)', fontSize: windowSize.width >= 1900 ? '20px' : '18px', fontWeight: '700', color: 'white' }}>72°F</div>
                 </div>
                 <div style={{ position: 'relative', textAlign: 'center' }}>
                   <div style={{ fontSize: '25px' }}>🎯</div>
-                  <div style={{ position: 'absolute', bottom: '-20px', left: '50%', transform: 'translateX(-50%)', fontSize: '8px', color: 'white' }}>Range</div>
-                  <div style={{ position: 'absolute', bottom: '-65px', left: '50%', transform: 'translateX(-50%)', fontSize: '18px', fontWeight: '700', color: 'white' }}>350 <span style={{ fontSize: '10px' }}>Km</span></div>
+                  <div style={{ position: 'absolute', bottom: '-20px', left: '50%', transform: 'translateX(-50%)', fontSize: windowSize.width >= 1900 ? '9px' : '8px', color: 'white' }}>Range</div>
+                  <div style={{ position: 'absolute', bottom: '-65px', left: '50%', transform: 'translateX(-50%)', fontSize: windowSize.width >= 1900 ? '20px' : '18px', fontWeight: '700', color: 'white' }}>350 <span style={{ fontSize: windowSize.width >= 1900 ? '11px' : '10px' }}>Km</span></div>
                 </div>
               </div>
             </div>
@@ -493,10 +493,10 @@ const BatteryScreen = () => {
                 <span style={{ fontSize: '14px', fontWeight: '700', color: 'white', fontFamily: 'Amazon Ember', position: 'absolute', left: '35%', top: '0px' }}>Fault Detection</span>
                 
                 {/* First Row of Fault Detection Items - 4 boxes */}
-                <div style={{ position: 'absolute', left: '35%', top: '25px', width: '60%', display: 'flex', gap: '3px' }}>
+                <div style={{ position: 'absolute', left: '35%', top: '25px', width: '60%', display: 'flex', gap: '4px' }}>
                   {faultDetectionItems.slice(0, 4).map((item, index) => (
                     <div key={index} style={{ 
-                      padding: '6px 3px', 
+                      padding: windowSize.width >= 1900 ? '9px 5px' : '6px 3px', 
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -506,18 +506,18 @@ const BatteryScreen = () => {
                       border: '1px solid rgba(255,255,255,0.8)',
                       borderRadius: '8px',
                       transition: 'all 0.5s ease',
-                      minHeight: '22px'
+                      minHeight: windowSize.width >= 1900 ? '30px' : '22px'
                     }}>
-                      <span style={{ fontSize: '8px', color: 'white', fontWeight: '600', lineHeight: '1.2' }}>{item.name}</span>
+                      <span style={{ fontSize: windowSize.width >= 1900 ? '9.5px' : '8px', color: 'white', fontWeight: '600', lineHeight: '1.2' }}>{item.name}</span>
                     </div>
                   ))}
                 </div>
                 
                 {/* Second Row of Fault Detection Items - 4 boxes */}
-                <div style={{ position: 'absolute', left: '35%', top: '65px', width: '60%', display: 'flex', gap: '3px' }}>
+                <div style={{ position: 'absolute', left: '35%', top: windowSize.width >= 1900 ? '68px' : '60px', width: '60%', display: 'flex', gap: '4px' }}>
                   {faultDetectionItems.slice(4, 8).map((item, index) => (
                     <div key={index + 4} style={{ 
-                      padding: '6px 3px', 
+                      padding: windowSize.width >= 1900 ? '9px 5px' : '6px 3px', 
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -527,18 +527,18 @@ const BatteryScreen = () => {
                       border: '1px solid rgba(255,255,255,0.8)',
                       borderRadius: '8px',
                       transition: 'all 0.5s ease',
-                      minHeight: '22px'
+                      minHeight: windowSize.width >= 1900 ? '30px' : '22px'
                     }}>
-                      <span style={{ fontSize: '8px', color: 'white', fontWeight: '600', lineHeight: '1.2' }}>{item.name}</span>
+                      <span style={{ fontSize: windowSize.width >= 1900 ? '9.5px' : '8px', color: 'white', fontWeight: '600', lineHeight: '1.2' }}>{item.name}</span>
                     </div>
                   ))}
                 </div>
                 
                 {/* Third Row of Fault Detection Items - 2 boxes (left-aligned) */}
-                <div style={{ position: 'absolute', left: '35%', top: '105px', width: '30%', display: 'flex', gap: '3px' }}>
+                <div style={{ position: 'absolute', left: '35%', top: windowSize.width >= 1900 ? '111px' : '95px', width: '30%', display: 'flex', gap: '4px' }}>
                   {faultDetectionItems.slice(8, 10).map((item, index) => (
                     <div key={index + 8} style={{ 
-                      padding: '6px 3px', 
+                      padding: windowSize.width >= 1900 ? '9px 5px' : '6px 3px', 
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -548,9 +548,9 @@ const BatteryScreen = () => {
                       border: '1px solid rgba(255,255,255,0.8)',
                       borderRadius: '8px',
                       transition: 'all 0.5s ease',
-                      minHeight: '22px'
+                      minHeight: windowSize.width >= 1900 ? '30px' : '22px'
                     }}>
-                      <span style={{ fontSize: '8px', color: 'white', fontWeight: '600', lineHeight: '1.2' }}>{item.name}</span>
+                      <span style={{ fontSize: windowSize.width >= 1900 ? '9.5px' : '8px', color: 'white', fontWeight: '600', lineHeight: '1.2' }}>{item.name}</span>
                     </div>
                   ))}
                 </div>
@@ -587,7 +587,7 @@ const BatteryScreen = () => {
                   </button>
                 </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '12px', color: 'white' }}>Cell Balancing</span>
+                    <span style={{ fontSize: windowSize.width >= 1900 ? '13px' : '12px', color: 'white' }}>Cell Balancing</span>
                     <div 
                       onClick={() => setCellBalancing(!cellBalancing)}
                       style={{ 
@@ -624,7 +624,7 @@ const BatteryScreen = () => {
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '12px', color: 'white' }}>Start Cooling</span>
+                    <span style={{ fontSize: windowSize.width >= 1900 ? '13px' : '12px', color: 'white' }}>Start Cooling</span>
                     <div 
                       onClick={() => setStartCooling(!startCooling)}
                       style={{ 
@@ -661,7 +661,7 @@ const BatteryScreen = () => {
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '12px', color: 'white' }}>Start Heating</span>
+                    <span style={{ fontSize: windowSize.width >= 1900 ? '13px' : '12px', color: 'white' }}>Start Heating</span>
                     <div 
                       onClick={() => setStartHeating(!startHeating)}
                       style={{ 
@@ -713,19 +713,19 @@ const BatteryScreen = () => {
             </div>
 
             {/* Health Prediction Chart */}
-            <div className="motor-prediction-container" style={{ paddingLeft: '30px', marginTop: windowSize.width <= 1700 ? '-20px' : windowSize.width <= 1815 ? '-10px' : '0' }}>
+            <div className="motor-prediction-container" style={{ paddingLeft: '30px', marginTop: windowSize.width <= 1700 ? '10px' : windowSize.width <= 1815 ? '-10px' : '0' }}>
               <div className="failure-prediction">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <h3 style={{ fontSize: windowSize.width <= 1700 ? '12px' : windowSize.width <= 1815 ? '13px' : '14px', marginTop: windowSize.width <= 1700 ? '-40px' : windowSize.width <= 1815 ? '-20px' : '0' }}>State of Health</h3>
+                  <h3 style={{ fontSize: windowSize.width <= 1700 ? '12px' : windowSize.width <= 1815 ? '13px' : windowSize.width >= 1900 ? '16px' : '14px', marginTop: windowSize.width <= 1700 ? '-40px' : windowSize.width <= 1815 ? '-20px' : windowSize.width >= 1900 ? '-20px' : '0' }}>State of Health</h3>
                   <button
                     onClick={() => setShowHealthPrediction(!showHealthPrediction)}
                     style={{
                       background: showHealthPrediction ? '#37bc12' : 'rgba(128,128,128,0.6)',
                       border: 'none',
                       borderRadius: '16px',
-                      padding: '6px 12px',
+                      padding: windowSize.width >= 1900 ? '8px 14px' : '6px 12px',
                       color: 'white',
-                      fontSize: '9px',
+                      fontSize: windowSize.width >= 1900 ? '10px' : '9px',
                       fontWeight: '600',
                       cursor: 'pointer',
                       transition: 'all 0.3s ease'
@@ -734,18 +734,18 @@ const BatteryScreen = () => {
                     {showHealthPrediction ? 'Hide Prediction' : 'Show Prediction'}
                   </button>
                 </div>
-                <div className="prediction-legend" style={{ marginTop: windowSize.width <= 1700 ? '-30px' : windowSize.width <= 1815 ? '-15px' : '0' }}>
+                <div className="prediction-legend" style={{ marginTop: windowSize.width <= 1700 ? '-30px' : windowSize.width <= 1815 ? '-15px' : windowSize.width >= 1900 ? '-15px' : '0' }}>
                   <div className="legend-item">
                     <div style={{ width: '15px', height: '2px', backgroundColor: 'rgba(255,153,0,1)' }}></div>
-                    <span>Historical</span>
+                    <span style={{ fontSize: windowSize.width >= 1900 ? '11px' : 'inherit' }}>Historical</span>
                   </div>
                   <div className="legend-item">
                     <div style={{ width: '15px', height: '2px', backgroundColor: 'rgba(56,239,125,1)', borderTop: '2px dashed rgba(56,239,125,1)', backgroundColor: 'transparent' }}></div>
-                    <span>ML Prediction</span>
+                    <span style={{ fontSize: windowSize.width >= 1900 ? '11px' : 'inherit' }}>ML Prediction</span>
                   </div>
                 </div>
                 <div style={{ position: 'relative', marginTop: windowSize.width <= 1512 ? '100px' : windowSize.width <= 1700 ? '90px' : windowSize.width <= 1815 ? '80px' : '80px' }}>
-                  <div className="prediction-chart" style={{ transform: windowSize.width <= 1440 ? 'scaleX(0.85) scaleY(0.75)' : windowSize.width <= 1700 ? 'scaleX(0.9) scaleY(0.8)' : windowSize.width <= 1815 ? 'scaleX(0.95) scaleY(0.9)' : 'scale(1)', transformOrigin: 'top left' }}>
+                  <div className="prediction-chart" style={{ transform: windowSize.width <= 1440 ? 'scaleX(0.85) scaleY(0.75)' : windowSize.width <= 1700 ? 'scaleX(0.9) scaleY(0.8)' : windowSize.width <= 1815 ? 'scaleX(0.95) scaleY(0.9)' : windowSize.width >= 1900 ? 'scaleX(1.15)' : 'scale(1)', transformOrigin: windowSize.width >= 1900 ? 'top right' : 'top left' }}>
                     <svg width="350px" height="350px" viewBox="0 0 350 350">
                       {/* Grid lines */}
                       {Array.from({ length: 11 }, (_, i) => (
@@ -910,12 +910,12 @@ const BatteryScreen = () => {
               {/* Battery Bars */}
               <div className="battery-bars" style={{ marginBottom: '20px', marginTop: windowSize.width <= 1512 ? '-150px' : windowSize.width <= 1700 ? '-160px' : windowSize.width <= 1815 ? '-120px' : '-80px' }}>
                 <div style={{ textAlign: 'center', marginBottom: '-5px' }}>
-                  <span style={{ fontSize: '10px', color: 'white' }}>Battery Metrics</span>
+                  <span style={{ fontSize: windowSize.width >= 1900 ? '11px' : '10px', color: 'white' }}>Battery Metrics</span>
                 </div>
                 <div className="battery-bar-item" style={{ marginBottom: windowSize.width <= 1700 ? '10px' : windowSize.width <= 1815 ? '18px' : '25px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
-                    <span style={{ fontSize: '10px', color: 'white' }}>State of Certified Energy</span>
-                    <span style={{ fontSize: '12px', color: 'white', fontWeight: 'bold' }}>{Math.round(currentHealthData.currentHealth - 5)}%</span>
+                    <span style={{ fontSize: windowSize.width >= 1900 ? '11px' : '10px', color: 'white' }}>State of Certified Energy</span>
+                    <span style={{ fontSize: windowSize.width >= 1900 ? '13px' : '12px', color: 'white', fontWeight: 'bold' }}>{Math.round(currentHealthData.currentHealth - 5)}%</span>
                   </div>
                   <div className="life-bar" style={{ borderRadius: '0', height: '20px' }}>
                     <div className="life-fill" style={{ width: `${currentHealthData.currentHealth - 5}%`, borderRadius: '0' }}></div>
@@ -924,8 +924,8 @@ const BatteryScreen = () => {
                 
                 <div className="battery-bar-item" style={{ marginBottom: windowSize.width <= 1700 ? '5px' : windowSize.width <= 1815 ? '15px' : '25px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
-                    <span style={{ fontSize: '10px', color: 'white' }}>State of Power</span>
-                    <span style={{ fontSize: '12px', color: 'white', fontWeight: 'bold' }}>{Math.round(currentHealthData.currentHealth - 10)}%</span>
+                    <span style={{ fontSize: windowSize.width >= 1900 ? '11px' : '10px', color: 'white' }}>State of Power</span>
+                    <span style={{ fontSize: windowSize.width >= 1900 ? '13px' : '12px', color: 'white', fontWeight: 'bold' }}>{Math.round(currentHealthData.currentHealth - 10)}%</span>
                   </div>
                   <div className="life-bar" style={{ borderRadius: '0', height: '20px' }}>
                     <div className="life-fill" style={{ width: `${currentHealthData.currentHealth - 10}%`, borderRadius: '0' }}></div>
@@ -934,8 +934,8 @@ const BatteryScreen = () => {
                 
                 <div className="battery-bar-item" style={{ marginBottom: windowSize.width <= 1800 ? '10px' : '30px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
-                    <span style={{ fontSize: '10px', color: 'white' }}>Remaining Useful Life</span>
-                    <span style={{ fontSize: '12px', color: 'white', fontWeight: 'bold' }}>{Math.round(currentHealthData.predictedHealth)}%</span>
+                    <span style={{ fontSize: windowSize.width >= 1900 ? '11px' : '10px', color: 'white' }}>Remaining Useful Life</span>
+                    <span style={{ fontSize: windowSize.width >= 1900 ? '13px' : '12px', color: 'white', fontWeight: 'bold' }}>{Math.round(currentHealthData.predictedHealth)}%</span>
                   </div>
                   <div className="life-bar" style={{ borderRadius: '0', height: '20px' }}>
                     <div className="life-fill" style={{ width: `${currentHealthData.predictedHealth}%`, borderRadius: '0' }}></div>

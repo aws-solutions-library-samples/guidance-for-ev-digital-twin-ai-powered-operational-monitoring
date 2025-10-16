@@ -24,12 +24,50 @@ const TIRE_DATA_POINTS = [
   { label: "Vibration/Frequency Signatures", freq: "event based" },
 ];
 
+const INVERTER_DATA_POINTS = [
+  { label: "Input Voltage (DC Voltage)", freq: "5-min trends" },
+  { label: "Input Current (DC Current)", freq: "hourly" },
+  { label: "Output Voltage (AC Voltage)", freq: "hourly" },
+  { label: "Output Current (AC Current)", freq: "hourly" },
+  { label: "Inverter Temperature", freq: "5-min avg." },
+  { label: "DC Link Voltage", freq: "hourly" },
+  { label: "PWM (Pulse Width Modulation)", freq: "10-min avg." },
+  { label: "Harmonic Distortion", freq: "hourly" },
+  { label: "Fault Codes", freq: "event based" },
+];
+
+const ENERGY_DATA_POINTS = [
+  { label: "Thermal Efficiency Score", freq: "derived value" },
+  { label: "Motor/Inverter Temperature", freq: "5-min avg." },
+  { label: "Coolant Inlet Temperatures", freq: "hourly" },
+  { label: "Coolant Outlet Temperatures", freq: "hourly" },
+  { label: "Coolant Flow Rate", freq: "5-min avg." },
+  { label: "Heater/Cooler Power Consumption", freq: "5-min avg." },
+  { label: "Ambient Temperature", freq: "5-min avg." },
+  { label: "Regenerative Braking Force", freq: "event based" },
+  { label: "Energy Recovered per Braking Event", freq: "event based" },
+  { label: "Brake Pedal Position", freq: "event based" },
+];
+
+const CHARGER_DATA_POINTS = [
+  { label: "Input Voltage (AC)", freq: "5-min" },
+  { label: "Input Current (AC)", freq: "5-min" },
+  { label: "Output Voltage (DC)", freq: "5-min" },
+  { label: "Output Current (DC)", freq: "5-min" },
+  { label: "Charger Temperature", freq: "15-min" },
+  { label: "Coolant Temperature", freq: "15-min" },
+  { label: "Charger Efficiency", freq: "5-min" },
+  { label: "Coolant Flow Rate", freq: "15-min" },
+  { label: "Power Factor", freq: "per session" },
+  { label: "Charging Rate", freq: "5-min" },
+];
+
 const DataNeededModal = ({ open, onClose, type = "motor" }) => {
   if (!open) return null;
 
-  const dataPoints = type === "tire" ? TIRE_DATA_POINTS : MOTOR_DATA_POINTS;
-  const title = type === "tire" ? "Tire" : "Motor";
-  const description = type === "tire" ? "Tire monitoring and diagnostic data." : "Motor performance and diagnostic data.";
+  const dataPoints = type === "tire" ? TIRE_DATA_POINTS : type === "inverter" ? INVERTER_DATA_POINTS : type === "energy" ? ENERGY_DATA_POINTS : type === "charger" ? CHARGER_DATA_POINTS : MOTOR_DATA_POINTS;
+  const title = type === "tire" ? "Tire" : type === "inverter" ? "Inverter" : type === "energy" ? "Energy Management" : type === "charger" ? "Charger" : "Motor";
+  const description = type === "tire" ? "Tire monitoring and diagnostic data." : type === "inverter" ? "Inverter performance and diagnostic data." : type === "energy" ? "Energy management and thermal efficiency data." : type === "charger" ? "Charger performance and diagnostic data." : "Motor performance and diagnostic data.";
 
   return (
     <div className="data-modal-overlay">

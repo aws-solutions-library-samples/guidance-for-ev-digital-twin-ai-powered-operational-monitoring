@@ -1,11 +1,13 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import DataNeededModal from "./DataNeededModal";
 import "../css/invertor.css";
 
 const Invertor = () => {
   const navigate = useNavigate();
   const { carId } = useParams();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   // Calculate clamped scale - grows with screen but never too big
@@ -23,9 +25,9 @@ const Invertor = () => {
     const height = window.innerHeight;
     
     return {
-      fontSize: width < 1200 ? '12px' : width < 1400 ? '14px' : '16px',
-      smallFontSize: width < 1200 ? '8px' : width < 1400 ? '9px' : '10px',
-      titleFontSize: width < 1200 ? '14px' : width < 1400 ? '16px' : '18px',
+      fontSize: width < 1200 ? '13px' : width < 1400 ? '15px' : '16px',
+      smallFontSize: width < 1200 ? '9px' : width < 1400 ? '10px' : '10px',
+      titleFontSize: width < 1200 ? '15px' : width < 1400 ? '17px' : '18px',
       gaugeSize: width < 1200 ? 80 : width < 1400 ? 90 : 100,
       chartHeight: height < 800 ? 200 : height < 900 ? 220 : 240,
       containerPadding: width < 1200 ? '10px' : '15px',
@@ -37,7 +39,7 @@ const Invertor = () => {
   return (
     <div className="invertor-page">
       <div className="invertor-container" style={{ 
-        zoom: windowWidth <= 1024 ? windowWidth / 1440 : (windowWidth >= 2685 ? windowWidth / 1920 : undefined),
+        zoom: windowWidth <= 1024 ? windowWidth / 1440 : (windowWidth >= 1820 && windowWidth <= 2400 ? windowWidth / 2560 : (windowWidth >= 2685 ? windowWidth / 1920 : undefined)),
         overflowY: 'auto',
         overflowX: 'hidden',
         minHeight: '100vh'
@@ -115,7 +117,7 @@ const Invertor = () => {
         <div style={{ margin: windowWidth <= 1440 ? '-15px 20px 5px' : windowWidth <= 1700 ? '-10px 20px 5px' : windowWidth <= 1815 ? '0px 20px 5px' : '10px 20px 5px' }}>
           <div className="invertor-layout">
             {/* Main Content */}
-            <div className="main-panel">
+            <div className="main-panel" style={{ marginTop: windowWidth <= 1700 ? '70px' : '90px' }}>
               {/* Power Metrics Container - Top */}
               <div className="data-container" style={{ marginBottom: '20px', marginTop: '-20px', minHeight: windowWidth <= 1440 ? '400px' : windowWidth <= 1700 ? '430px' : windowWidth <= 1815 ? '480px' : '530px', overflow: 'visible', width: 'calc(100% + 30px)', marginLeft: '-15px' }}>
                 <h3 style={{ fontSize: spacing.titleFontSize }}>Power Metrics</h3>
@@ -303,7 +305,7 @@ const Invertor = () => {
               {/* Bottom Containers */}
               <div className="bottom-containers" style={{ 
                 marginBottom: '0',
-                marginTop: '-30px',
+                marginTop: windowWidth <= 1440 ? '-40px' : windowWidth <= 1700 ? '-35px' : windowWidth <= 1815 ? '-30px' : '-30px',
                 transform: windowWidth <= 1440 ? 'scaleY(0.75)' : windowWidth <= 1700 ? 'scaleY(0.8)' : windowWidth <= 1815 ? 'scaleY(0.9)' : 'none',
                 transformOrigin: 'top'
               }}>
@@ -330,28 +332,28 @@ const Invertor = () => {
             <div className="right-panel" style={{ overflow: 'hidden' }}>
               <div className="battery-prediction">
                 <div className="prediction-header">
-                  <h2 style={{ fontSize: windowWidth <= 1440 ? '16px' : windowWidth <= 1700 ? '18px' : windowWidth <= 1815 ? '22px' : '24px', marginTop: windowWidth <= 1440 ? '-25px' : windowWidth <= 1700 ? '-20px' : windowWidth <= 1815 ? '-10px' : '0' }}>Inverter Prediction</h2>
-                  <img src={require('./assets/warning.png')} alt="Warning" className="info-icon" style={{ width: '20px', height: '20px', marginTop: windowWidth <= 1440 ? '-15px' : windowWidth <= 1700 ? '-10px' : windowWidth <= 1815 ? '-5px' : '0' }} />
+                  <h2 style={{ fontSize: windowWidth <= 1440 ? '16px' : windowWidth <= 1700 ? '18px' : windowWidth <= 1815 ? '22px' : '24px', marginTop: windowWidth <= 1440 ? '-15px' : windowWidth <= 1700 ? '-10px' : windowWidth <= 1815 ? '-5px' : '0' }}>Inverter Prediction</h2>
+                  <img src={require('./assets/warning.png')} alt="Warning" className="info-icon" style={{ width: '20px', height: '20px', cursor: 'pointer', zIndex: 99999, position: 'relative', marginTop: windowWidth <= 1440 ? '-15px' : windowWidth <= 1700 ? '-10px' : windowWidth <= 1815 ? '-5px' : '0' }} onClick={() => setShowModal(true)} />
                 </div>
 
                 {/* Failure Prediction Chart */}
                 <div className="motor-prediction-container" style={{ paddingLeft: '30px' }}>
                   <div className="failure-prediction" style={{ marginTop: windowWidth <= 1440 ? '-15px' : windowWidth <= 1700 ? '-10px' : windowWidth <= 1815 ? '-5px' : '0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                      <h3 style={{ margin: 0, fontSize: windowWidth <= 1440 ? '12px' : windowWidth <= 1700 ? '14px' : windowWidth <= 1815 ? '17px' : '20px' }}>Inverter Failure Prediction</h3>
+                      <h3 style={{ margin: 0, fontSize: windowWidth <= 1440 ? '12px' : windowWidth <= 1700 ? '14px' : windowWidth <= 1815 ? '17px' : '20px', marginTop: windowWidth <= 1700 ? '-25px' : '-15px' }}>Inverter Failure Prediction</h3>
                     </div>
-                    <div className="prediction-legend">
-                      <div className="legend-item">
+                    <div className="prediction-legend" style={{ marginTop: windowWidth <= 1700 ? '5px' : '10px', fontSize: windowWidth <= 1700 ? '11px' : '12px' }}>
+                      <div className="legend-item" style={{ fontSize: windowWidth <= 1700 ? '11px' : '12px' }}>
                         <div style={{ width: '15px', height: '2px', backgroundColor: 'rgba(255,153,0,1)' }}></div>
                         <span>Past</span>
                       </div>
-                      <div className="legend-item">
+                      <div className="legend-item" style={{ fontSize: windowWidth <= 1700 ? '11px' : '12px' }}>
                         <div style={{ width: '15px', height: '2px', backgroundColor: 'rgba(56,239,125,1)', borderTop: '2px dashed rgba(56,239,125,1)', backgroundColor: 'transparent' }}></div>
                         <span>Predicted</span>
                       </div>
                     </div>
                     <div style={{ position: 'relative', marginTop: '100px' }}>
-                      <div className="prediction-chart" style={{ marginTop: windowWidth <= 1440 ? '-170px' : windowWidth <= 1700 ? '-150px' : windowWidth <= 1815 ? '-80px' : windowWidth >= 2560 ? '-100px' : '0' }}>
+                      <div className="prediction-chart" style={{ marginTop: windowWidth <= 1440 ? '-180px' : windowWidth <= 1700 ? '-160px' : windowWidth <= 1815 ? '-80px' : windowWidth > 1815 && windowWidth <= 1950 ? '-60px' : windowWidth >= 2560 ? '-100px' : '-60px' }}>
                         <svg width="290" height="180" viewBox="0 0 290 180">
                         {/* Grid lines */}
                         {Array.from({ length: 8 }, (_, i) => (
@@ -437,7 +439,7 @@ const Invertor = () => {
                   </div>
 
                   {/* Remaining Useful Life */}
-                  <div className="useful-life" style={{ marginBottom: '20px', marginTop: windowWidth <= 1440 ? '-100px' : windowWidth <= 1700 ? '-80px' : windowWidth <= 1815 ? '-40px' : windowWidth >= 2560 ? '80px' : '20px' }}>
+                  <div className="useful-life" style={{ marginBottom: '20px', marginTop: windowWidth <= 1440 ? '-110px' : windowWidth <= 1700 ? '-90px' : windowWidth <= 1815 ? '-40px' : windowWidth >= 2560 ? '80px' : '0px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
                       <span style={{ fontSize: spacing.smallFontSize, color: 'white' }}>Remaining useful life</span>
                       <span style={{ fontSize: spacing.fontSize, color: 'white', fontWeight: 'bold' }}>83%</span>
@@ -503,6 +505,7 @@ const Invertor = () => {
           </div>
         </div>
       </div>
+      <DataNeededModal open={showModal} onClose={() => setShowModal(false)} type="inverter" />
     </div>
   );
 };

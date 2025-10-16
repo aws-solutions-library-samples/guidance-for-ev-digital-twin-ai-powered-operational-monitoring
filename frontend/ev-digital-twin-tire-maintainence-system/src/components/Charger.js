@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import DataNeededModal from "./DataNeededModal";
 import "../css/charger.css";
 
 const Charger = () => {
@@ -7,6 +8,7 @@ const Charger = () => {
   const { carId } = useParams();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -26,12 +28,8 @@ const Charger = () => {
   }, [windowWidth]);
 
   return (
-    <div className="charger-page">
-      <div className="charger-container" style={{ 
-        zoom: windowWidth <= 1024 ? windowWidth / 1440 : (windowWidth >= 2685 ? Math.min(windowWidth / 1920, 1.4) : undefined),
-        overflowY: 'auto',
-        overflowX: 'hidden'
-      }}>
+    <div className="charger-page" style={{ overflowY: windowWidth <= 1700 ? 'auto' : 'hidden' }}>
+      <div className="charger-container" style={{ overflowY: 'hidden', height: 'auto' }}>
         {/* Header */}
         <header className="header" style={{ height: windowWidth <= 1440 ? '45px' : windowWidth <= 1700 ? '50px' : windowWidth <= 1815 ? '60px' : 'auto', padding: windowWidth <= 1440 ? '8px 15px' : windowWidth <= 1700 ? '10px 20px' : windowWidth <= 1815 ? '15px 20px' : '20px' }}>
           <div className="header-left">
@@ -90,7 +88,7 @@ const Charger = () => {
         </header>
 
         {/* Navigation Header */}
-        <div className="nav-header" style={{ margin: '20px 20px 20px', borderBottom: 'none' }}>
+        <div className="nav-header" style={{ margin: windowWidth <= 1700 ? '20px 20px 15px' : '20px 20px 20px', borderBottom: 'none' }}>
           <button className="back-button" onClick={() => navigate(-1)}>
             <span>←</span>
             <span>On Board Chargers</span>
@@ -102,9 +100,9 @@ const Charger = () => {
         <div style={{ margin: '10px 20px 5px' }}>
           <div className="charger-layout">
             {/* Main Panel */}
-            <div className="main-panel" style={{ marginTop: '50px' }}>
+            <div className="main-panel" style={{ marginTop: windowWidth <= 1700 ? '40px' : '50px' }}>
               {/* Top Container: Charging Sessions */}
-              <div className="data-container" style={{ marginBottom: "20px", marginTop: "0px", minHeight: windowWidth <= 1440 ? '400px' : windowWidth <= 1700 ? '450px' : '500px', overflow: 'visible' }}>
+              <div className="data-container" style={{ marginBottom: "-5px", marginTop: "0px" }}>
               <h3>Charging Sessions</h3>
               <span className="charger-status in-use">In Use</span>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '30px', height: 'calc(100% - 60px)', width: '100%' }}>
@@ -201,7 +199,7 @@ const Charger = () => {
             </div>
 
               {/* Bottom Container: Charge Efficiency */}
-              <div className="data-container" style={{ marginTop: '-30px' }}>
+              <div className="data-container" style={{ minHeight: windowWidth >= 1920 ? '250px' : windowWidth <= 1440 ? '180px' : windowWidth <= 1700 ? '200px' : 'auto' }}>
               <h3>Charge Efficiency</h3>
               <div style={{ background: 'transparent', width: '100%', height: 'calc(100% - 60px)', marginTop: '10px' }}>
                 <svg width="100%" height="100%" viewBox="0 0 1000 150" preserveAspectRatio="xMidYMid meet">
@@ -239,16 +237,16 @@ const Charger = () => {
             <div className="battery-prediction">
               <div className="prediction-header">
                 <h2 style={{ fontSize: windowWidth <= 1440 ? '16px' : windowWidth <= 1700 ? '18px' : windowWidth <= 1815 ? '22px' : '24px' }}>On Board Chargers Prediction</h2>
-                <img src={require('./assets/warning.png')} alt="Warning" className="info-icon" style={{ width: '20px', height: '20px' }} />
+                <img src={require('./assets/warning.png')} alt="Warning" className="info-icon" style={{ width: '20px', height: '20px', cursor: 'pointer', zIndex: 99999, position: 'relative' }} onClick={() => setShowModal(true)} />
               </div>
 
               {/* Charger Prediction Container */}
               <div className="motor-prediction-container" style={{ paddingLeft: windowWidth <= 1440 ? '15px' : windowWidth <= 1700 ? '20px' : windowWidth <= 1815 ? '25px' : '30px' }}>
                 <div className="failure-prediction">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px', marginTop: '-15px' }}>
                     <h3 style={{ margin: 0 }}>Charger Failure Prediction</h3>
                   </div>
-                  <div className="prediction-legend">
+                  <div className="prediction-legend" style={{ fontSize: windowWidth >= 1820 ? '14px' : 'inherit' }}>
                     <div className="legend-item">
                       <div style={{ width: '15px', height: '2px', backgroundColor: 'rgba(255,153,0,1)' }}></div>
                       <span>Past</span>
@@ -345,10 +343,10 @@ const Charger = () => {
                 </div>
 
                 {/* Remaining Useful Life */}
-                <div className="useful-life" style={{ marginBottom: '20px', marginTop: windowWidth <= 1440 ? '-140px' : windowWidth <= 1700 ? '-120px' : windowWidth <= 1815 ? '-60px' : windowWidth >= 1920 ? '20px' : '-40px' }}>
+                <div className="useful-life" style={{ marginBottom: '20px', marginTop: windowWidth <= 1440 ? '-110px' : windowWidth <= 1700 ? '-90px' : windowWidth <= 1815 ? '-40px' : windowWidth >= 2560 ? '80px' : '0px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
-                    <span style={{ fontSize: spacing.smallFontSize, color: 'white' }}>Remaining useful life</span>
-                    <span style={{ fontSize: spacing.fontSize, color: 'white', fontWeight: 'bold' }}>60%</span>
+                    <span style={{ fontSize: windowWidth >= 1820 ? '14px' : spacing.smallFontSize, color: 'white' }}>Remaining useful life</span>
+                    <span style={{ fontSize: windowWidth >= 1820 ? '18px' : spacing.fontSize, color: 'white', fontWeight: 'bold' }}>60%</span>
                   </div>
                   <div className="life-bar" style={{ borderRadius: '0' }}>
                     <div className="life-fill" style={{ 
@@ -411,6 +409,7 @@ const Charger = () => {
           </div>
         </div>
       </div>
+      <DataNeededModal open={showModal} onClose={() => setShowModal(false)} type="charger" />
     </div>
   );
 };

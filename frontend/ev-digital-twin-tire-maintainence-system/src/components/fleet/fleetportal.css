@@ -46,7 +46,7 @@
 }
 
 .username {
-  font-size: 16px;
+  font-size: 20px;
   color: white;
 }
 
@@ -144,7 +144,7 @@
 .panel-title {
   background: #1b1e20;
   padding: 15px 20px;
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 500;
   color: white;
   border-bottom: none;
@@ -210,7 +210,7 @@
   }
 }
 
-@media (min-width: 1920px) {
+@media (min-width: 1900px) {
   .mini-map {
     height: 300px;
   }
@@ -260,15 +260,15 @@
   font-size: 10px;
 }
 
-@media (min-width: 1920px) {
+@media (min-width: 1900px) {
   .legend-text {
-    font-size: 16px;
+    font-size: 20px;
   }
 }
 
 @media (min-width: 1400px) and (max-width: 1919px) {
   .map-legend {
-    font-size: 18px;
+    font-size: 22px;
   }
   .legend-dot {
     width: 12px;
@@ -276,7 +276,7 @@
   }
 }
 
-@media (min-width: 1920px) {
+@media (min-width: 1900px) {
   .map-legend {
     font-size: 36px;
   }
@@ -372,9 +372,9 @@
   }
 }
 
-@media (min-width: 1920px) {
+@media (min-width: 1900px) {
   .vehicle-id {
-    font-size: 18px;
+    font-size: 22px;
   }
 }
 
@@ -390,9 +390,9 @@
   }
 }
 
-@media (min-width: 1920px) {
+@media (min-width: 1900px) {
   .vehicle-address {
-    font-size: 16px;
+    font-size: 20px;
   }
 }
 
@@ -421,9 +421,9 @@
   }
 }
 
-@media (min-width: 1920px) {
+@media (min-width: 1900px) {
   .battery-row {
-    font-size: 16px;
+    font-size: 20px;
   }
 }
 
@@ -439,7 +439,7 @@
   }
 }
 
-@media (min-width: 1920px) {
+@media (min-width: 1900px) {
   .miles-text {
     font-size: 14px;
   }
@@ -460,7 +460,7 @@
   }
 }
 
-@media (min-width: 1920px) {
+@media (min-width: 1900px) {
   .battery-bar {
     width: 60px;
     height: 20px;
@@ -517,9 +517,9 @@
   }
 }
 
-@media (min-width: 1920px) {
+@media (min-width: 1900px) {
   .section-header {
-    font-size: 16px;
+    font-size: 20px;
   }
 }
 
@@ -528,7 +528,7 @@
   color: white;
   padding: 2px 8px;
   border-radius: 0;
-  font-size: 18px;
+  font-size: 22px;
   font-weight: bold;
   min-width: 20px;
   text-align: center;
@@ -540,7 +540,7 @@
   }
 }
 
-@media (min-width: 1920px) {
+@media (min-width: 1900px) {
   .count-badge {
     font-size: 28px;
   }
@@ -575,15 +575,15 @@
   }
 }
 
-@media (min-width: 1920px) {
+@media (min-width: 1900px) {
   .shipment-list div {
-    font-size: 18px;
+    font-size: 22px;
     padding: 12px 0;
     letter-spacing: 1.5px;
     margin-left: 50px;
   }
   .charging-status div, .maintenance-list div {
-    font-size: 18px;
+    font-size: 22px;
     padding: 12px 0;
     letter-spacing: 1.5px;
     margin-left: 20px;
@@ -690,9 +690,9 @@
   }
 }
 
-@media (min-width: 1920px) {
+@media (min-width: 1900px) {
   .capacity-section h4, .recommendations-section h4, .recommended-maintenance h4 {
-    font-size: 16px;
+    font-size: 20px;
   }
 }
 
@@ -722,7 +722,7 @@
   }
 }
 
-@media (min-width: 1920px) {
+@media (min-width: 1900px) {
   .capacity-bars {
     height: 160px;
   }
@@ -760,7 +760,7 @@
   }
 }
 
-@media (min-width: 1920px) {
+@media (min-width: 1900px) {
   .capacity-column {
     width: 120px;
     height: 60px;
@@ -806,13 +806,13 @@
   font-weight: 500;
 }
 
-@media (min-width: 1920px) {
+@media (min-width: 1900px) {
   .type-row {
-    font-size: 16px;
+    font-size: 20px;
   }
   
   .type-row span:last-child {
-    font-size: 18px;
+    font-size: 22px;
   }
 }
 
@@ -843,7 +843,7 @@
   }
 }
 
-@media (min-width: 1920px) {
+@media (min-width: 1900px) {
   .recommendation, .maintenance-item {
     padding: 25px 0;
   }
@@ -864,9 +864,9 @@
   }
 }
 
-@media (min-width: 1920px) {
+@media (min-width: 1900px) {
   .rec-vehicle, .maint-vehicle {
-    font-size: 16px;
+    font-size: 20px;
     margin-bottom: 8px;
   }
 }
@@ -884,9 +884,9 @@
   }
 }
 
-@media (min-width: 1920px) {
+@media (min-width: 1900px) {
   .rec-text, .maint-desc {
-    font-size: 16px;
+    font-size: 20px;
   }
 }
 
@@ -926,7 +926,7 @@
   }
 }
 
-@media (min-width: 1920px) {
+@media (min-width: 1900px) {
   .rec-actions {
     margin-bottom: 50px;
   }
@@ -968,7 +968,7 @@
   }
 }
 
-@media (min-width: 1920px) {
+@media (min-width: 1900px) {
   .btn-dismiss, .btn-reject, .btn-approve {
     padding: 8px 16px;
     font-size: 13px;

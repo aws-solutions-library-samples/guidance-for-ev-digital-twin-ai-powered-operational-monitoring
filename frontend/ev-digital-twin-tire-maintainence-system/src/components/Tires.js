@@ -758,14 +758,14 @@ const TiresPage = () => {
         {/* Right Panel */}
         <div style={{ flex: 1, background: '#434a54', borderRadius: 0, padding: '24px', minWidth: '350px', minHeight: 0, alignSelf: 'flex-start' }}>
             <div className="motor-prediction">
-              <div className="prediction-header">
+              <div className="prediction-header" style={{ marginBottom: windowWidth <= 1700 ? '30px' : '20px' }}>
                 <h2 style={{ fontSize: windowWidth <= 1440 ? '16px' : windowWidth <= 1700 ? '18px' : windowWidth <= 1815 ? '22px' : '24px', marginTop: windowWidth <= 1440 ? '-25px' : windowWidth <= 1700 ? '-20px' : windowWidth <= 1815 ? '-10px' : '0' }}>Tire Prediction</h2>
                 <img
                   src={require('./assets/warning.png')}
                   alt="Warning"
                   className="info-icon"
-                  style={{ width: '20px', height: '20px', cursor: 'pointer', marginTop: windowWidth <= 1440 ? '-25px' : windowWidth <= 1700 ? '-20px' : windowWidth <= 1815 ? '-10px' : '0' }}
-                  onClick={() => setShowModal(true)}
+                  style={{ width: '20px', height: '20px', cursor: 'pointer', marginTop: windowWidth <= 1440 ? '-25px' : windowWidth <= 1700 ? '-20px' : windowWidth <= 1815 ? '-10px' : '0', zIndex: 99999, position: 'relative' }}
+                  onClick={() => { console.log('Modal clicked, showModal:', showModal); setShowModal(true); }}
                 />
               </div>
 
@@ -773,7 +773,7 @@ const TiresPage = () => {
               <div className="motor-prediction-container" style={{ paddingLeft: '30px', marginTop: windowWidth <= 1440 ? '-25px' : windowWidth <= 1700 ? '-20px' : windowWidth <= 1815 ? '-10px' : '0' }}>
                 <div className="failure-prediction" style={{ marginTop: windowWidth <= 1440 ? '-15px' : windowWidth <= 1700 ? '-10px' : windowWidth <= 1815 ? '-5px' : '0' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <h3 style={{ margin: 0, fontSize: windowWidth <= 1440 ? '11px' : windowWidth <= 1700 ? '12px' : windowWidth <= 1815 ? '13px' : '14px' }}>Tire Failure Prediction</h3>
+                    <h3 style={{ margin: 0, fontSize: windowWidth <= 1440 ? '11px' : windowWidth <= 1700 ? '12px' : windowWidth <= 1815 ? '13px' : '14px', position: 'relative', top: windowWidth <= 1700 ? '-3px' : '0' }}>Tire Failure Prediction</h3>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.7)' }}>
                         Show Prediction
@@ -813,7 +813,7 @@ const TiresPage = () => {
                       </button>
                     </div>
                   </div>
-                  <div className="prediction-legend">
+                  <div className="prediction-legend" style={{ position: 'relative', top: windowWidth <= 1700 ? '-2px' : '0' }}>
                     <div className="legend-item">
                       <div style={{ width: '15px', height: '2px', backgroundColor: 'rgba(255,153,0,1)' }}></div>
                       <span>Past</span>
@@ -823,8 +823,8 @@ const TiresPage = () => {
                       <span>Predicted</span>
                     </div>
                   </div>
-                  <div style={{ position: 'relative', marginTop: '20px' }}>
-                    <div className="prediction-chart" style={{ marginTop: windowWidth <= 1700 ? '-100px' : windowWidth <= 1815 ? '-60px' : '0' }}>
+                  <div style={{ position: 'relative', marginTop: windowWidth <= 1700 ? '5px' : '5px' }}>
+                    <div className="prediction-chart" style={{ marginTop: windowWidth <= 1700 ? '-120px' : windowWidth <= 1815 ? '-60px' : '-30px' }}>
                       <svg width="290" height="180" viewBox="0 0 290 180">
                       {/* Grid lines */}
                       {Array.from({ length: 8 }, (_, i) => (

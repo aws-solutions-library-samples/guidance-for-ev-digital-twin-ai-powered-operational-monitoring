@@ -1,11 +1,13 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import DataNeededModal from "./DataNeededModal";
 import "../css/energymanagement.css";
 
 const EnergyManagement = () => {
   const navigate = useNavigate();
   const { carId } = useParams();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   useEffect(() => {
@@ -35,7 +37,7 @@ const EnergyManagement = () => {
   return (
     <div className="energymanagement-page">
       <div className="energymanagement-container" style={{ 
-        zoom: windowWidth <= 1024 ? windowWidth / 1440 : (windowWidth >= 2685 ? Math.min(windowWidth / 1920, 1.4) : undefined),
+        zoom: windowWidth <= 1024 ? windowWidth / 1440 : (windowWidth >= 1820 && windowWidth <= 2400 ? windowWidth / 2560 : (windowWidth >= 2685 ? Math.min(windowWidth / 1920, 1.4) : undefined)),
         overflowY: 'auto',
         overflowX: 'hidden'
       }}>
@@ -385,28 +387,28 @@ const EnergyManagement = () => {
           <div className="right-panel">
             <div className="battery-prediction">
               <div className="prediction-header">
-                <h2 style={{ fontSize: windowWidth <= 1440 ? '16px' : windowWidth <= 1700 ? '18px' : windowWidth <= 1815 ? '22px' : '24px' }}>Energy Management Prediction</h2>
-                <img src={require('./assets/warning.png')} alt="Warning" className="info-icon" style={{ width: '20px', height: '20px' }} />
+                <h2 style={{ fontSize: windowWidth <= 1440 ? '16px' : windowWidth <= 1700 ? '18px' : windowWidth <= 1815 ? '22px' : '24px', marginTop: windowWidth <= 1440 ? '-15px' : windowWidth <= 1700 ? '-10px' : windowWidth <= 1815 ? '-5px' : '0' }}>Energy Management Prediction</h2>
+                <img src={require('./assets/warning.png')} alt="Warning" className="info-icon" style={{ width: '20px', height: '20px', cursor: 'pointer', zIndex: 99999, position: 'relative', marginTop: windowWidth <= 1440 ? '-15px' : windowWidth <= 1700 ? '-10px' : windowWidth <= 1815 ? '-5px' : '0' }} onClick={() => setShowModal(true)} />
               </div>
 
               {/* Energy Management Prediction Container */}
               <div className="motor-prediction-container" style={{ paddingLeft: windowWidth <= 1440 ? '15px' : windowWidth <= 1700 ? '20px' : windowWidth <= 1815 ? '25px' : '30px' }}>
-                <div className="failure-prediction">
+                <div className="failure-prediction" style={{ marginTop: windowWidth <= 1440 ? '-15px' : windowWidth <= 1700 ? '-10px' : windowWidth <= 1815 ? '-5px' : '0' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <h3 style={{ margin: 0 }}>Energy Management Failure Prediction</h3>
+                    <h3 style={{ margin: 0, fontSize: windowWidth <= 1440 ? '12px' : windowWidth <= 1700 ? '14px' : windowWidth <= 1815 ? '17px' : '20px', marginTop: windowWidth <= 1700 ? '-25px' : '-15px' }}>Energy Management Failure Prediction</h3>
                   </div>
-                  <div className="prediction-legend">
-                    <div className="legend-item">
+                  <div className="prediction-legend" style={{ marginTop: windowWidth <= 1700 ? '5px' : '10px', fontSize: windowWidth <= 1700 ? '11px' : '12px' }}>
+                    <div className="legend-item" style={{ fontSize: windowWidth <= 1700 ? '11px' : '12px' }}>
                       <div style={{ width: '15px', height: '2px', backgroundColor: 'rgba(255,153,0,1)' }}></div>
                       <span>Past</span>
                     </div>
-                    <div className="legend-item">
+                    <div className="legend-item" style={{ fontSize: windowWidth <= 1700 ? '11px' : '12px' }}>
                       <div style={{ width: '15px', height: '2px', backgroundColor: 'rgba(56,239,125,1)', borderTop: '2px dashed rgba(56,239,125,1)', backgroundColor: 'transparent' }}></div>
                       <span>Predicted</span>
                     </div>
                   </div>
-                  <div style={{ position: 'relative', marginTop: windowWidth <= 1440 ? '10px' : windowWidth <= 1700 ? '20px' : windowWidth <= 1815 ? '60px' : '100px' }}>
-                    <div className="prediction-chart" style={{ transform: windowWidth <= 1440 ? 'scale(0.9)' : windowWidth <= 1700 ? 'scale(0.95)' : windowWidth <= 1815 ? 'scale(0.98)' : 'none', transformOrigin: 'left top' }}>
+                  <div style={{ position: 'relative', marginTop: '100px' }}>
+                    <div className="prediction-chart" style={{ marginTop: windowWidth <= 1440 ? '-180px' : windowWidth <= 1700 ? '-160px' : windowWidth <= 1815 ? '-80px' : windowWidth > 1815 && windowWidth <= 1950 ? '-60px' : windowWidth >= 2560 ? '-100px' : '-60px' }}>
                       <svg width="290" height="180" viewBox="0 0 290 180">
                       {/* Grid lines */}
                       {Array.from({ length: 8 }, (_, i) => (
@@ -492,7 +494,7 @@ const EnergyManagement = () => {
                 </div>
 
                 {/* Remaining Useful Life */}
-                <div className="useful-life" style={{ marginBottom: '20px', marginTop: windowWidth <= 1440 ? '-140px' : windowWidth <= 1700 ? '-120px' : windowWidth <= 1815 ? '-60px' : windowWidth >= 1920 ? '20px' : '-40px' }}>
+                <div className="useful-life" style={{ marginBottom: '20px', marginTop: windowWidth <= 1440 ? '-110px' : windowWidth <= 1700 ? '-90px' : windowWidth <= 1815 ? '-40px' : windowWidth >= 2560 ? '80px' : '0px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
                     <span style={{ fontSize: spacing.smallFontSize, color: 'white' }}>Remaining useful life</span>
                     <span style={{ fontSize: spacing.fontSize, color: 'white', fontWeight: 'bold' }}>60%</span>
@@ -558,6 +560,7 @@ const EnergyManagement = () => {
         </div>
         </div>
       </div>
+      <DataNeededModal open={showModal} onClose={() => setShowModal(false)} type="energy" />
     </div>
   );
 };

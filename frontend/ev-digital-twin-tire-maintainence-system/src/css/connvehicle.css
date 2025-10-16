@@ -408,7 +408,13 @@
   }
 }
 
-@media (min-width: 1800px) {
+@media (min-width: 1800px) and (max-width: 1950px) {
+  .connvehicle-components {
+    margin-top: 8vh;
+  }
+}
+
+@media (min-width: 1951px) {
   .connvehicle-safety-row {
     gap: 1vw;
     margin: 3vh 0 2vh 0;

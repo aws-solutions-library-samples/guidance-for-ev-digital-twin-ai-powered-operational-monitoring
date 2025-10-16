@@ -140,7 +140,7 @@ const ConnVehicle = () => {
                 <div className="connvehicle-motor-eff">
                   <img src={require('./assets/motor.png')} alt="Motor" style={{ width: '20px', height: '20px' }} />
                   <span>92%</span>
-                  <div style={{ fontSize: '12px', opacity: 0.8 }}>Motor Efficiency</div>
+                  <div style={{ fontSize: window.innerWidth >= 1920 ? '16px' : '12px', opacity: 0.8 }}>Motor Efficiency</div>
                 </div>
               </div>
 

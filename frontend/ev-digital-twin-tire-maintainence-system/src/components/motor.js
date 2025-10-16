@@ -35,13 +35,13 @@ const Motor = () => {
     };
     if (width >= 1400) return { 
       gaugeSize: '90px', 
-      fontSize: '12px', 
+      fontSize: '15px', 
       chartHeight: '60px',
       imageWidth: '240px'
     };
     return { 
       gaugeSize: '80px', 
-      fontSize: '10px', 
+      fontSize: '13px', 
       chartHeight: '50px',
       imageWidth: '200px'
     };
@@ -402,7 +402,7 @@ const Motor = () => {
         <div style={{ margin: '10px 20px 5px' }}>
           <div className="motor-layout" style={{ marginTop: '-100px', height: 'auto', alignItems: 'flex-start' }}>
             {/* Main Content */}
-            <div className="main-panel" style={{ marginTop: '60px' }}>
+            <div className="main-panel" style={{ marginTop: windowWidth <= 1700 ? '50px' : '40px' }}>
               {/* Motor Performance Container - Top */}
               <div className="data-container" style={{ marginBottom: '20px', marginTop: windowWidth <= 1440 ? '-15px' : windowWidth <= 1700 ? '-10px' : windowWidth <= 1815 ? '-5px' : '0px', height: '320px', overflow: 'hidden', width: 'calc(100% + 30px)', marginLeft: '-15px' }}>
                 <h3 style={{ color: 'white' }}>Motor Performance</h3>
@@ -596,7 +596,7 @@ const Motor = () => {
               {/* Bottom Containers */}
               <div className="bottom-containers" style={{ 
                 marginBottom: '0',
-                marginTop: windowWidth <= 1440 ? '-40px' : windowWidth <= 1700 ? '-30px' : windowWidth <= 1815 ? '-15px' : '0',
+                marginTop: windowWidth <= 1440 ? '-40px' : windowWidth <= 1700 ? '-30px' : windowWidth <= 1815 ? '-15px' : '-30px',
                 transform: windowWidth <= 1440 ? 'scaleY(0.75)' : windowWidth <= 1700 ? 'scaleY(0.8)' : windowWidth <= 1815 ? 'scaleY(0.9)' : 'none',
                 transformOrigin: 'top'
               }}>
@@ -735,21 +735,21 @@ const Motor = () => {
             <div className="right-panel">
               <div className="battery-prediction">
                 <div className="prediction-header">
-                  <h2 style={{ fontSize: windowWidth <= 1440 ? '16px' : windowWidth <= 1700 ? '18px' : windowWidth <= 1815 ? '22px' : '24px', marginTop: windowWidth <= 1440 ? '-25px' : windowWidth <= 1700 ? '-20px' : windowWidth <= 1815 ? '-10px' : '0' }}>Motor Prediction</h2>
+                  <h2 style={{ fontSize: windowWidth <= 1440 ? '16px' : windowWidth <= 1700 ? '18px' : windowWidth <= 1815 ? '22px' : '24px', marginTop: windowWidth <= 1440 ? '-35px' : windowWidth <= 1700 ? '-30px' : windowWidth <= 1815 ? '-20px' : '-15px' }}>Motor Prediction</h2>
                   <img
                     src={require('./assets/warning.png')}
                     alt="Warning"
                     className="info-icon"
-                    style={{ width: '20px', height: '20px', cursor: 'pointer', zIndex: 9999, position: 'relative' }}
+                    style={{ width: '20px', height: '20px', cursor: 'pointer', zIndex: 99999, position: 'relative', marginTop: windowWidth <= 1440 ? '-35px' : windowWidth <= 1700 ? '-30px' : windowWidth <= 1815 ? '-20px' : '-15px' }}
                     onClick={() => setShowModal(true)}
                   />
                 </div>
 
                 {/* Failure Prediction Chart */}
-                <div className="motor-prediction-container" style={{ paddingLeft: '30px', marginTop: windowWidth <= 1440 ? '-25px' : windowWidth <= 1700 ? '-20px' : windowWidth <= 1815 ? '-10px' : '0' }}>
+                <div className="motor-prediction-container" style={{ paddingLeft: '30px', marginTop: windowWidth <= 1440 ? '10px' : windowWidth <= 1700 ? '15px' : windowWidth <= 1815 ? '-10px' : '0' }}>
                   <div className="failure-prediction" style={{ marginTop: windowWidth <= 1440 ? '-15px' : windowWidth <= 1700 ? '-10px' : windowWidth <= 1815 ? '-5px' : '0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                      <h3 style={{ margin: 0, fontSize: windowWidth <= 1440 ? '11px' : windowWidth <= 1700 ? '12px' : windowWidth <= 1815 ? '13px' : '14px' }}>Motor Failure Prediction</h3>
+                      <h3 style={{ margin: 0, fontSize: windowWidth <= 1440 ? '11px' : windowWidth <= 1700 ? '12px' : windowWidth <= 1815 ? '13px' : '14px', marginTop: windowWidth <= 1700 ? '-25px' : '-15px' }}>Motor Failure Prediction</h3>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.7)' }}>
                           Show Prediction
@@ -789,7 +789,7 @@ const Motor = () => {
                         </button>
                       </div>
                     </div>
-                    <div className="prediction-legend">
+                    <div className="prediction-legend" style={{ marginTop: windowWidth <= 1700 ? '-15px' : '-10px' }}>
                       <div className="legend-item">
                         <div style={{ width: '15px', height: '2px', backgroundColor: 'rgba(255,153,0,1)' }}></div>
                         <span>Past</span>
@@ -801,7 +801,7 @@ const Motor = () => {
                     </div>
                     <div style={{ position: 'relative', marginTop: '20px' }}>
 
-                      <div className="prediction-chart" style={{ marginTop: windowWidth <= 1440 ? '-120px' : windowWidth <= 1700 ? '-100px' : windowWidth <= 1815 ? '-60px' : '0' }}>
+                      <div className="prediction-chart" style={{ marginTop: windowWidth <= 1440 ? '-130px' : windowWidth <= 1700 ? '-110px' : windowWidth <= 1815 ? '-60px' : '-60px' }}>
                         <svg width="290" height="180" viewBox="0 0 290 180">
                         {/* Grid lines */}
                         {Array.from({ length: 8 }, (_, i) => (
@@ -915,7 +915,7 @@ const Motor = () => {
                   </div>
 
                   {/* Remaining Useful Life */}
-                  <div className="useful-life" style={{ marginBottom: '20px', marginTop: windowWidth <= 1440 ? '-120px' : windowWidth <= 1700 ? '-100px' : windowWidth <= 1815 ? '-60px' : '-40px' }}>
+                  <div className="useful-life" style={{ marginBottom: '20px', marginTop: windowWidth <= 1440 ? '-130px' : windowWidth <= 1700 ? '-110px' : windowWidth <= 1815 ? '-60px' : '-40px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
                       <span style={{ fontSize: '10px', color: 'white' }}>Remaining useful life</span>
                       <span style={{ fontSize: '12px', color: 'white', fontWeight: 'bold' }}>
@@ -934,7 +934,7 @@ const Motor = () => {
                   </div>
 
                   {/* GenAI Recommendations */}
-                  <div className="genai-recommendations" style={{ marginTop: windowWidth <= 1440 ? '-25px' : windowWidth <= 1700 ? '-20px' : windowWidth <= 1815 ? '-10px' : '-10px' }}>
+                  <div className="genai-recommendations" style={{ marginTop: windowWidth <= 1440 ? '-30px' : windowWidth <= 1700 ? '-25px' : windowWidth <= 1815 ? '-10px' : '-10px' }}>
                     <h3>GenAI Recommendations</h3>
                     <p>AI-powered motor optimization based on real-time performance data, driving patterns, and predictive analytics from sensor readings.</p>
                     
