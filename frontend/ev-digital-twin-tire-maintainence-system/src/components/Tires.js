@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Papa from 'papaparse';
 import DataNeededModal from "./DataNeededModal";
+import bedrockTireAnalysisService from '../services/bedrockTireAnalysis';
+import { setAWSCredentials } from '../utils/awsCredentials';
 
 const VehicleSVG = (props) => (
   <svg
@@ -49,6 +51,9 @@ const TiresPage = () => {
   const [dataIndex, setDataIndex] = useState(0);
   const [mlResults, setMlResults] = useState([]);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [pressureVariation, setPressureVariation] = useState(0);
+  const [genAiAnalysis, setGenAiAnalysis] = useState(null);
+  const [genAiLoading, setGenAiLoading] = useState(false);
 
 
   useEffect(() => {
@@ -78,17 +83,103 @@ const TiresPage = () => {
       .catch(err => console.log('ML results not available:', err));
   }, []);
 
+  // Realistic pressure simulation - gradual changes instead of jumps
   useEffect(() => {
     if (csvData.length > 0) {
+      // Initialize pressure variation system
+      
       const interval = setInterval(() => {
         setDataIndex(prev => (prev + 1) % csvData.length);
         
         // Force component re-render for fresh data
         setMlResults(prev => [...prev]);
-      }, 5000);
+      }, 30000); // Changed to 30 seconds for more realistic data rotation
       return () => clearInterval(interval);
     }
   }, [csvData]);
+
+  // Realistic pressure variation - small changes every few seconds
+  useEffect(() => {
+    const pressureInterval = setInterval(() => {
+      setPressureVariation(prev => {
+        // Create realistic pressure fluctuations
+        const currentData = csvData[dataIndex] || {};
+        
+        // Calculate realistic variation based on conditions
+        let maxVariation = 0.3; // Base variation ±0.3 PSI
+        
+        // Increase variation based on driving conditions
+        if (currentData.driving_pattern === 'highway') maxVariation = 0.5;
+        if (currentData.weather_condition === 'snow') maxVariation = 0.4;
+        if (currentData.anomaly_detected === 'True') maxVariation = 0.8;
+        
+        // Generate small random variation
+        const randomChange = (Math.random() - 0.5) * 0.2; // ±0.1 PSI random
+        const newVariation = Math.max(-maxVariation, Math.min(maxVariation, prev + randomChange));
+        
+        return newVariation;
+      });
+    }, 3000); // Update every 3 seconds for realistic monitoring
+    
+    return () => clearInterval(pressureInterval);
+  }, [csvData, dataIndex]);
+
+  // GenAI Analysis - Call Claude 3.7 Sonnet when data changes
+  useEffect(() => {
+    const analyzeWithGenAI = async () => {
+      if (!csvData.length || !currentData.vehicle_id) return;
+      
+      setGenAiLoading(true);
+      
+      try {
+        // Set AWS credentials for Bedrock access
+        // In production, these would come from secure authentication/environment
+        // For demo purposes, credentials should be set via environment variables
+        const credentials = {
+          accessKeyId: process.env.REACT_APP_AWS_ACCESS_KEY_ID || 'demo-access-key',
+          secretAccessKey: process.env.REACT_APP_AWS_SECRET_ACCESS_KEY || 'demo-secret-key',
+          sessionToken: process.env.REACT_APP_AWS_SESSION_TOKEN || 'demo-session-token'
+        };
+        
+        // Only proceed if we have valid credentials
+        if (credentials.accessKeyId !== 'demo-access-key') {
+          setAWSCredentials(credentials);
+        } else {
+          console.log('GenAI: Using demo mode - set AWS credentials via environment variables for real analysis');
+          // Skip GenAI analysis in demo mode
+          setGenAiLoading(false);
+          return;
+        }
+        
+        // Prepare tire data for analysis
+        const tireDataForAnalysis = {
+          ...currentData,
+          pressure_psi: getRealisticPressure(),
+          temperature_c: getRealisticTemperature(),
+          tread_depth_mm: getRealisticTreadDepth()
+        };
+        
+        console.log('Sending tire data to Claude 3.7 Sonnet:', tireDataForAnalysis);
+        
+        const analysis = await bedrockTireAnalysisService.analyzeTireCondition(tireDataForAnalysis);
+        
+        console.log('Received GenAI analysis:', analysis);
+        setGenAiAnalysis(analysis);
+        
+      } catch (error) {
+        console.error('GenAI analysis failed:', error);
+        // Keep existing fallback system
+        setGenAiAnalysis(null);
+      } finally {
+        setGenAiLoading(false);
+      }
+    };
+    
+    // Debounce the GenAI calls - only call when data stabilizes
+    const debounceTimer = setTimeout(analyzeWithGenAI, 2000);
+    return () => clearTimeout(debounceTimer);
+    
+  }, [dataIndex, pressureVariation]); // Trigger on data changes
 
   // Tire prediction animation effect
   useEffect(() => {
@@ -112,11 +203,40 @@ const TiresPage = () => {
   // Get ML data for current vehicle
   const currentMlData = mlResults.find(r => r.vehicle_id === parseInt(currentData.vehicle_id));
   
-  // Calculate dynamic last updated time (increments every 5 minutes with data rotation)
-  const getLastUpdated = () => {
-    const baseMinutes = 5;
-    const additionalMinutes = dataIndex * 5;
-    return `${baseMinutes + additionalMinutes} min ago`;
+  // Get realistic pressure with gradual variations
+  const getRealisticPressure = () => {
+    const currentData = csvData[dataIndex] || {};
+    const basePsi = parseFloat(currentData.pressure_psi) || 32.0;
+    const realisticPressure = basePsi + pressureVariation;
+    return Math.max(25.0, Math.min(40.0, realisticPressure)); // Keep within realistic bounds
+  };
+
+  // Get realistic temperature with seasonal adjustments
+  const getRealisticTemperature = () => {
+    const currentData = csvData[dataIndex] || {};
+    let baseTemp = parseFloat(currentData.temperature_c) || 25;
+    
+    // Adjust extreme temperatures to be more realistic for tire surface temp
+    if (baseTemp < 0) {
+      // Winter conditions - tire temp is usually warmer than air due to friction
+      baseTemp = Math.max(5, baseTemp + 15);
+    } else if (baseTemp > 40) {
+      // Very hot conditions - cap at reasonable tire temp
+      baseTemp = Math.min(45, baseTemp);
+    }
+    
+    // Add small variation for realism
+    const variation = (Math.random() - 0.5) * 2; // ±1°C variation
+    return Math.round(baseTemp + variation);
+  };
+
+  // Get realistic tread depth with proper rounding
+  const getRealisticTreadDepth = () => {
+    const currentData = csvData[dataIndex] || {};
+    const baseTread = parseFloat(currentData.tread_depth_mm) || 8.0;
+    
+    // Round to realistic precision (0.5mm increments)
+    return Math.round(baseTread * 2) / 2;
   };
   
   // Dynamic prediction calculation functions
@@ -177,28 +297,26 @@ const TiresPage = () => {
     return 60; // fallback
   };
   
-  // Get AI recommendations based on thread depth (lower thread = more recommendations)
+  // Get AI recommendations - prioritize GenAI (Claude 3.7 Sonnet) over rule-based
   const getAiRecommendations = () => {
-    const predictions = calculateDynamicPredictions(currentData);
-    const currentStatus = predictions?.status || "GOOD";
-    const threadDepth = parseFloat(currentData.tread_depth_mm) || 10.0;
-    
-    // Calculate number of recommendations based on thread depth
-    let numRecommendations = 1;
-    if (threadDepth < 2.0) {
-      numRecommendations = 5; // Very low thread - show 5 recommendations
-    } else if (threadDepth < 4.0) {
-      numRecommendations = 4; // Low thread - show 4 recommendations
-    } else if (threadDepth < 6.0) {
-      numRecommendations = 3; // Medium thread - show 3 recommendations
-    } else if (threadDepth < 8.0) {
-      numRecommendations = 2; // Good thread - show 2 recommendations
-    } else {
-      numRecommendations = 1; // High thread - show 1 recommendation
+    // Priority 1: Use GenAI analysis if available
+    if (genAiAnalysis && genAiAnalysis.recommendations) {
+      console.log('Using GenAI (Claude 3.7 Sonnet) recommendations');
+      return genAiAnalysis.recommendations.map(rec => ({
+        action: rec.action,
+        priority: rec.priority,
+        reason: rec.reason,
+        urgency: rec.urgency,
+        genai: true // Mark as GenAI generated
+      }));
     }
     
+    // Priority 2: Use ML analysis if available
     if (currentMlData?.ml_analysis?.recommendations) {
+      console.log('Using ML analysis recommendations');
       const allRecs = currentMlData.ml_analysis.recommendations;
+      const predictions = calculateDynamicPredictions(currentData);
+      const currentStatus = predictions?.status || "GOOD";
       
       // Filter recommendations based on current tire status
       let filteredRecs;
@@ -210,56 +328,66 @@ const TiresPage = () => {
         filteredRecs = allRecs.filter(r => r.priority === "LOW");
       }
       
-      // Return the calculated number of recommendations based on thread depth
       const availableRecs = filteredRecs.length > 0 ? filteredRecs : allRecs;
-      return availableRecs.slice(0, numRecommendations);
+      return availableRecs.slice(0, 3).map(rec => ({...rec, ml: true}));
     }
     
-    // Dynamic fallback based on current status and thread depth
+    // Priority 3: Fallback to rule-based recommendations
+    console.log('Using fallback rule-based recommendations');
+    const predictions = calculateDynamicPredictions(currentData);
+    const currentStatus = predictions?.status || "GOOD";
+    const threadDepth = parseFloat(currentData.tread_depth_mm) || 10.0;
+    
     const fallbackRecs = [];
     
     if (currentStatus === "CRITICAL") {
       fallbackRecs.push(
-        { action: "URGENT: Stop driving immediately - tire replacement required", priority: "CRITICAL" },
-        { action: "Schedule emergency tire service within 24 hours", priority: "HIGH" },
-        { action: "Check for visible tire damage or punctures", priority: "HIGH" },
-        { action: "Avoid highway speeds until replacement", priority: "MEDIUM" },
-        { action: "Contact roadside assistance if needed", priority: "CRITICAL" }
+        { action: "URGENT: Stop driving immediately - tire replacement required", priority: "CRITICAL", fallback: true },
+        { action: "Schedule emergency tire service within 24 hours", priority: "HIGH", fallback: true },
+        { action: "Check for visible tire damage or punctures", priority: "HIGH", fallback: true }
       );
     } else if (currentStatus === "WARNING") {
       fallbackRecs.push(
-        { action: "Schedule tire replacement within 2-4 weeks", priority: "MEDIUM" },
-        { action: "Monitor tire pressure daily until replacement", priority: "MEDIUM" },
-        { action: "Reduce driving speed and avoid aggressive maneuvers", priority: "LOW" },
-        { action: "Check tire alignment and balancing", priority: "LOW" },
-        { action: "Inspect for uneven wear patterns", priority: "LOW" }
+        { action: "Schedule tire replacement within 2-4 weeks", priority: "MEDIUM", fallback: true },
+        { action: "Monitor tire pressure daily until replacement", priority: "MEDIUM", fallback: true },
+        { action: "Check tire alignment and balancing", priority: "LOW", fallback: true }
       );
     } else {
       fallbackRecs.push(
-        { action: "Rotate tires every 5,000-7,500 miles for even wear", priority: "LOW" },
-        { action: "Monitor tire pressure monthly to optimize performance", priority: "LOW" },
-        { action: "Check tread depth every 3 months", priority: "LOW" },
-        { action: "Maintain proper wheel alignment", priority: "LOW" },
-        { action: "Follow manufacturer's maintenance schedule", priority: "LOW" }
+        { action: "Rotate tires every 5,000-7,500 miles for even wear", priority: "LOW", fallback: true },
+        { action: "Monitor tire pressure monthly to optimize performance", priority: "LOW", fallback: true }
       );
     }
     
+    // Limit based on tread depth
+    const numRecommendations = threadDepth < 4.0 ? 3 : threadDepth < 8.0 ? 2 : 1;
     return fallbackRecs.slice(0, numRecommendations);
   };
   
   const formatValue = (value, unit, fallback) => {
+    // Special handling for PSI to use realistic pressure
+    if (unit === '' && fallback && fallback.includes('35')) {
+      const realisticPsi = getRealisticPressure();
+      return `${realisticPsi.toFixed(1)}`;
+    }
+    
+    // Special handling for temperature
+    if (unit === '°C') {
+      const realisticTemp = getRealisticTemperature();
+      return `${realisticTemp}°C`;
+    }
+    
+    // Special handling for tread depth
+    if (unit === 'mm') {
+      const realisticTread = getRealisticTreadDepth();
+      return `${realisticTread.toFixed(1)}mm`;
+    }
+    
     if (!value) return fallback;
     const num = parseFloat(value);
     if (isNaN(num)) return fallback;
     
-    // Format with consistent width
-    if (unit === 'mm') {
-      return `${num.toFixed(1)}mm`;
-    } else if (unit === '°C') {
-      return `${Math.round(num)}°C`;
-    } else {
-      return `${Math.round(num)}`;
-    }
+    return `${Math.round(num)}`;
   };
   
   const formatLoad = (weight) => {
@@ -308,6 +436,12 @@ const TiresPage = () => {
   // ML INTEGRATION COMPLETE - Using real predictions from tire_predictor.py and enhanced_maintenance_agent.py
   const remainingLife = getRemainingLife();
   const aiRecommendations = getAiRecommendations();
+
+  // Debug logging for realistic tire metrics
+  const currentRealisticPressure = getRealisticPressure();
+  const currentRealisticTemp = getRealisticTemperature();
+  const currentRealisticTread = getRealisticTreadDepth();
+  console.log(`Realistic Tire Metrics - PSI: ${currentRealisticPressure.toFixed(1)} | Temp: ${currentRealisticTemp}°C | Tread: ${currentRealisticTread.toFixed(1)}mm`);
   const replacementMessages = getReplacementMessages();
   
   // DYNAMIC VIBRATION CALCULATION - All data from CSV tire_wear_data.csv
@@ -492,6 +626,14 @@ const TiresPage = () => {
 
   return (
     <div style={{ width: '100%', minHeight: '100vh', background: '#000', fontFamily: 'Amazon Ember' }}>
+      <style>
+        {`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}
+      </style>
       <div className="tires-container" style={{
         transform: windowWidth <= 1024 ? `scale(${windowWidth / 1440})` : (windowWidth >= 2685 ? `scale(${windowWidth / 1920})` : undefined),
         transformOrigin: windowWidth <= 1024 ? 'top left' : (windowWidth >= 2685 ? 'top left' : undefined),
@@ -950,32 +1092,72 @@ const TiresPage = () => {
 
                 {/* GenAI Recommendations */}
                 <div className="genai-recommendations" style={{ marginTop: windowWidth <= 1700 ? '-20px' : windowWidth <= 1815 ? '-10px' : '-10px' }}>
-                  <h3>GenAI Recommendations</h3>
-                  <p>AI-powered tire optimization based on tread depth. Lower tread depth triggers more recommendations.</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                    <h3>GenAI Recommendations</h3>
+                    {genAiLoading && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#ff9900' }}>
+                        <div className="spinner" style={{ width: '12px', height: '12px', border: '2px solid #333', borderTop: '2px solid #ff9900', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                        Analyzing...
+                      </div>
+                    )}
+                    {genAiAnalysis && !genAiLoading && (
+                      <div style={{ fontSize: '11px', color: '#00ff88', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>🤖</span> Claude 3.7 Sonnet
+                      </div>
+                    )}
+                  </div>
+                  
+                  <p style={{ fontSize: '12px', marginBottom: '12px' }}>
+                    {genAiAnalysis ? 
+                      `Real-time analysis by Claude 3.7 Sonnet. Status: ${genAiAnalysis.overall_status} | Risk: ${genAiAnalysis.risk_level}` :
+                      'AI-powered tire optimization. Connecting to Claude 3.7 Sonnet for real-time analysis...'
+                    }
+                  </p>
+                  
+                  {/* GenAI Key Findings */}
+                  {genAiAnalysis?.key_findings && (
+                    <div style={{ marginBottom: '12px', padding: '8px', backgroundColor: 'rgba(0,255,136,0.1)', borderRadius: '4px', border: '1px solid rgba(0,255,136,0.3)' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#00ff88', marginBottom: '4px' }}>🔍 Key Findings:</div>
+                      {genAiAnalysis.key_findings.map((finding, index) => (
+                        <div key={index} style={{ fontSize: '11px', color: 'rgba(255,255,255,0.9)' }}>• {finding}</div>
+                      ))}
+                    </div>
+                  )}
                   
                   <div className="recommendations-list">
                     {aiRecommendations.map((rec, index) => (
                       <div key={index} style={{ marginBottom: '12px' }}>
                         <div className="recommendation-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                           <span className="warning-icon">
-                            {rec.priority === 'CRITICAL' ? '🚨' : rec.priority === 'HIGH' ? '⚠️' : 'ℹ️'}
+                            {rec.priority === 'CRITICAL' ? '🚨' : rec.priority === 'HIGH' ? '⚠️' : rec.priority === 'MEDIUM' ? '⚡' : 'ℹ️'}
                           </span>
-                          <span>{rec.action}</span>
+                          <span style={{ flex: 1 }}>{rec.action}</span>
+                          {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
+                          {rec.ml && <span style={{ fontSize: '10px', color: '#ff9900', backgroundColor: 'rgba(255,153,0,0.2)', padding: '2px 6px', borderRadius: '10px' }}>ML</span>}
+                          {rec.fallback && <span style={{ fontSize: '10px', color: '#888', backgroundColor: 'rgba(136,136,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>Rule</span>}
                         </div>
-                        {rec.reason && (
+                        {(rec.reason || rec.urgency) && (
                           <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
-                            <p><strong>Details:</strong> {rec.reason}</p>
+                            {rec.reason && <p><strong>Reason:</strong> {rec.reason}</p>}
+                            {rec.urgency && <p><strong>Urgency:</strong> {rec.urgency}</p>}
                             {rec.estimated_cost && <p><strong>Cost:</strong> {rec.estimated_cost}</p>}
                           </div>
                         )}
                       </div>
                     ))}
+                    
+                    {genAiAnalysis?.next_inspection && (
+                      <div style={{ marginTop: '12px', fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontStyle: 'italic' }}>
+                        Next inspection recommended: {genAiAnalysis.next_inspection}
+                      </div>
+                    )}
+                    
                     <div className="more-link" style={{ marginTop: '16px', fontSize: '12px', color: '#ff9900', cursor: 'pointer' }}>More.....</div>
                   </div>
                   
-                  {currentPredictions?.status === 'CRITICAL' && (
-                    <div style={{ color: '#ff4444', fontWeight: 'bold', marginTop: '10px', padding: '5px', border: '1px solid #ff4444', borderRadius: '3px' }}>
-                      ⚠️ CRITICAL: {currentPredictions.has_anomaly ? 'Anomaly detected in tire data' : 'Tread depth below safety threshold'}
+                  {(currentPredictions?.status === 'CRITICAL' || genAiAnalysis?.overall_status === 'CRITICAL') && (
+                    <div style={{ color: '#ff4444', fontWeight: 'bold', marginTop: '10px', padding: '8px', border: '1px solid #ff4444', borderRadius: '3px', backgroundColor: 'rgba(255,68,68,0.1)' }}>
+                      🚨 CRITICAL: {genAiAnalysis?.key_findings?.[0] || (currentPredictions?.has_anomaly ? 'Anomaly detected in tire data' : 'Tread depth below safety threshold')}
                     </div>
                   )}
                 </div>
