@@ -1080,7 +1080,7 @@ const TiresPage = () => {
                 </div>
 
                 {/* Remaining Useful Life */}
-                <div className="useful-life" style={{ marginBottom: '20px', marginTop: windowWidth <= 1700 ? '-95px' : windowWidth <= 1815 ? '-60px' : '-40px' }}>
+                <div className="useful-life" style={{ marginBottom: '20px', marginTop: windowWidth <= 1700 ? '-110px' : windowWidth <= 1815 ? '-60px' : '-40px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
                     <span style={{ fontSize: '10px', color: 'white' }}>Remaining useful life</span>
                     <span style={{ fontSize: '12px', color: 'white', fontWeight: 'bold' }}>{remainingLife}%</span>

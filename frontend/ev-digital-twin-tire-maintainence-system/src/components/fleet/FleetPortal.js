@@ -12,7 +12,13 @@ const FleetPortal = () => {
 
   // State for AI-powered maintenance recommendations
   const [aiRecommendations, setAiRecommendations] = useState([]);
-  const [loadingRecommendations, setLoadingRecommendations] = useState(true);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+
+  // State for approval modal
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [selectedRecommendation, setSelectedRecommendation] = useState(null);
+  const [approvalInstructions, setApprovalInstructions] = useState('');
+  const [submittingApproval, setSubmittingApproval] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -22,9 +28,8 @@ const FleetPortal = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Fetch AI recommendations on component mount
-  useEffect(() => {
-    const fetchRecommendations = async () => {
+  // Fetch AI recommendations on demand
+  const fetchRecommendations = async () => {
       try {
         setLoadingRecommendations(true);
         console.log('Starting to fetch AI recommendations...');
@@ -74,9 +79,6 @@ const FleetPortal = () => {
       }
     };
 
-    fetchRecommendations();
-  }, []);
-
   // Parse AI response into structured recommendation
   const parseRecommendation = (response, vehicleId) => {
     // Extract key information from the AI response
@@ -86,9 +88,17 @@ const FleetPortal = () => {
     let description = '';
     let priority = 'normal';
 
-    if (response.toLowerCase().includes('critical') || response.toLowerCase().includes('immediately')) {
+    const lowerResponse = response.toLowerCase();
+    
+    // Check for explicit "no critical/urgent" phrases FIRST
+    if (lowerResponse.match(/no (critical|urgent|immediate)/)) {
+      priority = 'normal';
+    }
+    // Then check for actual critical issues
+    else if (lowerResponse.match(/(critical|urgent|immediate).*(issue|problem|attention|required)/)) {
       priority = 'critical';
-    } else if (response.toLowerCase().includes('warning') || response.toLowerCase().includes('soon')) {
+    }
+    else if (lowerResponse.match(/(warning|soon|attention).*(needed|required|recommended)/)) {
       priority = 'warning';
     }
 
@@ -112,7 +122,8 @@ const FleetPortal = () => {
     return {
       vehicleId,
       vehicleName: getVehicleName(vehicleId),
-      description: description.substring(0, 150), // Limit length
+      description: description.substring(0, 150), // Limit length for display
+      fullRecommendation: response, // Store full AI response
       priority,
       timestamp: new Date().toISOString()
     };
@@ -132,9 +143,35 @@ const FleetPortal = () => {
   };
 
   const handleApprove = (recommendation) => {
-    console.log('Approved:', recommendation);
-    // Here you could send the approval to a backend
-    alert(`Maintenance approved for ${recommendation.vehicleName}`);
+    setSelectedRecommendation(recommendation);
+    setApprovalInstructions('');
+    setShowApprovalModal(true);
+  };
+
+  const handleSubmitApproval = async () => {
+    if (!approvalInstructions.trim()) {
+      alert('Please provide instructions for this maintenance');
+      return;
+    }
+
+    setSubmittingApproval(true);
+    try {
+      const prompt = `Approve maintenance for vehicle ${selectedRecommendation.vehicleId} (VIN: ${selectedRecommendation.vehicleName}). Recommendation: ${selectedRecommendation.description}. Operator instructions: ${approvalInstructions}. Please schedule the appropriate maintenance using the schedule_appointment tool.`;
+      
+      const response = await agentCoreService.chat(prompt);
+      console.log('Agent response:', response);
+      
+      alert(`Maintenance approved for ${selectedRecommendation.vehicleName}\n\nAgent Response: ${response.substring(0, 200)}...`);
+      
+      // Remove from recommendations after approval
+      handleDismiss(aiRecommendations.indexOf(selectedRecommendation));
+      setShowApprovalModal(false);
+    } catch (error) {
+      console.error('Error submitting approval:', error);
+      alert('Failed to submit approval. Please try again.');
+    } finally {
+      setSubmittingApproval(false);
+    }
   };
 
   const handleReject = (recommendation) => {
@@ -459,7 +496,25 @@ const FleetPortal = () => {
             </div>
           </div>
           <div className="recommended-maintenance">
-            <h4>📋 Recommended Maintenance <span style={{ fontSize: '12px', color: '#37bc12', marginLeft: '8px' }}>🤖 AI-Powered</span></h4>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #444' }}>
+              <h4 style={{ margin: 0 }}>📋 Recommended Maintenance <span style={{ fontSize: '12px', color: '#37bc12', marginLeft: '8px' }}>🤖 AI-Powered</span></h4>
+              <button
+                onClick={fetchRecommendations}
+                disabled={loadingRecommendations}
+                style={{
+                  padding: '5px 10px',
+                  background: loadingRecommendations ? '#666' : '#37bc12',
+                  border: 'none',
+                  borderRadius: '4px',
+                  color: '#fff',
+                  fontSize: '11px',
+                  cursor: loadingRecommendations ? 'not-allowed' : 'pointer',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {loadingRecommendations ? '⏳ Generating...' : '🤖 Generate'}
+              </button>
+            </div>
 
             {loadingRecommendations ? (
               <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
@@ -467,7 +522,7 @@ const FleetPortal = () => {
               </div>
             ) : aiRecommendations.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
-                <div style={{ fontSize: '14px' }}>✅ No maintenance recommendations at this time</div>
+                <div style={{ fontSize: '14px' }}>Click "Generate" to analyze fleet vehicles</div>
               </div>
             ) : (
               aiRecommendations.map((rec, index) => (
@@ -496,6 +551,124 @@ const FleetPortal = () => {
           </div>
         </div>
       </div>
+
+      {/* Approval Modal */}
+      {showApprovalModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            background: '#1b1e20',
+            border: '1px solid #37bc12',
+            borderRadius: '8px',
+            padding: '30px',
+            maxWidth: '700px',
+            width: '90%'
+          }}>
+            <h3 style={{ color: '#37bc12', marginBottom: '20px' }}>Approve Maintenance</h3>
+            
+            {selectedRecommendation && (
+              <>
+                <div style={{ marginBottom: '20px', color: '#ccc' }}>
+                  <div style={{ marginBottom: '10px' }}>
+                    <strong>Vehicle:</strong> {selectedRecommendation.vehicleName}
+                  </div>
+                  <div style={{ marginBottom: '10px' }}>
+                    <strong>Priority:</strong> <span style={{ 
+                      color: selectedRecommendation.priority === 'critical' ? '#ff4444' : 
+                             selectedRecommendation.priority === 'warning' ? '#ffa500' : '#37bc12'
+                    }}>{selectedRecommendation.priority.toUpperCase()}</span>
+                  </div>
+                  <div style={{ 
+                    marginTop: '15px',
+                    padding: '15px',
+                    background: '#2a2d2f',
+                    borderRadius: '4px',
+                    borderLeft: '3px solid #37bc12',
+                    maxHeight: '300px',
+                    overflowY: 'auto'
+                  }}>
+                    <strong style={{ display: 'block', marginBottom: '10px', color: '#37bc12' }}>AI Recommendation:</strong>
+                    <div style={{ fontSize: '14px', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+                      {selectedRecommendation.fullRecommendation
+                        .replace(/#{1,6}\s*/g, '')  // Remove markdown headers
+                        .replace(/\*\*/g, '')        // Remove bold markdown
+                        .replace(/\*/g, '')          // Remove italic markdown
+                        .replace(/^[-•]\s*/gm, '• ') // Normalize bullet points
+                        .trim()
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '10px', color: '#ccc' }}>
+                    Add scheduling details or special instructions:
+                  </label>
+                  <textarea
+                    value={approvalInstructions}
+                    onChange={(e) => setApprovalInstructions(e.target.value)}
+                    placeholder="e.g., Schedule for Monday 9am, use OEM parts, notify driver beforehand..."
+                    style={{
+                      width: '100%',
+                      minHeight: '100px',
+                      padding: '10px',
+                      background: '#2a2d2f',
+                      border: '1px solid #444',
+                      borderRadius: '4px',
+                      color: '#fff',
+                      fontSize: '14px',
+                      resize: 'vertical'
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                  <button
+                    onClick={() => setShowApprovalModal(false)}
+                    disabled={submittingApproval}
+                    style={{
+                      padding: '10px 20px',
+                      background: '#444',
+                      border: 'none',
+                      borderRadius: '4px',
+                      color: '#fff',
+                      cursor: submittingApproval ? 'not-allowed' : 'pointer',
+                      opacity: submittingApproval ? 0.5 : 1
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSubmitApproval}
+                    disabled={submittingApproval}
+                    style={{
+                      padding: '10px 20px',
+                      background: '#37bc12',
+                      border: 'none',
+                      borderRadius: '4px',
+                      color: '#fff',
+                      cursor: submittingApproval ? 'not-allowed' : 'pointer',
+                      opacity: submittingApproval ? 0.5 : 1
+                    }}
+                  >
+                    {submittingApproval ? 'Submitting...' : 'Submit Approval'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

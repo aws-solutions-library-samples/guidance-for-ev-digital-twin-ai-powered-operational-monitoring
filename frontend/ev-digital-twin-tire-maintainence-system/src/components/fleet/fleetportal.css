@@ -661,9 +661,14 @@
   color: white;
 }
 
-.recommendations-section h4, .recommended-maintenance h4 {
+.recommendations-section h4 {
   border-bottom: 1px solid #444;
   padding-bottom: 10px;
+}
+
+.recommended-maintenance h4 {
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .capacity-legend {
