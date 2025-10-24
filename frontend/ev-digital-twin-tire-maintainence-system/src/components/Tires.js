@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Papa from 'papaparse';
 import DataNeededModal from "./DataNeededModal";
-import bedrockTireAnalysisService from '../services/bedrockTireAnalysis';
-import { setAWSCredentials } from '../utils/awsCredentials';
+import agentCoreService from '../services/agentcore';
 
 const VehicleSVG = (props) => (
   <svg
@@ -63,13 +62,21 @@ const TiresPage = () => {
   }, []);
 
   useEffect(() => {
-    Papa.parse('/data/tire_wear_data.csv', {
+    Papa.parse('/data/vehicle_maintenance_data.csv', {
       download: true,
       header: true,
       complete: (results) => {
         if (results.data && results.data.length > 0) {
-          setCsvData(results.data.filter(row => row.vehicle_id));
+          const filteredData = results.data.filter(row => row.vehicle_id);
+          setCsvData(filteredData);
+          console.log('CSV data loaded:', filteredData.length, 'records');
+          console.log('Sample record:', filteredData[0]);
+        } else {
+          console.error('No CSV data loaded');
         }
+      },
+      error: (error) => {
+        console.error('Error loading CSV:', error);
       }
     });
     
@@ -127,59 +134,388 @@ const TiresPage = () => {
   // GenAI Analysis - Call Claude 3.7 Sonnet when data changes
   useEffect(() => {
     const analyzeWithGenAI = async () => {
-      if (!csvData.length || !currentData.vehicle_id) return;
+      if (!csvData.length || !currentData.vehicle_id) {
+        console.log('GenAI Analysis skipped - missing data:', { csvDataLength: csvData.length, vehicleId: currentData.vehicle_id });
+        return;
+      }
       
+      console.log('Starting enhanced GenAI analysis...');
       setGenAiLoading(true);
       
+      // Prepare tire data for analysis (moved outside try block for error handling)
+      const tireDataForAnalysis = {
+        vehicle_id: currentData.vehicle_id,
+        make: currentData.make,
+        model: currentData.model,
+        year: currentData.year,
+        tire_brand: currentData.tire_brand,
+        tire_size: currentData.tire_size,
+        pressure_psi: getRealisticPressure(),
+        temperature_c: getRealisticTemperature(),
+        tread_depth_mm: getRealisticTreadDepth(),
+        mileage: currentData.mileage,
+        driving_pattern: currentData.driving_pattern,
+        weather_condition: currentData.weather_condition,
+        anomaly_type: currentData.anomaly_type
+      };
+      
       try {
-        // Set AWS credentials for Bedrock access
-        // In production, these would come from secure authentication/environment
-        // For demo purposes, credentials should be set via environment variables
-        const credentials = {
-          accessKeyId: process.env.REACT_APP_AWS_ACCESS_KEY_ID || 'demo-access-key',
-          secretAccessKey: process.env.REACT_APP_AWS_SECRET_ACCESS_KEY || 'demo-secret-key',
-          sessionToken: process.env.REACT_APP_AWS_SESSION_TOKEN || 'demo-session-token'
-        };
         
-        // Only proceed if we have valid credentials
-        if (credentials.accessKeyId !== 'demo-access-key') {
-          setAWSCredentials(credentials);
-        } else {
-          console.log('GenAI: Using demo mode - set AWS credentials via environment variables for real analysis');
-          // Skip GenAI analysis in demo mode
-          setGenAiLoading(false);
+        console.log('Calling enhanced AgentCore service...');
+        
+        // Use the enhanced service method
+        const analysisResult = await agentCoreService.getTireAnalysis(currentData.vehicle_id, tireDataForAnalysis);
+        
+        console.log('Received enhanced GenAI analysis:', analysisResult);
+        
+        // Check if service was throttled and no cache available
+        if (analysisResult.throttled) {
+          console.log('Service throttled - using enhanced fallback');
+          const enhancedFallback = createEnhancedFallback(tireDataForAnalysis, new Error('Service throttled'));
+          setGenAiAnalysis(enhancedFallback);
           return;
         }
         
-        // Prepare tire data for analysis
-        const tireDataForAnalysis = {
-          ...currentData,
-          pressure_psi: getRealisticPressure(),
-          temperature_c: getRealisticTemperature(),
-          tread_depth_mm: getRealisticTreadDepth()
-        };
+        // Parse the response into structured format
+        const analysis = parseAgentCoreResponse(analysisResult.response, tireDataForAnalysis, analysisResult);
         
-        console.log('Sending tire data to Claude 3.7 Sonnet:', tireDataForAnalysis);
+        console.log('Parsed GenAI analysis:', analysis);
+        console.log('Analysis has recommendations:', analysis?.recommendations?.length);
         
-        const analysis = await bedrockTireAnalysisService.analyzeTireCondition(tireDataForAnalysis);
-        
-        console.log('Received GenAI analysis:', analysis);
         setGenAiAnalysis(analysis);
         
       } catch (error) {
         console.error('GenAI analysis failed:', error);
-        // Keep existing fallback system
-        setGenAiAnalysis(null);
+        console.error('Error details:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        });
+        
+        // Create enhanced fallback with rule-based intelligence
+        const enhancedFallback = createEnhancedFallback(tireDataForAnalysis, error);
+        setGenAiAnalysis(enhancedFallback);
       } finally {
         setGenAiLoading(false);
       }
     };
     
-    // Debounce the GenAI calls - only call when data stabilizes
-    const debounceTimer = setTimeout(analyzeWithGenAI, 2000);
+    // Debounce the GenAI calls - longer interval for stability
+    const debounceTimer = setTimeout(analyzeWithGenAI, 5000); // 5 seconds for better stability
     return () => clearTimeout(debounceTimer);
     
-  }, [dataIndex, pressureVariation]); // Trigger on data changes
+  }, [dataIndex]); // Only trigger on data index changes, not pressure variations
+
+  // Parse AgentCore response into structured format
+  const parseAgentCoreResponse = (response, tireData, analysisResult = {}) => {
+    try {
+      console.log('Parsing AgentCore response:', response);
+      
+      // AgentCore returns text responses, not JSON
+      // Let's create structured recommendations from the text
+      const recommendations = [];
+      const keyFindings = [];
+      
+      // Split response into sentences for analysis
+      const sentences = response.split(/[.!?]+/).filter(s => s.trim().length > 10);
+      
+      sentences.forEach(sentence => {
+        const trimmed = sentence.trim();
+        
+        // Look for actionable recommendations
+        if (trimmed.toLowerCase().includes('recommend') || 
+            trimmed.toLowerCase().includes('should') || 
+            trimmed.toLowerCase().includes('need') ||
+            trimmed.toLowerCase().includes('check') ||
+            trimmed.toLowerCase().includes('replace') ||
+            trimmed.toLowerCase().includes('inflate') ||
+            trimmed.toLowerCase().includes('monitor')) {
+          
+          const priority = trimmed.toLowerCase().includes('urgent') || trimmed.toLowerCase().includes('critical') || trimmed.toLowerCase().includes('immediate') ? 'CRITICAL' :
+                          trimmed.toLowerCase().includes('soon') || trimmed.toLowerCase().includes('warning') || trimmed.toLowerCase().includes('attention') ? 'HIGH' :
+                          trimmed.toLowerCase().includes('consider') || trimmed.toLowerCase().includes('schedule') ? 'MEDIUM' : 'LOW';
+          
+          recommendations.push({
+            action: trimmed,
+            priority: priority,
+            reason: "Based on Claude 3.7 Sonnet analysis of current tire condition",
+            urgency: priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance'
+          });
+        }
+        
+        // Look for key findings
+        if (trimmed.toLowerCase().includes('psi') || 
+            trimmed.toLowerCase().includes('pressure') ||
+            trimmed.toLowerCase().includes('tread') ||
+            trimmed.toLowerCase().includes('temperature') ||
+            trimmed.toLowerCase().includes('wear')) {
+          keyFindings.push(trimmed);
+        }
+      });
+      
+      // Determine overall status from response content
+      const status = determineStatusFromResponse(response);
+      
+      // Create natural language summary instead of bullet points
+      const naturalSummary = createNaturalLanguageSummary(response, tireData);
+
+      // Determine source and status based on analysis result
+      let sourceInfo = "AgentCore Claude 3.7 Sonnet";
+      if (analysisResult.fromCache) {
+        sourceInfo += analysisResult.stale ? " (Cached - Stale)" : " (Cached)";
+      }
+      if (analysisResult.error) {
+        sourceInfo += " (Service Issues)";
+      }
+
+      return {
+        overall_status: status,
+        risk_level: status === 'CRITICAL' ? 'HIGH' : status === 'WARNING' ? 'MEDIUM' : 'LOW',
+        key_findings_summary: naturalSummary,
+        recommendations: recommendations.slice(0, 4),
+        next_inspection: "30 days",
+        source: sourceInfo,
+        fromCache: analysisResult.fromCache || false,
+        stale: analysisResult.stale || false,
+        serviceError: analysisResult.error || null,
+        raw_response: response
+      };
+      
+    } catch (error) {
+      console.error('Error parsing AgentCore response:', error);
+      return parseTextResponse(response, tireData);
+    }
+  };
+
+  // Create enhanced fallback with intelligent rule-based analysis
+  const createEnhancedFallback = (tireData, error) => {
+    const pressure = parseFloat(tireData.pressure_psi) || 32;
+    const treadDepth = parseFloat(tireData.tread_depth_mm) || 8;
+    const temperature = parseFloat(tireData.temperature_c) || 25;
+    
+    let status = 'GOOD';
+    let riskLevel = 'LOW';
+    let summary = '';
+    const recommendations = [];
+    
+    // Intelligent analysis based on tire data
+    if (pressure < 28) {
+      status = 'CRITICAL';
+      riskLevel = 'HIGH';
+      summary = 'Critical tire pressure detected requiring immediate attention. ';
+      recommendations.push({
+        action: 'URGENT: Inflate tire to recommended pressure immediately',
+        priority: 'CRITICAL',
+        reason: 'Tire pressure below safe operating threshold',
+        urgency: 'Immediately'
+      });
+    } else if (pressure < 30) {
+      status = 'WARNING';
+      riskLevel = 'MEDIUM';
+      summary = 'Low tire pressure detected that should be addressed soon. ';
+      recommendations.push({
+        action: 'Inflate tire to recommended 32 PSI',
+        priority: 'HIGH',
+        reason: 'Tire pressure below optimal range',
+        urgency: 'Within 24 hours'
+      });
+    }
+    
+    if (treadDepth < 3) {
+      status = 'CRITICAL';
+      riskLevel = 'HIGH';
+      summary += 'Dangerous tread depth requiring immediate tire replacement. ';
+      recommendations.push({
+        action: 'URGENT: Replace tire immediately - below legal limit',
+        priority: 'CRITICAL',
+        reason: 'Tread depth below safe driving threshold',
+        urgency: 'Immediately'
+      });
+    } else if (treadDepth < 5) {
+      status = status === 'CRITICAL' ? 'CRITICAL' : 'WARNING';
+      riskLevel = riskLevel === 'HIGH' ? 'HIGH' : 'MEDIUM';
+      summary += 'Low tread depth requiring tire replacement planning. ';
+      recommendations.push({
+        action: 'Schedule tire replacement within 2 weeks',
+        priority: 'HIGH',
+        reason: 'Tread depth approaching replacement threshold',
+        urgency: 'Within 2 weeks'
+      });
+    }
+    
+    if (temperature > 80) {
+      status = status === 'CRITICAL' ? 'CRITICAL' : 'WARNING';
+      recommendations.push({
+        action: 'Monitor tire temperature - check for overheating causes',
+        priority: 'MEDIUM',
+        reason: 'Elevated tire temperature detected',
+        urgency: 'Next inspection'
+      });
+    }
+    
+    // Default good condition
+    if (recommendations.length === 0) {
+      summary = 'Tire analysis shows good overall condition with routine maintenance recommended. ';
+      recommendations.push({
+        action: 'Continue regular tire pressure monitoring',
+        priority: 'LOW',
+        reason: 'Preventive maintenance for optimal performance',
+        urgency: 'Next scheduled maintenance'
+      });
+    }
+    
+    // Complete summary
+    if (!summary.includes('All tire metrics')) {
+      summary += 'Enhanced rule-based analysis provides reliable maintenance guidance.';
+    }
+    
+    return {
+      error: true,
+      error_message: error.message.includes('throttled') ? 
+        'GenAI service throttled for stability. Using enhanced rule-based analysis.' :
+        'GenAI service temporarily unavailable. Using intelligent fallback analysis.',
+      overall_status: status,
+      risk_level: riskLevel,
+      key_findings_summary: summary,
+      recommendations: recommendations,
+      next_inspection: "30 days",
+      source: "Enhanced Rule-Based Analysis",
+      fallback: true
+    };
+  };
+
+  // Create natural language summary from Claude's response
+  const createNaturalLanguageSummary = (response, tireData) => {
+    try {
+      // Extract key metrics and issues from the response
+      const pressureIssues = response.toLowerCase().includes('pressure') || response.toLowerCase().includes('psi');
+      const treadIssues = response.toLowerCase().includes('tread') || response.toLowerCase().includes('wear');
+      const temperatureIssues = response.toLowerCase().includes('temperature') || response.toLowerCase().includes('hot');
+      const criticalIssues = response.toLowerCase().includes('critical') || response.toLowerCase().includes('urgent') || response.toLowerCase().includes('immediate');
+      
+      let summary = '';
+      
+      // First sentence - overall condition
+      if (criticalIssues) {
+        summary = 'Claude has identified critical tire conditions requiring immediate attention. ';
+      } else if (pressureIssues || treadIssues) {
+        summary = 'Claude has detected tire maintenance needs that should be addressed soon. ';
+      } else {
+        summary = 'Claude reports your tires are in good condition with routine maintenance recommended. ';
+      }
+      
+      // Second sentence - specific findings
+      const specificIssues = [];
+      if (pressureIssues) specificIssues.push('pressure adjustments');
+      if (treadIssues) specificIssues.push('tread wear monitoring');
+      if (temperatureIssues) specificIssues.push('temperature concerns');
+      
+      if (specificIssues.length > 0) {
+        summary += `Key areas of focus include ${specificIssues.join(' and ')} based on current vehicle data.`;
+      } else {
+        summary += 'All tire metrics are within acceptable ranges for continued safe operation.';
+      }
+      
+      return summary;
+    } catch (error) {
+      return 'Claude has analyzed your tire condition and provided maintenance recommendations based on current vehicle data.';
+    }
+  };
+
+  const determineStatusFromResponse = (response) => {
+    const lowerResponse = response.toLowerCase();
+    if (lowerResponse.includes('critical') || lowerResponse.includes('urgent') || lowerResponse.includes('immediate')) {
+      return 'CRITICAL';
+    } else if (lowerResponse.includes('warning') || lowerResponse.includes('caution') || lowerResponse.includes('attention')) {
+      return 'WARNING';
+    }
+    return 'GOOD';
+  };
+
+  const determineRiskFromResponse = (response) => {
+    const status = determineStatusFromResponse(response);
+    return status === 'CRITICAL' ? 'HIGH' : status === 'WARNING' ? 'MEDIUM' : 'LOW';
+  };
+
+  const extractKeyFindings = (response) => {
+    const findings = [];
+    const lines = response.split('\n').filter(line => line.trim());
+    
+    // Look for key insights in the response
+    lines.forEach(line => {
+      if (line.includes('PSI') || line.includes('pressure')) {
+        findings.push(line.trim());
+      } else if (line.includes('tread') || line.includes('depth')) {
+        findings.push(line.trim());
+      } else if (line.includes('temperature') || line.includes('temp')) {
+        findings.push(line.trim());
+      }
+    });
+    
+    return findings.slice(0, 3); // Limit to 3 key findings
+  };
+
+  const parseTextResponse = (response, tireData) => {
+    const lines = response.split('\n').filter(line => line.trim());
+    const recommendations = [];
+    
+    // Extract recommendations from text
+    lines.forEach(line => {
+      if (line.includes('recommend') || line.includes('should') || line.includes('need')) {
+        const priority = line.toLowerCase().includes('urgent') || line.toLowerCase().includes('critical') ? 'HIGH' : 
+                        line.toLowerCase().includes('soon') || line.toLowerCase().includes('warning') ? 'MEDIUM' : 'LOW';
+        
+        recommendations.push({
+          action: line.trim(),
+          priority: priority,
+          reason: "Based on current tire condition analysis",
+          urgency: priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance'
+        });
+      }
+    });
+    
+    // If no recommendations found, create default ones
+    if (recommendations.length === 0) {
+      const pressure = parseFloat(tireData.pressure_psi) || 32;
+      const tread = parseFloat(tireData.tread_depth_mm) || 8;
+      
+      if (pressure < 30) {
+        recommendations.push({
+          action: `Inflate tire to 32-35 PSI (currently ${pressure.toFixed(1)} PSI)`,
+          priority: 'HIGH',
+          reason: 'Tire pressure below optimal range',
+          urgency: 'Within 24 hours'
+        });
+      }
+      
+      if (tread < 4) {
+        recommendations.push({
+          action: `Schedule tire replacement - tread depth ${tread.toFixed(1)}mm below safety threshold`,
+          priority: 'CRITICAL',
+          reason: 'Tread depth approaching safety limit',
+          urgency: 'Immediately'
+        });
+      }
+      
+      if (recommendations.length === 0) {
+        recommendations.push({
+          action: 'Continue regular tire monitoring and maintenance',
+          priority: 'LOW',
+          reason: 'Tire condition within normal parameters',
+          urgency: 'Next scheduled service'
+        });
+      }
+    }
+    
+    return {
+      overall_status: determineStatusFromResponse(response),
+      risk_level: determineRiskFromResponse(response),
+      key_findings: extractKeyFindings(response),
+      recommendations: recommendations.slice(0, 4), // Limit to 4 recommendations
+      next_inspection: "30 days",
+      source: "AgentCore"
+    };
+  };
 
   // Tire prediction animation effect
   useEffect(() => {
@@ -362,6 +698,71 @@ const TiresPage = () => {
     // Limit based on tread depth
     const numRecommendations = threadDepth < 4.0 ? 3 : threadDepth < 8.0 ? 2 : 1;
     return fallbackRecs.slice(0, numRecommendations);
+  };
+
+  // Create dynamic UI page summary based on current tire data and component state
+  const createTireUIPageSummary = () => {
+    const pressure = getRealisticPressure();
+    const temperature = getRealisticTemperature();
+    const treadDepth = getRealisticTreadDepth();
+    const vehicleInfo = `${currentData.year || 'N/A'} ${currentData.make || 'Unknown'} ${currentData.model || 'Vehicle'}`;
+    const tireInfo = `${currentData.tire_brand || 'Unknown'} ${currentData.tire_size || 'tires'}`;
+    
+    // Determine overall system status
+    let systemStatus = 'optimal';
+    let statusColor = '#00ff88';
+    let statusIcon = '✅';
+    
+    if (pressure < 28 || treadDepth < 3 || temperature > 80) {
+      systemStatus = 'critical';
+      statusColor = '#ff4444';
+      statusIcon = '🚨';
+    } else if (pressure < 30 || treadDepth < 5 || temperature > 70) {
+      systemStatus = 'warning';
+      statusColor = '#ff9900';
+      statusIcon = '⚠️';
+    }
+    
+    // Create dynamic summary
+    let summary = '';
+    
+    // First line - overall status and vehicle info
+    if (systemStatus === 'critical') {
+      summary = `Tire monitoring system detecting critical conditions on ${vehicleInfo} requiring immediate attention. `;
+    } else if (systemStatus === 'warning') {
+      summary = `Tire monitoring system showing warning indicators for ${vehicleInfo} with maintenance needs identified. `;
+    } else {
+      summary = `Tire monitoring system operating normally for ${vehicleInfo} with all parameters within acceptable ranges. `;
+    }
+    
+    // Second line - specific metrics and data flow
+    const dataUpdateFreq = '30-second intervals';
+    const activeMetrics = [];
+    
+    if (pressure < 32) activeMetrics.push(`pressure ${pressure.toFixed(1)} PSI`);
+    if (treadDepth < 8) activeMetrics.push(`tread depth ${treadDepth.toFixed(1)}mm`);
+    if (temperature > 25) activeMetrics.push(`temperature ${temperature}°C`);
+    
+    if (activeMetrics.length > 0) {
+      summary += `Real-time data streaming at ${dataUpdateFreq} shows active monitoring of ${activeMetrics.join(', ')} with integrated ML analysis and predictive maintenance alerts.`;
+    } else {
+      summary += `Real-time data streaming at ${dataUpdateFreq} with comprehensive tire health monitoring, ML-powered analysis, and predictive maintenance recommendations.`;
+    }
+    
+    return {
+      summary,
+      status: systemStatus,
+      statusColor,
+      statusIcon,
+      vehicleInfo,
+      tireInfo,
+      dataPoints: {
+        pressure: pressure.toFixed(1),
+        temperature: temperature,
+        treadDepth: treadDepth.toFixed(1),
+        mileage: currentData.mileage || 'N/A'
+      }
+    };
   };
   
   const formatValue = (value, unit, fallback) => {
@@ -1090,8 +1491,61 @@ const TiresPage = () => {
                   </div>
                 </div>
 
+                {/* UI Page Summary */}
+                <div className="ui-page-summary" style={{ 
+                  marginTop: windowWidth <= 1700 ? '-10px' : windowWidth <= 1815 ? '-5px' : '0px',
+                  marginBottom: '15px',
+                  padding: '12px',
+                  backgroundColor: 'rgba(0,0,0,0.3)',
+                  borderRadius: '8px',
+                  border: `1px solid ${createTireUIPageSummary().statusColor}40`
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '16px' }}>{createTireUIPageSummary().statusIcon}</span>
+                    <h3 style={{ margin: 0, fontSize: '14px', color: createTireUIPageSummary().statusColor }}>
+                      Tire System Status: {createTireUIPageSummary().status.toUpperCase()}
+                    </h3>
+                    <div style={{ 
+                      fontSize: '10px', 
+                      color: '#888', 
+                      backgroundColor: 'rgba(255,255,255,0.1)', 
+                      padding: '2px 6px', 
+                      borderRadius: '10px',
+                      marginLeft: 'auto'
+                    }}>
+                      Live Data
+                    </div>
+                  </div>
+                  
+                  <p style={{ 
+                    fontSize: '11px', 
+                    color: 'rgba(255,255,255,0.9)', 
+                    lineHeight: '1.4', 
+                    margin: '0 0 8px 0' 
+                  }}>
+                    {createTireUIPageSummary().summary}
+                  </p>
+                  
+                  {/* Quick Metrics Display */}
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '12px', 
+                    fontSize: '10px', 
+                    color: 'rgba(255,255,255,0.7)',
+                    flexWrap: 'wrap'
+                  }}>
+                    <span>🔧 {createTireUIPageSummary().dataPoints.pressure} PSI</span>
+                    <span>🌡️ {createTireUIPageSummary().dataPoints.temperature}°C</span>
+                    <span>📏 {createTireUIPageSummary().dataPoints.treadDepth}mm</span>
+                    <span>🛣️ {createTireUIPageSummary().dataPoints.mileage} mi</span>
+                    <span style={{ marginLeft: 'auto', fontStyle: 'italic' }}>
+                      {createTireUIPageSummary().vehicleInfo} | {createTireUIPageSummary().tireInfo}
+                    </span>
+                  </div>
+                </div>
+
                 {/* GenAI Recommendations */}
-                <div className="genai-recommendations" style={{ marginTop: windowWidth <= 1700 ? '-20px' : windowWidth <= 1815 ? '-10px' : '-10px' }}>
+                <div className="genai-recommendations" style={{ marginTop: '0px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                     <h3>GenAI Recommendations</h3>
                     {genAiLoading && (
@@ -1101,30 +1555,59 @@ const TiresPage = () => {
                       </div>
                     )}
                     {genAiAnalysis && !genAiLoading && (
-                      <div style={{ fontSize: '11px', color: '#00ff88', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span>🤖</span> Claude 3.7 Sonnet
+                      <div style={{ fontSize: '11px', color: genAiAnalysis.error ? '#ff6b6b' : genAiAnalysis.fromCache ? '#ffa500' : '#00ff88', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>{genAiAnalysis.error ? '🛡️' : genAiAnalysis.fromCache ? '💾' : '🤖'}</span> 
+                        {genAiAnalysis.error ? 'Enhanced Fallback' : 
+                         genAiAnalysis.fromCache ? 'Claude (Cached)' : 'Claude 3.7 Sonnet'}
                       </div>
                     )}
                   </div>
                   
                   <p style={{ fontSize: '12px', marginBottom: '12px' }}>
                     {genAiAnalysis ? 
-                      `Real-time analysis by Claude 3.7 Sonnet. Status: ${genAiAnalysis.overall_status} | Risk: ${genAiAnalysis.risk_level}` :
+                      (genAiAnalysis.error ? 
+                        genAiAnalysis.error_message :
+                        `Real-time analysis by Claude 3.7 Sonnet. Status: ${genAiAnalysis.overall_status} | Risk: ${genAiAnalysis.risk_level}`
+                      ) :
                       'AI-powered tire optimization. Connecting to Claude 3.7 Sonnet for real-time analysis...'
                     }
                   </p>
                   
-                  {/* GenAI Key Findings */}
-                  {genAiAnalysis?.key_findings && (
+                  {/* GenAI Key Findings - Natural Language Summary */}
+                  {genAiAnalysis?.key_findings_summary && !genAiAnalysis.error && (
                     <div style={{ marginBottom: '12px', padding: '8px', backgroundColor: 'rgba(0,255,136,0.1)', borderRadius: '4px', border: '1px solid rgba(0,255,136,0.3)' }}>
-                      <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#00ff88', marginBottom: '4px' }}>🔍 Key Findings:</div>
-                      {genAiAnalysis.key_findings.map((finding, index) => (
-                        <div key={index} style={{ fontSize: '11px', color: 'rgba(255,255,255,0.9)' }}>• {finding}</div>
-                      ))}
+                      <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#00ff88', marginBottom: '4px' }}>🔍 Analysis Summary:</div>
+                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.9)', lineHeight: '1.4' }}>
+                        {genAiAnalysis.key_findings_summary}
+                      </div>
                     </div>
                   )}
                   
-                  <div className="recommendations-list">
+                  <div className="recommendations-list" style={{ 
+                    maxHeight: '200px', 
+                    overflowY: 'auto', 
+                    paddingRight: '8px',
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: '#00ff88 rgba(255,255,255,0.1)'
+                  }}>
+                    <style>
+                      {`
+                        .recommendations-list::-webkit-scrollbar {
+                          width: 6px;
+                        }
+                        .recommendations-list::-webkit-scrollbar-track {
+                          background: rgba(255,255,255,0.1);
+                          border-radius: 3px;
+                        }
+                        .recommendations-list::-webkit-scrollbar-thumb {
+                          background: #00ff88;
+                          border-radius: 3px;
+                        }
+                        .recommendations-list::-webkit-scrollbar-thumb:hover {
+                          background: #00cc6a;
+                        }
+                      `}
+                    </style>
                     {aiRecommendations.map((rec, index) => (
                       <div key={index} style={{ marginBottom: '12px' }}>
                         <div className="recommendation-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>

@@ -8,8 +8,10 @@ import Dashboard from './components/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import awsExports from './aws-exports';
 
-// Configure Amplify
-Amplify.configure(awsExports);
+// Configure Amplify only in production
+if (process.env.NODE_ENV === 'production') {
+  Amplify.configure(awsExports);
+}
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -21,6 +23,15 @@ function App() {
   }, []);
 
   const checkAuthState = async () => {
+    // In development mode, bypass authentication for GenAI testing
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Development mode: Bypassing authentication for GenAI testing');
+      setUser({ username: 'demo-user' });
+      setIsAuthenticated(true);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const currentUser = await getCurrentUser();
       setUser(currentUser);

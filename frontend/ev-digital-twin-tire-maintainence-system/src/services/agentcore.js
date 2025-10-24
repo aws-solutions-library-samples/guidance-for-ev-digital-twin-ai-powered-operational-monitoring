@@ -5,16 +5,58 @@ class AgentCoreService {
   constructor() {
     this.sessionId = null;
     this.cache = new Map();
-    this.CACHE_TTL = 60000; // 60 seconds
+    this.CACHE_TTL = 300000; // 5 minutes for GenAI responses
+    this.lastCallTime = 0;
+    this.MIN_CALL_INTERVAL = 15000; // 15 seconds minimum between calls (reduced for better UX)
+    this.serviceAvailable = true;
+    this.lastFailureTime = 0;
+    this.FAILURE_COOLDOWN = 60000; // 1 minute cooldown after failure
+    this.retryCount = 0;
+    this.MAX_RETRIES = 2;
+    this.allowFirstCall = true; // Allow the first call immediately
   }
 
   /**
-   * Send a prompt to the AgentCore Runtime
+   * Check if service should be called based on timing and availability
+   */
+  shouldCallService() {
+    const now = Date.now();
+
+    // Allow the first call immediately
+    if (this.allowFirstCall) {
+      this.allowFirstCall = false;
+      return true;
+    }
+
+    // Check if we're in cooldown period after failure
+    if (!this.serviceAvailable && (now - this.lastFailureTime) < this.FAILURE_COOLDOWN) {
+      return false;
+    }
+
+    // Check minimum interval between calls
+    if ((now - this.lastCallTime) < this.MIN_CALL_INTERVAL) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Send a prompt to the AgentCore Runtime with retry logic
    * @param {string} prompt - The question or request
    * @returns {Promise<string>} - The AI response
    */
   async chat(prompt) {
+    const now = Date.now();
+
+    // Check if we should make the call
+    if (!this.shouldCallService()) {
+      throw new Error('Service call throttled - using cached data or fallback');
+    }
+
     try {
+      this.lastCallTime = now;
+
       const response = await fetch(AGENTCORE_API_ENDPOINT, {
         method: 'POST',
         headers: {
@@ -23,15 +65,17 @@ class AgentCoreService {
         body: JSON.stringify({
           prompt,
           session_id: this.sessionId
-        })
+        }),
+        timeout: 10000 // 10 second timeout
       });
 
       if (!response.ok) {
-        throw new Error(`AgentCore API error: ${response.statusText}`);
+        const errorText = await response.text().catch(() => 'Unknown error');
+        throw new Error(`AgentCore API error (${response.status}): ${response.statusText} - ${errorText}`);
       }
 
       const data = await response.json();
-      
+
       // Update session ID for conversation continuity
       if (data.session_id) {
         this.sessionId = data.session_id;
@@ -43,9 +87,127 @@ class AgentCoreService {
         responseText = JSON.parse(responseText);
       }
 
+      // Mark service as available and reset retry count
+      this.serviceAvailable = true;
+      this.retryCount = 0;
+
       return responseText;
     } catch (error) {
       console.error('AgentCore error:', error);
+
+      // Mark service as potentially unavailable
+      this.serviceAvailable = false;
+      this.lastFailureTime = now;
+
+      // Check if it's a network error or service unavailable
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        throw new Error('AgentCore service is currently unavailable. Using cached recommendations.');
+      } else if (error.message.includes('500') || error.message.includes('502') || error.message.includes('503')) {
+        throw new Error('AgentCore service is temporarily unavailable. Using fallback system.');
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Get tire analysis with enhanced caching and fallback
+   * @param {string} vehicleId - The vehicle ID
+   * @param {object} tireData - Current tire data
+   * @returns {Promise<string>} - Tire analysis
+   */
+  async getTireAnalysis(vehicleId, tireData) {
+    const cacheKey = `tire_analysis_${vehicleId}_${JSON.stringify(tireData).slice(0, 50)}`;
+    const cached = this.cache.get(cacheKey);
+
+    // Use cached data if available and fresh
+    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+      console.log(`Using cached GenAI analysis for vehicle ${vehicleId} (age: ${Math.round((Date.now() - cached.timestamp) / 1000)}s)`);
+      return { ...cached.data, fromCache: true };
+    }
+
+    // Try to get fresh analysis if service timing allows
+    try {
+      if (!this.shouldCallService()) {
+        // Use stale cache if available, otherwise return throttled indicator
+        if (cached) {
+          console.log(`Using stale cached data due to service throttling`);
+          return { ...cached.data, fromCache: true, stale: true };
+        }
+        console.log(`Service throttled and no cache available - indicating fallback needed`);
+        return {
+          throttled: true,
+          error: 'Service throttled - use enhanced fallback',
+          fromCache: false
+        };
+      }
+
+      console.log(`Fetching fresh GenAI analysis for vehicle ${vehicleId}`);
+      const response = await this.chat(`Analyze tire condition for vehicle ${vehicleId}. Current metrics: Pressure ${tireData.pressure_psi} PSI, Tread ${tireData.tread_depth_mm}mm, Temperature ${tireData.temperature_c}°C. Provide specific maintenance recommendations focusing on safety and performance.`);
+
+      // Store successful response in cache
+      const analysisData = { response, timestamp: Date.now(), fromCache: false };
+      this.cache.set(cacheKey, analysisData);
+
+      return analysisData;
+    } catch (error) {
+      // Try to use stale cache on error
+      if (cached) {
+        console.log(`Service error - using stale cached data:`, error.message);
+        return { ...cached.data, fromCache: true, stale: true, error: error.message };
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Get motor analysis with enhanced caching and fallback
+   * @param {string} vehicleId - The vehicle ID
+   * @param {object} motorData - Current motor data
+   * @returns {Promise<string>} - Motor analysis
+   */
+  async getMotorAnalysis(vehicleId, motorData) {
+    const cacheKey = `motor_analysis_${vehicleId}_${JSON.stringify(motorData).slice(0, 50)}`;
+    const cached = this.cache.get(cacheKey);
+
+    // Use cached data if available and fresh
+    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+      console.log(`Using cached Motor GenAI analysis for vehicle ${vehicleId} (age: ${Math.round((Date.now() - cached.timestamp) / 1000)}s)`);
+      return { ...cached.data, fromCache: true };
+    }
+
+    // Try to get fresh analysis if service timing allows
+    try {
+      if (!this.shouldCallService()) {
+        // Use stale cache if available, otherwise return throttled indicator
+        if (cached) {
+          console.log(`Using stale cached motor data due to service throttling`);
+          return { ...cached.data, fromCache: true, stale: true };
+        }
+        console.log(`Motor service throttled and no cache available - indicating fallback needed`);
+        return {
+          throttled: true,
+          error: 'Motor service throttled - use enhanced fallback',
+          fromCache: false
+        };
+      }
+
+      console.log(`Fetching fresh Motor GenAI analysis for vehicle ${vehicleId}`);
+      const response = await this.chat(`Analyze motor condition for vehicle ${vehicleId}. Current metrics: Engine temp ${motorData.engine_temp_c}°C, Oil pressure ${motorData.oil_pressure_psi} PSI, RPM ${motorData.rpm_avg}, Performance ${motorData.performance_score}%, Vibration ${motorData.vibration_level}. Provide specific motor maintenance recommendations focusing on performance and reliability.`);
+
+      // Store successful response in cache
+      const analysisData = { response, timestamp: Date.now(), fromCache: false };
+      this.cache.set(cacheKey, analysisData);
+
+      return analysisData;
+    } catch (error) {
+      // Try to use stale cache on error
+      if (cached) {
+        console.log(`Motor service error - using stale cached data:`, error.message);
+        return { ...cached.data, fromCache: true, stale: true, error: error.message };
+      }
+
       throw error;
     }
   }
@@ -59,7 +221,7 @@ class AgentCoreService {
     // Check cache first
     const cacheKey = `vehicle_${vehicleId}`;
     const cached = this.cache.get(cacheKey);
-    
+
     if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
       console.log(`Using cached data for vehicle ${vehicleId} (age: ${Math.round((Date.now() - cached.timestamp) / 1000)}s)`);
       return cached.data;
@@ -69,13 +231,13 @@ class AgentCoreService {
     console.log(`Fetching fresh data for vehicle ${vehicleId}`);
     const prompt = `Analyze vehicle ${vehicleId} using analyze_tire_condition and analyze_motor_performance tools. Look for tire pressure issues (below 30 PSI), low tread depth, motor performance problems. Give me specific maintenance recommendations in 1-2 sentences. If you find any tire pressure below 30 PSI or tread depth issues, mention them specifically.`;
     const response = await this.chat(prompt);
-    
+
     // Store in cache
     this.cache.set(cacheKey, {
       data: response,
       timestamp: Date.now()
     });
-    
+
     return response;
   }
 

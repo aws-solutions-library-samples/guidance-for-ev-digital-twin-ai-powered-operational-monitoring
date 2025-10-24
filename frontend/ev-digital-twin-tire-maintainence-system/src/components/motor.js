@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Papa from 'papaparse';
 import DataNeededModal from "./DataNeededModal";
+import agentCoreService from '../services/agentcore';
 import '../css/motor.css';
 
 // Motor data rotates through CSV entries every 30 seconds
@@ -14,6 +15,8 @@ const Motor = () => {
   const [dataIndex, setDataIndex] = useState(0);
   const [mlResults, setMlResults] = useState([]);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [genAiAnalysis, setGenAiAnalysis] = useState(null);
+  const [genAiLoading, setGenAiLoading] = useState(false);
 
   const [showPrediction, setShowPrediction] = useState(false);
   const [animationProgress, setAnimationProgress] = useState(0);
@@ -107,6 +110,83 @@ const Motor = () => {
     }
   }, [showPrediction]);
 
+  // GenAI Analysis - Call Claude 3.7 Sonnet for motor analysis
+  useEffect(() => {
+    const analyzeMotorWithGenAI = async () => {
+      if (!csvData.length || !currentData.vehicle_id) {
+        console.log('Motor GenAI Analysis skipped - missing data:', { csvDataLength: csvData.length, vehicleId: currentData.vehicle_id });
+        return;
+      }
+      
+      console.log('Starting enhanced Motor GenAI analysis...');
+      setGenAiLoading(true);
+      
+      // Prepare motor data for analysis (moved outside try block for error handling)
+      const motorDataForAnalysis = {
+        vehicle_id: currentData.vehicle_id,
+        make: currentData.make,
+        model: currentData.model,
+        year: currentData.year,
+        engine_temp_c: parseFloat(currentData.engine_temp_c) || 90,
+        oil_pressure_psi: parseFloat(currentData.oil_pressure_psi) || 20,
+        rpm_avg: parseFloat(currentData.rpm_avg) || 2500,
+        speed_kmh: parseFloat(currentData.speed_kmh) || 50,
+        vibration_level: parseFloat(currentData.vibration_level) || 3,
+        fuel_consumption_l100km: parseFloat(currentData.fuel_consumption_l100km) || 8,
+        performance_score: parseFloat(currentData.performance_score) || 90,
+        motor_anomaly: currentData.motor_anomaly === 'True',
+        anomaly_type_motor: currentData.anomaly_type_motor,
+        failure_risk: parseFloat(currentData.failure_risk) || 1,
+        engine_type: currentData.engine_type,
+        fuel_type: currentData.fuel_type
+      };
+      
+      try {
+        console.log('Calling enhanced AgentCore service for motor analysis...');
+        
+        // Use the enhanced service method
+        const analysisResult = await agentCoreService.getMotorAnalysis(currentData.vehicle_id, motorDataForAnalysis);
+        
+        console.log('Received enhanced Motor GenAI analysis:', analysisResult);
+        
+        // Check if service was throttled and no cache available
+        if (analysisResult.throttled) {
+          console.log('Motor service throttled - using enhanced fallback');
+          const enhancedFallback = createEnhancedMotorFallback(motorDataForAnalysis, new Error('Service throttled'));
+          setGenAiAnalysis(enhancedFallback);
+          return;
+        }
+        
+        // Parse the response into structured format
+        const analysis = parseMotorAgentCoreResponse(analysisResult.response, motorDataForAnalysis, analysisResult);
+        
+        console.log('Parsed Motor GenAI analysis:', analysis);
+        console.log('Motor analysis has recommendations:', analysis?.recommendations?.length);
+        
+        setGenAiAnalysis(analysis);
+        
+      } catch (error) {
+        console.error('Motor GenAI analysis failed:', error);
+        console.error('Motor error details:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        });
+        
+        // Create enhanced fallback with rule-based intelligence
+        const enhancedFallback = createEnhancedMotorFallback(motorDataForAnalysis, error);
+        setGenAiAnalysis(enhancedFallback);
+      } finally {
+        setGenAiLoading(false);
+      }
+    };
+    
+    // Debounce the GenAI calls - longer interval for stability
+    const debounceTimer = setTimeout(analyzeMotorWithGenAI, 5000); // 5 seconds for better stability
+    return () => clearTimeout(debounceTimer);
+    
+  }, [dataIndex]); // Only trigger on data index changes
+
   const currentData = csvData[dataIndex] || {};
   
   // Get ML data for current vehicle
@@ -144,6 +224,296 @@ const Motor = () => {
     return `Continue current maintenance - ${months} months remaining`;
   };
 
+  // Create enhanced fallback with intelligent rule-based motor analysis
+  const createEnhancedMotorFallback = (motorData, error) => {
+    const engineTemp = parseFloat(motorData.engine_temp_c) || 90;
+    const oilPressure = parseFloat(motorData.oil_pressure_psi) || 20;
+    const performanceScore = parseFloat(motorData.performance_score) || 90;
+    const vibrationLevel = parseFloat(motorData.vibration_level) || 3;
+    const hasAnomaly = motorData.motor_anomaly;
+    
+    let status = 'GOOD';
+    let riskLevel = 'LOW';
+    let summary = '';
+    const recommendations = [];
+    
+    // Intelligent analysis based on motor data
+    if (engineTemp > 105 || hasAnomaly) {
+      status = 'CRITICAL';
+      riskLevel = 'HIGH';
+      summary = 'Critical motor conditions detected requiring immediate attention. ';
+      recommendations.push({
+        action: 'URGENT: Stop operation and inspect motor immediately',
+        priority: 'CRITICAL',
+        reason: 'Engine temperature or anomaly exceeds safe operating limits',
+        urgency: 'Immediately'
+      });
+    } else if (engineTemp > 95 || oilPressure < 20) {
+      status = 'WARNING';
+      riskLevel = 'MEDIUM';
+      summary = 'Motor performance issues detected that should be addressed soon. ';
+      recommendations.push({
+        action: 'Schedule motor inspection within 48 hours',
+        priority: 'HIGH',
+        reason: 'Engine temperature or oil pressure approaching critical levels',
+        urgency: 'Within 48 hours'
+      });
+    }
+    
+    if (oilPressure < 15) {
+      status = 'CRITICAL';
+      riskLevel = 'HIGH';
+      summary += 'Dangerously low oil pressure requiring immediate service. ';
+      recommendations.push({
+        action: 'URGENT: Check oil level and pressure system immediately',
+        priority: 'CRITICAL',
+        reason: 'Oil pressure below minimum safe operating threshold',
+        urgency: 'Immediately'
+      });
+    }
+    
+    if (performanceScore < 70) {
+      status = status === 'CRITICAL' ? 'CRITICAL' : 'WARNING';
+      riskLevel = riskLevel === 'HIGH' ? 'HIGH' : 'MEDIUM';
+      summary += 'Significant performance degradation detected. ';
+      recommendations.push({
+        action: 'Comprehensive motor diagnostic and tune-up required',
+        priority: 'HIGH',
+        reason: 'Performance score indicates motor efficiency issues',
+        urgency: 'Within 1 week'
+      });
+    }
+    
+    if (vibrationLevel > 5) {
+      status = status === 'CRITICAL' ? 'CRITICAL' : 'WARNING';
+      recommendations.push({
+        action: 'Inspect motor mounts and balance - excessive vibration detected',
+        priority: 'MEDIUM',
+        reason: 'High vibration levels may indicate mechanical issues',
+        urgency: 'Next scheduled maintenance'
+      });
+    }
+    
+    // Default good condition
+    if (recommendations.length === 0) {
+      summary = 'Motor analysis shows good overall performance with routine maintenance recommended. ';
+      recommendations.push({
+        action: 'Continue regular motor monitoring and scheduled maintenance',
+        priority: 'LOW',
+        reason: 'Preventive maintenance for optimal motor performance',
+        urgency: 'Next scheduled maintenance'
+      });
+    }
+    
+    // Complete summary
+    if (!summary.includes('All motor metrics')) {
+      summary += 'Enhanced rule-based analysis provides reliable motor maintenance guidance.';
+    }
+    
+    return {
+      error: true,
+      error_message: error.message.includes('throttled') ? 
+        'GenAI service throttled for stability. Using enhanced motor rule-based analysis.' :
+        'GenAI service temporarily unavailable. Using intelligent motor fallback analysis.',
+      overall_status: status,
+      risk_level: riskLevel,
+      key_findings_summary: summary,
+      recommendations: recommendations,
+      next_inspection: "30 days",
+      source: "Enhanced Motor Rule-Based Analysis",
+      fallback: true
+    };
+  };
+
+  // Create natural language summary from Claude's motor response
+  const createMotorNaturalLanguageSummary = (response, motorData) => {
+    try {
+      // Extract key metrics and issues from the response
+      const tempIssues = response.toLowerCase().includes('temperature') || response.toLowerCase().includes('temp') || response.toLowerCase().includes('hot');
+      const oilIssues = response.toLowerCase().includes('oil') || response.toLowerCase().includes('pressure');
+      const performanceIssues = response.toLowerCase().includes('performance') || response.toLowerCase().includes('efficiency');
+      const criticalIssues = response.toLowerCase().includes('critical') || response.toLowerCase().includes('urgent') || response.toLowerCase().includes('immediate');
+      
+      let summary = '';
+      
+      // First sentence - overall condition
+      if (criticalIssues) {
+        summary = 'Claude has identified critical motor conditions requiring immediate attention. ';
+      } else if (tempIssues || oilIssues || performanceIssues) {
+        summary = 'Claude has detected motor maintenance needs that should be addressed soon. ';
+      } else {
+        summary = 'Claude reports your motor is in good condition with routine maintenance recommended. ';
+      }
+      
+      // Second sentence - specific findings
+      const specificIssues = [];
+      if (tempIssues) specificIssues.push('temperature monitoring');
+      if (oilIssues) specificIssues.push('oil pressure maintenance');
+      if (performanceIssues) specificIssues.push('performance optimization');
+      
+      if (specificIssues.length > 0) {
+        summary += `Key areas of focus include ${specificIssues.join(' and ')} based on current motor data.`;
+      } else {
+        summary += 'All motor metrics are within acceptable ranges for continued reliable operation.';
+      }
+      
+      return summary;
+    } catch (error) {
+      return 'Claude has analyzed your motor condition and provided maintenance recommendations based on current performance data.';
+    }
+  };
+
+  // Parse AgentCore response into structured format for motor analysis
+  const parseMotorAgentCoreResponse = (response, motorData, analysisResult = {}) => {
+    try {
+      console.log('Parsing Motor AgentCore response:', response);
+      
+      // AgentCore returns text responses, not JSON
+      // Let's create structured recommendations from the text
+      const recommendations = [];
+      
+      // Split response into sentences for analysis
+      const sentences = response.split(/[.!?]+/).filter(s => s.trim().length > 10);
+      
+      sentences.forEach(sentence => {
+        const trimmed = sentence.trim();
+        
+        // Look for actionable recommendations
+        if (trimmed.toLowerCase().includes('recommend') || 
+            trimmed.toLowerCase().includes('should') || 
+            trimmed.toLowerCase().includes('need') ||
+            trimmed.toLowerCase().includes('check') ||
+            trimmed.toLowerCase().includes('replace') ||
+            trimmed.toLowerCase().includes('service') ||
+            trimmed.toLowerCase().includes('inspect') ||
+            trimmed.toLowerCase().includes('monitor')) {
+          
+          const priority = trimmed.toLowerCase().includes('urgent') || trimmed.toLowerCase().includes('critical') || trimmed.toLowerCase().includes('immediate') ? 'CRITICAL' :
+                          trimmed.toLowerCase().includes('soon') || trimmed.toLowerCase().includes('warning') || trimmed.toLowerCase().includes('attention') ? 'HIGH' :
+                          trimmed.toLowerCase().includes('consider') || trimmed.toLowerCase().includes('schedule') ? 'MEDIUM' : 'LOW';
+          
+          recommendations.push({
+            action: trimmed,
+            priority: priority,
+            reason: "Based on Claude 3.7 Sonnet analysis of current motor condition",
+            urgency: priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance'
+          });
+        }
+      });
+      
+      // Determine overall status from response content
+      const status = determineMotorStatusFromResponse(response);
+      
+      // Create natural language summary instead of bullet points
+      const naturalSummary = createMotorNaturalLanguageSummary(response, motorData);
+
+      // Determine source and status based on analysis result
+      let sourceInfo = "AgentCore Claude 3.7 Sonnet";
+      if (analysisResult.fromCache) {
+        sourceInfo += analysisResult.stale ? " (Cached - Stale)" : " (Cached)";
+      }
+      if (analysisResult.error) {
+        sourceInfo += " (Service Issues)";
+      }
+
+      return {
+        overall_status: status,
+        risk_level: status === 'CRITICAL' ? 'HIGH' : status === 'WARNING' ? 'MEDIUM' : 'LOW',
+        key_findings_summary: naturalSummary,
+        recommendations: recommendations.slice(0, 4),
+        next_inspection: "30 days",
+        source: sourceInfo,
+        fromCache: analysisResult.fromCache || false,
+        stale: analysisResult.stale || false,
+        serviceError: analysisResult.error || null,
+        raw_response: response
+      };
+      
+    } catch (error) {
+      console.error('Error parsing Motor AgentCore response:', error);
+      return createEnhancedMotorFallback(motorData, error);
+    }
+  };
+
+  const determineMotorStatusFromResponse = (response) => {
+    const lowerResponse = response.toLowerCase();
+    if (lowerResponse.includes('critical') || lowerResponse.includes('urgent') || lowerResponse.includes('immediate') || lowerResponse.includes('stop')) {
+      return 'CRITICAL';
+    }
+    if (lowerResponse.includes('warning') || lowerResponse.includes('attention') || lowerResponse.includes('soon') || lowerResponse.includes('schedule')) {
+      return 'WARNING';
+    }
+    return 'GOOD';
+  };
+
+  // Create dynamic UI page summary based on current motor data and component state
+  const createUIPageSummary = () => {
+    const engineTemp = parseFloat(currentData.engine_temp_c) || 90;
+    const oilPressure = parseFloat(currentData.oil_pressure_psi) || 20;
+    const performanceScore = parseFloat(currentData.performance_score) || 90;
+    const rpm = parseFloat(currentData.rpm_avg) || 2500;
+    const vibration = parseFloat(currentData.vibration_level) || 3;
+    const hasAnomaly = currentData.motor_anomaly === 'True';
+    const vehicleInfo = `${currentData.year || 'N/A'} ${currentData.make || 'Unknown'} ${currentData.model || 'Vehicle'}`;
+    
+    // Determine overall system status
+    let systemStatus = 'optimal';
+    let statusColor = '#00ff88';
+    let statusIcon = '✅';
+    
+    if (hasAnomaly || engineTemp > 105 || oilPressure < 15 || performanceScore < 70) {
+      systemStatus = 'critical';
+      statusColor = '#ff4444';
+      statusIcon = '🚨';
+    } else if (engineTemp > 95 || oilPressure < 20 || performanceScore < 85 || vibration > 5) {
+      systemStatus = 'warning';
+      statusColor = '#ff9900';
+      statusIcon = '⚠️';
+    }
+    
+    // Create dynamic summary
+    let summary = '';
+    
+    // First line - overall status and vehicle info
+    if (systemStatus === 'critical') {
+      summary = `Motor monitoring system detecting critical conditions on ${vehicleInfo} requiring immediate attention. `;
+    } else if (systemStatus === 'warning') {
+      summary = `Motor monitoring system showing warning indicators for ${vehicleInfo} with maintenance needs identified. `;
+    } else {
+      summary = `Motor monitoring system operating normally for ${vehicleInfo} with all parameters within acceptable ranges. `;
+    }
+    
+    // Second line - specific metrics and data flow
+    const dataUpdateFreq = '5-second intervals';
+    const activeMetrics = [];
+    
+    if (engineTemp > 90) activeMetrics.push(`engine temp ${engineTemp.toFixed(1)}°C`);
+    if (oilPressure < 25) activeMetrics.push(`oil pressure ${oilPressure.toFixed(1)} PSI`);
+    if (performanceScore < 95) activeMetrics.push(`performance ${performanceScore.toFixed(1)}%`);
+    if (vibration > 3) activeMetrics.push(`vibration ${vibration.toFixed(1)}`);
+    
+    if (activeMetrics.length > 0) {
+      summary += `Real-time data streaming at ${dataUpdateFreq} shows active monitoring of ${activeMetrics.join(', ')} with integrated ML analysis and predictive maintenance alerts.`;
+    } else {
+      summary += `Real-time data streaming at ${dataUpdateFreq} with comprehensive motor health monitoring, ML-powered analysis, and predictive maintenance recommendations.`;
+    }
+    
+    return {
+      summary,
+      status: systemStatus,
+      statusColor,
+      statusIcon,
+      vehicleInfo,
+      dataPoints: {
+        engineTemp: engineTemp.toFixed(1),
+        oilPressure: oilPressure.toFixed(1),
+        performance: performanceScore.toFixed(1),
+        rpm: Math.round(rpm),
+        vibration: vibration.toFixed(1)
+      }
+    };
+  };
+
   // Calculate dynamic predictions from current CSV data
   const calculateDynamicMotorPredictions = (currentData) => {
     if (!currentData) return null;
@@ -177,12 +547,26 @@ const Motor = () => {
     return 70; // fallback
   };
   
-  // Get AI recommendations based on current CSV status
+  // Get AI recommendations - prioritize GenAI (Claude 3.7 Sonnet) over rule-based
   const getAiRecommendations = () => {
+    // Priority 1: Use GenAI analysis if available
+    if (genAiAnalysis && genAiAnalysis.recommendations) {
+      console.log('Using Motor GenAI (Claude 3.7 Sonnet) recommendations');
+      return genAiAnalysis.recommendations.map(rec => ({
+        action: rec.action,
+        priority: rec.priority,
+        reason: rec.reason,
+        urgency: rec.urgency,
+        genai: true // Mark as GenAI generated
+      }));
+    }
+    
+    // Priority 2: Use ML analysis if available
     const predictions = calculateDynamicMotorPredictions(currentData);
     const currentStatus = predictions?.status || "GOOD";
     
     if (currentMlData?.ml_analysis?.recommendations) {
+      console.log('Using Motor ML analysis recommendations');
       const allRecs = currentMlData.ml_analysis.recommendations;
       
       // Filter recommendations based on current motor status
@@ -195,26 +579,29 @@ const Motor = () => {
         filteredRecs = allRecs.filter(r => r.priority === "LOW");
       }
       
-      // If no matching recommendations, fall back to all recommendations
-      return filteredRecs.length > 0 ? filteredRecs.slice(0, 3) : allRecs.slice(0, 3);
+      const availableRecs = filteredRecs.length > 0 ? filteredRecs : allRecs;
+      return availableRecs.slice(0, 3).map(rec => ({...rec, ml: true}));
     }
+    
+    // Priority 3: Fallback to rule-based recommendations
+    console.log('Using fallback rule-based motor recommendations');
     
     // Dynamic fallback based on current status
     if (currentStatus === "CRITICAL") {
       return [
-        { action: "URGENT: Stop driving - engine critical condition", priority: "URGENT" },
-        { action: "Schedule emergency engine service immediately", priority: "HIGH" }
+        { action: "URGENT: Stop driving - engine critical condition", priority: "URGENT", fallback: true },
+        { action: "Schedule emergency engine service immediately", priority: "HIGH", fallback: true }
       ];
     } else if (currentStatus === "WARNING") {
       return [
-        { action: "Schedule engine maintenance within 2 months", priority: "MEDIUM" },
-        { action: "Monitor engine parameters daily", priority: "MEDIUM" }
+        { action: "Schedule engine maintenance within 2 months", priority: "MEDIUM", fallback: true },
+        { action: "Monitor engine parameters daily", priority: "MEDIUM", fallback: true }
       ];
     }
     
     return [
-      { action: "Continue regular maintenance schedule", priority: "LOW" },
-      { action: "Monitor engine performance monthly", priority: "LOW" }
+      { action: "Continue regular maintenance schedule", priority: "LOW", fallback: true },
+      { action: "Monitor engine performance monthly", priority: "LOW", fallback: true }
     ];
   };
   
@@ -933,32 +1320,160 @@ const Motor = () => {
                     </div>
                   </div>
 
-                  {/* GenAI Recommendations */}
-                  <div className="genai-recommendations" style={{ marginTop: windowWidth <= 1440 ? '-30px' : windowWidth <= 1700 ? '-25px' : windowWidth <= 1815 ? '-10px' : '-10px' }}>
-                    <h3>GenAI Recommendations</h3>
-                    <p>AI-powered motor optimization based on real-time performance data, driving patterns, and predictive analytics from sensor readings.</p>
+                  {/* UI Page Summary */}
+                  <div className="ui-page-summary" style={{ 
+                    marginTop: windowWidth <= 1440 ? '-20px' : windowWidth <= 1700 ? '-15px' : '-10px',
+                    marginBottom: '15px',
+                    padding: '12px',
+                    backgroundColor: 'rgba(0,0,0,0.3)',
+                    borderRadius: '8px',
+                    border: `1px solid ${createUIPageSummary().statusColor}40`
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '16px' }}>{createUIPageSummary().statusIcon}</span>
+                      <h3 style={{ margin: 0, fontSize: '14px', color: createUIPageSummary().statusColor }}>
+                        Motor System Status: {createUIPageSummary().status.toUpperCase()}
+                      </h3>
+                      <div style={{ 
+                        fontSize: '10px', 
+                        color: '#888', 
+                        backgroundColor: 'rgba(255,255,255,0.1)', 
+                        padding: '2px 6px', 
+                        borderRadius: '10px',
+                        marginLeft: 'auto'
+                      }}>
+                        Live Data
+                      </div>
+                    </div>
                     
-                    <div className="recommendations-list">
-                      {aiRecommendations.slice(0, 3).map((rec, index) => (
-                        <div key={index}>
-                          <div className="recommendation-item">
+                    <p style={{ 
+                      fontSize: '11px', 
+                      color: 'rgba(255,255,255,0.9)', 
+                      lineHeight: '1.4', 
+                      margin: '0 0 8px 0' 
+                    }}>
+                      {createUIPageSummary().summary}
+                    </p>
+                    
+                    {/* Quick Metrics Display */}
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: '12px', 
+                      fontSize: '10px', 
+                      color: 'rgba(255,255,255,0.7)',
+                      flexWrap: 'wrap'
+                    }}>
+                      <span>🌡️ {createUIPageSummary().dataPoints.engineTemp}°C</span>
+                      <span>🛢️ {createUIPageSummary().dataPoints.oilPressure} PSI</span>
+                      <span>⚡ {createUIPageSummary().dataPoints.performance}%</span>
+                      <span>🔄 {createUIPageSummary().dataPoints.rpm} RPM</span>
+                      <span>📳 {createUIPageSummary().dataPoints.vibration}</span>
+                      <span style={{ marginLeft: 'auto', fontStyle: 'italic' }}>
+                        Vehicle: {createUIPageSummary().vehicleInfo}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* GenAI Recommendations */}
+                  <div className="genai-recommendations" style={{ marginTop: '0px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                      <h3>GenAI Recommendations</h3>
+                      {genAiLoading && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#ff9900' }}>
+                          <div className="spinner" style={{ width: '12px', height: '12px', border: '2px solid #333', borderTop: '2px solid #ff9900', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                          Analyzing...
+                        </div>
+                      )}
+                      {genAiAnalysis && !genAiLoading && (
+                        <div style={{ fontSize: '11px', color: genAiAnalysis.error ? '#ff6b6b' : genAiAnalysis.fromCache ? '#ffa500' : '#00ff88', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span>{genAiAnalysis.error ? '🛡️' : genAiAnalysis.fromCache ? '💾' : '🤖'}</span> 
+                          {genAiAnalysis.error ? 'Enhanced Fallback' : 
+                           genAiAnalysis.fromCache ? 'Claude (Cached)' : 'Claude 3.7 Sonnet'}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <p style={{ fontSize: '12px', marginBottom: '12px' }}>
+                      {genAiAnalysis ? 
+                        (genAiAnalysis.error ? 
+                          genAiAnalysis.error_message :
+                          `Real-time motor analysis by Claude 3.7 Sonnet. Status: ${genAiAnalysis.overall_status} | Risk: ${genAiAnalysis.risk_level}`
+                        ) :
+                        'AI-powered motor optimization. Connecting to Claude 3.7 Sonnet for real-time analysis...'
+                      }
+                    </p>
+                    
+                    {/* GenAI Key Findings - Natural Language Summary */}
+                    {genAiAnalysis?.key_findings_summary && !genAiAnalysis.error && (
+                      <div style={{ marginBottom: '12px', padding: '8px', backgroundColor: 'rgba(0,255,136,0.1)', borderRadius: '4px', border: '1px solid rgba(0,255,136,0.3)' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#00ff88', marginBottom: '4px' }}>🔍 Analysis Summary:</div>
+                        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.9)', lineHeight: '1.4' }}>
+                          {genAiAnalysis.key_findings_summary}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="recommendations-list" style={{ 
+                      maxHeight: '200px', 
+                      overflowY: 'auto', 
+                      paddingRight: '8px',
+                      scrollbarWidth: 'thin',
+                      scrollbarColor: '#00ff88 rgba(255,255,255,0.1)'
+                    }}>
+                      <style>
+                        {`
+                          .recommendations-list::-webkit-scrollbar {
+                            width: 6px;
+                          }
+                          .recommendations-list::-webkit-scrollbar-track {
+                            background: rgba(255,255,255,0.1);
+                            border-radius: 3px;
+                          }
+                          .recommendations-list::-webkit-scrollbar-thumb {
+                            background: #00ff88;
+                            border-radius: 3px;
+                          }
+                          .recommendations-list::-webkit-scrollbar-thumb:hover {
+                            background: #00cc6a;
+                          }
+                        `}
+                      </style>
+                      {aiRecommendations.map((rec, index) => (
+                        <div key={index} style={{ marginBottom: '12px' }}>
+                          <div className="recommendation-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                             <span className="warning-icon">
-                              {rec.priority === 'URGENT' ? '🚨' : rec.priority === 'HIGH' ? '⚠️' : 'ℹ️'}
+                              {rec.priority === 'CRITICAL' ? '🚨' : rec.priority === 'HIGH' ? '⚠️' : rec.priority === 'MEDIUM' ? '⚡' : 'ℹ️'}
                             </span>
-                            <span>{rec.action}</span>
+                            <span style={{ flex: 1 }}>{rec.action}</span>
+                            {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
+                            {rec.ml && <span style={{ fontSize: '10px', color: '#ff9900', backgroundColor: 'rgba(255,153,0,0.2)', padding: '2px 6px', borderRadius: '10px' }}>ML</span>}
+                            {rec.fallback && <span style={{ fontSize: '10px', color: '#888', backgroundColor: 'rgba(136,136,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>Rule</span>}
                           </div>
-                          {rec.description && (
-                            <div className="recommendation-details">
-                              <p><strong>Details:</strong> {rec.description}</p>
+                          {(rec.reason || rec.urgency || rec.description) && (
+                            <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
+                              {rec.reason && <p><strong>Reason:</strong> {rec.reason}</p>}
+                              {rec.urgency && <p><strong>Urgency:</strong> {rec.urgency}</p>}
+                              {rec.description && <p><strong>Details:</strong> {rec.description}</p>}
                               {rec.estimated_cost && <p><strong>Cost:</strong> {rec.estimated_cost}</p>}
                             </div>
                           )}
                         </div>
                       ))}
-                      <div className="more-link" style={{ color: '#ff9900', fontSize: '8px', fontStyle: 'italic' }}>
-                        More.....
-                      </div>
+                      
+                      {genAiAnalysis?.next_inspection && (
+                        <div style={{ marginTop: '12px', fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontStyle: 'italic' }}>
+                          Next inspection recommended: {genAiAnalysis.next_inspection}
+                        </div>
+                      )}
+                      
+                      <div className="more-link" style={{ marginTop: '16px', fontSize: '12px', color: '#ff9900', cursor: 'pointer' }}>More.....</div>
                     </div>
+                    
+                    {(currentPredictions?.status === 'CRITICAL' || genAiAnalysis?.overall_status === 'CRITICAL') && (
+                      <div style={{ color: '#ff4444', fontWeight: 'bold', marginTop: '10px', padding: '8px', border: '1px solid #ff4444', borderRadius: '3px', backgroundColor: 'rgba(255,68,68,0.1)' }}>
+                        🚨 CRITICAL: {genAiAnalysis?.key_findings_summary?.split('.')[0] || 'Motor requires immediate attention'}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
