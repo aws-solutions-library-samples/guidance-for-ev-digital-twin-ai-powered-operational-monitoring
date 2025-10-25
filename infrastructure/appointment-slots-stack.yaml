@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'DynamoDB table for vehicle appointment scheduling'
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: ev-digital-twin
+    Description: Name of the project
+
+Resources:
+  AppointmentSlotsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: vehicle-appointment-slots
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: date
+          AttributeType: S
+        - AttributeName: time_slot
+          AttributeType: S
+      KeySchema:
+        - AttributeName: date
+          KeyType: HASH
+        - AttributeName: time_slot
+          KeyType: RANGE
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+Outputs:
+  TableName:
+    Description: DynamoDB table name for appointment slots
+    Value: !Ref AppointmentSlotsTable
+    Export:
+      Name: !Sub "${ProjectName}-appointment-slots-table-name"
+  
+  TableArn:
+    Description: DynamoDB table ARN
+    Value: !GetAtt AppointmentSlotsTable.Arn
+    Export:
+      Name: !Sub "${ProjectName}-appointment-slots-table-arn"

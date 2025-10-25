@@ -347,23 +347,127 @@ Our AI-powered agentic solution transforms vehicle maintenance through intellige
 
 ---
 
-## Future Roadmap
+## AgentCore Browser Tool Integration
 
-### Phase 1 Enhancements
-- Integration with additional vehicle sensors (GPS, accelerometer, fuel systems)
-- Advanced predictive models for brake wear and battery health
-- Mobile application for field technicians
+### Overview
 
-### Phase 2 Expansion
-- Multi-tenant architecture for fleet management companies
-- Integration with OEM maintenance systems
-- Advanced analytics dashboard with business intelligence
+The system integrates **AWS Bedrock AgentCore Browser Tool** with **Amazon Nova Act SDK** to enable autonomous tire ordering from Amazon.com, demonstrating end-to-end automation from vehicle analysis to parts procurement.
 
-### Phase 3 Innovation
-- Computer vision integration for visual inspections
-- IoT sensor network for real-time data collection
-- Blockchain integration for maintenance history verification
+### Prerequisites and Setup
+
+**1. AWS Services Required:**
+- AWS Bedrock AgentCore Runtime (deployed)
+- AgentCore Browser Tool (built-in AWS service)
+- AWS account with Bedrock access in us-east-1
+
+**2. Nova Act SDK Setup:**
+```bash
+# Install Nova Act SDK
+pip install nova-act
+
+# Obtain Nova Act API Key from Amazon
+# Store in environment variable or agent configuration
+NOVA_ACT_API_KEY="your-api-key-here"
+```
+
+**3. Python Dependencies:**
+```bash
+# Install AgentCore SDK
+pip install bedrock-agentcore
+
+# Required imports
+from bedrock_agentcore.tools.browser_client import browser_session
+from nova_act import NovaAct
+```
+
+**4. AgentCore Configuration:**
+```yaml
+# .bedrock_agentcore.yaml
+memory:
+  mode: STM_ONLY
+  memory_id: vehicle_maintenance_agent_mem-Zz75E62LMt
+  event_expiry_days: 30
+```
+
+**5. IAM Permissions Required:**
+- `bedrock-agentcore:InvokeAgentRuntime`
+- `bedrock:InvokeModel` (for Claude 3.7 Sonnet)
+- Browser tool access (automatic with AgentCore)
+
+### Tool Definition
+
+**Tool Name:** `order_tire_online`  
+**Purpose:** Automates tire ordering from Amazon using browser automation  
+**Integration:** AgentCore Browser Tool + NovaAct vision-language model  
+**Region:** us-east-1  
+
+### How It Works
+
+**Automation Flow:**
+1. User approves tire replacement in FleetPortal
+2. Agent calls `order_tire_online(vehicle_id)` tool
+3. Tool loads vehicle tire specs from CSV (tire_size, brand)
+4. Creates browser session in us-east-1 region
+5. Initializes NovaAct with WebSocket connection
+6. NovaAct executes automation:
+   - Navigate to Amazon.com
+   - Search for tire size (e.g., "215/55R16 tires")
+   - Click first highly-rated result
+   - Add to cart
+   - Extract product name, brand, price
+7. Returns JSON with order details
+
+**NovaAct Vision-Language Process:**
+- **Screenshot** → Capture current page state
+- **Analyze** → Claude 3.7 Sonnet analyzes image
+- **Decide** → Determine next action (click, type, scroll)
+- **Execute** → Perform action via Chrome DevTools Protocol
+- **Verify** → Confirm action succeeded
+- **Repeat** → Continue until task complete
+
+### Implementation
+
+**Basic Browser Session:**
+```python
+with browser_session(region="us-east-1") as client:
+    ws_url, headers = client.generate_ws_headers()
+```
+
+**NovaAct Integration:**
+```python
+with NovaAct(
+    cdp_endpoint_url=ws_url,
+    cdp_headers=headers,
+    nova_act_api_key=NOVA_ACT_API_KEY,
+    starting_page="https://www.amazon.com"
+) as nova_act:
+    result = nova_act.act("Search for tires and add to cart")
+```
+
+**Custom Browser Tool (Optional):**
+```python
+# Use custom tool for S3 recordings
+with browser_session(
+    region="us-east-1",
+    browser_tool_id="vehicle_tire_order_tool-EfIt5YeiPR"
+) as client:
+    # Same implementation
+```
+
+### Live Browser Viewing
+
+**AWS Console Method:**
+1. AWS Console → Bedrock → AgentCore
+2. Built-in tools → Browser
+3. Select "AgentCore Browser Tool"
+4. Click "View live session" during automation
+5. Watch real-time browser actions
+
+**Local Development:**
+- Use `BrowserViewerServer` from AgentCore samples
+- Requires Amazon DCV Web Client SDK
+- Opens localhost:8000 with live feed
 
 ---
 
-*This document represents the comprehensive agentic solution for EV Digital Twin vehicle maintenance, showcasing the evolution from traditional CLI tools to modern AI-powered cloud applications.*
+*This document represents the comprehensive agentic solution for EV Digital Twin vehicle maintenance, showcasing the evolution from traditional CLI tools to modern AI-powered cloud applications with autonomous browser automation.*

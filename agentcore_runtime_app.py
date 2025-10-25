@@ -19,6 +19,7 @@ from agentcore_maintenance_agent import (
     get_fleet_status,
     cross_system_analysis,
     generate_maintenance_report,
+    order_tire_online,
     SYSTEM_PROMPT,
     MODEL_ID,
     agent_instance
@@ -44,7 +45,8 @@ agent = Agent(
         schedule_appointment,
         get_fleet_status,
         cross_system_analysis,
-        generate_maintenance_report
+        generate_maintenance_report,
+        order_tire_online
     ],
     system_prompt=SYSTEM_PROMPT
 )

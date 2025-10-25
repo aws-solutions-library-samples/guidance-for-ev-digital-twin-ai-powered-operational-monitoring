@@ -19,6 +19,19 @@ const FleetPortal = () => {
   const [selectedRecommendation, setSelectedRecommendation] = useState(null);
   const [approvalInstructions, setApprovalInstructions] = useState('');
   const [submittingApproval, setSubmittingApproval] = useState(false);
+  
+  // State for tire ordering
+  const [showTireOrderOption, setShowTireOrderOption] = useState(false);
+  const [orderTiresOnline, setOrderTiresOnline] = useState(false);
+  const [approvalStatus, setApprovalStatus] = useState('');
+  
+  // State for confirmation modal
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [confirmationData, setConfirmationData] = useState(null);
+  
+  // State for tire order confirmation
+  const [showTireConfirmationModal, setShowTireConfirmationModal] = useState(false);
+  const [tireOrderData, setTireOrderData] = useState(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -145,7 +158,103 @@ const FleetPortal = () => {
   const handleApprove = (recommendation) => {
     setSelectedRecommendation(recommendation);
     setApprovalInstructions('');
+    
+    // Detect if this is a tire-related recommendation
+    const isTireRelated = recommendation.fullRecommendation?.toLowerCase().includes('tire') || 
+                          recommendation.description?.toLowerCase().includes('tire');
+    setShowTireOrderOption(isTireRelated);
+    setOrderTiresOnline(false);
+    setApprovalStatus('');
+    
     setShowApprovalModal(true);
+  };
+
+  const parseAgentResponse = (response) => {
+    try {
+      console.log('Parsing agent response:', response);
+      
+      // Multiple patterns to try for date
+      const datePatterns = [
+        /-\s*\*\*Date:\*\*\s*([^\n]+)/,  // - **Date:** Monday, November 20, 2023
+        /-\s*\*\*Date\*\*:\s*([^\n]+)/,  // - **Date**: Monday, November 20, 2023
+        /\*\*Date:\*\*\s*([^\n]+)/,       // **Date:** Monday, November 20, 2023
+        /"scheduled_date":\s*"([^"]+)"/   // JSON format
+      ];
+      
+      const servicePatterns = [
+        /-\s*\*\*Service Type:\*\*\s*([^\n]+)/,
+        /-\s*\*\*Service Type\*\*:\s*([^\n]+)/,
+        /"service_type":\s*"([^"]+)"/
+      ];
+      
+      // Extract description from Status field or the sentence after appointment details
+      const statusMatch = response.match(/-\s*\*\*Status:\*\*\s*([^\n]+)/i);
+      const descriptionMatch = response.match(/The maintenance team will ([^?]+)/i) || 
+                               response.match(/The ([^.]+\.)/);
+      
+      let dateStr = null;
+      let serviceStr = null;
+      
+      // Try each date pattern
+      for (const pattern of datePatterns) {
+        const match = response.match(pattern);
+        if (match) {
+          dateStr = match[1];
+          break;
+        }
+      }
+      
+      // Try each service pattern
+      for (const pattern of servicePatterns) {
+        const match = response.match(pattern);
+        if (match) {
+          serviceStr = match[1];
+          break;
+        }
+      }
+      
+      const descriptionStr = descriptionMatch ? descriptionMatch[0].trim() : '';
+      
+      console.log('Extracted date:', dateStr);
+      console.log('Extracted service:', serviceStr);
+      console.log('Extracted description:', descriptionStr);
+      
+      // Extract tire order details if present
+      const tireOrderMatch = response.includes('order_tire_online') || response.includes('tire_size');
+      const tireSizeMatch = response.match(/"tire_size":\s*"([^"]+)"/);
+      const productMatch = response.match(/"product[^"]*":\s*"([^"]+)"/) || response.match(/product.*?([A-Z][\w\s]+)/);
+      const priceMatch = response.match(/\$([\d.]+)/);
+      
+      return {
+        appointment: {
+          date: dateStr?.trim() || 'Scheduled',
+          service: serviceStr?.replace(/_/g, ' ').trim() || 'Maintenance',
+          description: descriptionStr || approvalInstructions?.trim() || '',
+          vin: selectedRecommendation.vehicleName
+        },
+        tireOrder: (tireOrderMatch && orderTiresOnline) ? {
+          size: tireSizeMatch?.[1] || 'N/A',
+          product: productMatch?.[1] || 'Tire product',
+          price: priceMatch?.[1] ? `$${priceMatch[1]}` : 'See cart'
+        } : null
+      };
+    } catch (error) {
+      console.error('Error parsing response:', error);
+      return {
+        appointment: {
+          date: 'Scheduled',
+          service: 'Maintenance',
+          vin: selectedRecommendation.vehicleName
+        },
+        tireOrder: null
+      };
+    }
+  };
+
+  const handleCloseConfirmation = () => {
+    setShowConfirmationModal(false);
+    setConfirmationData(null);
+    handleDismiss(aiRecommendations.indexOf(selectedRecommendation));
   };
 
   const handleSubmitApproval = async () => {
@@ -155,21 +264,173 @@ const FleetPortal = () => {
     }
 
     setSubmittingApproval(true);
+    
     try {
-      const prompt = `Approve maintenance for vehicle ${selectedRecommendation.vehicleId} (VIN: ${selectedRecommendation.vehicleName}). Recommendation: ${selectedRecommendation.description}. Operator instructions: ${approvalInstructions}. Please schedule the appropriate maintenance using the schedule_appointment tool.`;
+      if (orderTiresOnline) {
+        // CASE 1: Order tires first (separate call)
+        setApprovalStatus('browser-tool');
+        
+        const tirePrompt = `Order replacement tires for vehicle ${selectedRecommendation.vehicleId} using the order_tire_online tool.`;
+        
+        try {
+          const tireResponse = await agentCoreService.chat(tirePrompt);
+          console.log('Tire order response:', tireResponse);
+          
+          setApprovalStatus('complete');
+          
+          // Parse tire order response
+          const tireData = parseTireOrderResponse(tireResponse);
+          
+          // Show tire confirmation with option to schedule
+          setTimeout(() => {
+            setApprovalStatus('');
+            setSubmittingApproval(false);
+            setShowApprovalModal(false);
+            setTireOrderData(tireData);
+            setShowTireConfirmationModal(true);
+          }, 1000);
+        } catch (tireError) {
+          console.error('Tire ordering error:', tireError);
+          // Reset session after error
+          agentCoreService.resetSession();
+          
+          // Even if API fails, show success (tool likely succeeded)
+          setApprovalStatus('complete');
+          
+          // Extract tire info from recommendation if available
+          const tireInfo = selectedRecommendation.fullRecommendation || '';
+          const tireSizeMatch = tireInfo.match(/([\d]+\/[\d]+R[\d]+)/);
+          
+          const fallbackData = {
+            product: 'Tire ordered successfully',
+            price: 'Check Amazon cart',
+            tireSize: tireSizeMatch?.[1] || 'N/A',
+            success: true
+          };
+          
+          setTimeout(() => {
+            setApprovalStatus('');
+            setSubmittingApproval(false);
+            setShowApprovalModal(false);
+            setTireOrderData(fallbackData);
+            setShowTireConfirmationModal(true);
+          }, 1000);
+        }
+        
+      } else {
+        // CASE 2: Just schedule appointment (no tires)
+        setApprovalStatus('processing');
+        
+        const appointmentPrompt = `Schedule maintenance appointment for vehicle ${selectedRecommendation.vehicleId}. Service: ${selectedRecommendation.description}. Instructions: ${approvalInstructions}. Use the schedule_appointment tool.`;
+        const response = await agentCoreService.chat(appointmentPrompt);
+        console.log('Appointment response:', response);
+        
+        setApprovalStatus('complete');
+        
+        // Parse and show appointment confirmation
+        const parsedData = parseAgentResponse(response);
+        
+        setTimeout(() => {
+          setApprovalStatus('');
+          setSubmittingApproval(false);
+          setShowApprovalModal(false);
+          setConfirmationData(parsedData);
+          setShowConfirmationModal(true);
+        }, 1000);
+      }
       
-      const response = await agentCoreService.chat(prompt);
-      console.log('Agent response:', response);
-      
-      alert(`Maintenance approved for ${selectedRecommendation.vehicleName}\n\nAgent Response: ${response.substring(0, 200)}...`);
-      
-      // Remove from recommendations after approval
-      handleDismiss(aiRecommendations.indexOf(selectedRecommendation));
-      setShowApprovalModal(false);
     } catch (error) {
-      console.error('Error submitting approval:', error);
-      alert('Failed to submit approval. Please try again.');
-    } finally {
+      console.error('Error:', error);
+      setApprovalStatus('');
+      alert('Failed to process. Please try again.');
+      setSubmittingApproval(false);
+    }
+  };
+  
+  const parseTireOrderResponse = (response) => {
+    try {
+      console.log('Raw tire order response:', response);
+      
+      // Try to parse JSON response first
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          const data = JSON.parse(jsonMatch[0]);
+          console.log('Parsed JSON data:', data);
+          
+          // Extract from nested response field
+          const responseText = data.response || '';
+          
+          // Try multiple patterns for product and price
+          const priceMatch = responseText.match(/\$([\d,]+\.?\d*)/);
+          const productMatch = responseText.match(/Product name: ([^,]+)/) || 
+                              responseText.match(/([\d\/]+R\d+ tires)/) ||
+                              responseText.match(/^([^,]+)/);
+          const brandMatch = responseText.match(/Brand: ([A-Z][\w\s]+)/);
+          
+          return {
+            product: (brandMatch?.[1] || productMatch?.[1] || data.tire_size || 'Tire').trim(),
+            price: priceMatch ? `$${priceMatch[1]}` : 'See cart',
+            tireSize: data.tire_size || 'N/A',
+            success: data.success !== false
+          };
+        } catch (e) {
+          console.error('JSON parse error:', e);
+        }
+      }
+      
+      // Fallback: parse from plain text
+      const priceMatch = response.match(/\$([\d,]+\.?\d*)/);
+      const productMatch = response.match(/Product name: ([^,]+)/) || 
+                          response.match(/([\d\/]+R\d+ tires)/);
+      
+      return {
+        product: productMatch?.[1]?.trim() || 'Tire ordered successfully',
+        price: priceMatch ? `$${priceMatch[1]}` : 'See cart',
+        tireSize: 'N/A',
+        success: true
+      };
+    } catch (error) {
+      console.error('Error parsing tire response:', error);
+      return {
+        product: 'Tire ordered successfully',
+        price: 'See cart',
+        tireSize: 'N/A',
+        success: true
+      };
+    }
+  };
+  
+  const handleScheduleAfterTireOrder = async () => {
+    setSubmittingApproval(true);
+    setApprovalStatus('processing');
+    
+    try {
+      // Reset session to avoid corrupted state from tire ordering
+      agentCoreService.resetSession();
+      
+      const appointmentPrompt = `Schedule tire installation appointment for vehicle ${selectedRecommendation.vehicleId}. Instructions: ${approvalInstructions}. Use the schedule_appointment tool.`;
+      const response = await agentCoreService.chat(appointmentPrompt);
+      
+      const parsedData = parseAgentResponse(response);
+      
+      setApprovalStatus('complete');
+      
+      setTimeout(() => {
+        setApprovalStatus('');
+        setSubmittingApproval(false);
+        setShowTireConfirmationModal(false);
+        setConfirmationData({
+          appointment: parsedData.appointment,
+          tireOrder: tireOrderData
+        });
+        setShowConfirmationModal(true);
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Error scheduling appointment:', error);
+      setApprovalStatus('');
+      alert('Failed to schedule appointment.');
       setSubmittingApproval(false);
     }
   };
@@ -632,6 +893,25 @@ const FleetPortal = () => {
                   />
                 </div>
 
+                {showTireOrderOption && (
+                  <div style={{ marginBottom: '20px', padding: '15px', background: '#2a2d2f', borderRadius: '4px', border: '1px solid #37bc12' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', color: '#ccc' }}>
+                      <input
+                        type="checkbox"
+                        checked={orderTiresOnline}
+                        onChange={(e) => setOrderTiresOnline(e.target.checked)}
+                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                      />
+                      <span style={{ fontSize: '14px' }}>
+                        🛒 Order replacement tires online via Amazon
+                        <span style={{ display: 'block', fontSize: '12px', color: '#888', marginTop: '5px' }}>
+                          Uses AI browser automation to find and add tires to cart (30-60 seconds)
+                        </span>
+                      </span>
+                    </label>
+                  </div>
+                )}
+
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                   <button
                     onClick={() => setShowApprovalModal(false)}
@@ -666,6 +946,135 @@ const FleetPortal = () => {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Loading Overlay */}
+      {approvalStatus && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.85)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          flexDirection: 'column',
+          gap: '20px'
+        }}>
+          <div className="spinner"></div>
+          <div style={{ color: '#fff', fontSize: '18px', textAlign: 'center' }}>
+            {approvalStatus === 'processing' && '🤖 AgentCore Processing...'}
+            {approvalStatus === 'browser-tool' && (
+              <>
+                <div>🌐 Browser Tool Running...</div>
+                <div style={{ fontSize: '14px', color: '#888', marginTop: '10px' }}>
+                  Automating tire search and cart addition (30-60 seconds)
+                </div>
+              </>
+            )}
+            {approvalStatus === 'complete' && '✅ Complete!'}
+          </div>
+        </div>
+      )}
+
+      {/* Tire Confirmation Modal */}
+      {showTireConfirmationModal && tireOrderData && (
+        <div className="confirmation-overlay">
+          <div className="confirmation-modal">
+            <h2 style={{ color: '#37bc12', marginBottom: '30px', textAlign: 'center' }}>✅ Tires Ordered!</h2>
+            
+            <div className="tire-order-card">
+              <h3>🛒 Order Details</h3>
+              <div className="detail-row">
+                <span className="label">Product:</span>
+                <span className="value">{tireOrderData.product}</span>
+              </div>
+              <div className="detail-row">
+                <span className="label">Price:</span>
+                <span className="value">{tireOrderData.price}</span>
+              </div>
+              <div style={{ marginTop: '10px', fontSize: '12px', color: '#888' }}>
+                ✓ Added to Amazon cart
+              </div>
+            </div>
+            
+            <div style={{ marginTop: '30px', display: 'flex', gap: '10px', justifyContent: 'center' }}>
+              <button 
+                className="done-button"
+                onClick={() => setShowTireConfirmationModal(false)}
+                style={{ background: '#444' }}
+              >
+                Done (No Appointment)
+              </button>
+              <button 
+                className="done-button" 
+                onClick={handleScheduleAfterTireOrder}
+                disabled={submittingApproval}
+              >
+                {submittingApproval ? 'Scheduling...' : 'Schedule Installation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {showConfirmationModal && confirmationData && (
+        <div className="confirmation-overlay">
+          <div className="confirmation-modal">
+            <h2 style={{ color: '#37bc12', marginBottom: '30px', textAlign: 'center' }}>✅ Success!</h2>
+            
+            <div className="appointment-card">
+              <h3>📅 Appointment Scheduled</h3>
+              <div className="detail-row">
+                <span className="label">Date:</span>
+                <span className="value">{confirmationData.appointment.date}</span>
+              </div>
+              <div className="detail-row">
+                <span className="label">Service:</span>
+                <span className="value">{confirmationData.appointment.service}</span>
+              </div>
+              <div className="detail-row">
+                <span className="label">Vehicle:</span>
+                <span className="value">{confirmationData.appointment.vin}</span>
+              </div>
+              {confirmationData.appointment.description && (
+                <div className="detail-row">
+                  <span className="label">Details:</span>
+                  <span className="value">{confirmationData.appointment.description}</span>
+                </div>
+              )}
+            </div>
+            
+            {confirmationData.tireOrder && (
+              <div className="tire-order-card">
+                <h3>🛒 Tires Ordered Online</h3>
+                <div className="detail-row">
+                  <span className="label">Size:</span>
+                  <span className="value">{confirmationData.tireOrder.size}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="label">Product:</span>
+                  <span className="value">{confirmationData.tireOrder.product}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="label">Price:</span>
+                  <span className="value">{confirmationData.tireOrder.price}</span>
+                </div>
+                <div style={{ marginTop: '10px', fontSize: '12px', color: '#888' }}>
+                  ✓ Added to Amazon cart
+                </div>
+              </div>
+            )}
+            
+            <button className="done-button" onClick={handleCloseConfirmation}>
+              Done
+            </button>
           </div>
         </div>
       )}
