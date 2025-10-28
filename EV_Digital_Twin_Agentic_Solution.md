@@ -115,7 +115,7 @@ Our AI-powered agentic solution transforms vehicle maintenance through intellige
 │  │  ┌─────────────────────────────────────────────────────────────────────┐   │ │
 │  │  │                    11 Specialized Agent Tools                      │   │ │
 │  │  │                                                                     │   │ │
-│  │  │  1. quick_vehicle_check        7. schedule_appointment              │   │ │
+│  │  │  1. quick_vehicle_check        7. schedule_appointment (DynamoDB)   │   │ │
 │  │  │  2. analyze_tire_condition     8. get_fleet_status                  │   │ │
 │  │  │  3. analyze_motor_performance  9. cross_system_analysis             │   │ │
 │  │  │  4. predict_tire_wear         10. generate_maintenance_report       │   │ │
@@ -139,6 +139,15 @@ Our AI-powered agentic solution transforms vehicle maintenance through intellige
 │  │  │ • Wear patterns │  │ • Vibration     │  │                             │ │ │
 │  │  │ • Anomalies     │  │ • Failure risk  │  │                             │ │ │
 │  │  └─────────────────┘  └─────────────────┘  └─────────────────────────────┘ │ │
+│  │                                                                             │ │
+│  │  ┌─────────────────────────────────────────────────────────────────────┐   │ │
+│  │  │                    DynamoDB - Appointment Slots                    │   │ │
+│  │  │                                                                     │   │ │
+│  │  │  • Real-time availability tracking                                 │   │ │
+│  │  │  • Service bay scheduling                                          │   │ │
+│  │  │  • Date/time slot management                                       │   │ │
+│  │  │  • Booking status updates                                          │   │ │
+│  │  └─────────────────────────────────────────────────────────────────────┘   │ │
 │  │                                                                             │ │
 │  │  ┌─────────────────────────────────────────────────────────────────────┐   │ │
 │  │  │                    ML Models (Pre-trained)                         │   │ │
@@ -304,6 +313,7 @@ Our AI-powered agentic solution transforms vehicle maintenance through intellige
 - **Motor Data:** 900 sensor readings with performance metrics
 - **Vehicle Specs:** 5 vehicle configurations with manufacturer guidelines
 - **ML Models:** Pre-trained Random Forest and Isolation Forest models
+- **Appointment Slots:** DynamoDB table with real-time availability tracking for service bay scheduling
 
 ### Performance Metrics
 - **API Response Time:** 15-20 seconds per vehicle analysis
@@ -344,10 +354,52 @@ Our AI-powered agentic solution transforms vehicle maintenance through intellige
 - **API-First:** RESTful architecture enables easy integration and expansion
 - **Real-Time Processing:** Streaming responses provide immediate user feedback
 - **High Availability:** Multi-AZ deployment ensures 99.9% uptime
+- **DynamoDB Integration:** AgentCore Runtime connects to DynamoDB (`vehicle-appointment-slots` table) via Lambda proxy for real-time appointment scheduling. The `schedule_appointment` tool queries available time slots by date and updates booking status, enabling conversational appointment management directly through the AI agent
 
 ---
 
 ## AgentCore Browser Tool Integration
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Browser Tool Architecture                        │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  AgentCore Runtime                                                  │
+│  ┌───────────────────────────────────────────────────────────────┐ │
+│  │  order_tire_online Tool                                       │ │
+│  │  ┌─────────────────────────────────────────────────────────┐ │ │
+│  │  │  1. Load vehicle tire specs from CSV                   │ │ │
+│  │  │  2. Initialize browser_session(region="us-east-1")     │ │ │
+│  │  │  3. Get WebSocket URL + headers                         │ │ │
+│  │  └─────────────────────────────────────────────────────────┘ │ │
+│  └───────────────────────────────────────────────────────────────┘ │
+│                           │                                         │
+│                           │ WebSocket Connection                    │
+│                           ▼                                         │
+│  ┌───────────────────────────────────────────────────────────────┐ │
+│  │  Nova Act SDK (Vision-Language Model)                         │ │
+│  │  ┌─────────────────────────────────────────────────────────┐ │ │
+│  │  │  • Screenshot → Analyze → Decide → Execute              │ │ │
+│  │  │  • Navigate Amazon.com                                   │ │ │
+│  │  │  • Search tire size (e.g., "215/55R16 tires")          │ │ │
+│  │  │  • Click product → Add to cart                          │ │ │
+│  │  │  • Extract: product name, brand, price                  │ │ │
+│  │  └─────────────────────────────────────────────────────────┘ │ │
+│  └───────────────────────────────────────────────────────────────┘ │
+│                           │                                         │
+│                           │ Chrome DevTools Protocol                │
+│                           ▼                                         │
+│  ┌───────────────────────────────────────────────────────────────┐ │
+│  │  AgentCore Browser Tool (AWS Managed)                         │ │
+│  │  • Headless Chrome browser instance                           │ │
+│  │  • Secure isolated environment                                │ │
+│  │  • Real-time browser automation                               │ │
+│  └───────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
 ### Overview
 

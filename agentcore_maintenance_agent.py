@@ -524,37 +524,55 @@ def detect_motor_anomalies(vehicle_id: int) -> str:
 @tool
 def schedule_appointment(vehicle_id: int, service_type: str, preferred_date: str, notes: str = "") -> str:
     """
-    Schedule a maintenance appointment for a vehicle.
+    Schedule a maintenance appointment for a vehicle in DynamoDB.
     
     Args:
         vehicle_id: The vehicle ID
         service_type: Type of service (tire_replacement, tire_rotation, motor_maintenance, oil_change, inspection)
-        preferred_date: Preferred date in YYYY-MM-DD format or relative (e.g., "in 3 days", "next Monday")
+        preferred_date: Preferred date in YYYY-MM-DD format
         notes: Additional notes or concerns
         
     Returns:
         Appointment confirmation details
     """
     try:
-        # Always use current date + 3 days for scheduling (ignore old dates from data)
-        scheduled_date = (datetime.now() + timedelta(days=3)).strftime("%Y-%m-%d")
+        dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+        table = dynamodb.Table('vehicle-appointment-slots')
         
-        appointment = {
-            "appointment_id": len(agent_instance.appointments) + 1,
-            "vehicle_id": int(vehicle_id),
-            "service_type": service_type,
-            "scheduled_date": scheduled_date,
-            "status": "SCHEDULED",
-            "notes": notes,
-            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
+        # Query available slots for the date
+        response = table.query(
+            KeyConditionExpression='#d = :date',
+            FilterExpression='available = :avail',
+            ExpressionAttributeNames={'#d': 'date'},
+            ExpressionAttributeValues={':date': preferred_date, ':avail': True}
+        )
         
-        agent_instance.appointments.append(appointment)
+        slots = response.get('Items', [])
+        if not slots:
+            return json.dumps({"error": f"No available slots on {preferred_date}"})
+        
+        # Book first available slot
+        slot = slots[0]
+        table.update_item(
+            Key={'date': preferred_date, 'time_slot': slot['time_slot']},
+            UpdateExpression='SET available = :false, vehicle_id = :vid, service_type = :svc, booked_at = :now',
+            ExpressionAttributeValues={
+                ':false': False,
+                ':vid': vehicle_id,
+                ':svc': service_type,
+                ':now': datetime.now().isoformat()
+            }
+        )
         
         return json.dumps({
             "success": True,
-            "appointment": appointment,
-            "message": f"Appointment scheduled successfully for vehicle {vehicle_id}"
+            "appointment": {
+                "vehicle_id": vehicle_id,
+                "date": preferred_date,
+                "time_slot": slot['time_slot'],
+                "service_type": service_type,
+                "notes": notes
+            }
         }, indent=2)
         
     except Exception as e:

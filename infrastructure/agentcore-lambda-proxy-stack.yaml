@@ -34,13 +34,21 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - bedrock-agent-runtime:InvokeAgentRuntime
                   - bedrock-agentcore:InvokeAgentRuntime
-                Resource: !Ref AgentCoreRuntimeArn
+                Resource: 
+                  - !Ref AgentCoreRuntimeArn
+                  - !Sub '${AgentCoreRuntimeArn}/runtime-endpoint/DEFAULT'
               - Effect: Allow
                 Action:
                   - logs:FilterLogEvents
                 Resource: arn:aws:logs:us-east-1:009296485814:log-group:/aws/bedrock-agentcore/runtimes/vehicle_maintenance_agent-kH9hYvFcCD-DEFAULT:*
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/vehicle-appointment-slots'
 
   # Lambda Function
   AgentCoreLambdaProxy:
@@ -62,15 +70,76 @@ Resources:
           import os
           import re
           from datetime import datetime, timedelta
+          from decimal import Decimal
+          
+          def decimal_default(obj):
+              if isinstance(obj, Decimal):
+                  return float(obj)
+              raise TypeError
           
           bedrock_agentcore = boto3.client('bedrock-agentcore', region_name='us-east-1')
           logs_client = boto3.client('logs', region_name='us-east-1')
+          dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
           
           LOG_GROUP_NAME = '/aws/bedrock-agentcore/runtimes/vehicle_maintenance_agent-kH9hYvFcCD-DEFAULT'
+          APPOINTMENTS_TABLE = 'vehicle-appointment-slots'
+          
+          def get_available_appointments(date):
+              """Query DynamoDB for available appointment slots on a specific date"""
+              table = dynamodb.Table(APPOINTMENTS_TABLE)
+              
+              try:
+                  response = table.query(
+                      KeyConditionExpression='#d = :date',
+                      FilterExpression='available = :avail',
+                      ExpressionAttributeNames={'#d': 'date'},
+                      ExpressionAttributeValues={':date': date, ':avail': True}
+                  )
+                  
+                  slots = response.get('Items', [])
+                  return sorted(slots, key=lambda x: x['time_slot'])
+              except Exception as e:
+                  print(f"DynamoDB query error: {e}")
+                  return []
           
           def lambda_handler(event, context):
               print(f"Event: {json.dumps(event)}")
               
+              # Handle GET /available-appointments
+              if event.get('requestContext', {}).get('http', {}).get('method') == 'GET':
+                  query_params = event.get('queryStringParameters', {}) or {}
+                  date = query_params.get('date')
+                  
+                  if not date:
+                      return {
+                          'statusCode': 400,
+                          'headers': {
+                              'Content-Type': 'application/json',
+                              'Access-Control-Allow-Origin': '*',
+                              'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+                              'Access-Control-Allow-Methods': 'GET,POST,OPTIONS'
+                          },
+                          'body': json.dumps({'error': 'date parameter required (YYYY-MM-DD)'})
+                      }
+                  
+                  slots = get_available_appointments(date)
+                  
+                  return {
+                      'statusCode': 200,
+                      'headers': {
+                          'Content-Type': 'application/json',
+                          'Access-Control-Allow-Origin': '*',
+                          'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+                          'Access-Control-Allow-Methods': 'GET,POST,OPTIONS'
+                      },
+                      'body': json.dumps({
+                          'date': date,
+                          'available_slots': slots,
+                          'count': len(slots)
+                      }, default=decimal_default)
+                  }
+              
+              # Handle POST /chat (existing logic - unchanged)
               try:
                   body = json.loads(event.get('body', '{}'))
                   prompt = body.get('prompt', body.get('message', ''))
@@ -249,6 +318,14 @@ Resources:
       ApiId: !Ref AgentCoreHttpApi
       RouteKey: 'POST /chat'
       Target: !Sub 'integrations/${AgentCoreLambdaIntegration}'
+  
+  # Available Appointments Route
+  AgentCoreAppointmentsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref AgentCoreHttpApi
+      RouteKey: 'GET /available-appointments'
+      Target: !Sub 'integrations/${AgentCoreLambdaIntegration}'
 
   # Default Stage
   AgentCoreHttpApiStage:
@@ -292,3 +369,4 @@ Outputs:
       curl -X POST https://${AgentCoreHttpApi}.execute-api.${AWS::Region}.amazonaws.com/chat \
         -H "Content-Type: application/json" \
         -d '{"prompt": "What is the tire condition for vehicle 1?"}'
+
