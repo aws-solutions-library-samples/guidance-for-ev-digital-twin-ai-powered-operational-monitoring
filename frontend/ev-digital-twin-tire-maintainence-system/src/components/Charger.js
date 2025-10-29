@@ -9,11 +9,226 @@ const Charger = () => {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showPrediction, setShowPrediction] = useState(false);
+  const [predictionData, setPredictionData] = useState([]);
+  const [genAiAnalysis, setGenAiAnalysis] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [chartData, setChartData] = useState({
+    inputVoltage: { current: [], expected: [] },
+    outputVoltage: { current: [], expected: [] },
+    inputCurrent: { current: [], expected: [] },
+    outputCurrent: { current: [], expected: [] }
+  });
+  const [gaugeAngles, setGaugeAngles] = useState({
+    inputVoltage: 0,
+    outputVoltage: 0,
+    inputCurrent: 0,
+    outputCurrent: 0
+  });
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Dynamic chart data generation for Charger
+  useEffect(() => {
+    const generateChargerChartData = () => {
+      // Simulate realistic charger data
+      const inputVoltage = 180 + Math.sin(Date.now() * 0.0003) * 10 + Math.random() * 5;
+      const outputVoltage = 180 + Math.sin(Date.now() * 0.0003) * 8 + Math.random() * 4;
+      const inputCurrent = 27 + Math.sin(Date.now() * 0.0005) * 5 + Math.random() * 2;
+      const outputCurrent = 27 + Math.sin(Date.now() * 0.0005) * 4 + Math.random() * 2;
+      
+      // Generate realistic waveform data points
+      const generateWaveform = (baseValue, amplitude = 5, frequency = 1, phase = 0) => {
+        const points = [];
+        const time = Date.now() * 0.001;
+        
+        for (let i = 0; i < 20; i++) {
+          const x = (i / 19) * 90;
+          const variation = Math.sin((time + phase) * frequency + (i * 0.3)) * amplitude;
+          const noise = (Math.random() - 0.5) * 2;
+          const y = 22 + variation + noise;
+          points.push({ x, y: Math.max(8, Math.min(36, y)) });
+        }
+        return points;
+      };
+      
+      const generateExpectedWaveform = (baseValue, amplitude = 3, frequency = 0.5, phase = 0) => {
+        const points = [];
+        const time = Date.now() * 0.001;
+        
+        for (let i = 0; i < 20; i++) {
+          const x = (i / 19) * 90;
+          const variation = Math.sin((time + phase) * frequency + (i * 0.2)) * amplitude;
+          const y = 25 + variation;
+          points.push({ x, y: Math.max(8, Math.min(36, y)) });
+        }
+        return points;
+      };
+      
+      // Update chart data
+      const newChartData = {
+        inputVoltage: {
+          current: generateWaveform(inputVoltage, 4, 1.2, 0),
+          expected: generateExpectedWaveform(inputVoltage, 2, 0.8, 0.5)
+        },
+        outputVoltage: {
+          current: generateWaveform(outputVoltage, 3, 1.0, 1.0),
+          expected: generateExpectedWaveform(outputVoltage, 2, 0.6, 1.2)
+        },
+        inputCurrent: {
+          current: generateWaveform(inputCurrent, 5, 1.5, 2.0),
+          expected: generateExpectedWaveform(inputCurrent, 3, 0.9, 2.5)
+        },
+        outputCurrent: {
+          current: generateWaveform(outputCurrent, 4, 1.1, 3.0),
+          expected: generateExpectedWaveform(outputCurrent, 2, 0.7, 3.5)
+        }
+      };
+      
+      setChartData(newChartData);
+      
+      // Calculate gauge angles
+      const calculateGaugeAngle = (value, min, max) => {
+        const percentage = Math.max(0, Math.min(1, (value - min) / (max - min)));
+        return percentage * 180;
+      };
+      
+      const newGaugeAngles = {
+        inputVoltage: calculateGaugeAngle(inputVoltage, 100, 250),
+        outputVoltage: calculateGaugeAngle(outputVoltage, 100, 250),
+        inputCurrent: calculateGaugeAngle(inputCurrent, 10, 50),
+        outputCurrent: calculateGaugeAngle(outputCurrent, 10, 50)
+      };
+      
+      setGaugeAngles(newGaugeAngles);
+      
+      console.log('🔌 Charger Charts Updated:', {
+        inputVoltage: inputVoltage.toFixed(1) + 'V',
+        outputVoltage: outputVoltage.toFixed(1) + 'V',
+        inputCurrent: inputCurrent.toFixed(1) + 'A',
+        outputCurrent: outputCurrent.toFixed(1) + 'A'
+      });
+    };
+    
+    // Generate initial data and update every 2 seconds
+    generateChargerChartData();
+    const chartInterval = setInterval(generateChargerChartData, 2000);
+    
+    return () => clearInterval(chartInterval);
+  }, []);
+
+  // Generate dynamic prediction data for charger failure
+  useEffect(() => {
+    if (showPrediction) {
+      const generateChargerPredictionData = () => {
+        const basePoints = [
+          { x: 125, y: 85, health: 55, status: 'Current' },
+          { x: 140, y: 90, health: 50, status: 'Declining' },
+          { x: 155, y: 95, health: 45, status: 'Declining' },
+          { x: 170, y: 100, health: 40, status: 'Warning' },
+          { x: 185, y: 105, health: 35, status: 'Critical' },
+          { x: 200, y: 110, health: 30, status: 'Critical' },
+          { x: 215, y: 115, health: 25, status: 'Failure Risk' }
+        ];
+
+        let currentIndex = 0;
+        const animationInterval = setInterval(() => {
+          if (currentIndex < basePoints.length) {
+            setPredictionData(prev => [...prev, basePoints[currentIndex]]);
+            currentIndex++;
+          } else {
+            clearInterval(animationInterval);
+          }
+        }, 300);
+
+        return () => clearInterval(animationInterval);
+      };
+
+      const animationTimeout = setTimeout(generateChargerPredictionData, 500);
+      return () => clearTimeout(animationTimeout);
+    } else {
+      setPredictionData([]);
+    }
+  }, [showPrediction]);
+
+  // GenAI Analysis for Charger Management
+  const analyzeChargerWithGenAI = async () => {
+    setIsAnalyzing(true);
+    
+    try {
+      // Simulate GenAI analysis with charger-specific data
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const chargerAnalysis = {
+        overall_status: "WARNING",
+        risk_level: "MEDIUM",
+        key_findings_summary: "Charger efficiency declining due to thermal stress and component aging. Power conversion efficiency at 85% with increasing heat generation. Isolation resistance within acceptable range but trending downward.",
+        recommendations: [
+          {
+            action: "Implement Thermal Management Optimization",
+            priority: "HIGH",
+            reason: "Charger temperature reaching 60°C indicates thermal stress affecting efficiency",
+            urgency: "Within 2 weeks - Schedule during next maintenance window"
+          },
+          {
+            action: "Power Conversion Efficiency Monitoring",
+            priority: "MEDIUM", 
+            reason: "85% efficiency is below optimal 90-95% range for onboard chargers",
+            urgency: "Within 1 month - Implement continuous monitoring"
+          },
+          {
+            action: "Isolation Resistance Testing",
+            priority: "MEDIUM",
+            reason: "23 MΩ resistance is adequate but requires regular monitoring",
+            urgency: "Monthly testing recommended"
+          },
+          {
+            action: "Coolant System Inspection",
+            priority: "HIGH",
+            reason: "Coolant temperature at 60°C suggests potential cooling system issues",
+            urgency: "Within 1 week - Check coolant levels and flow rates"
+          }
+        ]
+      };
+      
+      setGenAiAnalysis(chargerAnalysis);
+      console.log('🤖 GenAI Charger Analysis Complete:', chargerAnalysis);
+      
+    } catch (error) {
+      console.error('GenAI Analysis Error:', error);
+      setGenAiAnalysis({
+        error: true,
+        message: "GenAI service temporarily unavailable. Using fallback recommendations."
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // Initialize GenAI analysis
+  useEffect(() => {
+    // Start analysis after a delay
+    const analysisTimer = setTimeout(analyzeChargerWithGenAI, 3000);
+    return () => clearTimeout(analysisTimer);
+  }, []);
+
+  // Calculate dynamic remaining useful life based on charger health
+  const calculateChargerRemainingLife = useMemo(() => {
+    const currentHealth = 55; // Based on current charger status
+    const criticalThreshold = 25;
+    const warningThreshold = 40;
+    
+    if (currentHealth <= criticalThreshold) {
+      return Math.max(10, currentHealth);
+    } else if (currentHealth <= warningThreshold) {
+      return Math.max(25, currentHealth - 5);
+    } else {
+      return Math.min(85, currentHealth + 5);
+    }
   }, []);
 
   // Responsive sizing functions
@@ -26,6 +241,40 @@ const Charger = () => {
       titleFontSize: width < 1200 ? '14px' : width < 1400 ? '16px' : '18px'
     };
   }, [windowWidth]);
+
+  // Helper function to generate SVG path from data points
+  const generateSVGPath = (points) => {
+    if (!points || points.length === 0) return '';
+    
+    let path = `M${points[0].x},${points[0].y}`;
+    
+    for (let i = 1; i < points.length - 1; i++) {
+      const current = points[i];
+      const next = points[i + 1];
+      const controlX = current.x + (next.x - current.x) * 0.5;
+      const controlY = current.y;
+      path += ` Q${controlX},${controlY} ${next.x},${next.y}`;
+    }
+    
+    return path;
+  };
+
+  // Helper function to create dynamic gauge arc
+  const createGaugeArc = (angle, radius = 35, strokeWidth = 3) => {
+    const centerX = 45;
+    const centerY = 45;
+    const startAngle = 0;
+    const endAngle = Math.min(180, Math.max(0, angle));
+    
+    const startX = centerX + radius * Math.cos((startAngle - 90) * Math.PI / 180);
+    const startY = centerY + radius * Math.sin((startAngle - 90) * Math.PI / 180);
+    const endX = centerX + radius * Math.cos((endAngle - 90) * Math.PI / 180);
+    const endY = centerY + radius * Math.sin((endAngle - 90) * Math.PI / 180);
+    
+    const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
+    
+    return `M ${startX} ${startY} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${endX} ${endY}`;
+  };
 
   return (
     <div className="charger-page" style={{ overflowY: windowWidth <= 1700 ? 'auto' : 'hidden' }}>
@@ -109,58 +358,222 @@ const Charger = () => {
                 <div className="charger-metrics-grid" style={{ flex: '0 0 380px' }}>
                 <div className="charger-gauge">
                   <div className="gauge-container">
-                    <div className="gauge-arc"></div>
-                    <div className="gauge-value">180 V</div>
+                    {/* Dynamic Semi-Circle Gauge */}
+                    <svg width="90px" height="50px" viewBox="0 0 90 50" style={{ position: 'absolute', top: '0', left: '0' }}>
+                      <path
+                        d="M 10 45 A 35 35 0 0 1 80 45"
+                        fill="none"
+                        stroke="rgba(104,111,120,0.3)"
+                        strokeWidth="3"
+                      />
+                      <path
+                        d={createGaugeArc(gaugeAngles.inputVoltage)}
+                        fill="none"
+                        stroke="#37bc12"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        style={{ 
+                          transition: 'all 0.5s ease-in-out',
+                          filter: 'drop-shadow(0 0 3px rgba(55, 188, 18, 0.5))'
+                        }}
+                      />
+                      <circle cx="45" cy="45" r="2" fill="#37bc12" />
+                    </svg>
+                    <div className="gauge-value" style={{ fontWeight: 'bold', color: '#37bc12' }}>
+                      {Math.round(180 + Math.sin(Date.now() * 0.0003) * 10)} V
+                    </div>
                     <div className="gauge-label">Input Voltage (AC)</div>
                   </div>
                   <svg width="90px" height="45px" viewBox="0 0 90 45">
                     {Array.from({ length: 5 }, (_, i) => (
                       <line key={i} x1="0" y1={8 + i * 8} x2="90" y2={8 + i * 8} stroke="rgba(104,111,120,0.3)" strokeWidth="0.5"/>
                     ))}
-                    <path d="M0,22 Q20,10 40,30 T90,22" fill="none" stroke="#37bc12" strokeWidth="1"/>
-                    <path d="M0,28 Q20,18 40,38 T90,28" fill="none" stroke="#ff9900" strokeWidth="1"/>
+                    <path
+                      d={generateSVGPath(chartData.inputVoltage.current)}
+                      fill="none"
+                      stroke="#37bc12"
+                      strokeWidth="1.5"
+                      style={{ 
+                        transition: 'all 0.3s ease-in-out',
+                        filter: 'drop-shadow(0 0 2px rgba(55, 188, 18, 0.3))'
+                      }}
+                    />
+                    <path
+                      d={generateSVGPath(chartData.inputVoltage.expected)}
+                      fill="none"
+                      stroke="#ff9900"
+                      strokeWidth="1.5"
+                      strokeDasharray="2,2"
+                      style={{ 
+                        transition: 'all 0.3s ease-in-out',
+                        filter: 'drop-shadow(0 0 2px rgba(255, 153, 0, 0.3))'
+                      }}
+                    />
                   </svg>
                 </div>
                 <div className="charger-gauge">
                   <div className="gauge-container">
-                    <div className="gauge-arc"></div>
-                    <div className="gauge-value">180 V</div>
+                    {/* Dynamic Semi-Circle Gauge */}
+                    <svg width="90px" height="50px" viewBox="0 0 90 50" style={{ position: 'absolute', top: '0', left: '0' }}>
+                      <path
+                        d="M 10 45 A 35 35 0 0 1 80 45"
+                        fill="none"
+                        stroke="rgba(104,111,120,0.3)"
+                        strokeWidth="3"
+                      />
+                      <path
+                        d={createGaugeArc(gaugeAngles.outputVoltage)}
+                        fill="none"
+                        stroke="#0088ff"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        style={{ 
+                          transition: 'all 0.5s ease-in-out',
+                          filter: 'drop-shadow(0 0 3px rgba(0, 136, 255, 0.5))'
+                        }}
+                      />
+                      <circle cx="45" cy="45" r="2" fill="#0088ff" />
+                    </svg>
+                    <div className="gauge-value" style={{ fontWeight: 'bold', color: '#0088ff' }}>
+                      {Math.round(180 + Math.sin(Date.now() * 0.0003) * 8)} V
+                    </div>
                     <div className="gauge-label">Output Voltage (AC)</div>
                   </div>
                   <svg width="90px" height="45px" viewBox="0 0 90 45">
                     {Array.from({ length: 5 }, (_, i) => (
                       <line key={i} x1="0" y1={8 + i * 8} x2="90" y2={8 + i * 8} stroke="rgba(104,111,120,0.3)" strokeWidth="0.5"/>
                     ))}
-                    <path d="M0,22 Q20,30 40,10 T90,22" fill="none" stroke="#37bc12" strokeWidth="1"/>
-                    <path d="M0,28 Q20,38 40,18 T90,28" fill="none" stroke="#ff9900" strokeWidth="1"/>
+                    <path
+                      d={generateSVGPath(chartData.outputVoltage.current)}
+                      fill="none"
+                      stroke="#0088ff"
+                      strokeWidth="1.5"
+                      style={{ 
+                        transition: 'all 0.3s ease-in-out',
+                        filter: 'drop-shadow(0 0 2px rgba(0, 136, 255, 0.3))'
+                      }}
+                    />
+                    <path
+                      d={generateSVGPath(chartData.outputVoltage.expected)}
+                      fill="none"
+                      stroke="#ff9900"
+                      strokeWidth="1.5"
+                      strokeDasharray="2,2"
+                      style={{ 
+                        transition: 'all 0.3s ease-in-out',
+                        filter: 'drop-shadow(0 0 2px rgba(255, 153, 0, 0.3))'
+                      }}
+                    />
                   </svg>
                 </div>
                 <div className="charger-gauge">
                   <div className="gauge-container">
-                    <div className="gauge-arc"></div>
-                    <div className="gauge-value">27 A</div>
+                    {/* Dynamic Semi-Circle Gauge */}
+                    <svg width="90px" height="50px" viewBox="0 0 90 50" style={{ position: 'absolute', top: '0', left: '0' }}>
+                      <path
+                        d="M 10 45 A 35 35 0 0 1 80 45"
+                        fill="none"
+                        stroke="rgba(104,111,120,0.3)"
+                        strokeWidth="3"
+                      />
+                      <path
+                        d={createGaugeArc(gaugeAngles.inputCurrent)}
+                        fill="none"
+                        stroke="#ff6b35"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        style={{ 
+                          transition: 'all 0.5s ease-in-out',
+                          filter: 'drop-shadow(0 0 3px rgba(255, 107, 53, 0.5))'
+                        }}
+                      />
+                      <circle cx="45" cy="45" r="2" fill="#ff6b35" />
+                    </svg>
+                    <div className="gauge-value" style={{ fontWeight: 'bold', color: '#ff6b35' }}>
+                      {Math.round(27 + Math.sin(Date.now() * 0.0005) * 5)} A
+                    </div>
                     <div className="gauge-label">Input Current (AC)</div>
                   </div>
                   <svg width="90px" height="45px" viewBox="0 0 90 45">
                     {Array.from({ length: 5 }, (_, i) => (
                       <line key={i} x1="0" y1={8 + i * 8} x2="90" y2={8 + i * 8} stroke="rgba(104,111,120,0.3)" strokeWidth="0.5"/>
                     ))}
-                    <path d="M0,22 Q20,15 40,35 T90,22" fill="none" stroke="#37bc12" strokeWidth="1"/>
-                    <path d="M0,28 Q20,21 40,41 T90,28" fill="none" stroke="#ff9900" strokeWidth="1"/>
+                    <path
+                      d={generateSVGPath(chartData.inputCurrent.current)}
+                      fill="none"
+                      stroke="#ff6b35"
+                      strokeWidth="1.5"
+                      style={{ 
+                        transition: 'all 0.3s ease-in-out',
+                        filter: 'drop-shadow(0 0 2px rgba(255, 107, 53, 0.3))'
+                      }}
+                    />
+                    <path
+                      d={generateSVGPath(chartData.inputCurrent.expected)}
+                      fill="none"
+                      stroke="#ff9900"
+                      strokeWidth="1.5"
+                      strokeDasharray="2,2"
+                      style={{ 
+                        transition: 'all 0.3s ease-in-out',
+                        filter: 'drop-shadow(0 0 2px rgba(255, 153, 0, 0.3))'
+                      }}
+                    />
                   </svg>
                 </div>
                 <div className="charger-gauge">
                   <div className="gauge-container">
-                    <div className="gauge-arc"></div>
-                    <div className="gauge-value">27 A</div>
+                    {/* Dynamic Semi-Circle Gauge */}
+                    <svg width="90px" height="50px" viewBox="0 0 90 50" style={{ position: 'absolute', top: '0', left: '0' }}>
+                      <path
+                        d="M 10 45 A 35 35 0 0 1 80 45"
+                        fill="none"
+                        stroke="rgba(104,111,120,0.3)"
+                        strokeWidth="3"
+                      />
+                      <path
+                        d={createGaugeArc(gaugeAngles.outputCurrent)}
+                        fill="none"
+                        stroke="#9b59b6"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        style={{ 
+                          transition: 'all 0.5s ease-in-out',
+                          filter: 'drop-shadow(0 0 3px rgba(155, 89, 182, 0.5))'
+                        }}
+                      />
+                      <circle cx="45" cy="45" r="2" fill="#9b59b6" />
+                    </svg>
+                    <div className="gauge-value" style={{ fontWeight: 'bold', color: '#9b59b6' }}>
+                      {Math.round(27 + Math.sin(Date.now() * 0.0005) * 4)} A
+                    </div>
                     <div className="gauge-label">Output Current (AC)</div>
                   </div>
                   <svg width="90px" height="45px" viewBox="0 0 90 45">
                     {Array.from({ length: 5 }, (_, i) => (
                       <line key={i} x1="0" y1={8 + i * 8} x2="90" y2={8 + i * 8} stroke="rgba(104,111,120,0.3)" strokeWidth="0.5"/>
                     ))}
-                    <path d="M0,22 Q20,35 40,15 T90,22" fill="none" stroke="#37bc12" strokeWidth="1"/>
-                    <path d="M0,28 Q20,41 40,21 T90,28" fill="none" stroke="#ff9900" strokeWidth="1"/>
+                    <path
+                      d={generateSVGPath(chartData.outputCurrent.current)}
+                      fill="none"
+                      stroke="#9b59b6"
+                      strokeWidth="1.5"
+                      style={{ 
+                        transition: 'all 0.3s ease-in-out',
+                        filter: 'drop-shadow(0 0 2px rgba(155, 89, 182, 0.3))'
+                      }}
+                    />
+                    <path
+                      d={generateSVGPath(chartData.outputCurrent.expected)}
+                      fill="none"
+                      stroke="#ff9900"
+                      strokeWidth="1.5"
+                      strokeDasharray="2,2"
+                      style={{ 
+                        transition: 'all 0.3s ease-in-out',
+                        filter: 'drop-shadow(0 0 2px rgba(255, 153, 0, 0.3))'
+                      }}
+                    />
                   </svg>
                 </div>
                 </div>
@@ -243,8 +656,41 @@ const Charger = () => {
               {/* Charger Prediction Container */}
               <div className="motor-prediction-container" style={{ paddingLeft: windowWidth <= 1440 ? '15px' : windowWidth <= 1700 ? '20px' : windowWidth <= 1815 ? '25px' : '30px' }}>
                 <div className="failure-prediction">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px', marginTop: '-15px' }}>
-                    <h3 style={{ margin: 0 }}>Charger Failure Prediction</h3>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', marginTop: '-12px', paddingRight: '5px' }}>
+                    <h3 style={{ margin: 0, fontSize: windowWidth <= 1440 ? '14px' : '16px' }}>Charger Failure Prediction</h3>
+                    <div 
+                      className="prediction-toggle"
+                      onClick={() => {
+                        setShowPrediction(!showPrediction);
+                        console.log('🔌 Charger Prediction Toggle:', !showPrediction ? 'ON' : 'OFF');
+                      }}
+                      style={{
+                        width: '32px',
+                        height: '16px',
+                        backgroundColor: showPrediction ? '#00ff88' : 'rgba(255,255,255,0.3)',
+                        borderRadius: '8px',
+                        position: 'relative',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        border: showPrediction ? '1px solid #00ff88' : '1px solid rgba(255,255,255,0.3)',
+                        zIndex: 10,
+                        marginTop: '2px'
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: '12px',
+                          height: '12px',
+                          backgroundColor: 'white',
+                          borderRadius: '50%',
+                          position: 'absolute',
+                          top: '1px',
+                          left: showPrediction ? '18px' : '1px',
+                          transition: 'all 0.3s ease',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                        }}
+                      />
+                    </div>
                   </div>
                   <div className="prediction-legend" style={{ fontSize: windowWidth >= 1820 ? '14px' : 'inherit' }}>
                     <div className="legend-item">
@@ -252,7 +698,7 @@ const Charger = () => {
                       <span>Past</span>
                     </div>
                     <div className="legend-item">
-                      <div style={{ width: '15px', height: '2px', backgroundColor: 'rgba(56,239,125,1)', borderTop: '2px dashed rgba(56,239,125,1)', backgroundColor: 'transparent' }}></div>
+                      <div style={{ width: '15px', height: '2px', borderTop: '2px dashed rgba(56,239,125,1)', backgroundColor: 'transparent' }}></div>
                       <span>Predicted</span>
                     </div>
                   </div>
@@ -305,14 +751,20 @@ const Charger = () => {
                         strokeWidth="2"
                       />
                       
-                      {/* Predicted data (green) - Static prediction */}
-                      <polyline
-                        points="125,85 140,90 155,95 170,100 185,105 200,110 215,115"
-                        fill="none"
-                        stroke="rgba(56,239,125,1)"
-                        strokeWidth="2"
-                        strokeDasharray="4,4"
-                      />
+                      {/* Dynamic Predicted data (green) - Only show if toggle is on */}
+                      {showPrediction && predictionData.length > 1 && (
+                        <polyline
+                          points={predictionData.map(point => `${point.x},${point.y}`).join(' ')}
+                          fill="none"
+                          stroke="rgba(56,239,125,1)"
+                          strokeWidth="2"
+                          strokeDasharray="4,4"
+                          style={{ 
+                            opacity: showPrediction ? 1 : 0,
+                            transition: 'opacity 0.5s ease-in-out'
+                          }}
+                        />
+                      )}
                       
                       {/* Data points - Historical */}
                       <circle cx="35" cy="25" r="1.5" fill="rgba(255,153,0,1)"/>
@@ -324,83 +776,182 @@ const Charger = () => {
                       
                       {/* Current point - Highlighted */}
                       <circle cx="125" cy="85" r="2.5" fill="rgba(255,153,0,1)" stroke="white" strokeWidth="1.5"/>
-                      
-                      {/* Data points - Predicted */}
-                      <circle cx="140" cy="90" r="1.5" fill="rgba(56,239,125,1)"/>
-                      <circle cx="155" cy="95" r="1.5" fill="rgba(56,239,125,1)"/>
-                      <circle cx="170" cy="100" r="1.5" fill="rgba(56,239,125,1)"/>
-                      <circle cx="185" cy="105" r="1.5" fill="rgba(56,239,125,1)"/>
-                      <circle cx="200" cy="110" r="1.5" fill="rgba(56,239,125,1)"/>
-                      <circle cx="215" cy="115" r="1.5" fill="rgba(255,153,0,1)"/>
-                      
-                      {/* Annotations */}
                       <text x="125" y="78" fill="rgba(255,255,255,0.9)" fontSize="7" textAnchor="middle" fontWeight="bold">NOW</text>
-                      <text x="170" y="93" fill="rgba(56,239,125,0.9)" fontSize="6" textAnchor="middle">Stable</text>
-                      <text x="215" y="108" fill="rgba(255,153,0,0.9)" fontSize="6" textAnchor="middle">Monitor</text>
+                      <text x="125" y="95" fill="rgba(255,153,0,0.9)" fontSize="6" textAnchor="middle" fontWeight="bold">55%</text>
+                      
+                      {/* Dynamic Data points - Predicted (only show when toggle is on) */}
+                      {showPrediction && predictionData.map((point, index) => (
+                        <g key={index}>
+                          <circle 
+                            cx={point.x} 
+                            cy={point.y} 
+                            r="1.5" 
+                            fill={point.health <= 30 ? "rgba(255,68,68,1)" : point.health <= 40 ? "rgba(255,153,0,1)" : "rgba(56,239,125,1)"}
+                            style={{ 
+                              opacity: 0,
+                              animation: `fadeIn 0.5s ease-in-out ${index * 0.3}s forwards`
+                            }}
+                          />
+                          {index === predictionData.length - 1 && (
+                            <text 
+                              x={point.x} 
+                              y={point.y - 8} 
+                              fill={point.health <= 30 ? "rgba(255,68,68,0.9)" : point.health <= 40 ? "rgba(255,153,0,0.9)" : "rgba(56,239,125,0.9)"} 
+                              fontSize="6" 
+                              textAnchor="middle"
+                              style={{ 
+                                opacity: 0,
+                                animation: `fadeIn 0.5s ease-in-out ${index * 0.3 + 0.5}s forwards`
+                              }}
+                            >
+                              {point.status}
+                            </text>
+                          )}
+                        </g>
+                      ))}
+                      
+                      {/* CSS Animation for fade in effect */}
+                      <defs>
+                        <style>
+                          {`
+                            @keyframes fadeIn {
+                              from { opacity: 0; transform: scale(0.5); }
+                              to { opacity: 1; transform: scale(1); }
+                            }
+                          `}
+                        </style>
+                      </defs>
                       </svg>
                     </div>
                   </div>
                 </div>
 
-                {/* Remaining Useful Life */}
+                {/* Dynamic Remaining Useful Life */}
                 <div className="useful-life" style={{ marginBottom: '20px', marginTop: windowWidth <= 1440 ? '-110px' : windowWidth <= 1700 ? '-90px' : windowWidth <= 1815 ? '-40px' : windowWidth >= 2560 ? '80px' : '0px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
                     <span style={{ fontSize: windowWidth >= 1820 ? '14px' : spacing.smallFontSize, color: 'white' }}>Remaining useful life</span>
-                    <span style={{ fontSize: windowWidth >= 1820 ? '18px' : spacing.fontSize, color: 'white', fontWeight: 'bold' }}>60%</span>
+                    <span style={{ 
+                      fontSize: windowWidth >= 1820 ? '18px' : spacing.fontSize, 
+                      color: calculateChargerRemainingLife < 30 ? '#ff4444' : calculateChargerRemainingLife < 60 ? '#ff9900' : '#37bc12', 
+                      fontWeight: 'bold' 
+                    }}>
+                      {calculateChargerRemainingLife}%
+                    </span>
                   </div>
                   <div className="life-bar" style={{ borderRadius: '0' }}>
                     <div className="life-fill" style={{ 
-                      width: '60%', 
+                      width: `${calculateChargerRemainingLife}%`, 
                       borderRadius: '0',
-                      background: 60 < 30 ? '#ff4444' : 
-                                 60 < 60 ? '#ff9900' : 
-                                 'linear-gradient(90deg, #ff9900 0%, #37bc12 100%)'
+                      background: calculateChargerRemainingLife < 30 ? '#ff4444' : 
+                                 calculateChargerRemainingLife < 60 ? '#ff9900' : 
+                                 'linear-gradient(90deg, #ff9900 0%, #37bc12 100%)',
+                      transition: 'all 0.5s ease-in-out'
                     }}></div>
                   </div>
                 </div>
 
-                {/* GenAI Recommendations */}
+                {/* Enhanced GenAI Recommendations */}
                 <div className="genai-recommendations" style={{ marginTop: '20px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                     <h3 style={{ fontSize: spacing.titleFontSize, margin: 0 }}>GenAI Recommendations</h3>
+                    {isAnalyzing && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ 
+                          width: '12px', 
+                          height: '12px', 
+                          border: '2px solid #00ff88', 
+                          borderTop: '2px solid transparent', 
+                          borderRadius: '50%', 
+                          animation: 'spin 1s linear infinite' 
+                        }}></div>
+                        <span style={{ fontSize: '10px', color: '#00ff88' }}>Analyzing...</span>
+                      </div>
+                    )}
                   </div>
+                  
                   <p style={{ 
                     fontSize: windowWidth >= 1920 ? spacing.fontSize : spacing.smallFontSize, 
-                    color: 'rgba(255,255,255,0.8)', 
+                    color: isAnalyzing ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.8)', 
                     lineHeight: '1.4',
-                    marginBottom: '20px'
-                  }}>Use Battery health, SOC, Temperature and environmental data, Charging station load, Real-time traffic and user location data to dynamic power adjustment during charging</p>
+                    marginBottom: '20px',
+                    transition: 'color 0.3s ease'
+                  }}>
+                    {isAnalyzing 
+                      ? "🤖 GenAI is analyzing charger performance data, thermal patterns, and efficiency metrics..." 
+                      : genAiAnalysis?.error 
+                        ? "GenAI service temporarily unavailable. Using standard charger maintenance recommendations."
+                        : `Overall Status: ${genAiAnalysis?.overall_status || 'ANALYZING'} | Risk Level: ${genAiAnalysis?.risk_level || 'PENDING'}`
+                    }
+                  </p>
                   
-                  <div className="recommendations-list" style={{ marginTop: '15px' }}>
-                    <div style={{ marginBottom: '15px' }}>
-                      <div className="recommendation-item" style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '8px',
-                        marginBottom: '10px',
-                        fontSize: windowWidth >= 1920 ? spacing.titleFontSize : spacing.fontSize,
-                        fontWeight: '600'
-                      }}>
-                        <span className="warning-icon" style={{ fontSize: '14px' }}>⚠️</span>
-                        <span>Dynamic Power Adjustment</span>
-                      </div>
-                      <div className="recommendation-details" style={{ 
-                        paddingLeft: '22px',
-                        fontSize: windowWidth >= 1920 ? spacing.fontSize : spacing.smallFontSize,
-                        color: 'rgba(255,255,255,0.7)',
-                        lineHeight: '1.3'
-                      }}>
-                        <p style={{ margin: '5px 0' }}><strong style={{ color: 'rgba(255,255,255,0.9)' }}>Step 1:</strong> Initial assessment and configure power ramping rates</p>
-                        <p style={{ margin: '5px 0' }}><strong style={{ color: 'rgba(255,255,255,0.9)' }}>Step 2:</strong> Configure adaptive charging rates</p>
+                  {/* GenAI Key Findings - Natural Language Summary */}
+                  {genAiAnalysis?.key_findings_summary && !genAiAnalysis.error && (
+                    <div style={{ marginBottom: '12px', padding: '8px', backgroundColor: 'rgba(0,255,136,0.1)', borderRadius: '4px', border: '1px solid rgba(0,255,136,0.3)' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#00ff88', marginBottom: '4px' }}>🔍 Analysis Summary:</div>
+                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.9)', lineHeight: '1.4' }}>
+                        {genAiAnalysis.key_findings_summary}
                       </div>
                     </div>
-                    <div className="more-link" style={{ 
-                      fontSize: spacing.smallFontSize,
-                      color: '#ff9900',
-                      cursor: 'pointer',
-                      textAlign: 'right',
-                      marginTop: '10px'
-                    }}>More.....</div>
+                  )}
+                  
+                  <div className="recommendations-list" style={{ 
+                    maxHeight: '200px', 
+                    overflowY: 'auto', 
+                    paddingRight: '8px',
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: '#00ff88 rgba(255,255,255,0.1)'
+                  }}>
+                    {genAiAnalysis?.recommendations ? (
+                      genAiAnalysis.recommendations.map((rec, index) => (
+                        <div key={index} style={{ marginBottom: '12px' }}>
+                          <div className="recommendation-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                            <span className="warning-icon">
+                              {rec.priority === 'CRITICAL' ? '🚨' : rec.priority === 'HIGH' ? '⚠️' : rec.priority === 'MEDIUM' ? '⚡' : 'ℹ️'}
+                            </span>
+                            <span style={{ flex: 1, fontSize: '13px' }}>{rec.action}</span>
+                            <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>
+                          </div>
+                          {(rec.reason || rec.urgency) && (
+                            <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
+                              {rec.reason && <p><strong>Reason:</strong> {rec.reason}</p>}
+                              {rec.urgency && <p><strong>Urgency:</strong> {rec.urgency}</p>}
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <>
+                        <div style={{ marginBottom: '15px' }}>
+                          <div className="recommendation-item" style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '8px',
+                            marginBottom: '10px',
+                            fontSize: windowWidth >= 1920 ? spacing.titleFontSize : spacing.fontSize,
+                            fontWeight: '600'
+                          }}>
+                            <span className="warning-icon" style={{ fontSize: '14px' }}>⚠️</span>
+                            <span>Dynamic Power Adjustment</span>
+                          </div>
+                          <div className="recommendation-details" style={{ 
+                            paddingLeft: '22px',
+                            fontSize: windowWidth >= 1920 ? spacing.fontSize : spacing.smallFontSize,
+                            color: 'rgba(255,255,255,0.7)',
+                            lineHeight: '1.3'
+                        }}>
+                          <p style={{ margin: '5px 0' }}><strong style={{ color: 'rgba(255,255,255,0.9)' }}>Step 1:</strong> Initial assessment and configure power ramping rates</p>
+                          <p style={{ margin: '5px 0' }}><strong style={{ color: 'rgba(255,255,255,0.9)' }}>Step 2:</strong> Configure adaptive charging rates</p>
+                        </div>
+                      </div>
+                      <div className="more-link" style={{ 
+                        fontSize: spacing.smallFontSize,
+                        color: '#ff9900',
+                        cursor: 'pointer',
+                        textAlign: 'right',
+                        marginTop: '10px'
+                      }}>More.....</div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -410,6 +961,29 @@ const Charger = () => {
         </div>
       </div>
       <DataNeededModal open={showModal} onClose={() => setShowModal(false)} type="charger" />
+      
+      {/* CSS Animations */}
+      <style>
+        {`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+          
+          .prediction-toggle:hover {
+            transform: scale(1.08);
+            box-shadow: 0 1px 6px rgba(0,255,136,0.4);
+          }
+          
+          .recommendation-item:hover {
+            background-color: rgba(255,255,255,0.05);
+            border-radius: 4px;
+            padding: 4px;
+            margin: -4px;
+            transition: all 0.2s ease;
+          }
+        `}
+      </style>
     </div>
   );
 };

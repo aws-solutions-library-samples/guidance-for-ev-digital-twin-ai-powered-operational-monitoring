@@ -213,6 +213,57 @@ class AgentCoreService {
   }
 
   /**
+   * Get inverter analysis with enhanced caching and fallback
+   * @param {string} vehicleId - The vehicle ID
+   * @param {object} inverterData - Current inverter data
+   * @returns {Promise<string>} - Inverter analysis
+   */
+  async getInverterAnalysis(vehicleId, inverterData) {
+    const cacheKey = `inverter_analysis_${vehicleId}_${JSON.stringify(inverterData).slice(0, 50)}`;
+    const cached = this.cache.get(cacheKey);
+    
+    // Use cached data if available and fresh
+    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+      console.log(`Using cached Inverter GenAI analysis for vehicle ${vehicleId} (age: ${Math.round((Date.now() - cached.timestamp) / 1000)}s)`);
+      return { ...cached.data, fromCache: true };
+    }
+
+    // Try to get fresh analysis if service timing allows
+    try {
+      if (!this.shouldCallService()) {
+        // Use stale cache if available, otherwise return throttled indicator
+        if (cached) {
+          console.log(`Using stale cached inverter data due to service throttling`);
+          return { ...cached.data, fromCache: true, stale: true };
+        }
+        console.log(`Inverter service throttled and no cache available - indicating fallback needed`);
+        return { 
+          throttled: true, 
+          error: 'Inverter service throttled - use enhanced fallback',
+          fromCache: false 
+        };
+      }
+
+      console.log(`Fetching fresh Inverter GenAI analysis for vehicle ${vehicleId}`);
+      const response = await this.chat(`Analyze inverter condition for vehicle ${vehicleId}. Current metrics: DC voltage ${inverterData.dc_voltage_v}V, AC voltage ${inverterData.ac_voltage_v}V, Power output ${inverterData.power_output_kw}kW, Efficiency ${inverterData.efficiency_percent}%, Temperature ${inverterData.temperature_c}°C, THD ${inverterData.thd_percent}%. Provide specific inverter maintenance recommendations focusing on power electronics and efficiency.`);
+      
+      // Store successful response in cache
+      const analysisData = { response, timestamp: Date.now(), fromCache: false };
+      this.cache.set(cacheKey, analysisData);
+      
+      return analysisData;
+    } catch (error) {
+      // Try to use stale cache on error
+      if (cached) {
+        console.log(`Inverter service error - using stale cached data:`, error.message);
+        return { ...cached.data, fromCache: true, stale: true, error: error.message };
+      }
+      
+      throw error;
+    }
+  }
+
+  /**
    * Get maintenance recommendations for a specific vehicle
    * @param {number} vehicleId - The vehicle ID
    * @returns {Promise<string>} - Maintenance recommendations
