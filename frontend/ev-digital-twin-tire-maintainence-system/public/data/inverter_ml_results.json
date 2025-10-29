@@ -1,0 +1,109 @@
+[
+  {
+    "vehicle_id": 1,
+    "ml_analysis": {
+      "predictions": {
+        "efficiency_trend": "declining",
+        "failure_probability": 0.15,
+        "maintenance_priority": "medium",
+        "estimated_remaining_life": 180
+      },
+      "recommendations": [
+        {
+          "action": "Monitor inverter temperature - approaching warning threshold",
+          "priority": "MEDIUM",
+          "description": "Temperature readings show upward trend, schedule thermal inspection",
+          "estimated_cost": "$150-250"
+        },
+        {
+          "action": "Check DC voltage stability - minor fluctuations detected",
+          "priority": "LOW",
+          "description": "Voltage variations within acceptable range but trending",
+          "estimated_cost": "$100-150"
+        }
+      ]
+    }
+  },
+  {
+    "vehicle_id": 2,
+    "ml_analysis": {
+      "predictions": {
+        "efficiency_trend": "stable",
+        "failure_probability": 0.08,
+        "maintenance_priority": "low",
+        "estimated_remaining_life": 240
+      },
+      "recommendations": [
+        {
+          "action": "Continue regular maintenance schedule",
+          "priority": "LOW",
+          "description": "Inverter operating within optimal parameters",
+          "estimated_cost": "$75-100"
+        }
+      ]
+    }
+  },
+  {
+    "vehicle_id": 3,
+    "ml_analysis": {
+      "predictions": {
+        "efficiency_trend": "improving",
+        "failure_probability": 0.05,
+        "maintenance_priority": "low",
+        "estimated_remaining_life": 300
+      },
+      "recommendations": [
+        {
+          "action": "Optimize switching frequency for better efficiency",
+          "priority": "LOW",
+          "description": "Performance trending positively, minor optimization opportunity",
+          "estimated_cost": "$50-75"
+        }
+      ]
+    }
+  },
+  {
+    "vehicle_id": 4,
+    "ml_analysis": {
+      "predictions": {
+        "efficiency_trend": "declining",
+        "failure_probability": 0.25,
+        "maintenance_priority": "high",
+        "estimated_remaining_life": 120
+      },
+      "recommendations": [
+        {
+          "action": "URGENT: Investigate voltage fluctuations - fault code I002 detected",
+          "priority": "HIGH",
+          "description": "Voltage instability may lead to inverter failure",
+          "estimated_cost": "$300-500"
+        },
+        {
+          "action": "Schedule comprehensive inverter diagnostic",
+          "priority": "HIGH",
+          "description": "Multiple parameters showing degradation patterns",
+          "estimated_cost": "$200-350"
+        }
+      ]
+    }
+  },
+  {
+    "vehicle_id": 5,
+    "ml_analysis": {
+      "predictions": {
+        "efficiency_trend": "stable",
+        "failure_probability": 0.12,
+        "maintenance_priority": "medium",
+        "estimated_remaining_life": 200
+      },
+      "recommendations": [
+        {
+          "action": "Monitor modulation index - slight deviation observed",
+          "priority": "MEDIUM",
+          "description": "PWM modulation showing minor irregularities",
+          "estimated_cost": "$125-200"
+        }
+      ]
+    }
+  }
+]

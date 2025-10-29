@@ -1,0 +1,16 @@
+vehicle_id,date,make,model,year,dc_voltage_v,dc_current_a,ac_voltage_v,ac_current_a,power_output_kw,efficiency_percent,temperature_c,switching_frequency_khz,modulation_index,thd_percent,fault_codes,inverter_anomaly,anomaly_type_inverter,failure_risk,maintenance_due_inverter,drivetrain,vehicle_class,battery_voltage_v,motor_rpm,torque_nm
+1,2025-03-15,Honda,Civic,2020,400.5,125.3,230.2,89.4,35.2,94.8,65.3,10.5,0.85,2.1,None,False,normal,1,False,FWD,Compact Sedan,396.8,2850,145.2
+2,2025-03-15,Toyota,Prius,2019,350.8,98.7,220.1,78.2,28.9,96.2,58.7,8.2,0.92,1.8,None,False,normal,1,False,FWD,Hybrid Sedan,348.2,2650,128.7
+3,2025-03-15,Tesla,Model 3,2021,450.2,156.8,240.5,112.3,42.8,97.1,72.4,12.8,0.88,1.5,None,False,normal,1,False,RWD,Electric Sedan,448.9,3200,185.6
+4,2025-03-15,BMW,3 Series,2020,420.7,142.1,235.8,98.5,38.7,95.4,69.1,11.2,0.87,2.3,None,False,normal,1,False,RWD,Luxury Sedan,418.3,2950,162.4
+5,2025-03-15,Audi,A4,2022,410.3,138.9,232.4,95.7,37.1,94.9,66.8,10.8,0.86,2.0,None,False,normal,1,False,AWD,Luxury Sedan,407.6,2880,158.9
+1,2025-03-16,Honda,Civic,2020,398.2,123.8,228.9,87.6,34.8,94.2,67.8,10.7,0.84,2.4,None,False,normal,1,False,FWD,Compact Sedan,394.5,2820,143.8
+2,2025-03-16,Toyota,Prius,2019,348.5,97.2,218.7,76.9,28.3,95.8,61.2,8.5,0.91,1.9,None,False,normal,1,False,FWD,Hybrid Sedan,345.8,2620,126.3
+3,2025-03-16,Tesla,Model 3,2021,447.8,155.2,238.9,110.8,42.1,96.8,74.9,13.1,0.89,1.6,None,False,normal,1,False,RWD,Electric Sedan,446.2,3180,183.2
+4,2025-03-16,BMW,3 Series,2020,418.4,140.7,234.2,97.1,38.2,95.1,71.5,11.5,0.86,2.5,None,False,normal,1,False,RWD,Luxury Sedan,415.9,2920,160.7
+5,2025-03-16,Audi,A4,2022,407.9,137.4,231.1,94.3,36.6,94.6,68.9,11.1,0.85,2.2,None,False,normal,1,False,AWD,Luxury Sedan,405.2,2860,157.1
+1,2025-03-17,Honda,Civic,2020,395.8,122.1,227.5,86.2,34.3,93.8,70.2,10.9,0.83,2.7,I001,True,overheating,2,False,FWD,Compact Sedan,392.1,2790,142.1
+2,2025-03-17,Toyota,Prius,2019,346.2,95.8,217.3,75.6,27.8,95.4,63.8,8.8,0.90,2.1,None,False,normal,1,False,FWD,Hybrid Sedan,343.4,2590,124.9
+3,2025-03-17,Tesla,Model 3,2021,445.1,153.7,237.2,109.2,41.5,96.5,77.3,13.4,0.90,1.7,None,False,normal,1,False,RWD,Electric Sedan,443.6,3160,181.8
+4,2025-03-17,BMW,3 Series,2020,415.9,139.2,232.6,95.8,37.6,94.7,73.8,11.8,0.85,2.8,I002,True,voltage_fluctuation,2,True,RWD,Luxury Sedan,413.4,2890,158.9
+5,2025-03-17,Audi,A4,2022,405.4,135.9,229.7,92.9,36.1,94.2,71.1,11.4,0.84,2.4,None,False,normal,1,False,AWD,Luxury Sedan,402.7,2840,155.3
