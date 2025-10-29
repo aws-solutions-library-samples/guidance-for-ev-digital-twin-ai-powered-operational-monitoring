@@ -7,7 +7,7 @@ class AgentCoreService {
     this.cache = new Map();
     this.CACHE_TTL = 300000; // 5 minutes for GenAI responses
     this.lastCallTime = 0;
-    this.MIN_CALL_INTERVAL = 15000; // 15 seconds minimum between calls (reduced for better UX)
+    this.MIN_CALL_INTERVAL = 5000; // 5 seconds minimum between calls (reduced for booking flow)
     this.serviceAvailable = true;
     this.lastFailureTime = 0;
     this.FAILURE_COOLDOWN = 60000; // 1 minute cooldown after failure
@@ -46,11 +46,11 @@ class AgentCoreService {
    * @param {string} prompt - The question or request
    * @returns {Promise<string>} - The AI response
    */
-  async chat(prompt) {
+  async chat(prompt, retryAttempt = 0) {
     const now = Date.now();
 
-    // Check if we should make the call
-    if (!this.shouldCallService()) {
+    // Check if we should make the call (skip check on retries)
+    if (!this.shouldCallService() && retryAttempt === 0) {
       throw new Error('Service call throttled - using cached data or fallback');
     }
 
@@ -97,8 +97,15 @@ class AgentCoreService {
 
       // Mark service as potentially unavailable
       this.serviceAvailable = false;
-      this.lastFailureTime = now;
+      // Don't update lastFailureTime - it interferes with throttling after long operations
 
+      // Reset session on ValidationException (corrupted conversation state)
+      if (error.message.includes('ValidationException') || error.message.includes('tool_use')) {
+        console.log('Session corrupted, resetting session ID');
+        this.sessionId = null;
+        throw new Error('Session reset due to conversation state error. Please retry.');
+      }
+      
       // Check if it's a network error or service unavailable
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
         throw new Error('AgentCore service is currently unavailable. Using cached recommendations.');
@@ -229,7 +236,7 @@ class AgentCoreService {
 
     // Not cached or expired - fetch fresh with improved prompt
     console.log(`Fetching fresh data for vehicle ${vehicleId}`);
-    const prompt = `Analyze vehicle ${vehicleId} using analyze_tire_condition and analyze_motor_performance tools. Look for tire pressure issues (below 30 PSI), low tread depth, motor performance problems. Give me specific maintenance recommendations in 1-2 sentences. If you find any tire pressure below 30 PSI or tread depth issues, mention them specifically.`;
+    const prompt = `Analyze ONLY the tire condition for vehicle ${vehicleId} using the analyze_tire_condition tool. Look for tire pressure issues (below 30 PSI), low tread depth, and wear patterns. Give me specific tire maintenance recommendations in 1-2 sentences. Do NOT analyze motor or engine.`;
     const response = await this.chat(prompt);
 
     // Store in cache

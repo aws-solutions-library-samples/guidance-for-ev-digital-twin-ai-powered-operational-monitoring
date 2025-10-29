@@ -7,6 +7,16 @@ const ConnVehicle = () => {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
+  const vehicleVINs = {
+    1: '5YJSA1E26HF123456',
+    2: '1HGBH41JXMN109876',
+    3: '2T1BURHE8JC987654',
+    4: 'WBADT43452G123789',
+    5: '3VWDX7AJ9DM456321'
+  };
+
+  const currentVIN = vehicleVINs[carId] || 'VIN number';
+
   return (
     <div className="connvehicle-page">
       <div className="connvehicle-container">
@@ -70,7 +80,7 @@ const ConnVehicle = () => {
         <div className="connvehicle-vin">
           <button className="connvehicle-back-btn" onClick={() => navigate('/')}>
             <span>←</span>
-            <span>VIN number</span>
+            <span>{currentVIN}</span>
           </button>
         </div>
 

@@ -4,12 +4,13 @@ import { useNavigate } from 'react-router-dom';
 const MapView = () => {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [hoveredVehicle, setHoveredVehicle] = useState(null);
   const vehicles = [
-    { id: 1, x: 871, y: 121, status: 'charging', battery: 85 },
-    { id: 2, x: 979, y: 532, status: 'low', battery: 15 },
-    { id: 3, x: 772, y: 233, status: 'charging', battery: 92 },
-    { id: 4, x: 1261, y: 384, status: 'charging', battery: 78 },
-    { id: 5, x: 1156, y: 564, status: 'idle', battery: 45 }
+    { id: 1, vin: '5YJSA1E26HF123456', x: 871, y: 121, status: 'charging', battery: 85 },
+    { id: 2, vin: '1HGBH41JXMN109876', x: 979, y: 532, status: 'low', battery: 15 },
+    { id: 3, vin: '2T1BURHE8JC987654', x: 772, y: 233, status: 'charging', battery: 92 },
+    { id: 4, vin: 'WBADT43452G123789', x: 1261, y: 384, status: 'charging', battery: 78 },
+    { id: 5, vin: '3VWDX7AJ9DM456321', x: 1156, y: 564, status: 'idle', battery: 45 }
   ];
 
   const getMarkerColor = (status) => {
@@ -91,7 +92,14 @@ const MapView = () => {
           
           {/* Vehicle markers */}
           {vehicles.map(vehicle => (
-            <g key={vehicle.id} style={{ cursor: 'pointer' }} onClick={() => handleVehicleClick(vehicle.id)} transform={`translate(${vehicle.x}, ${vehicle.y - 40}) scale(1.5)`}>
+            <g 
+              key={vehicle.id} 
+              style={{ cursor: 'pointer' }} 
+              onClick={() => handleVehicleClick(vehicle.id)}
+              onMouseEnter={() => setHoveredVehicle(vehicle.id)}
+              onMouseLeave={() => setHoveredVehicle(null)}
+              transform={`translate(${vehicle.x}, ${vehicle.y - 40}) scale(1.5)`}
+            >
               <path
                 d="M29.0858 7.43978 C26.2026 2.7813 21.2072 0 15.7231 0 C10.2389 0 5.24293 2.7813 2.36034 7.43978 C-0.522865 12.0989 -0.779876 17.8043 1.67313 22.7021 L15.1702 49.6584 C15.2768 49.872 15.4845 50 15.7237 50 C15.9628 50 16.1699 49.872 16.2771 49.6584 L29.7736 22.7021 C32.226 17.8043 31.969 12.0983 29.0864 7.43978 L29.0858 7.43978 Z"
                 fill={getMarkerColor(vehicle.status)}
@@ -104,6 +112,43 @@ const MapView = () => {
                   style={{ pointerEvents: 'none' }}
                 />
               </g>
+            </g>
+          ))}
+          
+          {/* Tooltips */}
+          {vehicles.map(vehicle => hoveredVehicle === vehicle.id && (
+            <g key={`tooltip-${vehicle.id}`} transform={`translate(${vehicle.x}, ${vehicle.y - 80})`}>
+              <rect 
+                x="-100" 
+                y="-45" 
+                width="200" 
+                height="50" 
+                rx="6" 
+                fill="white" 
+                stroke="#ddd" 
+                strokeWidth="1"
+                filter="drop-shadow(0 2px 8px rgba(0,0,0,0.15))"
+              />
+              <text 
+                x="-90" 
+                y="-28" 
+                fill="#000" 
+                fontSize="11" 
+                fontWeight="bold"
+                fontFamily="Amazon Ember, sans-serif"
+              >
+                VIN: {vehicle.vin}
+              </text>
+              <text 
+                x="-90" 
+                y="-12" 
+                fill="#000" 
+                fontSize="11" 
+                fontWeight="bold"
+                fontFamily="Amazon Ember, sans-serif"
+              >
+                Battery: {vehicle.battery}%
+              </text>
             </g>
           ))}
         </svg>

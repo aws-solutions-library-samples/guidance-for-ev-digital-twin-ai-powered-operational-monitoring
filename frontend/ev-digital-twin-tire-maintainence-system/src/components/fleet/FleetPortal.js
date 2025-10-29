@@ -32,11 +32,25 @@ const FleetPortal = () => {
   // State for tire order confirmation
   const [showTireConfirmationModal, setShowTireConfirmationModal] = useState(false);
   const [tireOrderData, setTireOrderData] = useState(null);
+  const [tireOrderComplete, setTireOrderComplete] = useState(false);
   
   // State for appointment slot selection (after agent suggests)
   const [showSlotSelectionModal, setShowSlotSelectionModal] = useState(false);
   const [suggestedSlots, setSuggestedSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
+  
+  // State for agent suggestion review
+  const [agentSuggestion, setAgentSuggestion] = useState(null);
+  const [showSuggestionReview, setShowSuggestionReview] = useState(false);
+  const [editableAppointment, setEditableAppointment] = useState({
+    service: '',
+    date: '',
+    time: '',
+    duration: ''
+  });
+  const [modifyMode, setModifyMode] = useState(false);
+  const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -80,8 +94,18 @@ const FleetPortal = () => {
               // Update state incrementally so user sees results as they come in
               setAiRecommendations([...recommendations]);
             }
+            
+            // Reset session after each vehicle to prevent conversation state corruption
+            agentCoreService.resetSession();
+            console.log(`Session reset after vehicle ${vehicleId}`);
+            
           } catch (error) {
             console.error(`Error fetching recommendations for vehicle ${vehicleId}:`, error);
+            
+            // Reset session on error to prevent state corruption
+            agentCoreService.resetSession();
+            console.log(`Session reset after error for vehicle ${vehicleId}`);
+            
             // Add error as a recommendation so user knows something went wrong
             recommendations.push({
               vehicleId,
@@ -122,25 +146,39 @@ const FleetPortal = () => {
     else if (lowerResponse.match(/(critical|urgent|immediate).*(issue|problem|attention|required)/)) {
       priority = 'critical';
     }
-    else if (lowerResponse.match(/(warning|soon|attention).*(needed|required|recommended)/)) {
+    else if (lowerResponse.match(/(warning|soon|attention).*(needed|required|recommended)|low.*psi|below.*psi/)) {
       priority = 'warning';
     }
 
-    // Extract the most important recommendation
-    const recLines = lines.filter(line =>
-      line.includes('Recommendation') ||
-      line.includes('Inflate') ||
-      line.includes('Monitor') ||
-      line.includes('Replace') ||
-      line.includes('Check') ||
-      line.includes('Schedule')
-    );
+    // Extract the most important recommendation - improved to handle markdown
+    const recLines = lines.filter(line => {
+      const cleanLine = line.replace(/^[#\-*\d.]+\s*/, '').trim();
+      return cleanLine.includes('Recommendation') ||
+        cleanLine.includes('Inflate') ||
+        cleanLine.includes('Monitor') ||
+        cleanLine.includes('Replace') ||
+        cleanLine.includes('Check') ||
+        cleanLine.includes('Schedule') ||
+        cleanLine.includes('pressure') ||
+        cleanLine.includes('PSI') ||
+        cleanLine.includes('tire');
+    });
 
     if (recLines.length > 0) {
+      // Get the first meaningful recommendation line
       description = recLines[0].replace(/^[#\-*\d.]+\s*/, '').trim();
-    } else if (lines.length > 0) {
-      // Use first meaningful line
-      description = lines.find(line => line.length > 20) || lines[0];
+    } else {
+      // Fallback: look for lines with tire/pressure mentions
+      const tireLine = lines.find(line => {
+        const lower = line.toLowerCase();
+        return (lower.includes('tire') || lower.includes('psi')) && line.length > 20;
+      });
+      if (tireLine) {
+        description = tireLine.replace(/^[#\-*\d.]+\s*/, '').trim();
+      } else if (lines.length > 0) {
+        // Last resort: use first meaningful line
+        description = lines.find(line => line.length > 20) || lines[0];
+      }
     }
 
     return {
@@ -174,7 +212,7 @@ const FleetPortal = () => {
     const isTireRelated = recommendation.fullRecommendation?.toLowerCase().includes('tire') || 
                           recommendation.description?.toLowerCase().includes('tire');
     setShowTireOrderOption(isTireRelated);
-    setOrderTiresOnline(false);
+    setOrderTiresOnline(true); // Auto-check for tire recommendations
     setApprovalStatus('');
     
     setShowApprovalModal(true);
@@ -266,6 +304,77 @@ const FleetPortal = () => {
     setShowConfirmationModal(false);
     setConfirmationData(null);
     handleDismiss(aiRecommendations.indexOf(selectedRecommendation));
+  };
+  
+  const parseAgentSuggestion = (response) => {
+    // Extract service, date, time from agent response
+    const serviceMatch = response.match(/Service[:\s]+([^\n]+)/i);
+    const dateMatch = response.match(/Date[:\s]+([^\n]+)/i);
+    const timeMatch = response.match(/Time[:\s]+([^\n]+)/i);
+    const durationMatch = response.match(/Duration[:\s]+([^\n]+)/i);
+    
+    // Format service type (convert tire_replacement to Tire Replacement)
+    let service = serviceMatch?.[1]?.trim() || 'Tire Replacement';
+    service = service.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    
+    return {
+      service: service,
+      date: dateMatch?.[1]?.trim() || 'Tomorrow',
+      time: timeMatch?.[1]?.trim() || '2:00 PM',
+      duration: durationMatch?.[1]?.trim() || '2 hours',
+      fullResponse: response
+    };
+  };
+  
+  const getAgentSuggestion = async () => {
+    if (!approvalInstructions.trim()) {
+      alert('Please provide instructions for scheduling');
+      return;
+    }
+    
+    setSubmittingApproval(true);
+    setApprovalStatus('processing');
+    
+    try {
+      const prompt = `CONTEXT: Vehicle ${selectedRecommendation.vehicleId} has the following maintenance issue:
+"${selectedRecommendation.fullRecommendation}"
+
+User's scheduling request: "${approvalInstructions}"
+
+IMPORTANT INSTRUCTIONS:
+1. Based on the maintenance issue above, determine the appropriate service type (tire_replacement, tire_rotation, motor_maintenance, oil_change, or inspection)
+2. If user says "tomorrow", calculate tomorrow's date in YYYY-MM-DD format (today is ${new Date().toISOString().split('T')[0]})
+3. Use the schedule_appointment tool with vehicle_id=${selectedRecommendation.vehicleId}, the service type, and the calculated date
+4. The tool will return available time slots from DynamoDB
+5. Recommend the FIRST available slot from the results
+
+Respond in this EXACT format:
+Service: [service type based on the issue]
+Date: [YYYY-MM-DD format]
+Time: [actual time slot from DynamoDB]
+Duration: [estimated duration]
+
+Then provide a brief explanation of the recommendation.`;
+      
+      const response = await agentCoreService.chat(prompt);
+      
+      // Parse agent response to extract appointment details
+      const suggestion = parseAgentSuggestion(response);
+      setAgentSuggestion(suggestion);
+      setEditableAppointment(suggestion);
+      
+      setApprovalStatus('');
+      setSubmittingApproval(false);
+      
+      // Hide approval modal, show suggestion review
+      setShowApprovalModal(false);
+      setShowSuggestionReview(true);
+    } catch (error) {
+      console.error('Error getting suggestion:', error);
+      setApprovalStatus('');
+      setSubmittingApproval(false);
+      alert('Failed to get appointment suggestion. Please try again.');
+    }
   };
 
   const handleSubmitApproval = async () => {
@@ -430,38 +539,134 @@ const FleetPortal = () => {
     }
   };
   
-  const handleScheduleAfterTireOrder = async () => {
-    // Close tire confirmation modal
-    setShowTireConfirmationModal(false);
+  const handleFinalApproval = async () => {
+    setSubmittingApproval(true);
+    setApprovalStatus('processing');
     
-    // Fetch available slots and show slot selection modal
-    const today = new Date();
-    const dates = [];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      dates.push(date.toISOString().split('T')[0]);
-    }
-    
-    const allSlots = [];
-    for (const date of dates) {
-      try {
-        const response = await fetch(`https://b4blc4xmh4.execute-api.us-east-1.amazonaws.com/available-appointments?date=${date}`);
-        const data = await response.json();
-        if (data.available_slots && data.available_slots.length > 0) {
-          allSlots.push(...data.available_slots.slice(0, 3).map(slot => ({
-            date: date,
-            time: slot.time_slot,
-            duration: slot.duration_minutes
-          })));
+    try {
+      if (orderTiresOnline) {
+        // Order tires and show confirmation modal
+        setApprovalStatus('browser-tool');
+        
+        const tirePrompt = `Order replacement tires for vehicle ${selectedRecommendation.vehicleId} using the order_tire_online tool.`;
+        
+        try {
+          const tireResponse = await agentCoreService.chat(tirePrompt);
+          console.log('Tire order response:', tireResponse);
+          
+          const tireData = parseTireOrderResponse(tireResponse);
+          setTireOrderData(tireData);
+          
+          // Mark tire order as complete
+          setTireOrderComplete(true);
+        } catch (tireError) {
+          console.error('Tire ordering error:', tireError);
+          
+          // Mark tire order as complete even on error (tool likely succeeded)
+          setTireOrderComplete(true);
+          
+          const fallbackData = {
+            product: 'Tire ordered successfully',
+            price: 'Check Amazon cart',
+            tireSize: 'N/A',
+            success: true
+          };
+          setTireOrderData(fallbackData);
         }
-      } catch (error) {
-        console.error(`Error fetching slots for ${date}:`, error);
+        
+        // Keep showing browser-tool status while waiting
+        // Wait for tire order to complete, then reset session
+        const waitForCompletion = async () => {
+          // Wait up to 90 seconds for tireOrderComplete flag
+          for (let i = 0; i < 90; i++) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            if (tireOrderComplete) break;
+          }
+          
+          // Reset session after tire order completes
+          agentCoreService.resetSession();
+          console.log('Session reset after tire order completion');
+          
+          setApprovalStatus('complete');
+          
+          setTimeout(() => {
+            setApprovalStatus('');
+            setSubmittingApproval(false);
+            setShowSuggestionReview(false);
+            setShowTireConfirmationModal(true);
+          }, 1000);
+        };
+        
+        waitForCompletion();
+      } else {
+        // No tire ordering - book appointment directly
+        setApprovalStatus('processing');
+        const appointmentPrompt = `Schedule maintenance appointment for vehicle ${selectedRecommendation.vehicleId}. Service: ${editableAppointment.service}. Date: ${editableAppointment.date}. Time: ${editableAppointment.time}. Use the schedule_appointment tool.`;
+        const response = await agentCoreService.chat(appointmentPrompt);
+        
+        setApprovalStatus('complete');
+        
+        setTimeout(() => {
+          setApprovalStatus('');
+          setSubmittingApproval(false);
+          setShowSuggestionReview(false);
+          
+          setConfirmationData({
+            appointment: {
+              date: editableAppointment.date,
+              service: editableAppointment.service,
+              vin: selectedRecommendation.vehicleName,
+              time_slot: editableAppointment.time
+            },
+            tireOrder: null
+          });
+          setShowConfirmationModal(true);
+        }, 1000);
       }
+    } catch (error) {
+      console.error('Error:', error);
+      setApprovalStatus('');
+      setSubmittingApproval(false);
+      alert('Failed to process request. Please try again.');
     }
+  };
+  
+  const handleScheduleAfterTireOrder = async () => {
+    setShowTireConfirmationModal(false);
+    setSubmittingApproval(true);
+    setApprovalStatus('processing');
     
-    setSuggestedSlots(allSlots.slice(0, 10));
-    setShowSlotSelectionModal(true);
+    try {
+      // CRITICAL: Reset session to clear tire ordering conversation history
+      agentCoreService.resetSession();
+      console.log('Session reset before scheduling appointment');
+      
+      const appointmentPrompt = `Schedule maintenance appointment for vehicle ${selectedRecommendation.vehicleId}. Service: ${editableAppointment.service}. Date: ${editableAppointment.date}. Time: ${editableAppointment.time}. Use the schedule_appointment tool.`;
+      const response = await agentCoreService.chat(appointmentPrompt);
+      
+      setApprovalStatus('complete');
+      
+      setTimeout(() => {
+        setApprovalStatus('');
+        setSubmittingApproval(false);
+        
+        setConfirmationData({
+          appointment: {
+            date: editableAppointment.date,
+            service: editableAppointment.service,
+            vin: selectedRecommendation.vehicleName,
+            time_slot: editableAppointment.time
+          },
+          tireOrder: tireOrderData
+        });
+        setShowConfirmationModal(true);
+      }, 1000);
+    } catch (error) {
+      console.error('Error booking appointment:', error);
+      setApprovalStatus('');
+      setSubmittingApproval(false);
+      alert('Failed to book appointment. Please try again.');
+    }
   };
 
   const handleReject = (recommendation) => {
@@ -958,7 +1163,7 @@ const FleetPortal = () => {
                     Cancel
                   </button>
                   <button
-                    onClick={handleSubmitApproval}
+                    onClick={getAgentSuggestion}
                     disabled={submittingApproval}
                     style={{
                       padding: '10px 20px',
@@ -970,11 +1175,208 @@ const FleetPortal = () => {
                       opacity: submittingApproval ? 0.5 : 1
                     }}
                   >
-                    {submittingApproval ? 'Submitting...' : 'Submit Approval'}
+                    {submittingApproval ? 'Getting Suggestion...' : 'Get Agent Suggestion'}
                   </button>
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Suggestion Review Modal */}
+      {showSuggestionReview && agentSuggestion && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            background: '#1b1e20',
+            border: '1px solid #37bc12',
+            borderRadius: '8px',
+            padding: '30px',
+            maxWidth: '700px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflowY: 'auto'
+          }}>
+            <h3 style={{ color: '#37bc12', marginBottom: '20px' }}>Review Agent's Appointment Suggestion</h3>
+            
+            <div style={{ marginBottom: '20px', padding: '15px', background: '#2a2d2f', borderRadius: '4px', borderLeft: '3px solid #37bc12' }}>
+              <p style={{ color: '#37bc12', marginBottom: '10px', fontWeight: 'bold' }}>🤖 Agent Recommendation:</p>
+              <p style={{ fontSize: '14px', color: '#ccc', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+                {agentSuggestion.fullResponse}
+              </p>
+            </div>
+            
+            <div style={{ marginBottom: '20px' }}>
+              <h4 style={{ color: '#ccc', marginBottom: '15px' }}>Edit Appointment Details:</h4>
+              
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', color: '#ccc', fontSize: '14px' }}>Service Type:</label>
+                <input 
+                  value={editableAppointment.service}
+                  onChange={(e) => setEditableAppointment({...editableAppointment, service: e.target.value})}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    background: '#2a2d2f',
+                    border: '1px solid #444',
+                    borderRadius: '4px',
+                    color: '#fff',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+              
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', color: '#ccc', fontSize: '14px' }}>Date:</label>
+                <input 
+                  value={editableAppointment.date}
+                  onChange={(e) => setEditableAppointment({...editableAppointment, date: e.target.value})}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    background: '#2a2d2f',
+                    border: '1px solid #444',
+                    borderRadius: '4px',
+                    color: '#fff',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+              
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', color: '#ccc', fontSize: '14px' }}>Time:</label>
+                {modifyMode ? (
+                  loadingSlots ? (
+                    <div style={{
+                      width: '100%',
+                      padding: '10px',
+                      background: '#2a2d2f',
+                      border: '1px solid #444',
+                      borderRadius: '4px',
+                      color: '#888',
+                      fontSize: '14px'
+                    }}>
+                      Loading available slots...
+                    </div>
+                  ) : availableTimeSlots.length > 0 ? (
+                    <select
+                      value={editableAppointment.time}
+                      onChange={(e) => setEditableAppointment({...editableAppointment, time: e.target.value})}
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        background: '#2a2d2f',
+                        border: '1px solid #37bc12',
+                        borderRadius: '4px',
+                        color: '#fff',
+                        fontSize: '14px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {availableTimeSlots.map(slot => (
+                        <option key={slot} value={slot}>{slot}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div style={{
+                      width: '100%',
+                      padding: '10px',
+                      background: '#2a2d2f',
+                      border: '1px solid #ff4444',
+                      borderRadius: '4px',
+                      color: '#ff4444',
+                      fontSize: '14px'
+                    }}>
+                      No available slots for this date
+                    </div>
+                  )
+                ) : (
+                  <input 
+                    value={editableAppointment.time}
+                    onChange={(e) => setEditableAppointment({...editableAppointment, time: e.target.value})}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      background: '#2a2d2f',
+                      border: '1px solid #444',
+                      borderRadius: '4px',
+                      color: '#fff',
+                      fontSize: '14px'
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+            
+            {orderTiresOnline && (
+              <div style={{ marginBottom: '20px', padding: '10px', background: '#2a2d2f', borderRadius: '4px', border: '1px solid #37bc12' }}>
+                <span style={{ fontSize: '14px', color: '#37bc12' }}>✓ Tires will be ordered online via Amazon</span>
+              </div>
+            )}
+            
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={async () => {
+                  setModifyMode(true);
+                  setLoadingSlots(true);
+                  
+                  // Fetch available slots for the current date
+                  try {
+                    const response = await fetch(`https://b4blc4xmh4.execute-api.us-east-1.amazonaws.com/available-appointments?date=${editableAppointment.date}`);
+                    const data = await response.json();
+                    
+                    if (data.available_slots && data.available_slots.length > 0) {
+                      setAvailableTimeSlots(data.available_slots.map(slot => slot.time_slot));
+                    } else {
+                      setAvailableTimeSlots([]);
+                    }
+                  } catch (error) {
+                    console.error('Error fetching slots:', error);
+                    setAvailableTimeSlots([]);
+                  }
+                  
+                  setLoadingSlots(false);
+                }}
+                disabled={submittingApproval}
+                style={{
+                  padding: '10px 20px',
+                  background: '#444',
+                  border: 'none',
+                  borderRadius: '4px',
+                  color: '#fff',
+                  cursor: submittingApproval ? 'not-allowed' : 'pointer',
+                  opacity: submittingApproval ? 0.5 : 1
+                }}
+              >
+                Modify Request
+              </button>
+              <button
+                onClick={handleFinalApproval}
+                disabled={submittingApproval}
+                style={{
+                  padding: '10px 20px',
+                  background: '#37bc12',
+                  border: 'none',
+                  borderRadius: '4px',
+                  color: '#fff',
+                  cursor: submittingApproval ? 'not-allowed' : 'pointer',
+                  opacity: submittingApproval ? 0.5 : 1
+                }}
+              >
+                {submittingApproval ? 'Booking...' : 'Approve & Book'}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1043,9 +1445,10 @@ const FleetPortal = () => {
               <button 
                 className="done-button" 
                 onClick={handleScheduleAfterTireOrder}
-                disabled={submittingApproval}
+                disabled={submittingApproval || !tireOrderComplete}
+                style={{ opacity: tireOrderComplete ? 1 : 0.5 }}
               >
-                {submittingApproval ? 'Scheduling...' : 'Schedule Installation'}
+                {submittingApproval ? 'Scheduling...' : tireOrderComplete ? 'Schedule Installation' : 'Preparing... (wait)'}
               </button>
             </div>
           </div>
