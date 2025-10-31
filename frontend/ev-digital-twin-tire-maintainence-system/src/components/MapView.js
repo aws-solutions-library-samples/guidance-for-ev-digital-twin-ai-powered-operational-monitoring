@@ -22,8 +22,8 @@ const MapView = () => {
     }
   };
 
-  const handleVehicleClick = (vehicleId) => {
-    navigate(`/car/${vehicleId}`);
+  const handleVehicleClick = (vehicleVin) => {
+    navigate(`/car/${vehicleVin}`);
   };
 
   return (
@@ -95,7 +95,7 @@ const MapView = () => {
             <g 
               key={vehicle.id} 
               style={{ cursor: 'pointer' }} 
-              onClick={() => handleVehicleClick(vehicle.id)}
+              onClick={() => handleVehicleClick(vehicle.vin)}
               onMouseEnter={() => setHoveredVehicle(vehicle.id)}
               onMouseLeave={() => setHoveredVehicle(null)}
               transform={`translate(${vehicle.x}, ${vehicle.y - 40}) scale(1.5)`}
@@ -117,9 +117,9 @@ const MapView = () => {
           
           {/* Tooltips */}
           {vehicles.map(vehicle => hoveredVehicle === vehicle.id && (
-            <g key={`tooltip-${vehicle.id}`} transform={`translate(${vehicle.x}, ${vehicle.y - 80})`}>
+            <g key={`tooltip-${vehicle.id}`} transform={`translate(${vehicle.x}, ${vehicle.y - (vehicle.id === 1 ? 20 : 80)})`}>
               <rect 
-                x="-100" 
+                x={vehicle.id === 1 ? "40" : "-100"}
                 y="-45" 
                 width="200" 
                 height="50" 
@@ -130,7 +130,7 @@ const MapView = () => {
                 filter="drop-shadow(0 2px 8px rgba(0,0,0,0.15))"
               />
               <text 
-                x="-90" 
+                x={vehicle.id === 1 ? "50" : "-90"}
                 y="-28" 
                 fill="#000" 
                 fontSize="11" 
@@ -140,7 +140,7 @@ const MapView = () => {
                 VIN: {vehicle.vin}
               </text>
               <text 
-                x="-90" 
+                x={vehicle.id === 1 ? "50" : "-90"}
                 y="-12" 
                 fill="#000" 
                 fontSize="11" 
