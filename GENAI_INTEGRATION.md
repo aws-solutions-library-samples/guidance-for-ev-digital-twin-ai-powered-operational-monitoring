@@ -1,14 +1,14 @@
-# GenAI Integration - Claude 3.7 Sonnet for Tire Analysis
+# GenAI Integration - Claude Sonnet 4.5 for Tire Analysis
 
 ## Overview
 
-The EV Digital Twin tire component now features real-time GenAI analysis powered by **Claude 3.7 Sonnet** via AWS Bedrock. This provides sophisticated, contextual tire maintenance recommendations based on actual vehicle data.
+The EV Digital Twin tire component now features real-time GenAI analysis powered by **Claude Sonnet 4.5** via AWS Bedrock. This provides sophisticated, contextual tire maintenance recommendations based on actual vehicle data with enhanced reasoning capabilities.
 
 ## Features
 
 ### 🤖 **Real-Time GenAI Analysis**
-- Direct integration with Claude 3.7 Sonnet via AWS Bedrock
-- Sophisticated tire condition analysis with detailed prompts
+- Direct integration with Claude Sonnet 4.5 via AWS Bedrock
+- Advanced tire condition analysis with enhanced reasoning capabilities
 - Context-aware recommendations based on vehicle specifications
 - Real-time processing with 30-second intelligent caching
 
@@ -19,7 +19,7 @@ The EV Digital Twin tire component now features real-time GenAI analysis powered
 - **Load Distribution**: Accurate front/rear weight distribution (56%/44%)
 
 ### 🎯 **Intelligent Recommendation System**
-1. **Priority 1**: Claude 3.7 Sonnet GenAI recommendations
+1. **Priority 1**: Claude Sonnet 4.5 GenAI recommendations (Enhanced reasoning)
 2. **Priority 2**: ML analysis recommendations (existing system)
 3. **Priority 3**: Rule-based recommendations (fallback)
 
@@ -45,8 +45,9 @@ REACT_APP_AWS_SESSION_TOKEN=your_session_token_here
 ### 2. **AWS Bedrock Permissions**
 
 Ensure your AWS credentials have the following permissions:
-- `bedrock:InvokeModel` for Claude 3.7 Sonnet
-- Access to model ID: `us.anthropic.claude-3-7-sonnet-20250219-v1:0`
+- `bedrock:InvokeModel` for Claude Sonnet 4.5
+- Access to model ID: `anthropic.claude-sonnet-4-5-20250929-v1:0`
+- Note: May require inference profile access for newer models
 
 ### 3. **Dependencies**
 
@@ -57,8 +58,8 @@ The following packages are automatically installed:
 
 ### **Data Flow**
 1. **Data Collection**: Real tire metrics (PSI, temperature, tread depth, vehicle info)
-2. **GenAI Analysis**: Sophisticated prompts sent to Claude 3.7 Sonnet
-3. **Response Processing**: Structured analysis with recommendations
+2. **GenAI Analysis**: Advanced prompts sent to Claude Sonnet 4.5 with enhanced reasoning
+3. **Response Processing**: Structured analysis with improved recommendations
 4. **UI Display**: Enhanced interface with source indicators
 
 ### **GenAI Prompt Structure**
@@ -105,13 +106,13 @@ ANALYSIS REQUIREMENTS:
 ## UI Enhancements
 
 ### **Visual Indicators**
-- **🤖 Claude 3.7 Sonnet**: Shows when GenAI is active
+- **🤖 Claude Sonnet 4.5**: Shows when GenAI is active
 - **Loading Spinner**: "Analyzing..." during processing
 - **Source Badges**: GenAI/ML/Rule tags on recommendations
 - **Status Colors**: Green/Yellow/Red for condition severity
 
 ### **Key Findings Section**
-Highlighted insights from Claude analysis:
+Highlighted insights from Claude Sonnet 4.5 analysis:
 ```
 🔍 Key Findings:
 • Pressure deviation detected in front-right tire
@@ -135,7 +136,7 @@ Enhanced recommendation display:
 - Intelligent cache invalidation on significant data changes
 
 ### **Fallback System**
-1. **GenAI Available**: Full Claude 3.7 Sonnet analysis
+1. **GenAI Available**: Full Claude Sonnet 4.5 analysis with enhanced reasoning
 2. **GenAI Unavailable**: ML-based recommendations
 3. **All Systems Down**: Rule-based fallback recommendations
 
@@ -144,7 +145,7 @@ Enhanced recommendation display:
 ### **Console Logging**
 ```javascript
 // GenAI analysis logging
-console.log('Sending tire data to Claude 3.7 Sonnet:', tireData);
+console.log('Sending tire data to Claude Sonnet 4.5:', tireData);
 console.log('Received GenAI analysis:', analysis);
 
 // Realistic metrics logging

@@ -14,8 +14,8 @@ import boto3
 from bedrock_agentcore.tools.browser_client import browser_session
 from nova_act import NovaAct
 
-# Model configuration
-MODEL_ID = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
+# Model configuration - Claude Sonnet 4.5 via inference profile
+MODEL_ID = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
 
 # Browser Tool configuration
 NOVA_ACT_API_KEY = "645eef64-f306-4f7b-b930-4dff30d63e25"  

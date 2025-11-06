@@ -302,7 +302,7 @@ Our AI-powered agentic solution transforms vehicle maintenance through intellige
 ## Key Technical Specifications
 
 ### AgentCore Runtime Configuration
-- **Model:** Claude 3.7 Sonnet (us.anthropic.claude-3-7-sonnet-20250219-v1:0)
+- **Model:** Claude Sonnet 4.5 (anthropic.claude-sonnet-4-5-20250929-v1:0)
 - **Runtime ARN:** arn:aws:bedrock-agentcore:us-east-1:009296485814:runtime/vehicle_maintenance_agent-kH9hYvFcCD
 - **Tools:** 11 specialized maintenance analysis tools
 - **Memory:** STM_ONLY mode with 30-day event expiry
