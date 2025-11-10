@@ -27,15 +27,42 @@ Resources:
         - Key: Project
           Value: !Ref ProjectName
 
+  VehicleRecommendationsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: vehicle-genai-recs
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: vin
+          AttributeType: S
+      KeySchema:
+        - AttributeName: vin
+          KeyType: HASH
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
 Outputs:
-  TableName:
+  AppointmentSlotsTableName:
     Description: DynamoDB table name for appointment slots
     Value: !Ref AppointmentSlotsTable
     Export:
       Name: !Sub "${ProjectName}-appointment-slots-table-name"
   
-  TableArn:
-    Description: DynamoDB table ARN
+  AppointmentSlotsTableArn:
+    Description: DynamoDB table ARN for appointment slots
     Value: !GetAtt AppointmentSlotsTable.Arn
     Export:
       Name: !Sub "${ProjectName}-appointment-slots-table-arn"
+
+  VehicleRecommendationsTableName:
+    Description: DynamoDB table name for vehicle recommendations
+    Value: !Ref VehicleRecommendationsTable
+    Export:
+      Name: !Sub "${ProjectName}-vehicle-recommendations-table-name"
+  
+  VehicleRecommendationsTableArn:
+    Description: DynamoDB table ARN for vehicle recommendations
+    Value: !GetAtt VehicleRecommendationsTable.Arn
+    Export:
+      Name: !Sub "${ProjectName}-vehicle-recommendations-table-arn"

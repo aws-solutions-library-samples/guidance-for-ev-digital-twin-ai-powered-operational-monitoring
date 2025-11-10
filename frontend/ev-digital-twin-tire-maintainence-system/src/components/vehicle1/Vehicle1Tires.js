@@ -210,7 +210,7 @@ const Vehicle1Tires = () => {
         console.log('Calling enhanced AgentCore service...');
         
         // Use the enhanced service method
-        const analysisResult = await agentCoreService.getTireAnalysis(currentData.vehicle_id, tireDataForAnalysis);
+        const analysisResult = await agentCoreService.getTireAnalysis(currentData.vehicle_id, tireDataForAnalysis, '2T1BURHE8JC987654');
         
         console.log('Received enhanced GenAI analysis:', analysisResult);
         

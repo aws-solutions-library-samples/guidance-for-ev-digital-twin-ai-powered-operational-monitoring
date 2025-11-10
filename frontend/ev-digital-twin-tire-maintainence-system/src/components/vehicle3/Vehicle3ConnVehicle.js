@@ -163,7 +163,7 @@ const Vehicle3ConnVehicle = () => {
               <div className="connvehicle-card" onClick={() => navigate(`/car/3VWDX7AJ9DM456321/invertor`)}>
                 <img src={require('../assets/icons/invertoricon.png')} alt="Inverter" style={{ width: '20px', height: '20px', margin: '0 auto' }} />
                 <div className="connvehicle-card-title">Inverter</div>
-                <div className="connvehicle-card-error">DC voltage fluctuation detected</div>
+                <div className="connvehicle-card-error">⚠️ DC voltage fluctuation detected</div>
               </div>
               <div className="connvehicle-card" onClick={() => navigate(`/car/3VWDX7AJ9DM456321/energymanagement`)}>
                 <img src={require('../assets/icons/energyicon.png')} alt="Energy" style={{ width: '20px', height: '20px', margin: '0 auto' }} />

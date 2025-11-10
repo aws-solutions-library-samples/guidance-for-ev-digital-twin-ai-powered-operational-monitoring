@@ -154,7 +154,15 @@
   }
 }
 
-@media (min-width: 1441px) and (max-width: 2500px) {
+@media (min-width: 1441px) and (max-width: 1700px) {
+  .invertor-page .bottom-containers .data-container:first-child,
+  .invertor-page .bottom-containers .data-container:last-child {
+    max-height: 425px;
+    min-height: 425px;
+  }
+}
+
+@media (min-width: 1701px) and (max-width: 2500px) {
   .invertor-page .bottom-containers .data-container:first-child,
   .invertor-page .bottom-containers .data-container:last-child {
     max-height: 260px;

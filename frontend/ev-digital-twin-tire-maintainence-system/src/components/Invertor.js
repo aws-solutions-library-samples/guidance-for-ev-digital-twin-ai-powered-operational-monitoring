@@ -229,7 +229,7 @@ const Invertor = () => {
         console.log('Calling enhanced AgentCore service for inverter analysis...');
         
         // Use the enhanced service method
-        const analysisResult = await agentCoreService.getInverterAnalysis(currentData.vehicle_id, inverterDataForAnalysis);
+        const analysisResult = await agentCoreService.getInverterAnalysis(currentData.vehicle_id, inverterDataForAnalysis, 'W1KZF8EB8NA123456');
         
         console.log('Received enhanced Inverter GenAI analysis:', analysisResult);
         
@@ -1638,50 +1638,6 @@ const Invertor = () => {
                     </div>
                   </div>
 
-                  {/* GenAI Recommendations */}
-                  <div className="genai-recommendations" style={{ marginTop: '20px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                      <h3 style={{ fontSize: windowWidth >= 1600 ? '20px' : '16px', margin: 0 }}>GenAI Recommendations</h3>
-                    </div>
-                    <p style={{ 
-                      fontSize: windowWidth >= 1600 ? '12px' : spacing.smallFontSize, 
-                      color: 'rgba(255,255,255,0.8)', 
-                      lineHeight: '1.4',
-                      marginBottom: '20px'
-                    }}>Use driving behavior, speed patterns, battery state of charge (SOC), ambient temperature, road conditions, and power demand from the motor to generate adaptive inverter control strategies to improve energy efficiency based on driving conditions.</p>
-                    
-                    <div className="recommendations-list" style={{ marginTop: '15px' }}>
-                      <div style={{ marginBottom: '15px' }}>
-                        <div className="recommendation-item" style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          gap: '8px',
-                          marginBottom: '10px',
-                          fontSize: windowWidth >= 1600 ? '16px' : spacing.fontSize,
-                          fontWeight: '600'
-                        }}>
-                          <span className="warning-icon" style={{ fontSize: windowWidth >= 1600 ? '18px' : '14px' }}>⚠️</span>
-                          <span>Inverter Efficiency Tuning</span>
-                        </div>
-                        <div className="recommendation-details" style={{ 
-                          paddingLeft: '22px',
-                          fontSize: windowWidth >= 1600 ? '12px' : spacing.smallFontSize,
-                          color: 'rgba(255,255,255,0.7)',
-                          lineHeight: '1.3'
-                        }}>
-                          <p style={{ margin: '5px 0' }}><strong style={{ color: 'rgba(255,255,255,0.9)' }}>Step 1:</strong> Initial Assessment – Measure baseline inverter efficiency and review current operating parameters</p>
-                          <p style={{ margin: '5px 0' }}><strong style={{ color: 'rgba(255,255,255,0.9)' }}>Step 2:</strong> Adjust switching frequency and fine-tune PWM settings</p>
-                        </div>
-                      </div>
-                      <div className="more-link" style={{ 
-                        fontSize: windowWidth >= 1600 ? '12px' : spacing.smallFontSize,
-                        color: '#ff9900',
-                        cursor: 'pointer',
-                        textAlign: 'right',
-                        marginTop: '10px'
-                      }}>More.....</div>
-                    </div>
-                  </div>
                 </div>
 
                 {/* UI Page Summary */}

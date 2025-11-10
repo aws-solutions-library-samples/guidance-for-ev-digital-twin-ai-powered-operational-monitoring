@@ -12,7 +12,9 @@ import Vehicle1Tires from './vehicle1/Vehicle1Tires';
 import TiresPage from './Tires';
 import BatteryScreen from './BatteryScreen';
 import Motor from './motor';
+import Vehicle2Motor from './vehicle2/Vehicle2Motor';
 import Invertor from './Invertor';
+import Vehicle3Inverter from './vehicle3/Vehicle3Inverter';
 import EnergyManagement from './EnergyManagement';
 import Charger from './Charger';
 import Fleet from './fleet/FleetMgmt';
@@ -30,6 +32,8 @@ const Dashboard = () => {
       <Route path="/car/:carId" element={<ConnVehicle />} />
       <Route path="/car/:carId/old" element={<CarDetail />} />
       <Route path="/car/2T1BURHE8JC987654/tires" element={<Vehicle1Tires />} />
+      <Route path="/car/1HGBH41JXMN109876/motor" element={<Vehicle2Motor />} />
+      <Route path="/car/3VWDX7AJ9DM456321/invertor" element={<Vehicle3Inverter />} />
       <Route path="/car/:carId/tires" element={<TiresPage />} />
       <Route path="/car/:carId/battery" element={<BatteryScreen />} />
       <Route path="/car/:carId/motor" element={<Motor />} />

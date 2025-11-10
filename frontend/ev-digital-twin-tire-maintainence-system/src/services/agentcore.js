@@ -46,7 +46,7 @@ class AgentCoreService {
    * @param {string} prompt - The question or request
    * @returns {Promise<string>} - The AI response
    */
-  async chat(prompt, retryAttempt = 0) {
+  async chat(prompt, vin = null, retryAttempt = 0) {
     const now = Date.now();
 
     // Check if we should make the call (skip check on retries)
@@ -64,7 +64,8 @@ class AgentCoreService {
         },
         body: JSON.stringify({
           prompt,
-          session_id: this.sessionId
+          session_id: this.sessionId,
+          vin: vin
         }),
         timeout: 10000 // 10 second timeout
       });
@@ -123,7 +124,7 @@ class AgentCoreService {
    * @param {object} tireData - Current tire data
    * @returns {Promise<string>} - Tire analysis
    */
-  async getTireAnalysis(vehicleId, tireData) {
+  async getTireAnalysis(vehicleId, tireData, vin = null) {
     const cacheKey = `tire_analysis_${vehicleId}_${JSON.stringify(tireData).slice(0, 50)}`;
     const cached = this.cache.get(cacheKey);
 
@@ -150,7 +151,7 @@ class AgentCoreService {
       }
 
       console.log(`Fetching fresh GenAI analysis for vehicle ${vehicleId}`);
-      const response = await this.chat(`Analyze tire condition for vehicle ${vehicleId}. Current metrics: Pressure ${tireData.pressure_psi} PSI, Tread ${tireData.tread_depth_mm}mm, Temperature ${tireData.temperature_c}°C. Provide specific maintenance recommendations focusing on safety and performance.`);
+      const response = await this.chat(`Analyze tire condition for vehicle ${vehicleId}. Current metrics: Pressure ${tireData.pressure_psi} PSI, Tread ${tireData.tread_depth_mm}mm, Temperature ${tireData.temperature_c}°C. Provide specific maintenance recommendations focusing on safety and performance.`, vin);
 
       // Store successful response in cache
       const analysisData = { response, timestamp: Date.now(), fromCache: false };
@@ -174,7 +175,7 @@ class AgentCoreService {
    * @param {object} motorData - Current motor data
    * @returns {Promise<string>} - Motor analysis
    */
-  async getMotorAnalysis(vehicleId, motorData) {
+  async getMotorAnalysis(vehicleId, motorData, vin = null) {
     const cacheKey = `motor_analysis_${vehicleId}_${JSON.stringify(motorData).slice(0, 50)}`;
     const cached = this.cache.get(cacheKey);
 
@@ -201,7 +202,7 @@ class AgentCoreService {
       }
 
       console.log(`Fetching fresh Motor GenAI analysis for vehicle ${vehicleId}`);
-      const response = await this.chat(`Analyze motor condition for vehicle ${vehicleId}. Current metrics: Engine temp ${motorData.engine_temp_c}°C, Oil pressure ${motorData.oil_pressure_psi} PSI, RPM ${motorData.rpm_avg}, Performance ${motorData.performance_score}%, Vibration ${motorData.vibration_level}. Provide specific motor maintenance recommendations focusing on performance and reliability.`);
+      const response = await this.chat(`Analyze motor condition for vehicle ${vehicleId}. Current metrics: Engine temp ${motorData.engine_temp_c}°C, Oil pressure ${motorData.oil_pressure_psi} PSI, RPM ${motorData.rpm_avg}, Performance ${motorData.performance_score}%, Vibration ${motorData.vibration_level}. Provide specific motor maintenance recommendations focusing on performance and reliability.`, vin);
 
       // Store successful response in cache
       const analysisData = { response, timestamp: Date.now(), fromCache: false };
@@ -225,7 +226,7 @@ class AgentCoreService {
    * @param {object} inverterData - Current inverter data
    * @returns {Promise<string>} - Inverter analysis
    */
-  async getInverterAnalysis(vehicleId, inverterData) {
+  async getInverterAnalysis(vehicleId, inverterData, vin = null) {
     const cacheKey = `inverter_analysis_${vehicleId}_${JSON.stringify(inverterData).slice(0, 50)}`;
     const cached = this.cache.get(cacheKey);
     
@@ -252,7 +253,7 @@ class AgentCoreService {
       }
 
       console.log(`Fetching fresh Inverter GenAI analysis for vehicle ${vehicleId}`);
-      const response = await this.chat(`Analyze inverter condition for vehicle ${vehicleId}. Current metrics: DC voltage ${inverterData.dc_voltage_v}V, AC voltage ${inverterData.ac_voltage_v}V, Power output ${inverterData.power_output_kw}kW, Efficiency ${inverterData.efficiency_percent}%, Temperature ${inverterData.temperature_c}°C, THD ${inverterData.thd_percent}%. Provide specific inverter maintenance recommendations focusing on power electronics and efficiency.`);
+      const response = await this.chat(`Analyze inverter condition for vehicle ${vehicleId} (${inverterData.year} ${inverterData.make} ${inverterData.model}). Current metrics: DC voltage ${inverterData.dc_voltage_v}V, AC voltage ${inverterData.ac_voltage_v}V, Power output ${inverterData.power_output_kw}kW, Efficiency ${inverterData.efficiency_percent}%, Temperature ${inverterData.temperature_c}°C, THD ${inverterData.thd_percent}%. Provide specific inverter maintenance recommendations focusing on power electronics and efficiency.`, vin);
       
       // Store successful response in cache
       const analysisData = { response, timestamp: Date.now(), fromCache: false };
