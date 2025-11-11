@@ -1,0 +1,124 @@
+{
+  "vehicle_info": {
+    "make": "EV",
+    "model": "1",
+    "year": 2025,
+    "manual_source": "EV12025Manual.pdf",
+    "extraction_date": "2025-11-11",
+    "extractor": "Manual Review",
+    "verified": false
+  },
+  "tire_specifications": {
+    "primary_tire_size": {
+      "size": "[TO BE FILLED FROM MANUAL]",
+      "load_index": "[TO BE FILLED FROM MANUAL]",
+      "speed_rating": "[TO BE FILLED FROM MANUAL]",
+      "tire_type": "[TO BE FILLED FROM MANUAL]",
+      "manual_page": "[PAGE NUMBER]",
+      "notes": "[ADDITIONAL NOTES]"
+    },
+    "alternative_sizes": [
+      {
+        "size": "[ALTERNATIVE SIZE IF ANY]",
+        "trim": "[TRIM LEVEL]",
+        "load_index": "[LOAD INDEX]",
+        "speed_rating": "[SPEED RATING]"
+      }
+    ],
+    "tire_pressure": {
+      "front_psi": "[FRONT PRESSURE FROM MANUAL]",
+      "rear_psi": "[REAR PRESSURE FROM MANUAL]",
+      "spare_psi": "[SPARE PRESSURE FROM MANUAL]",
+      "cold_pressure_note": "[COLD PRESSURE INSTRUCTIONS]",
+      "manual_page": "[PAGE NUMBER]",
+      "door_sticker_reference": "[DOOR STICKER LOCATION]"
+    },
+    "tread_depth": {
+      "minimum_legal_mm": "[MINIMUM LEGAL DEPTH]",
+      "replacement_recommended_mm": "[REPLACEMENT THRESHOLD]",
+      "measurement_method": "[HOW TO MEASURE]",
+      "manual_page": "[PAGE NUMBER]"
+    }
+  },
+  "maintenance_schedule": {
+    "tire_rotation": {
+      "interval_miles": "[ROTATION INTERVAL]",
+      "interval_months": "[ROTATION MONTHS]",
+      "rotation_pattern": "[ROTATION PATTERN]",
+      "manual_page": "[PAGE NUMBER]",
+      "special_conditions": "[SEVERE SERVICE CONDITIONS]"
+    },
+    "tire_inspection": {
+      "frequency": "[INSPECTION FREQUENCY]",
+      "inspection_points": [
+        "[WHAT TO INSPECT 1]",
+        "[WHAT TO INSPECT 2]",
+        "[WHAT TO INSPECT 3]"
+      ],
+      "manual_page": "[PAGE NUMBER]"
+    },
+    "replacement_indicators": {
+      "wear_indicators": "[WEAR INDICATOR INFO]",
+      "age_limit": "[AGE LIMIT INFO]",
+      "manual_page": "[PAGE NUMBER]"
+    }
+  },
+  "vehicle_specifications": {
+    "weight": {
+      "curb_weight_lbs": "[CURB WEIGHT]",
+      "gross_weight_lbs": "[GROSS WEIGHT]",
+      "manual_page": "[PAGE NUMBER]"
+    },
+    "engine": {
+      "engine_size": "[ENGINE SIZE]",
+      "engine_type": "[ENGINE TYPE]",
+      "horsepower": "[HORSEPOWER]",
+      "manual_page": "[PAGE NUMBER]"
+    },
+    "drivetrain": {
+      "type": "[FWD/RWD/AWD/4WD]",
+      "manual_page": "[PAGE NUMBER]"
+    },
+    "dimensions": {
+      "wheelbase": "[WHEELBASE]",
+      "track_front": "[FRONT TRACK]",
+      "track_rear": "[REAR TRACK]",
+      "manual_page": "[PAGE NUMBER]"
+    }
+  },
+  "tpms_information": {
+    "system_type": "[TPMS SYSTEM TYPE]",
+    "warning_threshold": "[WARNING THRESHOLD]",
+    "reset_procedure": "[RESET PROCEDURE]",
+    "manual_page": "[PAGE NUMBER]"
+  },
+  "load_information": {
+    "seating_capacity": "[SEATING CAPACITY]",
+    "cargo_capacity": "[CARGO CAPACITY]",
+    "towing_capacity": "[TOWING CAPACITY]",
+    "tongue_weight": "[TONGUE WEIGHT]",
+    "manual_page": "[PAGE NUMBER]"
+  },
+  "seasonal_recommendations": {
+    "winter_tires": "[WINTER TIRE GUIDANCE]",
+    "all_season_guidance": "[ALL SEASON GUIDANCE]",
+    "performance_tires": "[PERFORMANCE TIRE INFO]",
+    "manual_page": "[PAGE NUMBER]"
+  },
+  "warranty_information": {
+    "tire_warranty": "[TIRE WARRANTY INFO]",
+    "maintenance_requirements": "[MAINTENANCE REQUIREMENTS]",
+    "manual_page": "[PAGE NUMBER]"
+  },
+  "verification": {
+    "cross_checked_sources": [
+      "[SOURCE 1]",
+      "[SOURCE 2]",
+      "[SOURCE 3]"
+    ],
+    "discrepancies_found": [],
+    "confidence_level": "[High/Medium/Low]",
+    "reviewer": "[REVIEWER NAME]",
+    "review_date": "[REVIEW DATE]"
+  }
+}

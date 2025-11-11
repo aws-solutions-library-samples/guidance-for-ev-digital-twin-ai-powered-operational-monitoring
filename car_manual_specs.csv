@@ -1,6 +1,6 @@
-make,model,year,tire_size,recommended_pressure_psi,min_tread_depth_mm,replacement_threshold_mm,rotation_interval_miles,expected_lifespan_miles,load_index,speed_rating,tire_type,curb_weight_lbs,engine_size,drivetrain,vehicle_class,verified,manual_source,verification_date
-Honda,Civic,2020,215/55R16,32,1.6,3.2,7500,60000,91,H,All-Season,2762,1.5L Turbo,FWD,Compact Sedan,True,HondaCivic2020Manual.pdf,2025-08-12
-Toyota,Camry,2022,215/60R16,32,1.6,3.2,5000,60000,91,H,All-Season,3340,2.5L I4,FWD,Midsize Sedan,False,,
-Ford,F-150,2023,275/65R18,35,1.6,3.2,5000,50000,113,S,All-Terrain,4069,3.5L V6,4WD,Full-Size Pickup,False,,
-BMW,3 Series,2020,225/50R17,32,1.6,3.2,6000,45000,94,W,Summer-Performance,3582,2.0L Turbo,RWD,Luxury Sedan,False,,
-Mercedes-Benz,C-Class,2022,225/45R18,32,1.6,3.2,6000,50000,91,W,Summer-Performance,3616,2.0L Turbo,RWD,Luxury Sedan,False,,
+vin,vehicle_type,year,tire_size,recommended_pressure_psi,min_tread_depth_mm,replacement_threshold_mm,rotation_interval_miles,expected_lifespan_miles,load_index,speed_rating,tire_type,curb_weight_lbs,motor_type,drivetrain,vehicle_class,verified,manual_source,verification_date
+EV-1001,Electric Sedan,2023,215/55R17,32,1.6,3.2,7500,60000,91,H,All-Season,3500,Electric Motor,AWD,Electric Sedan,True,Electric Vehicle Preventive Maintenance Manual.pdf,2025-11-06
+EV-1002,Electric Sedan,2023,215/55R17,32,1.6,3.2,7500,60000,91,H,All-Season,3500,Electric Motor,AWD,Electric Sedan,True,Electric Vehicle Preventive Maintenance Manual.pdf,2025-11-06
+EV-1003,Electric SUV,2023,235/55R18,35,1.6,3.2,7500,60000,100,H,All-Season,4200,Electric Motor,AWD,Electric SUV,True,Electric Vehicle Preventive Maintenance Manual.pdf,2025-11-06
+EV-1004,Electric Sedan,2023,215/55R17,32,1.6,3.2,7500,60000,91,H,All-Season,3500,Electric Motor,AWD,Electric Sedan,True,Electric Vehicle Preventive Maintenance Manual.pdf,2025-11-06
+EV-1005,Electric SUV,2023,235/55R18,35,1.6,3.2,7500,60000,100,H,All-Season,4200,Electric Motor,AWD,Electric SUV,True,Electric Vehicle Preventive Maintenance Manual.pdf,2025-11-06

@@ -8,7 +8,7 @@
 **Project Title:** EV Digital Twin - AI-Powered Vehicle Maintenance System  
 **Builder Name:** Kvanshaj Kochar  
 **Date:** October 10, 2025  
-**Technology Stack:** AWS Bedrock AgentCore, Claude 3.7 Sonnet, React, Python  
+**Technology Stack:** AWS Bedrock AgentCore, Claude Sonnet 4.5, React, Python  
 
 ---
 
@@ -38,7 +38,7 @@ Traditional vehicle maintenance systems rely on static rules and manual inspecti
 
 Our AI-powered agentic solution transforms vehicle maintenance through intelligent automation:
 
-1. **Predictive AI Analysis:** AWS Bedrock AgentCore with Claude 3.7 Sonnet analyzes real-time vehicle data to predict maintenance needs before failures occur
+1. **Predictive AI Analysis:** AWS Bedrock AgentCore with Claude Sonnet 4.5 analyzes real-time vehicle data to predict maintenance needs before failures occur
 2. **Specialized Agent Tools:** 11 custom tools provide comprehensive analysis including tire condition assessment, motor performance monitoring, and anomaly detection
 3. **Real-Time Data Integration:** Seamlessly processes CSV data from tire sensors, motor diagnostics, and manufacturer specifications for holistic vehicle health assessment
 4. **Natural Language Interface:** Fleet managers interact with the system using natural language queries, eliminating the need for technical expertise
@@ -103,7 +103,7 @@ Our AI-powered agentic solution transforms vehicle maintenance through intellige
 │  │                      AWS Bedrock AgentCore Runtime                         │ │
 │  │                                                                             │ │
 │  │  ┌─────────────────────────────────────────────────────────────────────┐   │ │
-│  │  │                    Claude 3.7 Sonnet Model                         │   │ │
+│  │  │                    Claude Sonnet 4.5 Model                         │   │ │
 │  │  │                                                                     │   │ │
 │  │  │  • Natural language understanding                                   │   │ │
 │  │  │  • Intelligent reasoning and analysis                               │   │ │
@@ -175,7 +175,7 @@ Our AI-powered agentic solution transforms vehicle maintenance through intellige
 │  └─────────────────────────────────────────────────────────────────────────────┘ │
 │     │                                                                           │
 │     ▼                                                                           │
-│  2. Claude 3.7 Sonnet Processing                                               │
+│  2. Claude Sonnet 4.5 Processing                                               │
 │  ┌─────────────────────────────────────────────────────────────────────────────┐ │
 │  │  • Parse natural language request                                          │ │
 │  │  • Identify required analysis (tire + motor)                               │ │
@@ -290,7 +290,7 @@ Our AI-powered agentic solution transforms vehicle maintenance through intellige
 │  1. IoT sensors → CSV files (3,600 tire + 900 motor records)                   │
 │  2. AgentCore tools load and validate data                                     │
 │  3. ML models provide predictions and anomaly detection                        │
-│  4. Claude 3.7 Sonnet analyzes and synthesizes insights                       │
+│  4. Claude Sonnet 4.5 analyzes and synthesizes insights                       │
 │  5. Lambda proxy formats responses for frontend                                │
 │  6. React UI displays real-time recommendations                                │
 │                                                                                 │
@@ -344,7 +344,7 @@ Our AI-powered agentic solution transforms vehicle maintenance through intellige
 ## Technical Innovation
 
 ### Agentic AI Implementation
-- **Tool Orchestration:** Claude 3.7 Sonnet intelligently selects and sequences analysis tools
+- **Tool Orchestration:** Claude Sonnet 4.5 intelligently selects and sequences analysis tools
 - **Context Awareness:** AI understands relationships between different vehicle systems
 - **Adaptive Reasoning:** Dynamic analysis based on specific vehicle conditions and history
 - **Natural Language Processing:** Converts complex technical data into actionable insights
@@ -443,7 +443,7 @@ memory:
 
 **5. IAM Permissions Required:**
 - `bedrock-agentcore:InvokeAgentRuntime`
-- `bedrock:InvokeModel` (for Claude 3.7 Sonnet)
+- `bedrock:InvokeModel` (for Claude Sonnet 4.5)
 - Browser tool access (automatic with AgentCore)
 
 ### Tool Definition
@@ -471,7 +471,7 @@ memory:
 
 **NovaAct Vision-Language Process:**
 - **Screenshot** → Capture current page state
-- **Analyze** → Claude 3.7 Sonnet analyzes image
+- **Analyze** → Claude Sonnet 4.5 analyzes image
 - **Decide** → Determine next action (click, type, scroll)
 - **Execute** → Perform action via Chrome DevTools Protocol
 - **Verify** → Confirm action succeeded

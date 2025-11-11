@@ -187,7 +187,7 @@ const Invertor = () => {
     }
   }, [showPrediction]);
 
-  // GenAI Analysis - Call Claude 3.7 Sonnet for inverter analysis
+  // GenAI Analysis - Call Claude Sonnet 4.5 for inverter analysis
   useEffect(() => {
     const analyzeInverterWithGenAI = async () => {
       // Use the same fixed vehicle data for GenAI analysis
@@ -437,7 +437,7 @@ const Invertor = () => {
           recommendations.push({
             action: trimmed,
             priority: priority,
-            reason: "Based on Claude 3.7 Sonnet analysis of current inverter condition",
+            reason: "Based on Claude Sonnet 4.5 analysis of current inverter condition",
             urgency: priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance'
           });
         }
@@ -450,7 +450,7 @@ const Invertor = () => {
       const naturalSummary = createInverterNaturalLanguageSummary(response, inverterData);
 
       // Determine source and status based on analysis result
-      let sourceInfo = "AgentCore Claude 3.7 Sonnet";
+      let sourceInfo = "AgentCore Claude Sonnet 4.5";
       if (analysisResult.fromCache) {
         sourceInfo += analysisResult.stale ? " (Cached - Stale)" : " (Cached)";
       }
@@ -498,7 +498,7 @@ const Invertor = () => {
     const thd = parseFloat(currentData.thd_percent) || 2.0;
     const hasAnomaly = currentData.inverter_anomaly === 'True';
     const hasFaultCodes = currentData.fault_codes && currentData.fault_codes !== 'None';
-    const vehicleInfo = `${currentData.year || 'N/A'} ${currentData.make || 'Unknown'} ${currentData.model || 'Vehicle'}`;
+    const vehicleInfo = `${currentData.make || 'Unknown Vehicle'} - ${currentData.model || 'Electric Vehicle'} (${currentData.year || '2023'})`;
     
     // Determine overall system status
     let systemStatus = 'optimal';
@@ -559,11 +559,11 @@ const Invertor = () => {
     };
   };
 
-  // Get AI recommendations - prioritize GenAI (Claude 3.7 Sonnet) over rule-based
+  // Get AI recommendations - prioritize GenAI (Claude Sonnet 4.5) over rule-based
   const getAiRecommendations = () => {
     // Priority 1: Use GenAI analysis if available
     if (genAiAnalysis && genAiAnalysis.recommendations) {
-      console.log('Using Inverter GenAI (Claude 3.7 Sonnet) recommendations');
+      console.log('Using Inverter GenAI (Claude Sonnet 4.5) recommendations');
       return genAiAnalysis.recommendations.map(rec => ({
         action: rec.action,
         priority: rec.priority,
@@ -778,7 +778,7 @@ const Invertor = () => {
   const generateFailurePredictionData = () => {
     const metrics = calculateInverterHealthMetrics();
     
-    // Fixed pattern for Vehicle 1 (Honda Civic) - consistent and realistic
+    // Fixed pattern for Vehicle 1 (EV-1001) - consistent and realistic
     const pattern = { baseHealth: 85, trend: 'declining', severity: 'moderate' };
     
     // Generate stable historical data points
@@ -854,7 +854,7 @@ const Invertor = () => {
   // Calculate remaining useful life percentage (stable for Vehicle 1)
   const calculateRemainingLife = () => {
     
-    // Fixed remaining life for Vehicle 1 (Honda Civic) - stable baseline
+    // Fixed remaining life for Vehicle 1 (EV-1001) - stable baseline
     let baseRemainingLife = 68; // Moderate decline pattern
     
     // Small adjustments based on current real-time conditions (max ±10%)
@@ -872,9 +872,9 @@ const Invertor = () => {
 
   const remainingLife = calculateRemainingLife();
   
-  // Log stable calculations for debugging (Vehicle 1 - Honda Civic)
+  // Log stable calculations for debugging (Vehicle 1 - EV-1001)
   console.log('Inverter Fixed Vehicle Analysis:', {
-    vehicle: `${currentData.year} ${currentData.make} ${currentData.model}`,
+    vehicle: `${currentData.year} ${currentData.make}`,
     vehicleId: currentData.vehicle_id,
     currentHealth: Math.round(graphData.currentHealth),
     remainingLife: remainingLife + '%',
@@ -1709,7 +1709,7 @@ const Invertor = () => {
                       <div style={{ fontSize: '11px', color: genAiAnalysis.error ? '#ff6b6b' : genAiAnalysis.fromCache ? '#ffa500' : '#00ff88', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span>{genAiAnalysis.error ? '🛡️' : genAiAnalysis.fromCache ? '💾' : '🤖'}</span> 
                         {genAiAnalysis.error ? 'Enhanced Fallback' : 
-                         genAiAnalysis.fromCache ? 'Claude (Cached)' : 'Claude 3.7 Sonnet'}
+                         genAiAnalysis.fromCache ? 'Claude (Cached)' : 'Claude Sonnet 4.5'}
                       </div>
                     )}
                   </div>
@@ -1718,9 +1718,9 @@ const Invertor = () => {
                     {genAiAnalysis ? 
                       (genAiAnalysis.error ? 
                         genAiAnalysis.error_message :
-                        `Real-time inverter analysis by Claude 3.7 Sonnet. Status: ${genAiAnalysis.overall_status} | Risk: ${genAiAnalysis.risk_level}`
+                        `Real-time inverter analysis by Claude Sonnet 4.5. Status: ${genAiAnalysis.overall_status} | Risk: ${genAiAnalysis.risk_level}`
                       ) :
-                      'AI-powered inverter optimization. Connecting to Claude 3.7 Sonnet for real-time analysis...'
+                      'AI-powered inverter optimization. Connecting to Claude Sonnet 4.5 for real-time analysis...'
                     }
                   </p>
                   

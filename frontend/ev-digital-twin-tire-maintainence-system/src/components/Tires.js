@@ -131,7 +131,7 @@ const TiresPage = () => {
     return () => clearInterval(pressureInterval);
   }, [csvData, dataIndex]);
 
-  // GenAI Analysis - Call Claude 3.7 Sonnet when data changes
+  // GenAI Analysis - Call Claude Sonnet 4.5 when data changes
   useEffect(() => {
     const analyzeWithGenAI = async () => {
       if (!csvData.length || !currentData.vehicle_id) {
@@ -238,7 +238,7 @@ const TiresPage = () => {
           recommendations.push({
             action: trimmed,
             priority: priority,
-            reason: "Based on Claude 3.7 Sonnet analysis of current tire condition",
+            reason: "Based on Claude Sonnet 4.5 analysis of current tire condition",
             urgency: priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance'
           });
         }
@@ -260,7 +260,7 @@ const TiresPage = () => {
       const naturalSummary = createNaturalLanguageSummary(response, tireData);
 
       // Determine source and status based on analysis result
-      let sourceInfo = "AgentCore Claude 3.7 Sonnet";
+      let sourceInfo = "AgentCore Claude Sonnet 4.5";
       if (analysisResult.fromCache) {
         sourceInfo += analysisResult.stale ? " (Cached - Stale)" : " (Cached)";
       }
@@ -633,11 +633,11 @@ const TiresPage = () => {
     return 60; // fallback
   };
   
-  // Get AI recommendations - prioritize GenAI (Claude 3.7 Sonnet) over rule-based
+  // Get AI recommendations - prioritize GenAI (Claude Sonnet 4.5) over rule-based
   const getAiRecommendations = () => {
     // Priority 1: Use GenAI analysis if available
     if (genAiAnalysis && genAiAnalysis.recommendations) {
-      console.log('Using GenAI (Claude 3.7 Sonnet) recommendations');
+      console.log('Using GenAI (Claude Sonnet 4.5) recommendations');
       return genAiAnalysis.recommendations.map(rec => ({
         action: rec.action,
         priority: rec.priority,
@@ -705,8 +705,8 @@ const TiresPage = () => {
     const pressure = getRealisticPressure();
     const temperature = getRealisticTemperature();
     const treadDepth = getRealisticTreadDepth();
-    const vehicleInfo = `${currentData.year || 'N/A'} ${currentData.make || 'Unknown'} ${currentData.model || 'Vehicle'}`;
-    const tireInfo = `${currentData.tire_brand || 'Unknown'} ${currentData.tire_size || 'tires'}`;
+    const vehicleInfo = `${currentData.make || 'Unknown Vehicle'} - ${currentData.model || 'Electric Vehicle'} (${currentData.year || '2023'})`;
+    const tireInfo = `${currentData.tire_brand || 'Premium EV Tires'} ${currentData.tire_size || 'tires'}`;
     
     // Determine overall system status
     let systemStatus = 'optimal';
@@ -1558,7 +1558,7 @@ const TiresPage = () => {
                       <div style={{ fontSize: '11px', color: genAiAnalysis.error ? '#ff6b6b' : genAiAnalysis.fromCache ? '#ffa500' : '#00ff88', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span>{genAiAnalysis.error ? '🛡️' : genAiAnalysis.fromCache ? '💾' : '🤖'}</span> 
                         {genAiAnalysis.error ? 'Enhanced Fallback' : 
-                         genAiAnalysis.fromCache ? 'Claude (Cached)' : 'Claude 3.7 Sonnet'}
+                         genAiAnalysis.fromCache ? 'Claude (Cached)' : 'Claude Sonnet 4.5'}
                       </div>
                     )}
                   </div>
@@ -1567,9 +1567,9 @@ const TiresPage = () => {
                     {genAiAnalysis ? 
                       (genAiAnalysis.error ? 
                         genAiAnalysis.error_message :
-                        `Real-time analysis by Claude 3.7 Sonnet. Status: ${genAiAnalysis.overall_status} | Risk: ${genAiAnalysis.risk_level}`
+                        `Real-time analysis by Claude Sonnet 4.5. Status: ${genAiAnalysis.overall_status} | Risk: ${genAiAnalysis.risk_level}`
                       ) :
-                      'AI-powered tire optimization. Connecting to Claude 3.7 Sonnet for real-time analysis...'
+                      'AI-powered tire optimization. Connecting to Claude Sonnet 4.5 for real-time analysis...'
                     }
                   </p>
                   

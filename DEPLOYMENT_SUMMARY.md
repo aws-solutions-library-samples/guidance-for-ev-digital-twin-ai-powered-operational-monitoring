@@ -22,7 +22,7 @@ Frontend (React) → CloudFront → S3
 
 ### 1. **AgentCore Runtime** (`agentcore_runtime_app.py`)
 - Deployed to AWS Bedrock AgentCore
-- Uses Claude 3.7 Sonnet model
+- Uses Claude Sonnet 4.5 model
 - Analyzes real-time vehicle data from CSV files
 
 ### 2. **Maintenance Agent** (`agentcore_maintenance_agent.py`)
