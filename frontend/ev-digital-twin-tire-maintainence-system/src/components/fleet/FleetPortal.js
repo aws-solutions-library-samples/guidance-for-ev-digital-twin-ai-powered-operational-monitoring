@@ -39,6 +39,9 @@ const FleetPortal = () => {
   const [suggestedSlots, setSuggestedSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
   
+  // State for tracking scheduled appointments
+  const [scheduledAppointments, setScheduledAppointments] = useState([]);
+  
   // State for agent suggestion review
   const [agentSuggestion, setAgentSuggestion] = useState(null);
   const [showSuggestionReview, setShowSuggestionReview] = useState(false);
@@ -60,19 +63,27 @@ const FleetPortal = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // VIN mapping for vehicles
+  const VIN_MAP = {
+    1: '2T1BURHE8JC987654',  // Vehicle 1 Tires
+    3: '3VWDX7AJ9DM456321',  // Vehicle 3 Inverter
+    5: '5YJSA1E26HF123456'   // Vehicle 2 Motor (uses vehicle_id 5)
+  };
+
   // Fetch AI recommendations on demand
   const fetchRecommendations = async () => {
       try {
         setLoadingRecommendations(true);
         console.log('Starting to fetch AI recommendations...');
 
-        // Get recommendations for vehicles 1, 2, and 3
-        const vehicleIds = [1, 2, 3];
+        // Get recommendations for vehicles 1, 3, and 5
+        const vehicleIds = [1, 3, 5];
         const recommendations = [];
 
         for (const vehicleId of vehicleIds) {
           try {
-            console.log(`Fetching recommendations for vehicle ${vehicleId}...`);
+            const vin = VIN_MAP[vehicleId];
+            console.log(`Fetching recommendations for vehicle ${vehicleId} (VIN: ${vin})...`);
             
             // Add 15-second delay between vehicles (except first one)
             if (vehicleId !== vehicleIds[0]) {
@@ -81,7 +92,8 @@ const FleetPortal = () => {
             
             const startTime = Date.now();
 
-            const response = await agentCoreService.getMaintenanceRecommendations(vehicleId);
+            // Check DynamoDB cache first, then call Claude if not cached
+            const response = await agentCoreService.getMaintenanceRecommendations(vehicleId, vin);
 
             const elapsed = Date.now() - startTime;
             console.log(`Received response for vehicle ${vehicleId} in ${elapsed}ms:`, response);
@@ -192,12 +204,7 @@ const FleetPortal = () => {
   };
 
   const getVehicleName = (vehicleId) => {
-    const vehicles = {
-      1: '1C4BJWCG8DL501255',
-      2: '1FVHG3DX3DHFE3747',
-      3: '1GCEC14W6TZ225573'
-    };
-    return vehicles[vehicleId] || `Vehicle ${vehicleId}`;
+    return VIN_MAP[vehicleId] || `Vehicle ${vehicleId}`;
   };
 
   const handleDismiss = (index) => {
@@ -208,11 +215,10 @@ const FleetPortal = () => {
     setSelectedRecommendation(recommendation);
     setApprovalInstructions('');
     
-    // Detect if this is a tire-related recommendation
-    const isTireRelated = recommendation.fullRecommendation?.toLowerCase().includes('tire') || 
-                          recommendation.description?.toLowerCase().includes('tire');
-    setShowTireOrderOption(isTireRelated);
-    setOrderTiresOnline(true); // Auto-check for tire recommendations
+    // ONLY show tire ordering for vehicle 1 (VIN: 2T1BURHE8JC987654 - tire use case)
+    const isTireVehicle = recommendation.vehicleId === 1;
+    setShowTireOrderOption(isTireVehicle);
+    setOrderTiresOnline(isTireVehicle); // Auto-check only for vehicle 1
     setApprovalStatus('');
     
     setShowApprovalModal(true);
@@ -304,6 +310,17 @@ const FleetPortal = () => {
     setShowConfirmationModal(false);
     setConfirmationData(null);
     handleDismiss(aiRecommendations.indexOf(selectedRecommendation));
+    
+    // Add to scheduled appointments
+    if (confirmationData?.appointment) {
+      const newAppointment = {
+        vin: confirmationData.appointment.vin,
+        service: confirmationData.appointment.service,
+        date: confirmationData.appointment.date,
+        vehicleId: selectedRecommendation.vehicleId
+      };
+      setScheduledAppointments(prev => [...prev, newAppointment]);
+    }
   };
   
   const parseAgentSuggestion = (response) => {
@@ -391,7 +408,7 @@ Then provide a brief explanation of the recommendation.`;
         // CASE 1: Order tires first (separate call)
         setApprovalStatus('browser-tool');
         
-        const tirePrompt = `Order replacement tires for vehicle ${selectedRecommendation.vehicleId} using the order_tire_online tool.`;
+        const tirePrompt = `order_tire_online(${selectedRecommendation.vehicleId})`;
         
         try {
           const tireResponse = await agentCoreService.chat(tirePrompt);
@@ -545,10 +562,14 @@ Then provide a brief explanation of the recommendation.`;
     
     try {
       if (orderTiresOnline) {
+        // CRITICAL: Reset session BEFORE tire ordering to clear corrupted conversation history
+        agentCoreService.resetSession();
+        console.log('Session reset before tire ordering');
+        
         // Order tires and show confirmation modal
         setApprovalStatus('browser-tool');
         
-        const tirePrompt = `Order replacement tires for vehicle ${selectedRecommendation.vehicleId} using the order_tire_online tool.`;
+        const tirePrompt = `order_tire_online(${selectedRecommendation.vehicleId})`;
         
         try {
           const tireResponse = await agentCoreService.chat(tirePrompt);
@@ -752,7 +773,7 @@ Then provide a brief explanation of the recommendation.`;
 
       <div className="dashboard-content">
         <div className="left-panel" style={{ marginTop: windowSize.width <= 1700 ? '-20px' : windowSize.width <= 1815 ? '-10px' : windowSize.width >= 1900 ? '-30px' : '0', height: windowSize.width <= 1700 ? 'calc(100vh - 140px)' : windowSize.width <= 1815 ? 'calc(100vh - 160px)' : 'auto' }}>
-          <div className="panel-title">Vehicles (10)</div>
+          <div className="panel-title">Vehicles (3)</div>
           <div className="map-container">
             <div className="mini-map">
               <div className="marker green" style={{ top: '20%', left: '15%' }}></div>
@@ -783,7 +804,7 @@ Then provide a brief explanation of the recommendation.`;
           <div className="vehicle-list" style={{ marginTop: windowSize.width <= 1700 ? '-68px' : windowSize.width <= 1815 ? '-35px' : '0', paddingTop: windowSize.width <= 1700 ? '95px' : windowSize.width <= 1815 ? '50px' : '0' }}>
             <div className="vehicle-row">
               <div className="vehicle-info">
-                <div className="vehicle-id" onClick={() => navigate('/car/1')}>1C4BJWCG8DL501255</div>
+                <div className="vehicle-id" onClick={() => navigate('/car/1')}>{VIN_MAP[1]}</div>
                 <div className="vehicle-address">1779 Dale Avenue</div>
               </div>
               <div className="battery-section">
@@ -798,7 +819,7 @@ Then provide a brief explanation of the recommendation.`;
             </div>
             <div className="vehicle-row">
               <div className="vehicle-info">
-                <div className="vehicle-id" onClick={() => navigate('/car/2')}>1FVHG3DX3DHFE3747</div>
+                <div className="vehicle-id" onClick={() => navigate('/car/3')}>{VIN_MAP[3]}</div>
                 <div className="vehicle-address">Address</div>
               </div>
               <div className="battery-section">
@@ -813,7 +834,7 @@ Then provide a brief explanation of the recommendation.`;
             </div>
             <div className="vehicle-row">
               <div className="vehicle-info">
-                <div className="vehicle-id" onClick={() => navigate('/car/3')}>1GCEC14W6TZ225573</div>
+                <div className="vehicle-id" onClick={() => navigate('/car/5')}>{VIN_MAP[5]}</div>
                 <div className="vehicle-address">Address</div>
               </div>
               <div className="battery-section">
@@ -821,36 +842,6 @@ Then provide a brief explanation of the recommendation.`;
                   <span>100%</span>
                   <div className="battery-bar">
                     <div className="battery-fill" style={{ width: '100%' }}></div>
-                  </div>
-                </div>
-                <div className="miles-text">XXX Miles</div>
-              </div>
-            </div>
-            <div className="vehicle-row">
-              <div className="vehicle-info">
-                <div className="vehicle-id" onClick={() => navigate('/car/4')}>3B7HC13Z7TG112627</div>
-                <div className="vehicle-address">Address</div>
-              </div>
-              <div className="battery-section">
-                <div className="battery-row">
-                  <span>19%</span>
-                  <div className="battery-bar">
-                    <div className="battery-fill low" style={{ width: '19%' }}></div>
-                  </div>
-                </div>
-                <div className="miles-text">XXX Miles</div>
-              </div>
-            </div>
-            <div className="vehicle-row">
-              <div className="vehicle-info">
-                <div className="vehicle-id" onClick={() => navigate('/car/5')}>WAUHGAFC6DN030356</div>
-                <div className="vehicle-address">Address</div>
-              </div>
-              <div className="battery-section">
-                <div className="battery-row">
-                  <span>15%</span>
-                  <div className="battery-bar">
-                    <div className="battery-fill low" style={{ width: '15%' }}></div>
                   </div>
                 </div>
                 <div className="miles-text">XXX Miles</div>
@@ -959,11 +950,16 @@ Then provide a brief explanation of the recommendation.`;
             <div className="maintenance-section">
               <div className="section-header">
                 <span>🔧 In Maintenance</span>
-                <span className="count-badge">2</span>
+                <span className="count-badge">{scheduledAppointments.length}</span>
               </div>
               <div className="maintenance-list">
-                <div>1C4BJWCG8DL501255</div>
-                <div>1FVHG3DX3DHFE3747</div>
+                {scheduledAppointments.length === 0 ? (
+                  <div style={{ color: '#666', fontSize: '12px', padding: '10px 0' }}>No scheduled maintenance</div>
+                ) : (
+                  scheduledAppointments.map((appt, idx) => (
+                    <div key={idx}>{appt.vin}</div>
+                  ))
+                )}
               </div>
             </div>
             <div className="maintenance-types">
@@ -971,22 +967,29 @@ Then provide a brief explanation of the recommendation.`;
                 <span>🔧 Maintenance Type</span>
               </div>
               <div className="type-list">
-                <div className="type-row">
-                  <span>Brake</span>
-                  <span>1</span>
-                </div>
-                <div className="type-row">
-                  <span>Oil</span>
-                  <span>3</span>
-                </div>
-                <div className="type-row">
-                  <span>Sensor</span>
-                  <span>4</span>
-                </div>
-                <div className="type-row">
-                  <span>General</span>
-                  <span>5</span>
-                </div>
+                {(() => {
+                  const typeCounts = {};
+                  scheduledAppointments.forEach(appt => {
+                    const service = appt.service.toLowerCase();
+                    let type = 'General';
+                    if (service.includes('brake')) type = 'Brake';
+                    else if (service.includes('oil')) type = 'Oil';
+                    else if (service.includes('sensor') || service.includes('diagnostic')) type = 'Sensor';
+                    else if (service.includes('tire')) type = 'Tire';
+                    typeCounts[type] = (typeCounts[type] || 0) + 1;
+                  });
+                  
+                  return Object.keys(typeCounts).length === 0 ? (
+                    <div style={{ color: '#666', fontSize: '12px', padding: '10px 0' }}>No maintenance scheduled</div>
+                  ) : (
+                    Object.entries(typeCounts).map(([type, count]) => (
+                      <div key={type} className="type-row">
+                        <span>{type}</span>
+                        <span>{count}</span>
+                      </div>
+                    ))
+                  );
+                })()}
               </div>
             </div>
           </div>

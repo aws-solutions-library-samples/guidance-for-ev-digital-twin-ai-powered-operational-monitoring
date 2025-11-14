@@ -5,14 +5,24 @@ Integrates Bedrock AgentCore capabilities with tire and motor maintenance system
 
 from strands.tools import tool
 from strands import Agent
+from strands.hooks import AfterInvocationEvent, HookProvider, HookRegistry, MessageAddedEvent
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import json
 from tire_predictor import TirePredictor
 import boto3
-from bedrock_agentcore.tools.browser_client import browser_session
-from nova_act import NovaAct
+from bedrock_agentcore.memory import MemoryClient
+
+# Import browser automation at module level to avoid Pydantic issues
+try:
+    from nova_act import NovaAct
+    from bedrock_agentcore.tools.browser_client import browser_session
+    BROWSER_AVAILABLE = True
+except Exception as e:
+    BROWSER_AVAILABLE = False
+    NovaAct = None
+    browser_session = None
 
 # Model configuration - Claude Sonnet 4.5 via inference profile
 MODEL_ID = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
@@ -21,30 +31,171 @@ MODEL_ID = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
 NOVA_ACT_API_KEY = "645eef64-f306-4f7b-b930-4dff30d63e25"  
 
 # System prompt for the vehicle maintenance agent
-SYSTEM_PROMPT = """You are a proactive EV maintenance assistant following the Electric Vehicle Preventive Maintenance Manual guidelines.
+SYSTEM_PROMPT = """You are a vehicle maintenance assistant specializing in tire, motor, and inverter analysis.
 
-CRITICAL THRESHOLDS (from EV Manual):
-- Tire Pressure: 32 PSI (sedans), 35 PSI (SUVs) | Critical: <28 PSI | Warning: 28-32 PSI
-- Tread Depth: Replace at 3.2mm | Critical: <3.2mm | Legal minimum: 1.6mm
-- Tire Temperature: Normal: <40°C | Warning: 40-60°C | Critical: >60°C (max 90°C)
-- Motor Temperature: Normal: 40-80°C | Warning: 80-95°C | Critical: >95°C
+When you receive a request:
+1. Call the appropriate tool (analyze_tire_condition, analyze_motor_performance, analyze_inverter_condition, order_tire_online, schedule_appointment, etc.)
+2. After the tool returns data, provide a brief 2-3 sentence summary
+3. Focus on actionable findings: what needs attention and when
+4. Be specific with measurements (e.g., "Tire at 27 PSI, inflate to 32 PSI")
 
-When analyzing vehicles:
-1. Use analyze_tire_condition and analyze_motor_performance tools for detailed analysis
-2. Reference specific manual sections (e.g., "Section 5.3 - Chronic Under-Inflation")
-3. Provide clear action timelines: IMMEDIATE, Within 24 hours, Within 1 week, Within 1 month
-4. Be specific with measurements and explain consequences
-5. Prioritize safety-critical issues (pressure <28 PSI, tread <3.2mm, temp >90°C)
-6. For SUVs (EV-1003, EV-1005): use 35 PSI recommended pressure
-7. For Sedans (EV-1001, EV-1002, EV-1004): use 32 PSI recommended pressure
+Key thresholds for reference:
+- Tire Pressure: 32 PSI (sedans), 35 PSI (SUVs) | Critical: <28 PSI
+- Tread Depth: Replace at 3.2mm | Legal minimum: 1.6mm
+- Motor Temperature: Normal 40-80°C | Critical: >95°C
+- Inverter Efficiency: Normal >95% | Warning: <90%
 
-Always explain WHY an issue matters (safety, efficiency, component life) and reference the manual."""
+Keep responses concise and action-oriented. Do not write lengthy explanations or safety lectures."""
+
+
+class MaintenanceMemoryHooks(HookProvider):
+    """Memory hooks for pattern and recurring issue detection"""
+    
+    def __init__(self, memory_id: str, client: MemoryClient, actor_id: str, session_id: str):
+        self.memory_id = memory_id
+        self.client = client
+        self.actor_id = actor_id
+        self.session_id = session_id
+    
+    def retrieve_context(self, event: MessageAddedEvent):
+        """Check for recurring issues and cross-vehicle patterns"""
+        messages = event.agent.messages
+        if messages[-1]["role"] == "user" and "toolResult" not in messages[-1]["content"][0]:
+            user_query = messages[-1]["content"][0]["text"]
+            
+            # Extract vehicle ID from query
+            import re
+            vehicle_match = re.search(r'vehicle[\s_]*(\d+)', user_query.lower())
+            if not vehicle_match:
+                return
+            
+            vehicle_id = vehicle_match.group(1)
+            
+            try:
+                # Retrieve past issues for this vehicle (STM_ONLY uses default namespace)
+                memories = self.client.retrieve_memories(
+                    memory_id=self.memory_id,
+                    namespace="default",
+                    query=f"vehicle {vehicle_id} issues problems",
+                    top_k=10
+                )
+                
+                if not memories:
+                    return
+                
+                # Parse memories for patterns
+                current_vehicle_issues = []
+                other_vehicle_issues = []
+                
+                for mem in memories:
+                    if isinstance(mem, dict):
+                        text = mem.get("content", {}).get("text", "")
+                        if f"Vehicle {vehicle_id}:" in text:
+                            current_vehicle_issues.append(text)
+                        elif "Vehicle" in text:
+                            other_vehicle_issues.append(text)
+                
+                # Build context warnings
+                warnings = []
+                if len(current_vehicle_issues) > 1:
+                    warnings.append(f"⚠️ RECURRING ISSUE: Vehicle {vehicle_id} has {len(current_vehicle_issues)} previous issues in history")
+                
+                # Check for similar issues in other vehicles
+                if current_vehicle_issues and other_vehicle_issues:
+                    issue_type = None
+                    if "tire" in user_query.lower() or any("tire" in issue.lower() for issue in current_vehicle_issues):
+                        issue_type = "tire"
+                    elif "motor" in user_query.lower() or any("motor" in issue.lower() for issue in current_vehicle_issues):
+                        issue_type = "motor"
+                    
+                    if issue_type:
+                        similar_count = sum(1 for issue in other_vehicle_issues if issue_type in issue.lower())
+                        if similar_count > 0:
+                            warnings.append(f"⚠️ FLEET PATTERN: {similar_count} other vehicle(s) have similar {issue_type} issues")
+                
+                # Inject warnings into query
+                if warnings:
+                    original_text = messages[-1]["content"][0]["text"]
+                    context = "\n".join(warnings)
+                    messages[-1]["content"][0]["text"] = f"{context}\n\n{original_text}"
+            
+            except Exception as e:
+                print(f"Memory retrieval error: {e}")
+    
+    def save_interaction(self, event: AfterInvocationEvent):
+        """Save detected issues to memory"""
+        try:
+            messages = event.agent.messages
+            if len(messages) < 2 or messages[-1]["role"] != "assistant":
+                return
+            
+            # Get user query and agent response
+            user_msg = None
+            agent_msg = None
+            
+            for msg in reversed(messages):
+                if msg["role"] == "assistant" and not agent_msg:
+                    agent_msg = msg["content"][0]["text"]
+                elif msg["role"] == "user" and not user_msg and "toolResult" not in msg["content"][0]:
+                    user_msg = msg["content"][0]["text"]
+                    break
+            
+            if not user_msg or not agent_msg:
+                return
+            
+            # Extract vehicle ID and issue type
+            import re
+            vehicle_match = re.search(r'vehicle[\s_]*(\d+)', user_msg.lower())
+            if not vehicle_match:
+                return
+            
+            vehicle_id = vehicle_match.group(1)
+            
+            # Detect issue type from response
+            issue_type = None
+            if "CRITICAL" in agent_msg or "WARNING" in agent_msg:
+                if "tire" in agent_msg.lower() or "pressure" in agent_msg.lower() or "tread" in agent_msg.lower():
+                    issue_type = "tire_issue"
+                elif "motor" in agent_msg.lower() or "engine" in agent_msg.lower() or "temperature" in agent_msg.lower():
+                    issue_type = "motor_issue"
+                elif "inverter" in agent_msg.lower():
+                    issue_type = "inverter_issue"
+            
+            # Save to memory with structured format
+            if issue_type:
+                from datetime import datetime
+                issue_summary = f"Vehicle {vehicle_id}: {issue_type} detected on {datetime.now().strftime('%Y-%m-%d')}"
+                
+                self.client.create_event(
+                    memory_id=self.memory_id,
+                    actor_id=self.actor_id,
+                    session_id=self.session_id,
+                    messages=[
+                        (user_msg, "USER"),
+                        (f"{issue_summary}\n{agent_msg}", "ASSISTANT")
+                    ]
+                )
+            else:
+                # Save normal interaction
+                self.client.create_event(
+                    memory_id=self.memory_id,
+                    actor_id=self.actor_id,
+                    session_id=self.session_id,
+                    messages=[(user_msg, "USER"), (agent_msg, "ASSISTANT")]
+                )
+        
+        except Exception as e:
+            print(f"Memory save error: {e}")
+    
+    def register_hooks(self, registry: HookRegistry) -> None:
+        registry.add_callback(MessageAddedEvent, self.retrieve_context)
+        registry.add_callback(AfterInvocationEvent, self.save_interaction)
 
 
 class AgentCoreMaintenanceAgent:
     """Enhanced maintenance agent with Bedrock AgentCore capabilities"""
     
-    def __init__(self):
+    def __init__(self, memory_id: str = None, actor_id: str = "fleet_manager", session_id: str = None):
         self.predictor = TirePredictor()
         try:
             self.predictor.load_models()
@@ -55,27 +206,43 @@ class AgentCoreMaintenanceAgent:
         self.appointments = []
         self.tire_data = None
         self.motor_data = None
+        self.inverter_data = None
         self.manual_data = None
+        self.memory_id = memory_id
+        self.actor_id = actor_id
+        self.session_id = session_id or datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.memory_hooks = None
+        
+        if memory_id:
+            try:
+                memory_client = MemoryClient(region_name="us-east-1")
+                self.memory_hooks = MaintenanceMemoryHooks(memory_id, memory_client, actor_id, self.session_id)
+                print("✓ Memory hooks initialized for pattern detection")
+            except Exception as e:
+                print(f"⚠ Memory hooks disabled: {e}")
         
     def load_data(self):
-        """Load tire, motor, and manual data"""
+        """Load tire, motor, inverter, and manual data"""
         try:
             self.tire_data = pd.read_csv('tire_wear_data.csv')
             self.motor_data = pd.read_csv('motor_sensor_data.csv')
+            self.inverter_data = pd.read_csv('inverter_sensor_data.csv')
             self.manual_data = pd.read_csv('car_manual_specs.csv')
             print("✓ Data loaded successfully")
         except Exception as e:
             print(f"⚠ Error loading data: {e}")
     
     def create_agent(self):
-        """Create AgentCore agent with maintenance tools"""
+        """Create AgentCore agent with maintenance tools and memory"""
         agent = Agent(
-            model=MODEL_ID,  # Use 'model' parameter instead of 'model_id'
+            model=MODEL_ID,
             system_prompt=SYSTEM_PROMPT,
+            hooks=[self.memory_hooks] if self.memory_hooks else [],
             tools=[
                 quick_vehicle_check,
                 analyze_tire_condition,
                 analyze_motor_performance,
+                analyze_inverter_condition,
                 predict_tire_wear,
                 predict_motor_failure,
                 detect_tire_anomalies,
@@ -83,7 +250,6 @@ class AgentCoreMaintenanceAgent:
                 schedule_appointment,
                 get_fleet_status,
                 cross_system_analysis,
-                generate_maintenance_report,
                 order_tire_online
             ]
         )
@@ -336,6 +502,65 @@ def analyze_motor_performance(vehicle_id: int) -> str:
                 "mileage": int(latest['mileage']),
                 "status": status,
                 "failure_risk": risk_level
+            }
+        }
+        
+        return json.dumps(analysis, indent=2)
+        
+    except Exception as e:
+        return json.dumps({"error": f"Analysis failed: {str(e)}"})
+
+
+@tool
+def analyze_inverter_condition(vehicle_id: int) -> str:
+    """
+    Analyze inverter condition and health for an electric vehicle.
+    
+    Args:
+        vehicle_id: The vehicle ID to analyze
+        
+    Returns:
+        Inverter analysis including DC voltage, efficiency, temperature, and THD
+    """
+    try:
+        if agent_instance.inverter_data is None:
+            agent_instance.load_data()
+        
+        vehicle_data = agent_instance.inverter_data[agent_instance.inverter_data['vehicle_id'] == vehicle_id]
+        
+        if vehicle_data.empty:
+            return json.dumps({"error": f"No inverter data found for vehicle {vehicle_id}"})
+        
+        latest = vehicle_data.iloc[-1]
+        
+        dc_voltage = float(latest['dc_voltage_v'])
+        efficiency = float(latest['efficiency_percent'])
+        temperature = float(latest['temperature_c'])
+        thd = float(latest['thd_percent'])
+        
+        # Determine status based on thresholds
+        if temperature > 90 or efficiency < 90 or thd > 10:
+            status = "CRITICAL - Immediate attention required"
+        elif temperature > 75 or efficiency < 95 or thd > 5 or dc_voltage < 300 or dc_voltage > 420:
+            status = "WARNING - Schedule maintenance soon"
+        else:
+            status = "GOOD"
+        
+        analysis = {
+            "vehicle_info": {
+                "vehicle_id": int(vehicle_id),
+                "make": str(latest['make']),
+                "model": str(latest['model']),
+                "year": int(latest['year'])
+            },
+            "inverter_health": {
+                "dc_voltage_v": round(dc_voltage, 1),
+                "ac_voltage_v": round(float(latest['ac_voltage_v']), 1),
+                "efficiency_percent": round(efficiency, 1),
+                "temperature_c": round(temperature, 1),
+                "thd_percent": round(thd, 1),
+                "power_output_kw": round(float(latest['power_output_kw']), 1),
+                "status": status
             }
         }
         
@@ -702,6 +927,16 @@ def order_tire_online(vehicle_id: int) -> str:
     Returns:
         Order status and action log from browser automation
     """
+    print(f"\n{'='*80}")
+    print(f"🔧 TOOL EXECUTION STARTED: order_tire_online(vehicle_id={vehicle_id})")
+    print(f"{'='*80}\n")
+    
+    if not BROWSER_AVAILABLE:
+        return json.dumps({
+            "error": "Browser automation not available in this runtime",
+            "vehicle_id": int(vehicle_id)
+        })
+    
     tire_size = None
     tire_brand = None
     result_response = None
@@ -718,11 +953,14 @@ def order_tire_online(vehicle_id: int) -> str:
         vehicle_info = vehicle_data.iloc[0]
         tire_size = str(vehicle_info['tire_size'])
         tire_brand = str(vehicle_info['tire_brand'])
+        print(f"✓ Vehicle data loaded: {tire_size} {tire_brand}")
         
         # Start browser session
-        with browser_session(region="us-east-1") as client:
+        print("✓ Starting browser session...")
+        with browser_session(region="us-east-1") as client:  # type: ignore
             ws_url, headers = client.generate_ws_headers()
             starting_page = "https://www.amazon.com"
+            print(f"✓ Browser session created: {starting_page}")
             
             prompt = f"""
             Type "{tire_size} tires" in the search bar at the top of this Amazon page and press Enter.
@@ -733,6 +971,7 @@ def order_tire_online(vehicle_id: int) -> str:
             Return the product name, brand, and price.
             """
             
+            print(f"✓ Executing browser automation for: {tire_size} tires")
             with NovaAct(
                 cdp_endpoint_url=ws_url,
                 cdp_headers=headers,
@@ -742,8 +981,12 @@ def order_tire_online(vehicle_id: int) -> str:
             ) as nova_act:
                 result = nova_act.act(prompt)
                 result_response = str(result.response) if result else None
+                print(f"✓ Browser automation completed: {result_response[:100] if result_response else 'No response'}...")
         
         # Return immediately with the result
+        print(f"\n{'='*80}")
+        print(f"✅ TOOL EXECUTION COMPLETED: order_tire_online(vehicle_id={vehicle_id})")
+        print(f"{'='*80}\n")
         return json.dumps({
             "success": True,
             "vehicle_id": int(vehicle_id),
@@ -752,6 +995,10 @@ def order_tire_online(vehicle_id: int) -> str:
         }, indent=2)
             
     except Exception as e:
+        print(f"\n{'='*80}")
+        print(f"❌ TOOL EXECUTION FAILED: order_tire_online(vehicle_id={vehicle_id})")
+        print(f"Error: {str(e)}")
+        print(f"{'='*80}\n")
         return json.dumps({
             "success": True,
             "vehicle_id": int(vehicle_id),

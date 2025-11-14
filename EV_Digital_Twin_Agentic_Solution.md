@@ -305,8 +305,49 @@ Our AI-powered agentic solution transforms vehicle maintenance through intellige
 - **Model:** Claude Sonnet 4.5 (anthropic.claude-sonnet-4-5-20250929-v1:0)
 - **Runtime ARN:** arn:aws:bedrock-agentcore:us-east-1:009296485814:runtime/vehicle_maintenance_agent-kH9hYvFcCD
 - **Tools:** 11 specialized maintenance analysis tools
-- **Memory:** STM_ONLY mode with 30-day event expiry
+- **Memory:** STM_ONLY mode with 30-day event expiry for pattern detection
 - **Platform:** Linux/ARM64 with Docker container runtime
+
+### AgentCore Memory Integration
+
+**Purpose:** Detect recurring vehicle issues and fleet-wide patterns to improve maintenance recommendations.
+
+**Memory Configuration:**
+- **Mode:** STM_ONLY (Short-Term Memory)
+- **Memory ID:** vehicle_maintenance_agent_mem-Zz75E62LMt
+- **Expiry:** 30 days
+- **Region:** us-east-1
+
+**Use Cases:**
+1. **Recurring Issue Detection:** Identifies when the same vehicle has repeated problems (e.g., "⚠️ RECURRING ISSUE: Vehicle 1 has 2 previous tire issues")
+2. **Fleet Pattern Analysis:** Detects similar issues across multiple vehicles (e.g., "⚠️ FLEET PATTERN: 3 vehicles have similar tire pressure problems")
+
+**How It Works:**
+- Memory hooks automatically save vehicle issues after each analysis
+- Before analyzing, agent checks memory for past issues on that vehicle and similar issues on other vehicles
+- Warnings are injected into recommendations when patterns are detected
+- Memory persists across sessions and page refreshes
+
+**Implementation:**
+```python
+class MaintenanceMemoryHooks(HookProvider):
+    def retrieve_context(self, event):
+        # Check memory for recurring issues before analysis
+        memories = client.retrieve_memories(memory_id, namespace="default", query=f"vehicle {id}")
+        if len(memories) > 1:
+            inject_warning("⚠️ RECURRING ISSUE detected")
+    
+    def save_interaction(self, event):
+        # Save detected issues to memory after analysis
+        if "CRITICAL" or "WARNING" in response:
+            client.create_event(memory_id, messages=[(query, "USER"), (response, "ASSISTANT")])
+```
+
+**Business Value:**
+- Proactive maintenance by identifying repeat failures
+- Fleet-wide insights reveal systemic issues
+- Improved safety through early pattern detection
+- Cost savings by addressing root causes
 
 ### Data Specifications
 - **Tire Data:** 3,600 records across 5 vehicles with 4 tire positions each

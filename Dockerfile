@@ -23,6 +23,7 @@ COPY agentcore_maintenance_agent.py .
 COPY tire_predictor.py .
 COPY tire_wear_data.csv .
 COPY motor_sensor_data.csv .
+COPY inverter_sensor_data.csv .
 COPY car_manual_specs.csv .
 COPY tire_models_*.pkl .
 

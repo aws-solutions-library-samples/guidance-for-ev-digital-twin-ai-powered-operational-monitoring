@@ -277,7 +277,7 @@ const Charger = () => {
   };
 
   return (
-    <div className="charger-page" style={{ overflowY: windowWidth <= 1700 ? 'auto' : 'hidden' }}>
+    <div className="charger-page" style={{ overflowY: windowWidth <= 1700 ? 'auto' : windowWidth === 1920 ? 'auto' : 'hidden' }}>
       <div className="charger-container" style={{ overflowY: 'hidden', height: 'auto' }}>
         {/* Header */}
         <header className="header" style={{ height: windowWidth <= 1440 ? '45px' : windowWidth <= 1700 ? '50px' : windowWidth <= 1815 ? '60px' : 'auto', padding: windowWidth <= 1440 ? '8px 15px' : windowWidth <= 1700 ? '10px 20px' : windowWidth <= 1815 ? '15px 20px' : '20px' }}>

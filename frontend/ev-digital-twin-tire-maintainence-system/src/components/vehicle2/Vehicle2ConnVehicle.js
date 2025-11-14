@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import '../../css/connvehicle.css';
+import { VEHICLE_INFO } from '../../utils/vinMapping';
 
 const Vehicle2ConnVehicle = () => {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const currentVIN = '1HGBH41JXMN109876';
+  const displayVIN = '5YJSA1E26HF123456';
+  const vehicleInfo = { vin: displayVIN, type: 'Electric SUV', year: '2022', tireSize: '255/50R20' };
 
   return (
     <div className="connvehicle-page">
@@ -71,7 +73,7 @@ const Vehicle2ConnVehicle = () => {
         <div className="connvehicle-vin">
           <button className="connvehicle-back-btn" onClick={() => navigate('/')}>
             <span>←</span>
-            <span>{currentVIN}</span>
+            <span>{displayVIN}</span>
           </button>
         </div>
 
@@ -147,21 +149,21 @@ const Vehicle2ConnVehicle = () => {
 
               {/* Component Cards */}
               <div className="connvehicle-components">
-              <div className="connvehicle-card" onClick={() => navigate(`/car/1HGBH41JXMN109876/battery`)}>
+              <div className="connvehicle-card" onClick={() => navigate(`/car/5YJSA1E26HF123456/battery`)}>
                 <img src={require('../assets/battery.png')} alt="Battery" style={{ width: '20px', height: '20px', margin: '0 auto' }} />
                 <div className="connvehicle-card-title">Battery</div>
                 <div className="connvehicle-card-text">85% Charged</div>
               </div>
-              <div className="connvehicle-card" onClick={() => navigate(`/car/1HGBH41JXMN109876/motor`)}>
+              <div className="connvehicle-card" onClick={() => navigate(`/car/5YJSA1E26HF123456/motor`)}>
                 <img src={require('../assets/motor.png')} alt="Motor" style={{ width: '20px', height: '20px', margin: '0 auto' }} />
                 <div className="connvehicle-card-title">Motor</div>
                 <div className="connvehicle-card-error">Phase currents are imbalanced</div>
               </div>
-              <div className="connvehicle-card" onClick={() => navigate(`/car/1HGBH41JXMN109876/tires`)}>
+              <div className="connvehicle-card" onClick={() => navigate(`/car/5YJSA1E26HF123456/tires`)}>
                 <img src={require('../assets/icons/tireicon.png')} alt="Tires" style={{ width: '20px', height: '20px', margin: '0 auto' }} />
                 <div className="connvehicle-card-title">Tires</div>
               </div>
-              <div className="connvehicle-card" onClick={() => navigate(`/car/1HGBH41JXMN109876/invertor`)}>
+              <div className="connvehicle-card" onClick={() => navigate(`/car/5YJSA1E26HF123456/invertor`)}>
                 <img src={require('../assets/icons/invertoricon.png')} alt="Inverter" style={{ width: '20px', height: '20px', margin: '0 auto' }} />
                 <div className="connvehicle-card-title">Inverter</div>
               </div>

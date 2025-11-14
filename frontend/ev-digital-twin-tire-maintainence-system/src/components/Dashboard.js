@@ -24,15 +24,17 @@ const Dashboard = () => {
   return (
     <Routes>
       <Route path="/" element={<MapView />} />
+      <Route path="/car/EV-1001" element={<Vehicle1ConnVehicle />} />
       <Route path="/car/2T1BURHE8JC987654" element={<Vehicle1ConnVehicle />} />
-      <Route path="/car/1HGBH41JXMN109876" element={<Vehicle2ConnVehicle />} />
+      <Route path="/car/5YJSA1E26HF123456" element={<Vehicle2ConnVehicle />} />
       <Route path="/car/3VWDX7AJ9DM456321" element={<Vehicle3ConnVehicle />} />
       <Route path="/car/WBADT43452G123789" element={<Vehicle4ConnVehicle />} />
       <Route path="/car/5YJSA1E26HF123456" element={<Vehicle5ConnVehicle />} />
       <Route path="/car/:carId" element={<ConnVehicle />} />
       <Route path="/car/:carId/old" element={<CarDetail />} />
       <Route path="/car/2T1BURHE8JC987654/tires" element={<Vehicle1Tires />} />
-      <Route path="/car/1HGBH41JXMN109876/motor" element={<Vehicle2Motor />} />
+      <Route path="/car/EV-1001/tires" element={<Vehicle1Tires />} />
+      <Route path="/car/5YJSA1E26HF123456/motor" element={<Vehicle2Motor />} />
       <Route path="/car/3VWDX7AJ9DM456321/invertor" element={<Vehicle3Inverter />} />
       <Route path="/car/:carId/tires" element={<TiresPage />} />
       <Route path="/car/:carId/battery" element={<BatteryScreen />} />

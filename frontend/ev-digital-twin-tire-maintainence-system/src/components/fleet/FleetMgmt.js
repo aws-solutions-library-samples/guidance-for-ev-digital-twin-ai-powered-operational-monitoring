@@ -10,7 +10,7 @@ const FleetMgmt = () => {
   // Sample fleet data with regions (using percentages for responsive positioning)
   const regions = [
     { id: 1, x: '22%', y: '31%', count: 10 },
-    { id: 2, x: '42%', y: '48%', count: 42 },
+    { id: 2, x: '42%', y: '48%', count: 3 },
     { id: 3, x: '59%', y: '75%', count: 23 },
     { id: 4, x: '16%', y: '79%', count: 15 },
     { id: 5, x: '80%', y: '33%', count: 13 },

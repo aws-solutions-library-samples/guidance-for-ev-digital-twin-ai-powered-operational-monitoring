@@ -5,63 +5,64 @@ Proper implementation using bedrock_agentcore.runtime SDK
 """
 
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
-from strands import Agent
-from strands.models import BedrockModel
-from agentcore_maintenance_agent import (
-    quick_vehicle_check,
-    analyze_tire_condition,
-    analyze_motor_performance,
-    predict_tire_wear,
-    predict_motor_failure,
-    detect_tire_anomalies,
-    detect_motor_anomalies,
-    schedule_appointment,
-    get_fleet_status,
-    cross_system_analysis,
-    generate_maintenance_report,
-    order_tire_online,
-    SYSTEM_PROMPT,
-    MODEL_ID,
-    agent_instance
-)
+from agentcore_maintenance_agent import AgentCoreMaintenanceAgent, order_tire_online
+import os
 
-# Create the Bedrock model
-model = BedrockModel(model_id=MODEL_ID)
+# Get memory ID from environment or config
+MEMORY_ID = os.environ.get("AGENTCORE_MEMORY_ID", "vehicle_maintenance_agent_mem-Zz75E62LMt")
+
+# Create agent with memory for pattern detection
+maintenance_agent = AgentCoreMaintenanceAgent(
+    memory_id=MEMORY_ID,
+    actor_id="fleet_manager",
+    session_id=None
+)
 
 # Load data
-agent_instance.load_data()
+maintenance_agent.load_data()
 
-# Create the agent with all maintenance tools
-agent = Agent(
-    model=model,
-    tools=[
-        quick_vehicle_check,
-        analyze_tire_condition,
-        analyze_motor_performance,
-        predict_tire_wear,
-        predict_motor_failure,
-        detect_tire_anomalies,
-        detect_motor_anomalies,
-        schedule_appointment,
-        get_fleet_status,
-        cross_system_analysis,
-        generate_maintenance_report,
-        order_tire_online
-    ],
-    system_prompt=SYSTEM_PROMPT
-)
+# Create agent with memory hooks
+agent = maintenance_agent.create_agent()
 
 # Initialize the AgentCore Runtime App
 app = BedrockAgentCoreApp()
 
 @app.entrypoint
 def invoke(payload):
-    """AgentCore Runtime entrypoint function"""
+    """AgentCore Runtime entrypoint with memory-based pattern detection"""
     user_input = payload.get("prompt", "")
+    actor_id = payload.get("actor_id", "fleet_manager")
     
-    # Invoke the agent
+    # Update actor_id if provided
+    if actor_id != maintenance_agent.actor_id:
+        maintenance_agent.actor_id = actor_id
+        if maintenance_agent.memory_hooks:
+            maintenance_agent.memory_hooks.actor_id = actor_id
+    
+    # BYPASS: If prompt is tire ordering, call tool directly
+    if "order_tire_online" in user_input.lower():
+        try:
+            import re
+            match = re.search(r'order_tire_online\((\d+)\)', user_input)
+            if match:
+                vehicle_id = int(match.group(1))
+                print(f"BYPASS: Directly calling order_tire_online({vehicle_id})")
+                result = order_tire_online(vehicle_id)
+                return result
+        except Exception as e:
+            print(f"BYPASS FAILED: {str(e)}")
+    
+    # Invoke agent with memory hooks active
     response = agent(user_input)
-    return response.message["content"][0]["text"]
+    
+    if hasattr(response, 'text'):
+        return response.text
+    elif hasattr(response, 'message') and response.message.get("content"):
+        content = response.message["content"]
+        if content and len(content) > 0:
+            return content[0].get("text", str(response))
+    
+    return str(response)
 
 if __name__ == "__main__":
     app.run()

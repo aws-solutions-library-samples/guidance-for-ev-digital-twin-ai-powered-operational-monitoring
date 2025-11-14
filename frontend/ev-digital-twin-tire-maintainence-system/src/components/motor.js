@@ -57,7 +57,7 @@ const Motor = () => {
   }, []);
 
   useEffect(() => {
-    Papa.parse('/data/motor_sensor_data.csv', {
+    Papa.parse('/motor_sensor_data.csv', {
       download: true,
       header: true,
       complete: (results) => {
@@ -368,37 +368,43 @@ const Motor = () => {
     try {
       console.log('Parsing Motor AgentCore response:', response);
       
+      // Safety check for undefined/null response
+      if (!response || typeof response !== 'string') {
+        console.log('No valid response text, using ML fallback');
+        return createEnhancedMotorFallback(motorData, new Error('No response text'));
+      }
+      
       // AgentCore returns text responses, not JSON
       // Let's create structured recommendations from the text
       const recommendations = [];
       
-      // Split response into sentences for analysis
-      const sentences = response.split(/[.!?]+/).filter(s => s.trim().length > 10);
+      // Extract numbered list items (1. Check oil, 2. Inspect, etc.)
+      const numberedPattern = /\d+\.\s*\*\*[^*]+\*\*[^\n]*(?:\n[^\d\n][^\n]*)*|\d+\.\s*[^\n]+/g;
+      const numberedItems = response.match(numberedPattern) || [];
       
-      sentences.forEach(sentence => {
-        const trimmed = sentence.trim();
+      // Action verbs that indicate real recommendations
+      const actionVerbs = ['check', 'inspect', 'replace', 'service', 'monitor', 'test', 'verify', 'clean', 'flush', 'change', 'repair', 'schedule', 'perform', 'examine', 'diagnose', 'stop', 'reduce', 'increase', 'adjust'];
+      
+      numberedItems.forEach(item => {
+        const cleaned = item.replace(/\d+\.\s*/, '').replace(/\*\*/g, '').trim();
+        if (cleaned.length < 15) return;
         
-        // Look for actionable recommendations
-        if (trimmed.toLowerCase().includes('recommend') || 
-            trimmed.toLowerCase().includes('should') || 
-            trimmed.toLowerCase().includes('need') ||
-            trimmed.toLowerCase().includes('check') ||
-            trimmed.toLowerCase().includes('replace') ||
-            trimmed.toLowerCase().includes('service') ||
-            trimmed.toLowerCase().includes('inspect') ||
-            trimmed.toLowerCase().includes('monitor')) {
-          
-          const priority = trimmed.toLowerCase().includes('urgent') || trimmed.toLowerCase().includes('critical') || trimmed.toLowerCase().includes('immediate') ? 'CRITICAL' :
-                          trimmed.toLowerCase().includes('soon') || trimmed.toLowerCase().includes('warning') || trimmed.toLowerCase().includes('attention') ? 'HIGH' :
-                          trimmed.toLowerCase().includes('consider') || trimmed.toLowerCase().includes('schedule') ? 'MEDIUM' : 'LOW';
-          
-          recommendations.push({
-            action: trimmed,
-            priority: priority,
-            reason: "Based on Claude Sonnet 4.5 analysis of current motor condition",
-            urgency: priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance'
-          });
-        }
+        // Only include if it contains an action verb
+        const lowerCleaned = cleaned.toLowerCase();
+        const hasActionVerb = actionVerbs.some(verb => lowerCleaned.includes(verb));
+        if (!hasActionVerb) return;
+        
+        const lowerItem = item.toLowerCase();
+        const priority = lowerItem.includes('urgent') || lowerItem.includes('critical') || lowerItem.includes('immediate') || lowerItem.includes('stop') ? 'CRITICAL' :
+                        lowerItem.includes('soon') || lowerItem.includes('warning') || lowerItem.includes('attention') ? 'HIGH' :
+                        lowerItem.includes('consider') || lowerItem.includes('schedule') ? 'MEDIUM' : 'LOW';
+        
+        recommendations.push({
+          action: cleaned,
+          priority: priority,
+          reason: "Based on Claude Sonnet 4.5 analysis of current motor condition",
+          urgency: priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance'
+        });
       });
       
       // Determine overall status from response content
@@ -1385,10 +1391,9 @@ const Motor = () => {
                         </div>
                       )}
                       {genAiAnalysis && !genAiLoading && (
-                        <div style={{ fontSize: '11px', color: genAiAnalysis.error ? '#ff6b6b' : genAiAnalysis.fromCache ? '#ffa500' : '#00ff88', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <span>{genAiAnalysis.error ? '🛡️' : genAiAnalysis.fromCache ? '💾' : '🤖'}</span> 
-                          {genAiAnalysis.error ? 'Enhanced Fallback' : 
-                           genAiAnalysis.fromCache ? 'Claude (Cached)' : 'Claude Sonnet 4.5'}
+                        <div style={{ fontSize: '11px', color: genAiAnalysis.error ? '#ff6b6b' : '#00ff88', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span>{genAiAnalysis.error ? '🛡️' : '🤖'}</span> 
+                          {genAiAnalysis.error ? 'Enhanced Fallback' : 'Claude Sonnet 4.5'}
                         </div>
                       )}
                     </div>

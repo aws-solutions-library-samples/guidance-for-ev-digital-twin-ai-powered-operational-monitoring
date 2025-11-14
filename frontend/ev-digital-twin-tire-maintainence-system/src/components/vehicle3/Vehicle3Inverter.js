@@ -42,12 +42,12 @@ const Invertor = () => {
   }, []);
 
   useEffect(() => {
-    Papa.parse('/data/inverter_sensor_data.csv', {
+    Papa.parse('/inverter_sensor_data.csv', {
       download: true,
       header: true,
       complete: (results) => {
         if (results.data && results.data.length > 0) {
-          const filteredData = results.data.filter(row => row.vehicle_id);
+          const filteredData = results.data.filter(row => row.vehicle_id === '3' || row.vin === 'EV-1003');
           setCsvData(filteredData);
           console.log('Inverter CSV data loaded:', filteredData.length, 'records');
           console.log('Sample inverter record:', filteredData[0]);
@@ -191,7 +191,7 @@ const Invertor = () => {
   useEffect(() => {
     const analyzeInverterWithGenAI = async () => {
       // Use the same fixed vehicle data for GenAI analysis
-      const currentData = csvData.find(row => row.vehicle_id === '3') || csvData[0] || {};
+      const currentData = csvData.find(row => row.vehicle_id === '3' || row.vin === 'EV-1003') || csvData[0] || {};
       
       if (!csvData.length || !currentData.vehicle_id) {
         console.log('Inverter GenAI Analysis skipped - missing data:', { csvDataLength: csvData.length, vehicleId: currentData.vehicle_id });
@@ -265,14 +265,14 @@ const Invertor = () => {
       }
     };
     
-    // Debounce the GenAI calls - longer interval for stability
-    const debounceTimer = setTimeout(analyzeInverterWithGenAI, 5000); // 5 seconds for better stability
+    // Debounce the GenAI calls
+    const debounceTimer = setTimeout(analyzeInverterWithGenAI, 2000);
     return () => clearTimeout(debounceTimer);
     
   }, [csvData.length]); // Trigger when CSV data is loaded
 
-  // Use a fixed vehicle for consistent inverter analysis (like Tires and Motor pages)
-  const currentData = csvData.find(row => row.vehicle_id === '3') || csvData[0] || {};
+  // Use a fixed vehicle for consistent inverter analysis
+  const currentData = csvData.find(row => row.vehicle_id === '3' || row.vin === 'EV-1003') || csvData[0] || {};
   
   // Get ML data for current vehicle
   const currentMlData = mlResults.find(r => r.vehicle_id === parseInt(currentData.vehicle_id));
@@ -408,40 +408,64 @@ const Invertor = () => {
   // Parse AgentCore response into structured format for inverter analysis
   const parseInverterAgentCoreResponse = (response, inverterData, analysisResult = {}) => {
     try {
+      if (!response) {
+        console.warn('No response to parse');
+        return createEnhancedInverterFallback(inverterData, new Error('Empty response'));
+      }
       console.log('Parsing Inverter AgentCore response:', response);
       
       // AgentCore returns text responses, not JSON
       // Let's create structured recommendations from the text
       const recommendations = [];
       
-      // Split response into sentences for analysis
-      const sentences = response.split(/[.!?]+/).filter(s => s.trim().length > 10);
+      // Extract numbered list recommendations
+      const numberedMatches = response.match(/\d+\.\s*\*\*[^*]+\*\*/g) || [];
       
-      sentences.forEach(sentence => {
-        const trimmed = sentence.trim();
-        
-        // Look for actionable recommendations
-        if (trimmed.toLowerCase().includes('recommend') || 
-            trimmed.toLowerCase().includes('should') || 
-            trimmed.toLowerCase().includes('need') ||
-            trimmed.toLowerCase().includes('check') ||
-            trimmed.toLowerCase().includes('replace') ||
-            trimmed.toLowerCase().includes('service') ||
-            trimmed.toLowerCase().includes('inspect') ||
-            trimmed.toLowerCase().includes('monitor')) {
+      // Extract sections with urgency context
+      const immediateSection = response.match(/Immediate Actions?[^#]*?(?=###|##|$)/is)?.[0] || '';
+      const within7DaysSection = response.match(/Within 7 Days[^#]*?(?=###|##|$)/is)?.[0] || '';
+      const within30DaysSection = response.match(/Within 30 Days[^#]*?(?=###|##|$)/is)?.[0] || '';
+      
+      // Parse numbered items from each section
+      const parseSection = (text, defaultUrgency, defaultPriority) => {
+        const matches = text.match(/\d+\.\s*\*\*[^*]+\*\*/g) || [];
+        return matches.map(match => {
+          let action = match.replace(/\d+\.\s*/, '').replace(/\*\*/g, '').trim();
+          const actionVerbs = ['check', 'inspect', 'replace', 'service', 'monitor', 'schedule', 'investigate', 'test', 'verify', 'maintain', 'review', 'update'];
+          const hasActionVerb = actionVerbs.some(verb => action.toLowerCase().includes(verb));
           
-          const priority = trimmed.toLowerCase().includes('urgent') || trimmed.toLowerCase().includes('critical') || trimmed.toLowerCase().includes('immediate') ? 'CRITICAL' :
-                          trimmed.toLowerCase().includes('soon') || trimmed.toLowerCase().includes('warning') || trimmed.toLowerCase().includes('attention') ? 'HIGH' :
-                          trimmed.toLowerCase().includes('consider') || trimmed.toLowerCase().includes('schedule') ? 'MEDIUM' : 'LOW';
-          
-          recommendations.push({
-            action: trimmed,
-            priority: priority,
-            reason: "Based on Claude Sonnet 4.5 analysis of current inverter condition",
-            urgency: priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance'
-          });
-        }
-      });
+          if (hasActionVerb && action.length >= 15) {
+            return {
+              action: action,
+              priority: defaultPriority,
+              reason: "Based on Claude Sonnet 4.5 analysis of current inverter condition",
+              urgency: defaultUrgency
+            };
+          }
+          return null;
+        }).filter(Boolean);
+      };
+      
+      // Parse each section with appropriate urgency
+      recommendations.push(...parseSection(immediateSection, 'Within 7 days', 'HIGH'));
+      recommendations.push(...parseSection(within7DaysSection, 'Within 7 days', 'HIGH'));
+      recommendations.push(...parseSection(within30DaysSection, 'Within 30 days', 'MEDIUM'));
+      
+      // Fallback: If no recommendations found, extract from bullet points or sentences
+      if (recommendations.length === 0) {
+        const bulletMatches = response.match(/[-•*]\s*([^\n]{20,})/g) || [];
+        bulletMatches.slice(0, 3).forEach(match => {
+          const action = match.replace(/[-•*]\s*/, '').trim();
+          if (action.length >= 20) {
+            recommendations.push({
+              action: action,
+              priority: 'MEDIUM',
+              reason: "Based on Claude Sonnet 4.5 analysis of current inverter condition",
+              urgency: 'Within 30 days'
+            });
+          }
+        });
+      }
       
       // Determine overall status from response content
       const status = determineInverterStatusFromResponse(response);
@@ -889,9 +913,9 @@ const Invertor = () => {
     const height = window.innerHeight;
     
     return {
-      fontSize: width < 1200 ? '13px' : width < 1400 ? '15px' : '16px',
-      smallFontSize: width < 1200 ? '9px' : width < 1400 ? '10px' : '10px',
-      titleFontSize: width < 1200 ? '15px' : width < 1400 ? '17px' : '18px',
+      fontSize: width < 1200 ? '13px' : width < 1400 ? '15px' : width === 1920 ? '18px' : '16px',
+      smallFontSize: width < 1200 ? '9px' : width < 1400 ? '10px' : width === 1920 ? '12px' : '10px',
+      titleFontSize: width < 1200 ? '15px' : width < 1400 ? '17px' : width === 1920 ? '20px' : '18px',
       gaugeSize: width < 1200 ? 80 : width < 1400 ? 90 : 100,
       chartHeight: height < 800 ? 200 : height < 900 ? 220 : 240,
       containerPadding: width < 1200 ? '10px' : '15px',
@@ -984,7 +1008,7 @@ const Invertor = () => {
             <div className="main-panel" style={{ marginTop: windowWidth <= 1700 ? '70px' : '90px' }}>
               {/* Power Metrics Container - Top */}
               <div className="data-container" style={{ marginBottom: '20px', marginTop: '-20px', minHeight: windowWidth <= 1440 ? '400px' : windowWidth <= 1700 ? '430px' : windowWidth <= 1815 ? '480px' : '530px', overflow: 'visible', width: 'calc(100% + 30px)', marginLeft: '-15px' }}>
-                <h3 style={{ fontSize: spacing.titleFontSize }}>Power Metrics</h3>
+                <h3 style={{ fontSize: windowWidth === 1920 ? '20px' : spacing.titleFontSize }}>Power Metrics</h3>
                 <img 
                   src={require('../assets/invertor.png')} 
                   alt="Invertor" 
@@ -1335,7 +1359,7 @@ const Invertor = () => {
                   padding: '15px',
                   overflow: 'hidden'
                 }}>
-                  <h4 style={{ fontSize: spacing.titleFontSize }}>Pulse with Modulations</h4>
+                  <h4 style={{ fontSize: windowWidth === 1920 ? '20px' : spacing.titleFontSize }}>Pulse with Modulations</h4>
                   <img src={require('../assets/pulsemod.png')} alt="Pulse Modulation" style={{ width: '100%', height: 'auto', marginTop: '10px' }} />
                   <div className="invertor-pulse-metrics" style={{ 
                     marginTop: '10px', 
@@ -1387,7 +1411,7 @@ const Invertor = () => {
                   padding: '15px',
                   overflow: 'hidden'
                 }}>
-                  <h4 style={{ fontSize: spacing.titleFontSize }}>Fault Codes</h4>
+                  <h4 style={{ fontSize: windowWidth === 1920 ? '20px' : spacing.titleFontSize }}>Fault Codes</h4>
                   <div style={{ 
                     padding: '12px 16px', 
                     textAlign: 'center', 
@@ -1451,7 +1475,7 @@ const Invertor = () => {
                 <div className="motor-prediction-container" style={{ paddingLeft: '30px' }}>
                   <div className="failure-prediction" style={{ marginTop: windowWidth <= 1440 ? '-15px' : windowWidth <= 1700 ? '-10px' : windowWidth <= 1815 ? '-5px' : '0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                      <h3 style={{ margin: 0, fontSize: windowWidth <= 1440 ? '12px' : windowWidth <= 1700 ? '14px' : windowWidth <= 1815 ? '17px' : '20px', marginTop: windowWidth <= 1700 ? '-25px' : '-15px' }}>Inverter Failure Prediction</h3>
+                      <h3 style={{ margin: 0, fontSize: windowWidth <= 1440 ? '12px' : windowWidth <= 1700 ? '14px' : windowWidth <= 1815 ? '17px' : windowWidth === 1920 ? '24px' : '20px', marginTop: windowWidth <= 1700 ? '-25px' : '-15px' }}>Inverter Failure Prediction</h3>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: windowWidth <= 1700 ? '5px' : '10px', position: 'relative', zIndex: 100 }}>
                         <span style={{ fontSize: windowWidth <= 1440 ? '10px' : '11px', color: 'rgba(255,255,255,0.7)' }}>
                           Show Prediction
@@ -1651,11 +1675,11 @@ const Invertor = () => {
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                     <span style={{ fontSize: '16px' }}>{createInverterUIPageSummary().statusIcon}</span>
-                    <h3 style={{ margin: 0, fontSize: '14px', color: createInverterUIPageSummary().statusColor }}>
+                    <h3 style={{ margin: 0, fontSize: windowWidth === 1920 ? '18px' : '14px', color: createInverterUIPageSummary().statusColor }}>
                       Inverter System Status: {createInverterUIPageSummary().status.toUpperCase()}
                     </h3>
                     <div style={{ 
-                      fontSize: '10px', 
+                      fontSize: windowWidth === 1920 ? '14px' : '10px', 
                       color: '#888', 
                       backgroundColor: 'rgba(255,255,255,0.1)', 
                       padding: '2px 6px', 
@@ -1667,7 +1691,7 @@ const Invertor = () => {
                   </div>
                   
                   <p style={{ 
-                    fontSize: '11px', 
+                    fontSize: windowWidth === 1920 ? '15px' : '11px', 
                     color: 'rgba(255,255,255,0.9)', 
                     lineHeight: '1.4', 
                     margin: '0 0 8px 0' 
@@ -1679,7 +1703,7 @@ const Invertor = () => {
                   <div style={{ 
                     display: 'flex', 
                     gap: '12px', 
-                    fontSize: '10px', 
+                    fontSize: windowWidth === 1920 ? '14px' : '10px', 
                     color: 'rgba(255,255,255,0.7)',
                     flexWrap: 'wrap'
                   }}>
@@ -1714,7 +1738,7 @@ const Invertor = () => {
                     )}
                   </div>
                   
-                  <p style={{ fontSize: '12px', marginBottom: '12px' }}>
+                  <p style={{ fontSize: windowWidth === 1920 ? '16px' : '12px', marginBottom: '12px' }}>
                     {genAiAnalysis ? 
                       (genAiAnalysis.error ? 
                         genAiAnalysis.error_message :
@@ -1727,8 +1751,8 @@ const Invertor = () => {
                   {/* GenAI Key Findings - Natural Language Summary */}
                   {genAiAnalysis?.key_findings_summary && !genAiAnalysis.error && (
                     <div style={{ marginBottom: '12px', padding: '8px', backgroundColor: 'rgba(0,255,136,0.1)', borderRadius: '4px', border: '1px solid rgba(0,255,136,0.3)' }}>
-                      <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#00ff88', marginBottom: '4px' }}>🔍 Analysis Summary:</div>
-                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.9)', lineHeight: '1.4' }}>
+                      <div style={{ fontSize: windowWidth === 1920 ? '15px' : '11px', fontWeight: 'bold', color: '#00ff88', marginBottom: '4px' }}>🔍 Analysis Summary:</div>
+                      <div style={{ fontSize: windowWidth === 1920 ? '15px' : '11px', color: 'rgba(255,255,255,0.9)', lineHeight: '1.4' }}>
                         {genAiAnalysis.key_findings_summary}
                       </div>
                     </div>
@@ -1765,13 +1789,13 @@ const Invertor = () => {
                           <span className="warning-icon">
                             {rec.priority === 'CRITICAL' ? '🚨' : rec.priority === 'HIGH' ? '⚠️' : rec.priority === 'MEDIUM' ? '⚡' : 'ℹ️'}
                           </span>
-                          <span style={{ flex: 1 }}>{rec.action}</span>
-                          {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
-                          {rec.ml && <span style={{ fontSize: '10px', color: '#ff9900', backgroundColor: 'rgba(255,153,0,0.2)', padding: '2px 6px', borderRadius: '10px' }}>ML</span>}
-                          {rec.fallback && <span style={{ fontSize: '10px', color: '#888', backgroundColor: 'rgba(136,136,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>Rule</span>}
+                          <span style={{ flex: 1, fontSize: windowWidth === 1920 ? '16px' : 'inherit' }}>{rec.action}</span>
+                          {rec.genai && <span style={{ fontSize: windowWidth === 1920 ? '13px' : '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
+                          {rec.ml && <span style={{ fontSize: windowWidth === 1920 ? '13px' : '10px', color: '#ff9900', backgroundColor: 'rgba(255,153,0,0.2)', padding: '2px 6px', borderRadius: '10px' }}>ML</span>}
+                          {rec.fallback && <span style={{ fontSize: windowWidth === 1920 ? '13px' : '10px', color: '#888', backgroundColor: 'rgba(136,136,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>Rule</span>}
                         </div>
                         {(rec.reason || rec.urgency || rec.description) && (
-                          <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
+                          <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: windowWidth === 1920 ? '15px' : '11px', color: 'rgba(255,255,255,0.8)' }}>
                             {rec.reason && <p><strong>Reason:</strong> {rec.reason}</p>}
                             {rec.urgency && <p><strong>Urgency:</strong> {rec.urgency}</p>}
                             {rec.description && <p><strong>Details:</strong> {rec.description}</p>}

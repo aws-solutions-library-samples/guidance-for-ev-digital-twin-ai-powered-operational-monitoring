@@ -62,7 +62,7 @@ const TiresPage = () => {
   }, []);
 
   useEffect(() => {
-    Papa.parse('/data/vehicle_maintenance_data.csv', {
+    Papa.parse('/tire_wear_data.csv', {
       download: true,
       header: true,
       complete: (results) => {
@@ -211,39 +211,50 @@ const TiresPage = () => {
     try {
       console.log('Parsing AgentCore response:', response);
       
+      // Safety check for undefined/null response
+      if (!response || typeof response !== 'string') {
+        console.warn('Invalid response format, using fallback');
+        return parseTextResponse('No analysis available', tireData);
+      }
+      
       // AgentCore returns text responses, not JSON
       // Let's create structured recommendations from the text
       const recommendations = [];
       const keyFindings = [];
       
-      // Split response into sentences for analysis
-      const sentences = response.split(/[.!?]+/).filter(s => s.trim().length > 10);
+      // Extract numbered list items (1. Check tires, 2. Inspect, etc.)
+      const numberedPattern = /\d+\.\s*\*\*[^*]+\*\*[^\n]*(?:\n[^\d\n][^\n]*)*|\d+\.\s*[^\n]+/g;
+      const numberedItems = response.match(numberedPattern) || [];
       
+      // Action verbs that indicate real recommendations
+      const actionVerbs = ['check', 'inspect', 'replace', 'service', 'monitor', 'test', 'verify', 'inflate', 'rotate', 'balance', 'align', 'repair', 'schedule', 'perform', 'examine', 'diagnose', 'adjust'];
+      
+      numberedItems.forEach(item => {
+        const cleaned = item.replace(/\d+\.\s*/, '').replace(/\*\*/g, '').trim();
+        if (cleaned.length < 15) return;
+        
+        // Only include if it contains an action verb
+        const lowerCleaned = cleaned.toLowerCase();
+        const hasActionVerb = actionVerbs.some(verb => lowerCleaned.includes(verb));
+        if (!hasActionVerb) return;
+        
+        const lowerItem = item.toLowerCase();
+        const priority = lowerItem.includes('urgent') || lowerItem.includes('critical') || lowerItem.includes('immediate') || lowerItem.includes('stop') ? 'CRITICAL' :
+                        lowerItem.includes('soon') || lowerItem.includes('warning') || lowerItem.includes('attention') ? 'HIGH' :
+                        lowerItem.includes('consider') || lowerItem.includes('schedule') ? 'MEDIUM' : 'LOW';
+        
+        recommendations.push({
+          action: cleaned,
+          priority: priority,
+          reason: "Based on Claude Sonnet 4.5 analysis of current tire condition",
+          urgency: priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance'
+        });
+      });
+      
+      // Extract key findings from full response
+      const sentences = response.split(/[.!?]+/).filter(s => s.trim().length > 10);
       sentences.forEach(sentence => {
         const trimmed = sentence.trim();
-        
-        // Look for actionable recommendations
-        if (trimmed.toLowerCase().includes('recommend') || 
-            trimmed.toLowerCase().includes('should') || 
-            trimmed.toLowerCase().includes('need') ||
-            trimmed.toLowerCase().includes('check') ||
-            trimmed.toLowerCase().includes('replace') ||
-            trimmed.toLowerCase().includes('inflate') ||
-            trimmed.toLowerCase().includes('monitor')) {
-          
-          const priority = trimmed.toLowerCase().includes('urgent') || trimmed.toLowerCase().includes('critical') || trimmed.toLowerCase().includes('immediate') ? 'CRITICAL' :
-                          trimmed.toLowerCase().includes('soon') || trimmed.toLowerCase().includes('warning') || trimmed.toLowerCase().includes('attention') ? 'HIGH' :
-                          trimmed.toLowerCase().includes('consider') || trimmed.toLowerCase().includes('schedule') ? 'MEDIUM' : 'LOW';
-          
-          recommendations.push({
-            action: trimmed,
-            priority: priority,
-            reason: "Based on Claude Sonnet 4.5 analysis of current tire condition",
-            urgency: priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance'
-          });
-        }
-        
-        // Look for key findings
         if (trimmed.toLowerCase().includes('psi') || 
             trimmed.toLowerCase().includes('pressure') ||
             trimmed.toLowerCase().includes('tread') ||
@@ -1366,8 +1377,8 @@ const TiresPage = () => {
                       <span>Predicted</span>
                     </div>
                   </div>
-                  <div style={{ position: 'relative', marginTop: windowWidth <= 1700 ? '5px' : '5px' }}>
-                    <div className="prediction-chart" style={{ marginTop: windowWidth <= 1700 ? '-120px' : windowWidth <= 1815 ? '-60px' : '-30px' }}>
+                  <div style={{ position: 'relative', marginTop: windowWidth <= 1700 ? '5px' : windowWidth === 1920 ? '-35px' : '5px' }}>
+                    <div className="prediction-chart" style={{ marginTop: windowWidth <= 1700 ? '-120px' : windowWidth <= 1815 ? '-60px' : windowWidth === 1920 ? '-90px' : '-30px' }}>
                       <svg width="290" height="180" viewBox="0 0 290 180">
                       {/* Grid lines */}
                       {Array.from({ length: 8 }, (_, i) => (
@@ -1481,7 +1492,7 @@ const TiresPage = () => {
                 </div>
 
                 {/* Remaining Useful Life */}
-                <div className="useful-life" style={{ marginBottom: '20px', marginTop: windowWidth <= 1700 ? '-110px' : windowWidth <= 1815 ? '-60px' : '-40px' }}>
+                <div className="useful-life" style={{ marginBottom: '20px', marginTop: windowWidth <= 1700 ? '-110px' : windowWidth <= 1815 ? '-60px' : windowWidth === 1920 ? '-100px' : '-40px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
                     <span style={{ fontSize: '10px', color: 'white' }}>Remaining useful life</span>
                     <span style={{ fontSize: '12px', color: 'white', fontWeight: 'bold' }}>{remainingLife}%</span>
@@ -1493,7 +1504,7 @@ const TiresPage = () => {
 
                 {/* UI Page Summary */}
                 <div className="ui-page-summary" style={{ 
-                  marginTop: windowWidth <= 1700 ? '-10px' : windowWidth <= 1815 ? '-5px' : '0px',
+                  marginTop: windowWidth <= 1700 ? '-10px' : windowWidth <= 1815 ? '-5px' : windowWidth === 1920 ? '-15px' : '0px',
                   marginBottom: '15px',
                   padding: '12px',
                   backgroundColor: 'rgba(0,0,0,0.3)',
@@ -1545,7 +1556,7 @@ const TiresPage = () => {
                 </div>
 
                 {/* GenAI Recommendations */}
-                <div className="genai-recommendations" style={{ marginTop: '0px' }}>
+                <div className="genai-recommendations" style={{ marginTop: windowWidth === 1920 ? '-30px' : '0px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                     <h3>GenAI Recommendations</h3>
                     {genAiLoading && (
@@ -1555,10 +1566,9 @@ const TiresPage = () => {
                       </div>
                     )}
                     {genAiAnalysis && !genAiLoading && (
-                      <div style={{ fontSize: '11px', color: genAiAnalysis.error ? '#ff6b6b' : genAiAnalysis.fromCache ? '#ffa500' : '#00ff88', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span>{genAiAnalysis.error ? '🛡️' : genAiAnalysis.fromCache ? '💾' : '🤖'}</span> 
-                        {genAiAnalysis.error ? 'Enhanced Fallback' : 
-                         genAiAnalysis.fromCache ? 'Claude (Cached)' : 'Claude Sonnet 4.5'}
+                      <div style={{ fontSize: '11px', color: genAiAnalysis.error ? '#ff6b6b' : '#00ff88', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>{genAiAnalysis.error ? '🛡️' : '🤖'}</span> 
+                        {genAiAnalysis.error ? 'Enhanced Fallback' : 'Claude Sonnet 4.5'}
                       </div>
                     )}
                   </div>

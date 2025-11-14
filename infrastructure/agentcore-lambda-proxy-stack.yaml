@@ -127,8 +127,55 @@ Resources:
           def lambda_handler(event, context):
               print(f"Event: {json.dumps(event)}")
               
-              # Handle GET /available-appointments
+              # Handle GET requests
               if event.get('requestContext', {}).get('http', {}).get('method') == 'GET':
+                  path = event.get('rawPath', '')
+                  
+                  # GET /genai-recs/{vin}
+                  if path.startswith('/genai-recs/'):
+                      vin = path.split('/')[-1]
+                      table = dynamodb.Table(GENAI_RECS_TABLE)
+                      
+                      try:
+                          response = table.get_item(Key={'vin': vin})
+                          item = response.get('Item')
+                          
+                          if item:
+                              return {
+                                  'statusCode': 200,
+                                  'headers': {
+                                      'Content-Type': 'application/json',
+                                      'Access-Control-Allow-Origin': '*',
+                                      'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+                                      'Access-Control-Allow-Methods': 'GET,POST,OPTIONS'
+                                  },
+                                  'body': json.dumps(item, default=decimal_default)
+                              }
+                          else:
+                              return {
+                                  'statusCode': 404,
+                                  'headers': {
+                                      'Content-Type': 'application/json',
+                                      'Access-Control-Allow-Origin': '*',
+                                      'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+                                      'Access-Control-Allow-Methods': 'GET,POST,OPTIONS'
+                                  },
+                                  'body': json.dumps({'error': 'No cached recommendation found'})
+                              }
+                      except Exception as e:
+                          print(f"DynamoDB get error: {e}")
+                          return {
+                              'statusCode': 500,
+                              'headers': {
+                                  'Content-Type': 'application/json',
+                                  'Access-Control-Allow-Origin': '*',
+                                  'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+                                  'Access-Control-Allow-Methods': 'GET,POST,OPTIONS'
+                              },
+                              'body': json.dumps({'error': str(e)})
+                          }
+                  
+                  # GET /available-appointments
                   query_params = event.get('queryStringParameters', {}) or {}
                   date = query_params.get('date')
                   
@@ -245,6 +292,28 @@ Resources:
                       error_str = str(runtime_error)
                       print(f"AgentCore Runtime error: {error_str}")
                       
+                      # SESSION RESET LOGIC - Break infinite loop
+                      if any(keyword in error_str.lower() for keyword in ['validationexception', 'timeout', 'tool_use', 'tool_id']):
+                          import uuid
+                          new_session_id = f"session-{uuid.uuid4()}"
+                          print(f"Session corrupted - resetting from {session_id} to {new_session_id}")
+                          
+                          return {
+                              'statusCode': 200,
+                              'headers': {
+                                  'Content-Type': 'application/json',
+                                  'Access-Control-Allow-Origin': '*',
+                                  'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+                                  'Access-Control-Allow-Methods': 'POST,OPTIONS'
+                              },
+                              'body': json.dumps({
+                                  'session_reset': True,
+                                  'new_session_id': new_session_id,
+                                  'message': 'Session reset due to error. Please retry with new session.',
+                                  'original_error': error_str
+                              })
+                          }
+                      
                       if '500' in error_str and is_tire_order:
                           print("Attempting to extract tire order result from CloudWatch...")
                           
@@ -344,6 +413,14 @@ Resources:
     Properties:
       ApiId: !Ref AgentCoreHttpApi
       RouteKey: 'POST /chat'
+      Target: !Sub 'integrations/${AgentCoreLambdaIntegration}'
+
+  # GenAI Recs Route
+  AgentCoreGenAIRecsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref AgentCoreHttpApi
+      RouteKey: 'GET /genai-recs/{vin}'
       Target: !Sub 'integrations/${AgentCoreLambdaIntegration}'
 
   # Default Stage

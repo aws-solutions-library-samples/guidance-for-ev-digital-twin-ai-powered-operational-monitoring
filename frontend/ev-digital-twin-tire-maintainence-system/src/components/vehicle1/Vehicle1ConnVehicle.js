@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Papa from 'papaparse';
 import '../../css/connvehicle.css';
+import { VEHICLE_INFO } from '../../utils/vinMapping';
 
 const Vehicle1ConnVehicle = () => {
   const navigate = useNavigate();
@@ -9,7 +10,8 @@ const Vehicle1ConnVehicle = () => {
   const [tireData, setTireData] = useState(null);
   const [dataIndex, setDataIndex] = useState(0);
 
-  const currentVIN = '2T1BURHE8JC987654';
+  const displayVIN = '2T1BURHE8JC987654';
+  const vehicleInfo = VEHICLE_INFO[displayVIN];
 
   useEffect(() => {
     Papa.parse('/data/tire_wear_data.csv', {
@@ -159,7 +161,7 @@ const Vehicle1ConnVehicle = () => {
         <div className="connvehicle-vin">
           <button className="connvehicle-back-btn" onClick={() => navigate('/')}>
             <span>←</span>
-            <span>{currentVIN}</span>
+            <span>{displayVIN}</span>
           </button>
         </div>
 

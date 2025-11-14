@@ -4,12 +4,13 @@ import Papa from 'papaparse';
 import DataNeededModal from "../DataNeededModal";
 import agentCoreService from '../../services/agentcore';
 import '../../css/motor.css';
+import { getVehicleDisplay } from '../../utils/vinMapping';
 
 // VIN Mapping for vehicles
 const VIN_MAPPING = {
-  '1': '2T1BURHE8JC987654',  // EV-1001 2020
-  '5': 'W1KZF8EB8NA123456',  // EV-1005 2022
-  '3': '1FTFW1E84NFA12345'   // EV-1003 2023
+  '1': 'EV-1001',  // EV-1001 2020
+  '3': 'EV-1003',  // EV-1003 2023
+  '5': 'EV-1005'   // EV-1005 2022
 };
 
 // Motor data rotates through CSV entries every 30 seconds
@@ -64,14 +65,14 @@ const Motor = () => {
   }, []);
 
   useEffect(() => {
-    Papa.parse('/data/motor_sensor_data.csv', {
+    Papa.parse('/motor_sensor_data.csv', {
       download: true,
       header: true,
       complete: (results) => {
         if (results.data && results.data.length > 0) {
-          // Filter to ONLY Vehicle 5 (EV-1005)
-          const vehicle5Data = results.data.filter(row => row.vehicle_id === '5');
-          setCsvData(vehicle5Data);
+          // Filter to ONLY Vehicle 5 (EV-1005 2022)
+          const vehicle3Data = results.data.filter(row => row.vehicle_id === '5' || row.vin === 'EV-1005');
+          setCsvData(vehicle3Data);
         }
       }
     });
@@ -97,7 +98,7 @@ const Motor = () => {
         
         // Force component re-render for fresh data
         setMlResults(prev => [...prev]);
-      }, 5000);
+      }, 10000);
       return () => clearInterval(interval);
     }
   }, [csvData]);
@@ -154,7 +155,7 @@ const Motor = () => {
         console.log('Calling enhanced AgentCore service for motor analysis...');
         
         // Use the enhanced service method
-        const analysisResult = await agentCoreService.getMotorAnalysis(currentData.vehicle_id, motorDataForAnalysis, 'W1KZF8EB8NA123456');
+        const analysisResult = await agentCoreService.getMotorAnalysis(currentData.vehicle_id, motorDataForAnalysis, '5YJSA1E26HF123456');
         
         console.log('Received enhanced Motor GenAI analysis:', analysisResult);
         
@@ -191,7 +192,7 @@ const Motor = () => {
     };
     
     // Debounce the GenAI calls - longer interval for stability
-    const debounceTimer = setTimeout(analyzeMotorWithGenAI, 5000); // 5 seconds for better stability
+    const debounceTimer = setTimeout(analyzeMotorWithGenAI, 2000); // 2 seconds debounce
     return () => clearTimeout(debounceTimer);
     
   }, [dataIndex]); // Only trigger on data index changes
@@ -377,37 +378,43 @@ const Motor = () => {
     try {
       console.log('Parsing Motor AgentCore response:', response);
       
+      // Safety check for undefined/null response
+      if (!response || typeof response !== 'string') {
+        console.log('No valid response text, using ML fallback');
+        return createEnhancedMotorFallback(motorData, new Error('No response text'));
+      }
+      
       // AgentCore returns text responses, not JSON
       // Let's create structured recommendations from the text
       const recommendations = [];
       
-      // Split response into sentences for analysis
-      const sentences = response.split(/[.!?]+/).filter(s => s.trim().length > 10);
+      // Extract numbered list items (1. Check oil, 2. Inspect, etc.)
+      const numberedPattern = /\d+\.\s*\*\*[^*]+\*\*[^\n]*(?:\n[^\d\n][^\n]*)*|\d+\.\s*[^\n]+/g;
+      const numberedItems = response.match(numberedPattern) || [];
       
-      sentences.forEach(sentence => {
-        const trimmed = sentence.trim();
+      // Action verbs that indicate real recommendations
+      const actionVerbs = ['check', 'inspect', 'replace', 'service', 'monitor', 'test', 'verify', 'clean', 'flush', 'change', 'repair', 'schedule', 'perform', 'examine', 'diagnose', 'stop', 'reduce', 'increase', 'adjust'];
+      
+      numberedItems.forEach(item => {
+        const cleaned = item.replace(/\d+\.\s*/, '').replace(/\*\*/g, '').trim();
+        if (cleaned.length < 15) return;
         
-        // Look for actionable recommendations
-        if (trimmed.toLowerCase().includes('recommend') || 
-            trimmed.toLowerCase().includes('should') || 
-            trimmed.toLowerCase().includes('need') ||
-            trimmed.toLowerCase().includes('check') ||
-            trimmed.toLowerCase().includes('replace') ||
-            trimmed.toLowerCase().includes('service') ||
-            trimmed.toLowerCase().includes('inspect') ||
-            trimmed.toLowerCase().includes('monitor')) {
-          
-          const priority = trimmed.toLowerCase().includes('urgent') || trimmed.toLowerCase().includes('critical') || trimmed.toLowerCase().includes('immediate') ? 'CRITICAL' :
-                          trimmed.toLowerCase().includes('soon') || trimmed.toLowerCase().includes('warning') || trimmed.toLowerCase().includes('attention') ? 'HIGH' :
-                          trimmed.toLowerCase().includes('consider') || trimmed.toLowerCase().includes('schedule') ? 'MEDIUM' : 'LOW';
-          
-          recommendations.push({
-            action: trimmed,
-            priority: priority,
-            reason: "Based on Claude Sonnet 4.5 analysis of current motor condition",
-            urgency: priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance'
-          });
-        }
+        // Only include if it contains an action verb
+        const lowerCleaned = cleaned.toLowerCase();
+        const hasActionVerb = actionVerbs.some(verb => lowerCleaned.includes(verb));
+        if (!hasActionVerb) return;
+        
+        const lowerItem = item.toLowerCase();
+        const priority = lowerItem.includes('urgent') || lowerItem.includes('critical') || lowerItem.includes('immediate') || lowerItem.includes('stop') ? 'CRITICAL' :
+                        lowerItem.includes('soon') || lowerItem.includes('warning') || lowerItem.includes('attention') ? 'HIGH' :
+                        lowerItem.includes('consider') || lowerItem.includes('schedule') ? 'MEDIUM' : 'LOW';
+        
+        recommendations.push({
+          action: cleaned,
+          priority: priority,
+          reason: "Based on Claude Sonnet 4.5 analysis of current motor condition",
+          urgency: priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance'
+        });
       });
       
       // Determine overall status from response content
@@ -787,7 +794,7 @@ const Motor = () => {
         <div className="nav-header" style={{ margin: '20px 20px 20px', borderBottom: 'none' }}>
           <button 
             className="back-button"
-            onClick={() => navigate(`/car/1HGBH41JXMN109876`)}
+            onClick={() => navigate(`/car/5YJSA1E26HF123456`)}
           >
             <span>←</span>
             <span>Motor</span>
@@ -1394,10 +1401,9 @@ const Motor = () => {
                         </div>
                       )}
                       {genAiAnalysis && !genAiLoading && (
-                        <div style={{ fontSize: '11px', color: genAiAnalysis.error ? '#ff6b6b' : genAiAnalysis.fromCache ? '#ffa500' : '#00ff88', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <span>{genAiAnalysis.error ? '🛡️' : genAiAnalysis.fromCache ? '💾' : '🤖'}</span> 
-                          {genAiAnalysis.error ? 'Enhanced Fallback' : 
-                           genAiAnalysis.fromCache ? 'Claude (Cached)' : 'Claude Sonnet 4.5'}
+                        <div style={{ fontSize: '11px', color: genAiAnalysis.error ? '#ff6b6b' : '#00ff88', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span>{genAiAnalysis.error ? '🛡️' : '🤖'}</span> 
+                          {genAiAnalysis.error ? 'Enhanced Fallback' : 'Claude Sonnet 4.5'}
                         </div>
                       )}
                     </div>
