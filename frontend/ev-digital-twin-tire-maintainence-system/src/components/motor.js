@@ -89,7 +89,7 @@ const Motor = () => {
         console.log('Motor ML results loaded:', data);
       })
       .catch(err => console.log('Motor ML results not available:', err));
-  }, []);
+  }, [carId]);
 
   useEffect(() => {
     if (csvData.length > 0) {
