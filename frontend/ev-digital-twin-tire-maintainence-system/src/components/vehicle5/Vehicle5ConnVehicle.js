@@ -6,7 +6,7 @@ const Vehicle5ConnVehicle = () => {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const currentVIN = '5YJSA1E26HF123456';
+  const currentVIN = '1HGBH41JXMN109876';
 
   return (
     <div className="connvehicle-page">
@@ -147,28 +147,28 @@ const Vehicle5ConnVehicle = () => {
 
               {/* Component Cards */}
               <div className="connvehicle-components">
-              <div className="connvehicle-card" onClick={() => navigate(`/car/5YJSA1E26HF123456/battery`)}>
+              <div className="connvehicle-card" onClick={() => navigate(`/car/1HGBH41JXMN109876/battery`)}>
                 <img src={require('../assets/battery.png')} alt="Battery" style={{ width: '20px', height: '20px', margin: '0 auto' }} />
                 <div className="connvehicle-card-title">Battery</div>
                 <div className="connvehicle-card-text">85% Charged</div>
               </div>
-              <div className="connvehicle-card" onClick={() => navigate(`/car/5YJSA1E26HF123456/motor`)}>
+              <div className="connvehicle-card" onClick={() => navigate(`/car/1HGBH41JXMN109876/motor`)}>
                 <img src={require('../assets/motor.png')} alt="Motor" style={{ width: '20px', height: '20px', margin: '0 auto' }} />
                 <div className="connvehicle-card-title">Motor</div>
               </div>
-              <div className="connvehicle-card" onClick={() => navigate(`/car/5YJSA1E26HF123456/tires`)}>
+              <div className="connvehicle-card" onClick={() => navigate(`/car/1HGBH41JXMN109876/tires`)}>
                 <img src={require('../assets/icons/tireicon.png')} alt="Tires" style={{ width: '20px', height: '20px', margin: '0 auto' }} />
                 <div className="connvehicle-card-title">Tires</div>
               </div>
-              <div className="connvehicle-card" onClick={() => navigate(`/car/5YJSA1E26HF123456/invertor`)}>
+              <div className="connvehicle-card" onClick={() => navigate(`/car/1HGBH41JXMN109876/invertor`)}>
                 <img src={require('../assets/icons/invertoricon.png')} alt="Inverter" style={{ width: '20px', height: '20px', margin: '0 auto' }} />
                 <div className="connvehicle-card-title">Inverter</div>
               </div>
-              <div className="connvehicle-card" onClick={() => navigate(`/car/5YJSA1E26HF123456/energymanagement`)}>
+              <div className="connvehicle-card" onClick={() => navigate(`/car/1HGBH41JXMN109876/energymanagement`)}>
                 <img src={require('../assets/icons/energyicon.png')} alt="Energy" style={{ width: '20px', height: '20px', margin: '0 auto' }} />
                 <div className="connvehicle-card-title">Energy Management</div>
               </div>
-              <div className="connvehicle-card" onClick={() => navigate(`/car/5YJSA1E26HF123456/charger`)}>
+              <div className="connvehicle-card" onClick={() => navigate(`/car/1HGBH41JXMN109876/charger`)}>
                 <img src={require('../assets/icons/chargericon.png')} alt="Charger" style={{ width: '20px', height: '20px', margin: '0 auto' }} />
                 <div className="connvehicle-card-title">On-Board Chargers</div>
                 <div className="connvehicle-card-text">Charger in use</div>

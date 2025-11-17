@@ -47,10 +47,21 @@ const Invertor = () => {
       header: true,
       complete: (results) => {
         if (results.data && results.data.length > 0) {
-          const filteredData = results.data.filter(row => row.vehicle_id === '3' || row.vin === 'EV-1003');
+          // Filter for Vehicle 3 AND only degraded/failing records (thermal overheating use-case)
+          const filteredData = results.data.filter(row => {
+            if (row.vehicle_id !== '3') return false;
+            
+            const temp = parseFloat(row.temperature_c) || 0;
+            const efficiency = parseFloat(row.efficiency_percent) || 100;
+            const thd = parseFloat(row.thd_percent) || 0;
+            const hasAnomaly = row.inverter_anomaly === 'True';
+            
+            // Only show records with thermal degradation (overheating/failing state)
+            return temp > 70 || efficiency < 92 || thd > 3.0 || hasAnomaly;
+          });
           setCsvData(filteredData);
-          console.log('Inverter CSV data loaded:', filteredData.length, 'records');
-          console.log('Sample inverter record:', filteredData[0]);
+          console.log('Inverter CSV data loaded (degraded only):', filteredData.length, 'records');
+          console.log('Sample degraded record:', filteredData[0]);
         } else {
           console.error('No inverter CSV data loaded');
         }
@@ -168,7 +179,16 @@ const Invertor = () => {
     return () => clearInterval(chartInterval);
   }, [csvData]);
 
-  // Note: Removed data rotation interval - using fixed vehicle like Tires and Motor pages
+  // Rotate through Vehicle 3's 180 days of data every 20 seconds
+  useEffect(() => {
+    if (csvData.length === 0) return;
+    
+    const rotationInterval = setInterval(() => {
+      setDataIndex(prev => (prev + 1) % csvData.length);
+    }, 20000); // 20 seconds
+    
+    return () => clearInterval(rotationInterval);
+  }, [csvData.length]);
 
   // Animation effect for prediction toggle
   useEffect(() => {
@@ -271,8 +291,8 @@ const Invertor = () => {
     
   }, [csvData.length]); // Trigger when CSV data is loaded
 
-  // Use a fixed vehicle for consistent inverter analysis
-  const currentData = csvData.find(row => row.vehicle_id === '3' || row.vin === 'EV-1003') || csvData[0] || {};
+  // Use rotating data index to cycle through Vehicle 3's 180 days
+  const currentData = csvData[dataIndex] || csvData[0] || {};
   
   // Get ML data for current vehicle
   const currentMlData = mlResults.find(r => r.vehicle_id === parseInt(currentData.vehicle_id));
@@ -1324,7 +1344,7 @@ const Invertor = () => {
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                       <span style={{ fontSize: windowWidth <= 1440 ? '13px' : windowWidth <= 1700 ? '14px' : windowWidth <= 1815 ? '15px' : '16px' }}>🌡️</span>
-                      <div style={{ fontSize: windowWidth <= 1440 ? '13px' : windowWidth <= 1700 ? '14px' : windowWidth <= 1815 ? '16px' : spacing.titleFontSize }}><span style={{ fontSize: windowWidth <= 1440 ? '18px' : windowWidth <= 1700 ? '20px' : windowWidth <= 1815 ? '22px' : `calc(${spacing.titleFontSize} * 1.5)` }}>54</span>°C</div>
+                      <div style={{ fontSize: windowWidth <= 1440 ? '13px' : windowWidth <= 1700 ? '14px' : windowWidth <= 1815 ? '16px' : spacing.titleFontSize }}><span style={{ fontSize: windowWidth <= 1440 ? '18px' : windowWidth <= 1700 ? '20px' : windowWidth <= 1815 ? '22px' : `calc(${spacing.titleFontSize} * 1.5)` }}>{Math.round(parseFloat(currentData.temperature_c) || 65)}</span>°C</div>
                     </div>
                     <div style={{ fontSize: windowWidth <= 1440 ? '9px' : windowWidth <= 1700 ? '10px' : windowWidth <= 1815 ? '11px' : spacing.fontSize }}>Inverter Temperature</div>
                   </div>

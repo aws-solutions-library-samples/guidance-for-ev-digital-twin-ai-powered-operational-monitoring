@@ -42,12 +42,23 @@ const Invertor = () => {
   }, []);
 
   useEffect(() => {
-    Papa.parse('/data/inverter_sensor_data.csv', {
+    const csvPath = (carId === '1HGBH41JXMN109876' || carId === 'WBADT43452G123789')
+      ? '/normal_data/inverter_sensor_data_normal.csv'
+      : '/data/inverter_sensor_data.csv';
+    
+    Papa.parse(csvPath, {
       download: true,
       header: true,
       complete: (results) => {
         if (results.data && results.data.length > 0) {
-          const filteredData = results.data.filter(row => row.vehicle_id);
+          let filteredData;
+          if (carId === '1HGBH41JXMN109876') {
+            filteredData = results.data.filter(row => row.vehicle_id === '2');
+          } else if (carId === 'WBADT43452G123789') {
+            filteredData = results.data.filter(row => row.vehicle_id === '4');
+          } else {
+            filteredData = results.data.filter(row => row.vehicle_id);
+          }
           setCsvData(filteredData);
           console.log('Inverter CSV data loaded:', filteredData.length, 'records');
           console.log('Sample inverter record:', filteredData[0]);
@@ -851,18 +862,30 @@ const Invertor = () => {
   // Get dynamic graph data
   const graphData = generateFailurePredictionData();
 
-  // Calculate remaining useful life percentage (stable for Vehicle 1)
+  // Calculate remaining useful life percentage
   const calculateRemainingLife = () => {
+    // Check if this is a normal/healthy vehicle
+    const isHealthyVehicle = carId === '1HGBH41JXMN109876' || carId === 'WBADT43452G123789';
     
-    // Fixed remaining life for Vehicle 1 (EV-1001) - stable baseline
-    let baseRemainingLife = 68; // Moderate decline pattern
+    // Healthy vehicle starts at 92% and stays high
+    let baseRemainingLife = isHealthyVehicle ? 92 : 68;
     
-    // Small adjustments based on current real-time conditions (max ±10%)
+    // Small adjustments based on current real-time conditions
     let adjustment = 0;
-    if (calculateInverterHealthMetrics().hasAnomaly) adjustment -= 8;
-    if (calculateInverterHealthMetrics().temperature > 75) adjustment -= 5;
-    if (calculateInverterHealthMetrics().efficiency < 90) adjustment -= 7;
-    if (calculateInverterHealthMetrics().thd > 4) adjustment -= 3;
+    const metrics = calculateInverterHealthMetrics();
+    
+    if (isHealthyVehicle) {
+      // Healthy vehicle: very minor adjustments (max ±3%)
+      if (metrics.temperature > 65) adjustment -= 1;
+      if (metrics.efficiency < 95) adjustment -= 1;
+      if (metrics.thd > 2.0) adjustment -= 1;
+    } else {
+      // Problem vehicle: larger adjustments (max ±10%)
+      if (metrics.hasAnomaly) adjustment -= 8;
+      if (metrics.temperature > 75) adjustment -= 5;
+      if (metrics.efficiency < 90) adjustment -= 7;
+      if (metrics.thd > 4) adjustment -= 3;
+    }
     
     // Apply adjustment but keep it reasonable
     const finalRemainingLife = Math.max(15, Math.min(95, baseRemainingLife + adjustment));

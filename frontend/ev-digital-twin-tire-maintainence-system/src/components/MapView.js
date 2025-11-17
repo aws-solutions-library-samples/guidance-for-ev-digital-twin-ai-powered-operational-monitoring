@@ -6,7 +6,7 @@ const MapView = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [hoveredVehicle, setHoveredVehicle] = useState(null);
   const vehicles = [
-    { id: 1, vin: 'EV-1001', x: 871, y: 121, status: 'charging', battery: 85 },
+    { id: 1, vin: '1HGBH41JXMN109876', x: 871, y: 121, status: 'charging', battery: 85 },
     { id: 2, vin: '5YJSA1E26HF123456', x: 979, y: 532, status: 'low', battery: 15 },
     { id: 3, vin: '2T1BURHE8JC987654', x: 772, y: 233, status: 'charging', battery: 92 },
     { id: 4, vin: 'WBADT43452G123789', x: 1261, y: 384, status: 'charging', battery: 78 },

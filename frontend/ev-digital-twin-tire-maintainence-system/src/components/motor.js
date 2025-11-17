@@ -57,12 +57,26 @@ const Motor = () => {
   }, []);
 
   useEffect(() => {
-    Papa.parse('/motor_sensor_data.csv', {
+    const csvPath = (carId === '1HGBH41JXMN109876' || carId === 'WBADT43452G123789')
+      ? '/normal_data/motor_sensor_data_normal.csv'
+      : '/motor_sensor_data.csv';
+    
+    Papa.parse(csvPath, {
       download: true,
       header: true,
       complete: (results) => {
         if (results.data && results.data.length > 0) {
-          setCsvData(results.data.filter(row => row.vehicle_id));
+          let filteredData;
+          if (carId === '1HGBH41JXMN109876') {
+            // Vehicle 2 uses vehicle_id=2 (EV-1002)
+            filteredData = results.data.filter(row => row.vehicle_id === '2');
+          } else if (carId === 'WBADT43452G123789') {
+            // Vehicle 4 uses vehicle_id=4 (EV-1004)
+            filteredData = results.data.filter(row => row.vehicle_id === '4');
+          } else {
+            filteredData = results.data.filter(row => row.vehicle_id);
+          }
+          setCsvData(filteredData);
         }
       }
     });

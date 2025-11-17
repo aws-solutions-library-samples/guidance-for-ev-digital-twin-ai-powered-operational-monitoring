@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Papa from 'papaparse';
 import DataNeededModal from "./DataNeededModal";
 import agentCoreService from '../services/agentcore';
@@ -42,6 +42,7 @@ const VehicleSVG = (props) => (
 // tire data rotates through csv entries every 30 seconds
 const TiresPage = () => {
   const navigate = useNavigate();
+  const { carId } = useParams();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [displayTirePrediction, setDisplayTirePrediction] = useState(false);
@@ -62,12 +63,26 @@ const TiresPage = () => {
   }, []);
 
   useEffect(() => {
-    Papa.parse('/tire_wear_data.csv', {
+    // Check if this is a normal/healthy vehicle
+    const csvPath = (carId === '1HGBH41JXMN109876' || carId === 'WBADT43452G123789')
+      ? '/normal_data/tire_wear_data_normal.csv'
+      : '/tire_wear_data.csv';
+    
+    Papa.parse(csvPath, {
       download: true,
       header: true,
       complete: (results) => {
         if (results.data && results.data.length > 0) {
-          const filteredData = results.data.filter(row => row.vehicle_id);
+          let filteredData;
+          if (carId === '1HGBH41JXMN109876') {
+            // Vehicle 2 uses vehicle_id=2 (EV-1002)
+            filteredData = results.data.filter(row => row.vehicle_id === '2');
+          } else if (carId === 'WBADT43452G123789') {
+            // Vehicle 4 uses vehicle_id=4 (EV-1004)
+            filteredData = results.data.filter(row => row.vehicle_id === '4');
+          } else {
+            filteredData = results.data.filter(row => row.vehicle_id);
+          }
           setCsvData(filteredData);
           console.log('CSV data loaded:', filteredData.length, 'records');
           console.log('Sample record:', filteredData[0]);
@@ -1114,7 +1129,7 @@ const TiresPage = () => {
       {/* Navigation Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '20px', paddingBottom: '15px' }}>
         <div 
-          onClick={() => navigate('/car/123')}
+          onClick={() => navigate(`/car/${carId}`)}
           style={{
             background: 'none',
             border: 'none',
