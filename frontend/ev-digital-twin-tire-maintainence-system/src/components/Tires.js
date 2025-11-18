@@ -64,7 +64,7 @@ const TiresPage = () => {
 
   useEffect(() => {
     // Check if this is a normal/healthy vehicle
-    const csvPath = (carId === '1HGBH41JXMN109876' || carId === 'WBADT43452G123789')
+    const csvPath = (carId === '1HGBH41JXMN109876' || carId === 'WBADT43452G123789' || carId === '3VWDX7AJ9DM456321')
       ? '/normal_data/tire_wear_data_normal.csv'
       : '/tire_wear_data.csv';
     
@@ -75,11 +75,17 @@ const TiresPage = () => {
         if (results.data && results.data.length > 0) {
           let filteredData;
           if (carId === '1HGBH41JXMN109876') {
-            // Vehicle 2 uses vehicle_id=2 (EV-1002)
-            filteredData = results.data.filter(row => row.vehicle_id === '2');
+            // Vehicle 2 uses VIN 1HGBH41JXMN109876
+            filteredData = results.data.filter(row => row.vehicle_id === '1HGBH41JXMN109876');
           } else if (carId === 'WBADT43452G123789') {
-            // Vehicle 4 uses vehicle_id=4 (EV-1004)
-            filteredData = results.data.filter(row => row.vehicle_id === '4');
+            // Vehicle 4 uses VIN WBADT43452G123789
+            filteredData = results.data.filter(row => row.vehicle_id === 'WBADT43452G123789');
+          } else if (carId === '3VWDX7AJ9DM456321') {
+            // Vehicle 3 uses VIN 3VWDX7AJ9DM456321 with normal tire data
+            filteredData = results.data.filter(row => row.vehicle_id === '3VWDX7AJ9DM456321');
+          } else if (carId === '5YJSA1E26HF123456') {
+            // Motor vehicle uses VIN 5YJSA1E26HF123456
+            filteredData = results.data.filter(row => row.vehicle_id === '5YJSA1E26HF123456');
           } else {
             filteredData = results.data.filter(row => row.vehicle_id);
           }
@@ -146,80 +152,61 @@ const TiresPage = () => {
     return () => clearInterval(pressureInterval);
   }, [csvData, dataIndex]);
 
-  // GenAI Analysis - Call Claude Sonnet 4.5 when data changes
-  useEffect(() => {
-    const analyzeWithGenAI = async () => {
-      if (!csvData.length || !currentData.vehicle_id) {
-        console.log('GenAI Analysis skipped - missing data:', { csvDataLength: csvData.length, vehicleId: currentData.vehicle_id });
+  // On-demand GenAI Analysis function
+  const analyzeWithGenAI = async () => {
+    const currentData = csvData[dataIndex] || {};
+    
+    if (!csvData.length || !currentData.vehicle_id) {
+      console.log('GenAI Analysis skipped - missing data:', { csvDataLength: csvData.length, vehicleId: currentData.vehicle_id });
+      return;
+    }
+    
+    console.log('Starting enhanced GenAI analysis...');
+    setGenAiLoading(true);
+    
+    const tireDataForAnalysis = {
+      vehicle_id: currentData.vehicle_id,
+      make: currentData.make,
+      model: currentData.model,
+      year: currentData.year,
+      tire_brand: currentData.tire_brand,
+      tire_size: currentData.tire_size,
+      pressure_psi: getRealisticPressure(),
+      temperature_c: getRealisticTemperature(),
+      tread_depth_mm: getRealisticTreadDepth(),
+      mileage: currentData.mileage,
+      driving_pattern: currentData.driving_pattern,
+      weather_condition: currentData.weather_condition,
+      anomaly_type: currentData.anomaly_type
+    };
+    
+    try {
+      console.log('Calling enhanced AgentCore service...');
+      
+      const analysisResult = await agentCoreService.getTireAnalysis(currentData.vehicle_id, tireDataForAnalysis);
+      
+      console.log('Received enhanced GenAI analysis:', analysisResult);
+      
+      if (analysisResult.throttled) {
+        console.log('Service throttled - using enhanced fallback');
+        const enhancedFallback = createEnhancedFallback(tireDataForAnalysis, new Error('Service throttled'));
+        setGenAiAnalysis(enhancedFallback);
         return;
       }
       
-      console.log('Starting enhanced GenAI analysis...');
-      setGenAiLoading(true);
+      const analysis = parseAgentCoreResponse(analysisResult.response, tireDataForAnalysis, analysisResult);
       
-      // Prepare tire data for analysis (moved outside try block for error handling)
-      const tireDataForAnalysis = {
-        vehicle_id: currentData.vehicle_id,
-        make: currentData.make,
-        model: currentData.model,
-        year: currentData.year,
-        tire_brand: currentData.tire_brand,
-        tire_size: currentData.tire_size,
-        pressure_psi: getRealisticPressure(),
-        temperature_c: getRealisticTemperature(),
-        tread_depth_mm: getRealisticTreadDepth(),
-        mileage: currentData.mileage,
-        driving_pattern: currentData.driving_pattern,
-        weather_condition: currentData.weather_condition,
-        anomaly_type: currentData.anomaly_type
-      };
+      console.log('Parsed GenAI analysis:', analysis);
+      setGenAiAnalysis(analysis);
       
-      try {
-        
-        console.log('Calling enhanced AgentCore service...');
-        
-        // Use the enhanced service method
-        const analysisResult = await agentCoreService.getTireAnalysis(currentData.vehicle_id, tireDataForAnalysis);
-        
-        console.log('Received enhanced GenAI analysis:', analysisResult);
-        
-        // Check if service was throttled and no cache available
-        if (analysisResult.throttled) {
-          console.log('Service throttled - using enhanced fallback');
-          const enhancedFallback = createEnhancedFallback(tireDataForAnalysis, new Error('Service throttled'));
-          setGenAiAnalysis(enhancedFallback);
-          return;
-        }
-        
-        // Parse the response into structured format
-        const analysis = parseAgentCoreResponse(analysisResult.response, tireDataForAnalysis, analysisResult);
-        
-        console.log('Parsed GenAI analysis:', analysis);
-        console.log('Analysis has recommendations:', analysis?.recommendations?.length);
-        
-        setGenAiAnalysis(analysis);
-        
-      } catch (error) {
-        console.error('GenAI analysis failed:', error);
-        console.error('Error details:', {
-          message: error.message,
-          stack: error.stack,
-          name: error.name
-        });
-        
-        // Create enhanced fallback with rule-based intelligence
-        const enhancedFallback = createEnhancedFallback(tireDataForAnalysis, error);
-        setGenAiAnalysis(enhancedFallback);
-      } finally {
-        setGenAiLoading(false);
-      }
-    };
-    
-    // Debounce the GenAI calls - longer interval for stability
-    const debounceTimer = setTimeout(analyzeWithGenAI, 5000); // 5 seconds for better stability
-    return () => clearTimeout(debounceTimer);
-    
-  }, [dataIndex]); // Only trigger on data index changes, not pressure variations
+    } catch (error) {
+      console.error('GenAI analysis failed:', error);
+      const enhancedFallback = createEnhancedFallback(tireDataForAnalysis, error);
+      setGenAiAnalysis(enhancedFallback);
+    } finally {
+      setGenAiLoading(false);
+    }
+  };
 
   // Parse AgentCore response into structured format
   const parseAgentCoreResponse = (response, tireData, analysisResult = {}) => {
@@ -1574,16 +1561,39 @@ const TiresPage = () => {
                 <div className="genai-recommendations" style={{ marginTop: windowWidth === 1920 ? '-30px' : '0px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                     <h3>GenAI Recommendations</h3>
-                    {genAiLoading && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#ff9900' }}>
-                        <div className="spinner" style={{ width: '12px', height: '12px', border: '2px solid #333', borderTop: '2px solid #ff9900', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-                        Analyzing...
-                      </div>
-                    )}
+                    <button
+                      onClick={analyzeWithGenAI}
+                      disabled={genAiLoading}
+                      style={{
+                        background: genAiLoading ? '#666' : '#00ff88',
+                        color: genAiLoading ? '#ccc' : '#000',
+                        border: 'none',
+                        padding: '6px 12px',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        cursor: genAiLoading ? 'not-allowed' : 'pointer',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      {genAiLoading ? (
+                        <>
+                          <div className="spinner" style={{ width: '10px', height: '10px', border: '2px solid #999', borderTop: '2px solid #ccc', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          🤖 Analyze
+                        </>
+                      )}
+                    </button>
                     {genAiAnalysis && !genAiLoading && (
-                      <div style={{ fontSize: '11px', color: genAiAnalysis.error ? '#ff6b6b' : '#00ff88', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span>{genAiAnalysis.error ? '🛡️' : '🤖'}</span> 
-                        {genAiAnalysis.error ? 'Enhanced Fallback' : 'Claude Sonnet 4.5'}
+                      <div style={{ fontSize: '11px', color: genAiAnalysis.error ? '#ff6b6b' : genAiAnalysis.fromCache ? '#ffa500' : '#00ff88', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>{genAiAnalysis.error ? '🛡️' : genAiAnalysis.fromCache ? '💾' : '🤖'}</span> 
+                        {genAiAnalysis.error ? 'Enhanced Fallback' : 
+                         genAiAnalysis.fromCache ? 'Claude (Cached)' : 'Claude Sonnet 4.5'}
                       </div>
                     )}
                   </div>
@@ -1592,9 +1602,9 @@ const TiresPage = () => {
                     {genAiAnalysis ? 
                       (genAiAnalysis.error ? 
                         genAiAnalysis.error_message :
-                        `Real-time analysis by Claude Sonnet 4.5. Status: ${genAiAnalysis.overall_status} | Risk: ${genAiAnalysis.risk_level}`
+                        `Analysis by Claude Sonnet 4.5. Status: ${genAiAnalysis.overall_status} | Risk: ${genAiAnalysis.risk_level}`
                       ) :
-                      'AI-powered tire optimization. Connecting to Claude Sonnet 4.5 for real-time analysis...'
+                      'AI-powered tire optimization. Click "Analyze" to get Claude Sonnet 4.5 recommendations for current tire condition.'
                     }
                   </p>
                   

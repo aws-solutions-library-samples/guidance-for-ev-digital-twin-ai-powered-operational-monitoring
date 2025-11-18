@@ -71,7 +71,7 @@ const Motor = () => {
       complete: (results) => {
         if (results.data && results.data.length > 0) {
           // Filter to ONLY Vehicle 5 (EV-1005 2022)
-          const vehicle3Data = results.data.filter(row => row.vehicle_id === '5' || row.vin === 'EV-1005');
+          const vehicle3Data = results.data.filter(row => row.vehicle_id === '5YJSA1E26HF123456' || row.vin === 'EV-1005');
           setCsvData(vehicle3Data);
         }
       }
@@ -120,82 +120,64 @@ const Motor = () => {
     }
   }, [showPrediction]);
 
-  // GenAI Analysis - Call Claude Sonnet 4.5 for motor analysis
-  useEffect(() => {
-    const analyzeMotorWithGenAI = async () => {
-      if (!csvData.length || !currentData.vehicle_id) {
-        console.log('Motor GenAI Analysis skipped - missing data:', { csvDataLength: csvData.length, vehicleId: currentData.vehicle_id });
+  // On-demand GenAI Analysis function
+  const analyzeMotorWithGenAI = async () => {
+    const currentData = csvData[dataIndex] || {};
+    
+    if (!csvData.length || !currentData.vehicle_id) {
+      console.log('Motor GenAI Analysis skipped - missing data:', { csvDataLength: csvData.length, vehicleId: currentData.vehicle_id });
+      return;
+    }
+    
+    console.log('Starting enhanced Motor GenAI analysis...');
+    setGenAiLoading(true);
+    
+    const motorDataForAnalysis = {
+      vehicle_id: currentData.vehicle_id,
+      make: currentData.make,
+      model: currentData.model,
+      year: currentData.year,
+      engine_temp_c: parseFloat(currentData.engine_temp_c) || 90,
+      oil_pressure_psi: parseFloat(currentData.oil_pressure_psi) || 20,
+      rpm_avg: parseFloat(currentData.rpm_avg) || 2500,
+      speed_kmh: parseFloat(currentData.speed_kmh) || 50,
+      vibration_level: parseFloat(currentData.vibration_level) || 3,
+      fuel_consumption_l100km: parseFloat(currentData.fuel_consumption_l100km) || 8,
+      performance_score: parseFloat(currentData.performance_score) || 90,
+      motor_anomaly: currentData.motor_anomaly === 'True',
+      anomaly_type_motor: currentData.anomaly_type_motor,
+      failure_risk: parseFloat(currentData.failure_risk) || 1,
+      engine_type: currentData.engine_type,
+      fuel_type: currentData.fuel_type
+    };
+    
+    try {
+      console.log('Calling enhanced AgentCore service for motor analysis...');
+      
+      const analysisResult = await agentCoreService.getMotorAnalysis(currentData.vehicle_id, motorDataForAnalysis, '5YJSA1E26HF123456');
+      
+      console.log('Received enhanced Motor GenAI analysis:', analysisResult);
+      
+      if (analysisResult.throttled) {
+        console.log('Motor service throttled - using enhanced fallback');
+        const enhancedFallback = createEnhancedMotorFallback(motorDataForAnalysis, new Error('Service throttled'));
+        setGenAiAnalysis(enhancedFallback);
         return;
       }
       
-      console.log('Starting enhanced Motor GenAI analysis...');
-      setGenAiLoading(true);
+      const analysis = parseMotorAgentCoreResponse(analysisResult.response, motorDataForAnalysis, analysisResult);
       
-      // Prepare motor data for analysis (moved outside try block for error handling)
-      const motorDataForAnalysis = {
-        vehicle_id: currentData.vehicle_id,
-        make: currentData.make,
-        model: currentData.model,
-        year: currentData.year,
-        engine_temp_c: parseFloat(currentData.engine_temp_c) || 90,
-        oil_pressure_psi: parseFloat(currentData.oil_pressure_psi) || 20,
-        rpm_avg: parseFloat(currentData.rpm_avg) || 2500,
-        speed_kmh: parseFloat(currentData.speed_kmh) || 50,
-        vibration_level: parseFloat(currentData.vibration_level) || 3,
-        fuel_consumption_l100km: parseFloat(currentData.fuel_consumption_l100km) || 8,
-        performance_score: parseFloat(currentData.performance_score) || 90,
-        motor_anomaly: currentData.motor_anomaly === 'True',
-        anomaly_type_motor: currentData.anomaly_type_motor,
-        failure_risk: parseFloat(currentData.failure_risk) || 1,
-        engine_type: currentData.engine_type,
-        fuel_type: currentData.fuel_type
-      };
+      console.log('Parsed Motor GenAI analysis:', analysis);
+      setGenAiAnalysis(analysis);
       
-      try {
-        console.log('Calling enhanced AgentCore service for motor analysis...');
-        
-        // Use the enhanced service method
-        const analysisResult = await agentCoreService.getMotorAnalysis(currentData.vehicle_id, motorDataForAnalysis, '5YJSA1E26HF123456');
-        
-        console.log('Received enhanced Motor GenAI analysis:', analysisResult);
-        
-        // Check if service was throttled and no cache available
-        if (analysisResult.throttled) {
-          console.log('Motor service throttled - using enhanced fallback');
-          const enhancedFallback = createEnhancedMotorFallback(motorDataForAnalysis, new Error('Service throttled'));
-          setGenAiAnalysis(enhancedFallback);
-          return;
-        }
-        
-        // Parse the response into structured format
-        const analysis = parseMotorAgentCoreResponse(analysisResult.response, motorDataForAnalysis, analysisResult);
-        
-        console.log('Parsed Motor GenAI analysis:', analysis);
-        console.log('Motor analysis has recommendations:', analysis?.recommendations?.length);
-        
-        setGenAiAnalysis(analysis);
-        
-      } catch (error) {
-        console.error('Motor GenAI analysis failed:', error);
-        console.error('Motor error details:', {
-          message: error.message,
-          stack: error.stack,
-          name: error.name
-        });
-        
-        // Create enhanced fallback with rule-based intelligence
-        const enhancedFallback = createEnhancedMotorFallback(motorDataForAnalysis, error);
-        setGenAiAnalysis(enhancedFallback);
-      } finally {
-        setGenAiLoading(false);
-      }
-    };
-    
-    // Debounce the GenAI calls - longer interval for stability
-    const debounceTimer = setTimeout(analyzeMotorWithGenAI, 2000); // 2 seconds debounce
-    return () => clearTimeout(debounceTimer);
-    
-  }, [dataIndex]); // Only trigger on data index changes
+    } catch (error) {
+      console.error('Motor GenAI analysis failed:', error);
+      const enhancedFallback = createEnhancedMotorFallback(motorDataForAnalysis, error);
+      setGenAiAnalysis(enhancedFallback);
+    } finally {
+      setGenAiLoading(false);
+    }
+  };
 
   const currentData = csvData[dataIndex] || {};
   
@@ -1394,16 +1376,39 @@ const Motor = () => {
                   <div className="genai-recommendations" style={{ marginTop: '0px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                       <h3>GenAI Recommendations</h3>
-                      {genAiLoading && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#ff9900' }}>
-                          <div className="spinner" style={{ width: '12px', height: '12px', border: '2px solid #333', borderTop: '2px solid #ff9900', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-                          Analyzing...
-                        </div>
-                      )}
+                      <button
+                        onClick={analyzeMotorWithGenAI}
+                        disabled={genAiLoading}
+                        style={{
+                          background: genAiLoading ? '#666' : '#00ff88',
+                          color: genAiLoading ? '#ccc' : '#000',
+                          border: 'none',
+                          padding: '6px 12px',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          cursor: genAiLoading ? 'not-allowed' : 'pointer',
+                          fontWeight: 'bold',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        {genAiLoading ? (
+                          <>
+                            <div className="spinner" style={{ width: '10px', height: '10px', border: '2px solid #999', borderTop: '2px solid #ccc', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                            Analyzing...
+                          </>
+                        ) : (
+                          <>
+                            🤖 Analyze
+                          </>
+                        )}
+                      </button>
                       {genAiAnalysis && !genAiLoading && (
-                        <div style={{ fontSize: '11px', color: genAiAnalysis.error ? '#ff6b6b' : '#00ff88', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <span>{genAiAnalysis.error ? '🛡️' : '🤖'}</span> 
-                          {genAiAnalysis.error ? 'Enhanced Fallback' : 'Claude Sonnet 4.5'}
+                        <div style={{ fontSize: '11px', color: genAiAnalysis.error ? '#ff6b6b' : genAiAnalysis.fromCache ? '#ffa500' : '#00ff88', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span>{genAiAnalysis.error ? '🛡️' : genAiAnalysis.fromCache ? '💾' : '🤖'}</span> 
+                          {genAiAnalysis.error ? 'Enhanced Fallback' : 
+                           genAiAnalysis.fromCache ? 'Claude (Cached)' : 'Claude Sonnet 4.5'}
                         </div>
                       )}
                     </div>
@@ -1412,9 +1417,9 @@ const Motor = () => {
                       {genAiAnalysis ? 
                         (genAiAnalysis.error ? 
                           genAiAnalysis.error_message :
-                          `Real-time motor analysis by Claude Sonnet 4.5. Status: ${genAiAnalysis.overall_status} | Risk: ${genAiAnalysis.risk_level}`
+                          `Motor analysis by Claude Sonnet 4.5. Status: ${genAiAnalysis.overall_status} | Risk: ${genAiAnalysis.risk_level}`
                         ) :
-                        'AI-powered motor optimization. Connecting to Claude Sonnet 4.5 for real-time analysis...'
+                        'AI-powered motor optimization. Click "Analyze" to get Claude Sonnet 4.5 recommendations for current motor condition.'
                       }
                     </p>
                     

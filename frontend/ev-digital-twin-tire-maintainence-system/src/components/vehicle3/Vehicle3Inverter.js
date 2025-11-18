@@ -47,21 +47,19 @@ const Invertor = () => {
       header: true,
       complete: (results) => {
         if (results.data && results.data.length > 0) {
-          // Filter for Vehicle 3 AND only degraded/failing records (thermal overheating use-case)
+          // Filter for Vehicle 3 AND start from July onwards (already degraded period)
           const filteredData = results.data.filter(row => {
-            if (row.vehicle_id !== '3') return false;
+            if (row.vehicle_id !== '3VWDX7AJ9DM456321') return false;
             
-            const temp = parseFloat(row.temperature_c) || 0;
-            const efficiency = parseFloat(row.efficiency_percent) || 100;
-            const thd = parseFloat(row.thd_percent) || 0;
-            const hasAnomaly = row.inverter_anomaly === 'True';
+            // Only use data from July onwards when degradation is already severe
+            const date = new Date(row.date);
+            const isJulyOrLater = date.getMonth() >= 6; // July = month 6 (0-indexed)
             
-            // Only show records with thermal degradation (overheating/failing state)
-            return temp > 70 || efficiency < 92 || thd > 3.0 || hasAnomaly;
+            return isJulyOrLater;
           });
           setCsvData(filteredData);
-          console.log('Inverter CSV data loaded (degraded only):', filteredData.length, 'records');
-          console.log('Sample degraded record:', filteredData[0]);
+          console.log('Inverter CSV data loaded (July+ degraded period):', filteredData.length, 'records');
+          console.log('Starting with degraded record:', filteredData[0]);
         } else {
           console.error('No inverter CSV data loaded');
         }
@@ -207,89 +205,68 @@ const Invertor = () => {
     }
   }, [showPrediction]);
 
-  // GenAI Analysis - Call Claude Sonnet 4.5 for inverter analysis
-  useEffect(() => {
-    const analyzeInverterWithGenAI = async () => {
-      // Use the same fixed vehicle data for GenAI analysis
-      const currentData = csvData.find(row => row.vehicle_id === '3' || row.vin === 'EV-1003') || csvData[0] || {};
+  // On-demand GenAI Analysis function
+  const analyzeInverterWithGenAI = async () => {
+    const currentData = csvData[dataIndex] || {};
+    
+    if (!csvData.length || !currentData.vehicle_id) {
+      console.log('Inverter GenAI Analysis skipped - missing data:', { csvDataLength: csvData.length, vehicleId: currentData.vehicle_id });
+      return;
+    }
+    
+    console.log('Starting enhanced Inverter GenAI analysis...');
+    setGenAiLoading(true);
+    
+    const inverterDataForAnalysis = {
+      vehicle_id: currentData.vehicle_id,
+      make: currentData.make,
+      model: currentData.model,
+      year: currentData.year,
+      dc_voltage_v: parseFloat(currentData.dc_voltage_v) || 400,
+      dc_current_a: parseFloat(currentData.dc_current_a) || 125,
+      ac_voltage_v: parseFloat(currentData.ac_voltage_v) || 230,
+      ac_current_a: parseFloat(currentData.ac_current_a) || 90,
+      power_output_kw: parseFloat(currentData.power_output_kw) || 35,
+      efficiency_percent: parseFloat(currentData.efficiency_percent) || 95,
+      temperature_c: parseFloat(currentData.temperature_c) || 65,
+      switching_frequency_khz: parseFloat(currentData.switching_frequency_khz) || 10,
+      modulation_index: parseFloat(currentData.modulation_index) || 0.85,
+      thd_percent: parseFloat(currentData.thd_percent) || 2.0,
+      fault_codes: currentData.fault_codes,
+      inverter_anomaly: currentData.inverter_anomaly === 'True',
+      anomaly_type_inverter: currentData.anomaly_type_inverter,
+      failure_risk: parseFloat(currentData.failure_risk) || 1,
+      drivetrain: currentData.drivetrain,
+      vehicle_class: currentData.vehicle_class
+    };
+    
+    try {
+      console.log('Calling enhanced AgentCore service for inverter analysis...');
       
-      if (!csvData.length || !currentData.vehicle_id) {
-        console.log('Inverter GenAI Analysis skipped - missing data:', { csvDataLength: csvData.length, vehicleId: currentData.vehicle_id });
+      const analysisResult = await agentCoreService.getInverterAnalysis('3', inverterDataForAnalysis, '3VWDX7AJ9DM456321');
+      
+      console.log('Received enhanced Inverter GenAI analysis:', analysisResult);
+      
+      if (analysisResult.throttled) {
+        console.log('Inverter service throttled - using enhanced fallback');
+        const enhancedFallback = createEnhancedInverterFallback(inverterDataForAnalysis, new Error('Service throttled'));
+        setGenAiAnalysis(enhancedFallback);
         return;
       }
       
-      console.log('Starting enhanced Inverter GenAI analysis...');
-      setGenAiLoading(true);
+      const analysis = parseInverterAgentCoreResponse(analysisResult.response, inverterDataForAnalysis, analysisResult);
       
-      // Prepare inverter data for analysis
-      const inverterDataForAnalysis = {
-        vehicle_id: currentData.vehicle_id,
-        make: currentData.make,
-        model: currentData.model,
-        year: currentData.year,
-        dc_voltage_v: parseFloat(currentData.dc_voltage_v) || 400,
-        dc_current_a: parseFloat(currentData.dc_current_a) || 125,
-        ac_voltage_v: parseFloat(currentData.ac_voltage_v) || 230,
-        ac_current_a: parseFloat(currentData.ac_current_a) || 90,
-        power_output_kw: parseFloat(currentData.power_output_kw) || 35,
-        efficiency_percent: parseFloat(currentData.efficiency_percent) || 95,
-        temperature_c: parseFloat(currentData.temperature_c) || 65,
-        switching_frequency_khz: parseFloat(currentData.switching_frequency_khz) || 10,
-        modulation_index: parseFloat(currentData.modulation_index) || 0.85,
-        thd_percent: parseFloat(currentData.thd_percent) || 2.0,
-        fault_codes: currentData.fault_codes,
-        inverter_anomaly: currentData.inverter_anomaly === 'True',
-        anomaly_type_inverter: currentData.anomaly_type_inverter,
-        failure_risk: parseFloat(currentData.failure_risk) || 1,
-        drivetrain: currentData.drivetrain,
-        vehicle_class: currentData.vehicle_class
-      };
+      console.log('Parsed Inverter GenAI analysis:', analysis);
+      setGenAiAnalysis(analysis);
       
-      try {
-        console.log('Calling enhanced AgentCore service for inverter analysis...');
-        
-        // Use the enhanced service method
-        const analysisResult = await agentCoreService.getInverterAnalysis(currentData.vehicle_id, inverterDataForAnalysis, '3VWDX7AJ9DM456321');
-        
-        console.log('Received enhanced Inverter GenAI analysis:', analysisResult);
-        
-        // Check if service was throttled and no cache available
-        if (analysisResult.throttled) {
-          console.log('Inverter service throttled - using enhanced fallback');
-          const enhancedFallback = createEnhancedInverterFallback(inverterDataForAnalysis, new Error('Service throttled'));
-          setGenAiAnalysis(enhancedFallback);
-          return;
-        }
-        
-        // Parse the response into structured format
-        const analysis = parseInverterAgentCoreResponse(analysisResult.response, inverterDataForAnalysis, analysisResult);
-        
-        console.log('Parsed Inverter GenAI analysis:', analysis);
-        console.log('Inverter analysis has recommendations:', analysis?.recommendations?.length);
-        
-        setGenAiAnalysis(analysis);
-        
-      } catch (error) {
-        console.error('Inverter GenAI analysis failed:', error);
-        console.error('Inverter error details:', {
-          message: error.message,
-          stack: error.stack,
-          name: error.name
-        });
-        
-        // Create enhanced fallback with rule-based intelligence
-        const enhancedFallback = createEnhancedInverterFallback(inverterDataForAnalysis, error);
-        setGenAiAnalysis(enhancedFallback);
-      } finally {
-        setGenAiLoading(false);
-      }
-    };
-    
-    // Debounce the GenAI calls
-    const debounceTimer = setTimeout(analyzeInverterWithGenAI, 2000);
-    return () => clearTimeout(debounceTimer);
-    
-  }, [csvData.length]); // Trigger when CSV data is loaded
+    } catch (error) {
+      console.error('Inverter GenAI analysis failed:', error);
+      const enhancedFallback = createEnhancedInverterFallback(inverterDataForAnalysis, error);
+      setGenAiAnalysis(enhancedFallback);
+    } finally {
+      setGenAiLoading(false);
+    }
+  };
 
   // Use rotating data index to cycle through Vehicle 3's 180 days
   const currentData = csvData[dataIndex] || csvData[0] || {};
@@ -428,69 +405,48 @@ const Invertor = () => {
   // Parse AgentCore response into structured format for inverter analysis
   const parseInverterAgentCoreResponse = (response, inverterData, analysisResult = {}) => {
     try {
-      if (!response) {
-        console.warn('No response to parse');
-        return createEnhancedInverterFallback(inverterData, new Error('Empty response'));
-      }
       console.log('Parsing Inverter AgentCore response:', response);
       
-      // AgentCore returns text responses, not JSON
-      // Let's create structured recommendations from the text
+      if (!response || typeof response !== 'string') {
+        console.warn('Invalid response format, using fallback');
+        return createEnhancedInverterFallback(inverterData, new Error('No response text'));
+      }
+      
       const recommendations = [];
       
-      // Extract numbered list recommendations
-      const numberedMatches = response.match(/\d+\.\s*\*\*[^*]+\*\*/g) || [];
+      // Extract numbered list items (1. Check inverter, 2. Inspect, etc.) - same as Vehicle1Tires
+      const numberedPattern = /\d+\.\s*\*\*[^*]+\*\*[^\n]*(?:\n[^\d\n][^\n]*)*|\d+\.\s*[^\n]+/g;
+      const numberedItems = response.match(numberedPattern) || [];
       
-      // Extract sections with urgency context
-      const immediateSection = response.match(/Immediate Actions?[^#]*?(?=###|##|$)/is)?.[0] || '';
-      const within7DaysSection = response.match(/Within 7 Days[^#]*?(?=###|##|$)/is)?.[0] || '';
-      const within30DaysSection = response.match(/Within 30 Days[^#]*?(?=###|##|$)/is)?.[0] || '';
+      // Action verbs that indicate real recommendations - same as Vehicle1Tires
+      const actionVerbs = ['check', 'inspect', 'replace', 'service', 'monitor', 'test', 'verify', 'clean', 'flush', 'change', 'repair', 'schedule', 'perform', 'examine', 'diagnose', 'stop', 'reduce', 'increase', 'adjust', 'investigate'];
       
-      // Parse numbered items from each section
-      const parseSection = (text, defaultUrgency, defaultPriority) => {
-        const matches = text.match(/\d+\.\s*\*\*[^*]+\*\*/g) || [];
-        return matches.map(match => {
-          let action = match.replace(/\d+\.\s*/, '').replace(/\*\*/g, '').trim();
-          const actionVerbs = ['check', 'inspect', 'replace', 'service', 'monitor', 'schedule', 'investigate', 'test', 'verify', 'maintain', 'review', 'update'];
-          const hasActionVerb = actionVerbs.some(verb => action.toLowerCase().includes(verb));
-          
-          if (hasActionVerb && action.length >= 15) {
-            return {
-              action: action,
-              priority: defaultPriority,
-              reason: "Based on Claude Sonnet 4.5 analysis of current inverter condition",
-              urgency: defaultUrgency
-            };
-          }
-          return null;
-        }).filter(Boolean);
-      };
-      
-      // Parse each section with appropriate urgency
-      recommendations.push(...parseSection(immediateSection, 'Within 7 days', 'HIGH'));
-      recommendations.push(...parseSection(within7DaysSection, 'Within 7 days', 'HIGH'));
-      recommendations.push(...parseSection(within30DaysSection, 'Within 30 days', 'MEDIUM'));
-      
-      // Fallback: If no recommendations found, extract from bullet points or sentences
-      if (recommendations.length === 0) {
-        const bulletMatches = response.match(/[-•*]\s*([^\n]{20,})/g) || [];
-        bulletMatches.slice(0, 3).forEach(match => {
-          const action = match.replace(/[-•*]\s*/, '').trim();
-          if (action.length >= 20) {
-            recommendations.push({
-              action: action,
-              priority: 'MEDIUM',
-              reason: "Based on Claude Sonnet 4.5 analysis of current inverter condition",
-              urgency: 'Within 30 days'
-            });
-          }
+      numberedItems.forEach(item => {
+        const cleaned = item.replace(/\d+\.\s*/, '').replace(/\*\*/g, '').trim();
+        if (cleaned.length < 15) return;
+        
+        // Only include if it contains an action verb - same as Vehicle1Tires
+        const lowerCleaned = cleaned.toLowerCase();
+        const hasActionVerb = actionVerbs.some(verb => lowerCleaned.includes(verb));
+        if (!hasActionVerb) return;
+        
+        const lowerItem = item.toLowerCase();
+        const priority = lowerItem.includes('urgent') || lowerItem.includes('critical') || lowerItem.includes('immediate') || lowerItem.includes('stop') ? 'CRITICAL' :
+                        lowerItem.includes('soon') || lowerItem.includes('warning') || lowerItem.includes('attention') ? 'HIGH' :
+                        lowerItem.includes('consider') || lowerItem.includes('schedule') ? 'MEDIUM' : 'LOW';
+        
+        recommendations.push({
+          action: cleaned,
+          priority: priority,
+          reason: "Based on Claude Sonnet 4.5 analysis of current inverter condition",
+          urgency: priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance'
         });
-      }
+      });
       
       // Determine overall status from response content
       const status = determineInverterStatusFromResponse(response);
       
-      // Create natural language summary instead of bullet points
+      // Create natural language summary
       const naturalSummary = createInverterNaturalLanguageSummary(response, inverterData);
 
       // Determine source and status based on analysis result
@@ -1743,12 +1699,34 @@ const Invertor = () => {
                 <div className="genai-recommendations" style={{ marginTop: '0px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                     <h3>GenAI Recommendations</h3>
-                    {genAiLoading && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#ff9900' }}>
-                        <div className="spinner" style={{ width: '12px', height: '12px', border: '2px solid #333', borderTop: '2px solid #ff9900', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-                        Analyzing...
-                      </div>
-                    )}
+                    <button
+                      onClick={analyzeInverterWithGenAI}
+                      disabled={genAiLoading}
+                      style={{
+                        background: genAiLoading ? '#666' : '#00ff88',
+                        color: genAiLoading ? '#ccc' : '#000',
+                        border: 'none',
+                        padding: '6px 12px',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        cursor: genAiLoading ? 'not-allowed' : 'pointer',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      {genAiLoading ? (
+                        <>
+                          <div className="spinner" style={{ width: '10px', height: '10px', border: '2px solid #999', borderTop: '2px solid #ccc', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          🤖 Analyze
+                        </>
+                      )}
+                    </button>
                     {genAiAnalysis && !genAiLoading && (
                       <div style={{ fontSize: '11px', color: genAiAnalysis.error ? '#ff6b6b' : genAiAnalysis.fromCache ? '#ffa500' : '#00ff88', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span>{genAiAnalysis.error ? '🛡️' : genAiAnalysis.fromCache ? '💾' : '🤖'}</span> 
@@ -1762,9 +1740,9 @@ const Invertor = () => {
                     {genAiAnalysis ? 
                       (genAiAnalysis.error ? 
                         genAiAnalysis.error_message :
-                        `Real-time inverter analysis by Claude Sonnet 4.5. Status: ${genAiAnalysis.overall_status} | Risk: ${genAiAnalysis.risk_level}`
+                        `Inverter analysis by Claude Sonnet 4.5. Status: ${genAiAnalysis.overall_status} | Risk: ${genAiAnalysis.risk_level}`
                       ) :
-                      'AI-powered inverter optimization. Connecting to Claude Sonnet 4.5 for real-time analysis...'
+                      'AI-powered inverter optimization. Click "Analyze" to get Claude Sonnet 4.5 recommendations for current inverter condition.'
                     }
                   </p>
                   

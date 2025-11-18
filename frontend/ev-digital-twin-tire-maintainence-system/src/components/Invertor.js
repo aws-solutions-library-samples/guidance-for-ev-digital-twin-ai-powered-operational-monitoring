@@ -42,7 +42,7 @@ const Invertor = () => {
   }, []);
 
   useEffect(() => {
-    const csvPath = (carId === '1HGBH41JXMN109876' || carId === 'WBADT43452G123789')
+    const csvPath = (carId === '1HGBH41JXMN109876' || carId === 'WBADT43452G123789' || carId === '5YJSA1E26HF123456' || carId === '2T1BURHE8JC987654')
       ? '/normal_data/inverter_sensor_data_normal.csv'
       : '/data/inverter_sensor_data.csv';
     
@@ -53,9 +53,15 @@ const Invertor = () => {
         if (results.data && results.data.length > 0) {
           let filteredData;
           if (carId === '1HGBH41JXMN109876') {
-            filteredData = results.data.filter(row => row.vehicle_id === '2');
+            filteredData = results.data.filter(row => row.vehicle_id === '1HGBH41JXMN109876');
           } else if (carId === 'WBADT43452G123789') {
-            filteredData = results.data.filter(row => row.vehicle_id === '4');
+            filteredData = results.data.filter(row => row.vehicle_id === 'WBADT43452G123789');
+          } else if (carId === '5YJSA1E26HF123456') {
+            // Motor vehicle uses VIN 5YJSA1E26HF123456
+            filteredData = results.data.filter(row => row.vehicle_id === '5YJSA1E26HF123456');
+          } else if (carId === '2T1BURHE8JC987654') {
+            // Tire vehicle uses VIN 2T1BURHE8JC987654
+            filteredData = results.data.filter(row => row.vehicle_id === '2T1BURHE8JC987654');
           } else {
             filteredData = results.data.filter(row => row.vehicle_id);
           }
@@ -86,7 +92,7 @@ const Invertor = () => {
     const generateChartData = () => {
       if (!csvData.length) return;
       
-      const currentData = csvData.find(row => row.vehicle_id === '1') || csvData[0] || {};
+      const currentData = csvData.find(row => row.vehicle_id === '1HGBH41JXMN109876') || csvData[0] || {};
       const inputVoltage = parseFloat(currentData.ac_voltage_v) || 230;
       const outputVoltage = parseFloat(currentData.dc_voltage_v) || 400;
       const inputCurrent = parseFloat(currentData.ac_current_a) || 90;
@@ -198,89 +204,68 @@ const Invertor = () => {
     }
   }, [showPrediction]);
 
-  // GenAI Analysis - Call Claude Sonnet 4.5 for inverter analysis
-  useEffect(() => {
-    const analyzeInverterWithGenAI = async () => {
-      // Use the same fixed vehicle data for GenAI analysis
-      const currentData = csvData.find(row => row.vehicle_id === '1') || csvData[0] || {};
+  // On-demand GenAI Analysis function
+  const analyzeInverterWithGenAI = async () => {
+    const currentData = csvData.find(row => row.vehicle_id === '1') || csvData[0] || {};
+    
+    if (!csvData.length || !currentData.vehicle_id) {
+      console.log('Inverter GenAI Analysis skipped - missing data:', { csvDataLength: csvData.length, vehicleId: currentData.vehicle_id });
+      return;
+    }
+    
+    console.log('Starting enhanced Inverter GenAI analysis...');
+    setGenAiLoading(true);
+    
+    const inverterDataForAnalysis = {
+      vehicle_id: currentData.vehicle_id,
+      make: currentData.make,
+      model: currentData.model,
+      year: currentData.year,
+      dc_voltage_v: parseFloat(currentData.dc_voltage_v) || 400,
+      dc_current_a: parseFloat(currentData.dc_current_a) || 125,
+      ac_voltage_v: parseFloat(currentData.ac_voltage_v) || 230,
+      ac_current_a: parseFloat(currentData.ac_current_a) || 90,
+      power_output_kw: parseFloat(currentData.power_output_kw) || 35,
+      efficiency_percent: parseFloat(currentData.efficiency_percent) || 95,
+      temperature_c: parseFloat(currentData.temperature_c) || 65,
+      switching_frequency_khz: parseFloat(currentData.switching_frequency_khz) || 10,
+      modulation_index: parseFloat(currentData.modulation_index) || 0.85,
+      thd_percent: parseFloat(currentData.thd_percent) || 2.0,
+      fault_codes: currentData.fault_codes,
+      inverter_anomaly: currentData.inverter_anomaly === 'True',
+      anomaly_type_inverter: currentData.anomaly_type_inverter,
+      failure_risk: parseFloat(currentData.failure_risk) || 1,
+      drivetrain: currentData.drivetrain,
+      vehicle_class: currentData.vehicle_class
+    };
+    
+    try {
+      console.log('Calling enhanced AgentCore service for inverter analysis...');
       
-      if (!csvData.length || !currentData.vehicle_id) {
-        console.log('Inverter GenAI Analysis skipped - missing data:', { csvDataLength: csvData.length, vehicleId: currentData.vehicle_id });
+      const analysisResult = await agentCoreService.getInverterAnalysis(currentData.vehicle_id, inverterDataForAnalysis, 'W1KZF8EB8NA123456');
+      
+      console.log('Received enhanced Inverter GenAI analysis:', analysisResult);
+      
+      if (analysisResult.throttled) {
+        console.log('Inverter service throttled - using enhanced fallback');
+        const enhancedFallback = createEnhancedInverterFallback(inverterDataForAnalysis, new Error('Service throttled'));
+        setGenAiAnalysis(enhancedFallback);
         return;
       }
       
-      console.log('Starting enhanced Inverter GenAI analysis...');
-      setGenAiLoading(true);
+      const analysis = parseInverterAgentCoreResponse(analysisResult.response, inverterDataForAnalysis, analysisResult);
       
-      // Prepare inverter data for analysis
-      const inverterDataForAnalysis = {
-        vehicle_id: currentData.vehicle_id,
-        make: currentData.make,
-        model: currentData.model,
-        year: currentData.year,
-        dc_voltage_v: parseFloat(currentData.dc_voltage_v) || 400,
-        dc_current_a: parseFloat(currentData.dc_current_a) || 125,
-        ac_voltage_v: parseFloat(currentData.ac_voltage_v) || 230,
-        ac_current_a: parseFloat(currentData.ac_current_a) || 90,
-        power_output_kw: parseFloat(currentData.power_output_kw) || 35,
-        efficiency_percent: parseFloat(currentData.efficiency_percent) || 95,
-        temperature_c: parseFloat(currentData.temperature_c) || 65,
-        switching_frequency_khz: parseFloat(currentData.switching_frequency_khz) || 10,
-        modulation_index: parseFloat(currentData.modulation_index) || 0.85,
-        thd_percent: parseFloat(currentData.thd_percent) || 2.0,
-        fault_codes: currentData.fault_codes,
-        inverter_anomaly: currentData.inverter_anomaly === 'True',
-        anomaly_type_inverter: currentData.anomaly_type_inverter,
-        failure_risk: parseFloat(currentData.failure_risk) || 1,
-        drivetrain: currentData.drivetrain,
-        vehicle_class: currentData.vehicle_class
-      };
+      console.log('Parsed Inverter GenAI analysis:', analysis);
+      setGenAiAnalysis(analysis);
       
-      try {
-        console.log('Calling enhanced AgentCore service for inverter analysis...');
-        
-        // Use the enhanced service method
-        const analysisResult = await agentCoreService.getInverterAnalysis(currentData.vehicle_id, inverterDataForAnalysis, 'W1KZF8EB8NA123456');
-        
-        console.log('Received enhanced Inverter GenAI analysis:', analysisResult);
-        
-        // Check if service was throttled and no cache available
-        if (analysisResult.throttled) {
-          console.log('Inverter service throttled - using enhanced fallback');
-          const enhancedFallback = createEnhancedInverterFallback(inverterDataForAnalysis, new Error('Service throttled'));
-          setGenAiAnalysis(enhancedFallback);
-          return;
-        }
-        
-        // Parse the response into structured format
-        const analysis = parseInverterAgentCoreResponse(analysisResult.response, inverterDataForAnalysis, analysisResult);
-        
-        console.log('Parsed Inverter GenAI analysis:', analysis);
-        console.log('Inverter analysis has recommendations:', analysis?.recommendations?.length);
-        
-        setGenAiAnalysis(analysis);
-        
-      } catch (error) {
-        console.error('Inverter GenAI analysis failed:', error);
-        console.error('Inverter error details:', {
-          message: error.message,
-          stack: error.stack,
-          name: error.name
-        });
-        
-        // Create enhanced fallback with rule-based intelligence
-        const enhancedFallback = createEnhancedInverterFallback(inverterDataForAnalysis, error);
-        setGenAiAnalysis(enhancedFallback);
-      } finally {
-        setGenAiLoading(false);
-      }
-    };
-    
-    // Debounce the GenAI calls - longer interval for stability
-    const debounceTimer = setTimeout(analyzeInverterWithGenAI, 5000); // 5 seconds for better stability
-    return () => clearTimeout(debounceTimer);
-    
-  }, [csvData.length]); // Trigger when CSV data is loaded
+    } catch (error) {
+      console.error('Inverter GenAI analysis failed:', error);
+      const enhancedFallback = createEnhancedInverterFallback(inverterDataForAnalysis, error);
+      setGenAiAnalysis(enhancedFallback);
+    } finally {
+      setGenAiLoading(false);
+    }
+  };
 
   // Use a fixed vehicle for consistent inverter analysis (like Tires and Motor pages)
   const currentData = csvData.find(row => row.vehicle_id === '1') || csvData[0] || {};
@@ -1722,12 +1707,34 @@ const Invertor = () => {
                 <div className="genai-recommendations" style={{ marginTop: '0px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                     <h3>GenAI Recommendations</h3>
-                    {genAiLoading && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#ff9900' }}>
-                        <div className="spinner" style={{ width: '12px', height: '12px', border: '2px solid #333', borderTop: '2px solid #ff9900', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-                        Analyzing...
-                      </div>
-                    )}
+                    <button
+                      onClick={analyzeInverterWithGenAI}
+                      disabled={genAiLoading}
+                      style={{
+                        background: genAiLoading ? '#666' : '#00ff88',
+                        color: genAiLoading ? '#ccc' : '#000',
+                        border: 'none',
+                        padding: '6px 12px',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        cursor: genAiLoading ? 'not-allowed' : 'pointer',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      {genAiLoading ? (
+                        <>
+                          <div className="spinner" style={{ width: '10px', height: '10px', border: '2px solid #999', borderTop: '2px solid #ccc', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          🤖 Analyze
+                        </>
+                      )}
+                    </button>
                     {genAiAnalysis && !genAiLoading && (
                       <div style={{ fontSize: '11px', color: genAiAnalysis.error ? '#ff6b6b' : genAiAnalysis.fromCache ? '#ffa500' : '#00ff88', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span>{genAiAnalysis.error ? '🛡️' : genAiAnalysis.fromCache ? '💾' : '🤖'}</span> 
@@ -1741,9 +1748,9 @@ const Invertor = () => {
                     {genAiAnalysis ? 
                       (genAiAnalysis.error ? 
                         genAiAnalysis.error_message :
-                        `Real-time inverter analysis by Claude Sonnet 4.5. Status: ${genAiAnalysis.overall_status} | Risk: ${genAiAnalysis.risk_level}`
+                        `Analysis by Claude Sonnet 4.5. Status: ${genAiAnalysis.overall_status} | Risk: ${genAiAnalysis.risk_level}`
                       ) :
-                      'AI-powered inverter optimization. Connecting to Claude Sonnet 4.5 for real-time analysis...'
+                      'AI-powered inverter optimization. Click "Analyze" to get Claude Sonnet 4.5 recommendations for current inverter condition.'
                     }
                   </p>
                   
