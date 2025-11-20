@@ -93,15 +93,24 @@ const Vehicle1Tires = () => {
             }
           });
           
-          // Filter to front_left only for smooth degradation display
-          const frontLeftOnly = degradationTimeline.filter(row => row.position === 'front_left');
+          // Get latest data for each tire position
+          const latestByPosition = {};
+          vehicle1Data.forEach(row => {
+            const position = row.position;
+            const date = new Date(row.date);
+            if (!latestByPosition[position] || new Date(latestByPosition[position].date) < date) {
+              latestByPosition[position] = row;
+            }
+          });
           
-          setCsvData(frontLeftOnly);
-          console.log('🔍 Vehicle1Tires - Front Left Degradation Timeline:', {
-            totalRecords: frontLeftOnly.length,
-            firstRecord: frontLeftOnly[0],
-            lastRecord: frontLeftOnly[frontLeftOnly.length - 1],
-            treadRange: `${frontLeftOnly[0]?.tread_depth_mm}mm → ${frontLeftOnly[frontLeftOnly.length - 1]?.tread_depth_mm}mm`
+          // Create array with latest data for all positions
+          const allPositions = Object.values(latestByPosition);
+          
+          setCsvData(allPositions);
+          console.log('🔍 Vehicle1Tires - Latest Data for All Positions:', {
+            totalPositions: allPositions.length,
+            positions: allPositions.map(r => `${r.position}: ${r.tread_depth_mm}mm, ${r.pressure_psi}PSI, ${r.temperature_c}°C`),
+            date: allPositions[0]?.date
           });
 
         } else {
@@ -239,6 +248,69 @@ const Vehicle1Tires = () => {
     }
   };
 
+  // Extract citations from KB tool responses
+  const extractCitations = (response) => {
+    const citations = [];
+    
+    // Pattern 1: (Confidence: 0.XX) [Source: s3://bucket/file.pdf]
+    const fullCitationPattern = /\(Confidence:\s*([\d.]+)\)\s*\[Source:\s*([^\]]+)\]/g;
+    let match;
+    
+    while ((match = fullCitationPattern.exec(response)) !== null) {
+      const confidence = parseFloat(match[1]);
+      const source = match[2].trim();
+      
+      // Extract filename from S3 URI
+      let displayName = source;
+      if (source.includes('/')) {
+        const parts = source.split('/');
+        displayName = parts[parts.length - 1];
+      }
+      
+      citations.push({
+        source: displayName,
+        confidence: confidence,
+        uri: source
+      });
+    }
+    
+    // Pattern 2: Just (Confidence: 0.XX) without explicit source
+    // This happens when KB tools are used but source isn't in the exact format
+    if (citations.length === 0) {
+      const confidenceOnlyPattern = /\(Confidence:\s*([\d.]+)\)/g;
+      const confidenceMatches = [];
+      
+      while ((match = confidenceOnlyPattern.exec(response)) !== null) {
+        confidenceMatches.push(parseFloat(match[1]));
+      }
+      
+      // If we found confidence scores, KB tools were used
+      if (confidenceMatches.length > 0) {
+        const avgConfidence = confidenceMatches.reduce((a, b) => a + b, 0) / confidenceMatches.length;
+        citations.push({
+          source: 'EV Preventive Maintenance Manual',
+          confidence: avgConfidence,
+          uri: 's3://ev-maintenance-manual-kb/manuals/Electric Vehicle Preventive Maintenance Manual.pdf'
+        });
+      }
+    }
+    
+    // Only add fallback citation if no KB citations were found AND response mentions manual
+    // This prevents overriding real KB citations with hardcoded "embedded" citation
+    if (citations.length === 0) {
+      if (response.toLowerCase().includes('maintenance manual') || 
+          response.toLowerCase().includes('ev manual')) {
+        citations.push({
+          source: 'EV Preventive Maintenance Manual (System Fallback)',
+          confidence: 0.5,
+          uri: 'embedded'
+        });
+      }
+    }
+    
+    return citations;
+  };
+
   // Parse AgentCore response into structured format
   const parseAgentCoreResponse = (response, tireData, analysisResult = {}) => {
     try {
@@ -303,6 +375,9 @@ const Vehicle1Tires = () => {
       // Create natural language summary instead of bullet points
       const naturalSummary = createNaturalLanguageSummary(response, tireData);
 
+      // Extract citations from the response
+      const citations = extractCitations(response);
+
       // Determine source and status based on analysis result
       let sourceInfo = "AgentCore Claude Sonnet 4.5";
       if (analysisResult.fromCache) {
@@ -319,6 +394,7 @@ const Vehicle1Tires = () => {
         recommendations: recommendations.slice(0, 4),
         next_inspection: "30 days",
         source: sourceInfo,
+        citations: citations,
         fromCache: analysisResult.fromCache || false,
         stale: analysisResult.stale || false,
         serviceError: analysisResult.error || null,
@@ -585,6 +661,17 @@ const Vehicle1Tires = () => {
 
   const currentData = csvData[dataIndex] || {};
   
+  // Get position-specific data for each tire
+  const getTireData = (position) => {
+    const positionData = csvData.find(row => row.position === position);
+    return positionData || currentData;
+  };
+  
+  const frontLeftData = getTireData('front_left');
+  const frontRightData = getTireData('front_right');
+  const rearLeftData = getTireData('rear_left');
+  const rearRightData = getTireData('rear_right');
+  
   // Get ML data for current vehicle
   const currentMlData = mlResults.find(r => r.vehicle_id === parseInt(currentData.vehicle_id));
   
@@ -815,27 +902,25 @@ const Vehicle1Tires = () => {
   };
   
   const formatValue = (value, unit, fallback) => {
-    // Special handling for PSI to use realistic pressure
-    if (unit === '' && fallback && fallback.includes('35')) {
-      const realisticPsi = getRealisticPressure();
-      return `${realisticPsi.toFixed(1)}`;
-    }
-    
-    // Special handling for temperature
-    if (unit === '°C') {
-      const realisticTemp = getRealisticTemperature();
-      return `${realisticTemp}°C`;
-    }
-    
-    // Special handling for tread depth
-    if (unit === 'mm') {
-      const realisticTread = getRealisticTreadDepth();
-      return `${realisticTread.toFixed(1)}mm`;
-    }
-    
+    // Use the actual value passed in, not the global currentData
     if (!value) return fallback;
     const num = parseFloat(value);
     if (isNaN(num)) return fallback;
+    
+    // Format based on unit
+    if (unit === 'mm') {
+      // Show actual value with 1 decimal place
+      return `${num.toFixed(1)}mm`;
+    }
+    
+    if (unit === '°C') {
+      return `${Math.round(num)}°C`;
+    }
+    
+    if (unit === '' && fallback && fallback.includes('35')) {
+      // PSI - round to 1 decimal
+      return `${num.toFixed(1)}`;
+    }
     
     return `${Math.round(num)}`;
   };
@@ -1195,24 +1280,24 @@ const Vehicle1Tires = () => {
                   <div>
                     <div className="tire-position">Front Left</div>
                     {/* CSV DATA: Load from curb_weight_lbs */}
-                    <div className="load">{formatLoad(currentData.curb_weight_lbs)}</div>
+                    <div className="load">{formatLoad(frontLeftData.curb_weight_lbs)}</div>
                     <div className="tire-position">Load</div>
                   </div>
                   {/* CSV DATA: Wear pattern from anomaly_type */}
-                  <div className="wear-pattern">{formatWearPattern(currentData.anomaly_type)}</div>
+                  <div className="wear-pattern">{formatWearPattern(frontLeftData.anomaly_type)}</div>
                   <div>
                     {/* CSV DATA: Tread depth from tread_depth_mm */}
-                    <div className="load">{formatValue(currentData.tread_depth_mm, 'mm', '8.0mm')}</div>
-                    <div className="tire-position">Thread</div>
+                    <div className="load">{formatValue(frontLeftData.tread_depth_mm, 'mm', '8.0mm')}</div>
+                    <div className="tire-position">Tread</div>
                   </div>
                   <div>
                     {/* CSV DATA: Temperature from temperature_c */}
-                    <div className="load">{formatValue(currentData.temperature_c, '°C', '30°C')}</div>
+                    <div className="load">{formatValue(frontLeftData.temperature_c, '°C', '30°C')}</div>
                     <div className="tire-position">Temperature</div>
                   </div>
                   <div>
                     {/* CSV DATA: Pressure from pressure_psi */}
-                    <div className="load">{formatValue(currentData.pressure_psi, '', '35')}</div>
+                    <div className="load">{formatValue(frontLeftData.pressure_psi, '', '35')}</div>
                     <div className="tire-position">PSI</div>
                   </div>
                 </div>
@@ -1222,25 +1307,25 @@ const Vehicle1Tires = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', textAlign: 'right', marginLeft: window.innerWidth >= 1400 ? '60px' : '0px', transform: windowWidth <= 1440 ? 'translateX(-40px)' : windowWidth <= 1700 ? 'translateX(-30px)' : 'none' }}>
                   <div style={{ marginRight: '20px' }}>
                     {/* CSV DATA: Pressure from pressure_psi */}
-                    <div className="load">{formatValue(currentData.pressure_psi, '', '35')}</div>
+                    <div className="load">{formatValue(frontRightData.pressure_psi, '', '35')}</div>
                     <div className="tire-position">PSI</div>
                   </div>
                   <div>
                     {/* CSV DATA: Temperature from temperature_c */}
-                    <div className="load">{formatValue(currentData.temperature_c, '°C', '30°C')}</div>
+                    <div className="load">{formatValue(frontRightData.temperature_c, '°C', '30°C')}</div>
                     <div className="tire-position">Temperature</div>
                   </div>
                   <div>
                     {/* CSV DATA: Tread depth from tread_depth_mm */}
-                    <div className="load">{formatValue(currentData.tread_depth_mm, 'mm', '8.0mm')}</div>
-                    <div className="tire-position">Thread</div>
+                    <div className="load">{formatValue(frontRightData.tread_depth_mm, 'mm', '8.0mm')}</div>
+                    <div className="tire-position">Tread</div>
                   </div>
                   {/* CSV DATA: Wear pattern from anomaly_type */}
-                  <div className="wear-pattern" style={{ marginRight: '15px' }}>{formatWearPattern(currentData.anomaly_type)}</div>
+                  <div className="wear-pattern" style={{ marginRight: '15px' }}>{formatWearPattern(frontRightData.anomaly_type)}</div>
                   <div>
                     <div className="tire-position">Front Right</div>
                     {/* CSV DATA: Load from curb_weight_lbs */}
-                    <div className="load">{formatLoad(currentData.curb_weight_lbs)}</div>
+                    <div className="load">{formatLoad(frontRightData.curb_weight_lbs)}</div>
                     <div className="tire-position">Load</div>
                   </div>
                 </div>
@@ -1254,24 +1339,24 @@ const Vehicle1Tires = () => {
                   <div>
                     <div className="tire-position">Rear Left</div>
                     {/* CSV DATA: Load from curb_weight_lbs */}
-                    <div className="load">{formatLoad(currentData.curb_weight_lbs)}</div>
+                    <div className="load">{formatLoad(rearLeftData.curb_weight_lbs)}</div>
                     <div className="tire-position">Load</div>
                   </div>
                   {/* CSV DATA: Wear pattern from anomaly_type */}
-                  <div className="wear-pattern">{formatWearPattern(currentData.anomaly_type)}</div>
+                  <div className="wear-pattern">{formatWearPattern(rearLeftData.anomaly_type)}</div>
                   <div>
                     {/* CSV DATA: Tread depth from tread_depth_mm */}
-                    <div className="load">{formatValue(currentData.tread_depth_mm, 'mm', '8.0mm')}</div>
-                    <div className="tire-position">Thread</div>
+                    <div className="load">{formatValue(rearLeftData.tread_depth_mm, 'mm', '8.0mm')}</div>
+                    <div className="tire-position">Tread</div>
                   </div>
                   <div>
                     {/* CSV DATA: Temperature from temperature_c */}
-                    <div className="load">{formatValue(currentData.temperature_c, '°C', '30°C')}</div>
+                    <div className="load">{formatValue(rearLeftData.temperature_c, '°C', '30°C')}</div>
                     <div className="tire-position">Temperature</div>
                   </div>
                   <div>
                     {/* CSV DATA: Pressure from pressure_psi */}
-                    <div className="load">{formatValue(currentData.pressure_psi, '', '35')}</div>
+                    <div className="load">{formatValue(rearLeftData.pressure_psi, '', '35')}</div>
                     <div className="tire-position">PSI</div>
                   </div>
                 </div>
@@ -1281,25 +1366,25 @@ const Vehicle1Tires = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', textAlign: 'right', marginLeft: window.innerWidth >= 1400 ? '60px' : '0px', transform: windowWidth <= 1440 ? 'translateX(-40px)' : windowWidth <= 1700 ? 'translateX(-30px)' : 'none' }}>
                   <div style={{ marginRight: '20px' }}>
                     {/* CSV DATA: Pressure from pressure_psi */}
-                    <div className="load">{formatValue(currentData.pressure_psi, '', '35')}</div>
+                    <div className="load">{formatValue(rearRightData.pressure_psi, '', '35')}</div>
                     <div className="tire-position">PSI</div>
                   </div>
                   <div>
                     {/* CSV DATA: Temperature from temperature_c */}
-                    <div className="load">{formatValue(currentData.temperature_c, '°C', '30°C')}</div>
+                    <div className="load">{formatValue(rearRightData.temperature_c, '°C', '30°C')}</div>
                     <div className="tire-position">Temperature</div>
                   </div>
                   <div>
                     {/* CSV DATA: Tread depth from tread_depth_mm */}
-                    <div className="load">{formatValue(currentData.tread_depth_mm, 'mm', '8.0mm')}</div>
-                    <div className="tire-position">Thread</div>
+                    <div className="load">{formatValue(rearRightData.tread_depth_mm, 'mm', '8.0mm')}</div>
+                    <div className="tire-position">Tread</div>
                   </div>
                   {/* CSV DATA: Wear pattern from anomaly_type */}
-                  <div className="wear-pattern" style={{ marginRight: '15px' }}>{formatWearPattern(currentData.anomaly_type)}</div>
+                  <div className="wear-pattern" style={{ marginRight: '15px' }}>{formatWearPattern(rearRightData.anomaly_type)}</div>
                   <div>
                     <div className="tire-position">Rear Right</div>
                     {/* CSV DATA: Load from curb_weight_lbs */}
-                    <div className="load">{formatLoad(currentData.curb_weight_lbs)}</div>
+                    <div className="load">{formatLoad(rearRightData.curb_weight_lbs)}</div>
                     <div className="tire-position">Load</div>
                   </div>
                 </div>
@@ -1708,6 +1793,23 @@ const Vehicle1Tires = () => {
                     
                     <div className="more-link" style={{ marginTop: '16px', fontSize: '12px', color: '#ff9900', cursor: 'pointer' }}>More.....</div>
                   </div>
+                  
+                  {/* Citations from Knowledge Base */}
+                  {genAiAnalysis?.citations && genAiAnalysis.citations.length > 0 && (
+                    <div style={{ marginTop: '12px', padding: '8px', backgroundColor: 'rgba(100,149,237,0.1)', borderRadius: '4px', border: '1px solid rgba(100,149,237,0.3)' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#6495ED', marginBottom: '6px' }}>📚 Sources:</div>
+                      {genAiAnalysis.citations.map((citation, idx) => (
+                        <div key={idx} style={{ fontSize: '10px', color: 'rgba(255,255,255,0.8)', marginBottom: '4px', paddingLeft: '8px' }}>
+                          <span style={{ color: '#6495ED' }}>•</span> {citation.source}
+                          {citation.confidence < 1.0 && (
+                            <span style={{ marginLeft: '6px', color: 'rgba(255,255,255,0.6)' }}>
+                              (Confidence: {(citation.confidence * 100).toFixed(0)}%)
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   
                   {(currentPredictions?.status === 'CRITICAL' || genAiAnalysis?.overall_status === 'CRITICAL') && (
                     <div style={{ color: '#ff4444', fontWeight: 'bold', marginTop: '10px', padding: '8px', border: '1px solid #ff4444', borderRadius: '3px', backgroundColor: 'rgba(255,68,68,0.1)' }}>

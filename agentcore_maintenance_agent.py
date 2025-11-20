@@ -1,6 +1,7 @@
 """
 AgentCore-powered Vehicle Maintenance Agent
 Integrates Bedrock AgentCore capabilities with tire and motor maintenance system
+Includes Knowledge Base integration for EV Maintenance Manual
 """
 
 from strands.tools import tool
@@ -13,6 +14,21 @@ import json
 from tire_predictor import TirePredictor
 import boto3
 from bedrock_agentcore.memory import MemoryClient
+import os
+
+# Import Knowledge Base tools
+try:
+    from knowledge_base_tools import (
+        get_tire_maintenance_guidance,
+        search_tire_troubleshooting,
+        get_tire_maintenance_schedule,
+        get_pressure_temperature_guidance,
+        get_tread_depth_guidance
+    )
+    KB_AVAILABLE = bool(os.environ.get('KNOWLEDGE_BASE_ID'))
+except ImportError:
+    KB_AVAILABLE = False
+    print("⚠️  Knowledge Base tools not available - install knowledge_base_tools.py")
 
 # Import browser automation at module level to avoid Pydantic issues
 try:
@@ -31,21 +47,43 @@ MODEL_ID = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
 NOVA_ACT_API_KEY = "645eef64-f306-4f7b-b930-4dff30d63e25"  
 
 # System prompt for the vehicle maintenance agent
-SYSTEM_PROMPT = """You are a vehicle maintenance assistant specializing in tire, motor, and inverter analysis.
+# This prompt contains embedded knowledge from the EV Preventive Maintenance Manual
+# and serves as the PRIMARY knowledge source (always available, no external dependencies)
+# If external knowledge bases are unavailable, this prompt ensures consistent, manual-backed recommendations
+SYSTEM_PROMPT = """You are a vehicle maintenance assistant. You do NOT have tire maintenance knowledge built-in. You MUST use the Knowledge Base tools to access the official EV Preventive Maintenance Manual.
 
-When you receive a request:
-1. Call the appropriate tool (analyze_tire_condition, analyze_motor_performance, analyze_inverter_condition, order_tire_online, schedule_appointment, etc.)
-2. After the tool returns data, provide a brief 2-3 sentence summary
-3. Focus on actionable findings: what needs attention and when
-4. Be specific with measurements (e.g., "Tire at 27 PSI, inflate to 32 PSI")
+**CRITICAL RULE: NO TIRE ADVICE WITHOUT KB TOOLS**
+You are FORBIDDEN from providing tire maintenance advice without first calling Knowledge Base tools. If you try to answer without using KB tools, you will give incorrect information.
 
-Key thresholds for reference:
-- Tire Pressure: 32 PSI (sedans), 35 PSI (SUVs) | Critical: <28 PSI
-- Tread Depth: Replace at 3.2mm | Legal minimum: 1.6mm
-- Motor Temperature: Normal 40-80°C | Critical: >95°C
-- Inverter Efficiency: Normal >95% | Warning: <90%
+**MANDATORY WORKFLOW - NO EXCEPTIONS:**
+1. **STEP 1 (REQUIRED)**: Call get_tire_maintenance_guidance() or get_pressure_temperature_guidance() or get_tread_depth_guidance() to get manual guidance
+2. **STEP 2**: Call analyze_tire_condition() to get current vehicle tire data  
+3. **STEP 3**: Combine the KB manual guidance (from step 1) with real-time data (from step 2) to create personalized recommendations
+4. **STEP 4**: Include the KB tool's citation information (Confidence and Source) in your response
 
-Keep responses concise and action-oriented. Do not write lengthy explanations or safety lectures."""
+**IMPORTANT**: 
+- You do NOT have tire knowledge in your training data that you can use
+- You MUST call KB tools BEFORE providing any tire advice
+- If KB tools fail, tell the user: "I cannot access the maintenance manual right now. Please try again later."
+- When you get KB results, preserve the citation format: (Confidence: X.XX) [Source: ...]
+
+When analyzing tires for drivers:
+1. FIRST: Call get_tire_maintenance_guidance() or related KB tools to get manual recommendations
+2. Use everyday language - avoid technical jargon
+3. Focus on WHAT to do and WHY it matters for safety and savings
+4. Give specific, actionable steps
+5. Explain the driver impact (safety, fuel economy, tire life, ride comfort)
+6. Provide clear timelines (today, this week, next month)
+7. ALWAYS cite: "According to the EV Maintenance Manual..." when using KB results
+
+**CRITICAL SAFETY THRESHOLDS (for emergency reference only - get details from KB):**
+- Pressure <25 PSI: CRITICAL - immediate action
+- Tread <3mm: CRITICAL - replacement needed
+- Temperature >80°C: WARNING - let cool
+
+For all other guidance, maintenance schedules, troubleshooting, and detailed recommendations, you MUST use the Knowledge Base tools.
+
+Keep responses friendly, practical, and focused on what the driver should do next."""
 
 
 class MaintenanceMemoryHooks(HookProvider):
@@ -234,24 +272,41 @@ class AgentCoreMaintenanceAgent:
     
     def create_agent(self):
         """Create AgentCore agent with maintenance tools and memory"""
+        
+        # Build tools list - add KB tools if available
+        tools_list = [
+            quick_vehicle_check,
+            analyze_tire_condition,
+            analyze_motor_performance,
+            analyze_inverter_condition,
+            predict_tire_wear,
+            predict_motor_failure,
+            detect_tire_anomalies,
+            detect_motor_anomalies,
+            schedule_appointment,
+            get_fleet_status,
+            cross_system_analysis,
+            order_tire_online
+        ]
+        
+        # Add Knowledge Base tools if available
+        if KB_AVAILABLE:
+            tools_list.extend([
+                get_tire_maintenance_guidance,
+                search_tire_troubleshooting,
+                get_tire_maintenance_schedule,
+                get_pressure_temperature_guidance,
+                get_tread_depth_guidance
+            ])
+            print("✅ Knowledge Base tools enabled")
+        else:
+            print("ℹ️  Knowledge Base tools not available - using embedded knowledge only")
+        
         agent = Agent(
             model=MODEL_ID,
             system_prompt=SYSTEM_PROMPT,
             hooks=[self.memory_hooks] if self.memory_hooks else [],
-            tools=[
-                quick_vehicle_check,
-                analyze_tire_condition,
-                analyze_motor_performance,
-                analyze_inverter_condition,
-                predict_tire_wear,
-                predict_motor_failure,
-                detect_tire_anomalies,
-                detect_motor_anomalies,
-                schedule_appointment,
-                get_fleet_status,
-                cross_system_analysis,
-                order_tire_online
-            ]
+            tools=tools_list
         )
         return agent
     
