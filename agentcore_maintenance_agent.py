@@ -23,7 +23,9 @@ try:
         search_tire_troubleshooting,
         get_tire_maintenance_schedule,
         get_pressure_temperature_guidance,
-        get_tread_depth_guidance
+        get_tread_depth_guidance,
+        get_motor_maintenance_guidance,
+        get_motor_temperature_guidance
     )
     KB_AVAILABLE = bool(os.environ.get('KNOWLEDGE_BASE_ID'))
 except ImportError:
@@ -63,10 +65,14 @@ SYSTEM_PROMPT = """You are a vehicle maintenance assistant. You do NOT have tire
 You are FORBIDDEN from providing tire maintenance advice without first calling Knowledge Base tools. If you try to answer without using KB tools, you will give incorrect information.
 
 **MANDATORY WORKFLOW - NO EXCEPTIONS:**
-1. **STEP 1 (REQUIRED)**: Call get_tire_maintenance_guidance() or get_pressure_temperature_guidance() or get_tread_depth_guidance() to get manual guidance
-2. **STEP 2**: Call analyze_tire_condition() to get current vehicle tire data  
-3. **STEP 3**: Combine the KB manual guidance (from step 1) with real-time data (from step 2) to create personalized recommendations
-4. **STEP 4**: Include the KB tool's citation information (Confidence and Source) in your response
+1. **STEP 1 (REQUIRED)**: Call analyze_tire_condition() to get current vehicle tire data
+2. **STEP 2 (CRITICAL)**: Check for UNEVEN WEAR FIRST - If tread depth difference >2mm between tires on same axle OR anomaly_type='uneven_wear', call search_tire_troubleshooting('uneven wear') to get Section 5.6 guidance
+3. **STEP 3**: Call get_tire_maintenance_guidance() or get_pressure_temperature_guidance() for general tire guidance
+4. **STEP 4**: Combine KB manual guidance with real-time data for personalized recommendations
+5. **STEP 5**: Include the KB tool's citation information (Confidence and Source) in your response
+
+**PRIORITY RULE: UNEVEN WEAR TRUMPS LOW TREAD**
+If you detect uneven wear (>2mm tread difference between tires), you MUST mention alignment/suspension issues from Section 5.6 BEFORE or ALONGSIDE tire replacement recommendations. Uneven wear indicates the ROOT CAUSE that will destroy new tires too!
 
 **IMPORTANT**: 
 - You do NOT have tire knowledge in your training data that you can use
@@ -83,10 +89,53 @@ When analyzing tires for drivers:
 6. Provide clear timelines (today, this week, next month)
 7. ALWAYS cite: "According to the EV Maintenance Manual..." when using KB results
 
+**MOTOR ANALYSIS WORKFLOW (Section 2.1):**
+When analyzing motor/drivetrain conditions:
+1. **STEP 1**: Call analyze_motor_performance() to get current motor data
+2. **STEP 2**: If temperature >95°C OR performance_score <80, call get_motor_maintenance_guidance() or get_motor_temperature_guidance()
+3. **STEP 3**: Combine Section 2.1 guidance with real-time data
+4. **STEP 4**: Include KB citations in response
+
 **CRITICAL SAFETY THRESHOLDS (for emergency reference only - get details from KB):**
+TIRES:
 - Pressure <25 PSI: CRITICAL - immediate action
 - Tread <3mm: CRITICAL - replacement needed
 - Temperature >80°C: WARNING - let cool
+
+MOTOR (Section 2.1):
+- Temperature >105°C: CRITICAL - stop driving
+- Temperature 95-105°C: WARNING - reduce load
+- Performance <70%: CRITICAL - immediate service
+- Performance 70-85%: WARNING - schedule maintenance
+
+**SECTION 5.6 FALLBACK: Uneven Tire Wear (Alignment/Suspension Issues)**
+If KB tools fail AND you detect uneven wear patterns (tread depth difference >2mm between tires on same axle, or anomaly_type='uneven_wear'), provide these Section 5.6 recommendations:
+
+**What Causes Uneven Wear:**
+- Wheel alignment problems (toe, camber, caster angles off)
+- Suspension damage or worn components
+- Improper tire pressure (under-inflation causes edge wear)
+- Hitting curbs or potholes at speed
+
+**Critical Thresholds:**
+- Normal: Tread depth difference <1mm across tire
+- Warning: 1-2mm difference - schedule alignment check within 1 week
+- Critical: >2mm difference - immediate service needed (within 24 hours)
+
+**Driver Actions (Section 5.6):**
+1. **Immediate (if >2mm difference):** Schedule wheel alignment check and suspension inspection
+2. **This week:** Rotate tires every 8,000-10,000 km (5,000-6,000 miles)
+3. **Monthly:** Check tire pressure when cold - under-inflation causes edge wear
+4. **After hitting curbs/potholes:** Get alignment checked within 1 week
+5. **Prevention:** Avoid hitting curbs or potholes at speed, maintain proper pressure
+
+**Warning Signs:**
+- Vehicle pulling to one side when driving
+- Steering wheel off-center when driving straight
+- Uneven tire temperatures (misaligned tire runs hotter)
+- Tire noise increasing (roaring or humming)
+
+Always cite: "According to Section 5.6 of the EV Maintenance Manual..." when using this fallback.
 
 For all other guidance, maintenance schedules, troubleshooting, and detailed recommendations, you MUST use the Knowledge Base tools.
 
@@ -310,9 +359,11 @@ class AgentCoreMaintenanceAgent:
                 search_tire_troubleshooting,
                 get_tire_maintenance_schedule,
                 get_pressure_temperature_guidance,
-                get_tread_depth_guidance
+                get_tread_depth_guidance,
+                get_motor_maintenance_guidance,
+                get_motor_temperature_guidance
             ])
-            print("✅ Knowledge Base tools enabled")
+            print("✅ Knowledge Base tools enabled (Tire + Motor)")
         else:
             print("ℹ️  Knowledge Base tools not available - using embedded knowledge only")
         

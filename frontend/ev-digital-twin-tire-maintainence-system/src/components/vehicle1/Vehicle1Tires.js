@@ -137,10 +137,11 @@ const Vehicle1Tires = () => {
     console.log('⚙️ Setting up rotation interval. CSV records available:', csvData.length);
     if (csvData.length > 0) {
       // Load saved index from ConnVehicle
-      const savedIndex = parseInt(sessionStorage.getItem('vehicle1TireIndex')) || 0;
-      if (savedIndex < csvData.length) {
-        setDataIndex(savedIndex);
-      }
+      // Start with the latest data (last index) instead of oldest
+      const savedIndex = parseInt(sessionStorage.getItem('vehicle1TireIndex'));
+      const defaultIndex = csvData.length > 0 ? csvData.length - 1 : 0;
+      const startIndex = (savedIndex !== null && savedIndex < csvData.length) ? savedIndex : defaultIndex;
+      setDataIndex(startIndex);
       
       const interval = setInterval(() => {
         setDataIndex(prev => {
@@ -845,19 +846,23 @@ const Vehicle1Tires = () => {
     const tireInfo = `${currentData.tire_brand || 'Premium EV Tires'} ${currentData.tire_size || 'tires'}`;
     
     // Determine overall system status
-    let systemStatus = 'optimal';
-    let statusColor = '#00ff88';
-    let statusIcon = '✅';
+    let systemStatus = 'warning'; // Default to warning
+    let statusColor = '#ff9900';
+    let statusIcon = '⚠️';
     
-    if (pressure < 28 || treadDepth < 3 || temperature > 80) {
+    // Very narrow critical zone - only extreme conditions
+    if (pressure < 25 || treadDepth < 2.0 || temperature > 85) {
       systemStatus = 'critical';
       statusColor = '#ff4444';
       statusIcon = '🚨';
-    } else if (pressure < 30 || treadDepth < 5 || temperature > 70) {
-      systemStatus = 'warning';
-      statusColor = '#ff9900';
-      statusIcon = '⚠️';
+    } 
+    // Very narrow optimal zone - only perfect conditions
+    else if (pressure >= 32 && pressure <= 35 && treadDepth >= 7 && temperature < 50) {
+      systemStatus = 'optimal';
+      statusColor = '#00ff88';
+      statusIcon = '✅';
     }
+    // Everything else stays in warning (default)
     
     // Create dynamic summary
     let summary = '';
@@ -971,12 +976,6 @@ const Vehicle1Tires = () => {
   // ML INTEGRATION COMPLETE - Using real predictions from tire_predictor.py and enhanced_maintenance_agent.py
   const remainingLife = getRemainingLife();
   const aiRecommendations = getAiRecommendations();
-
-  // Debug logging for realistic tire metrics
-  const currentRealisticPressure = getRealisticPressure();
-  const currentRealisticTemp = getRealisticTemperature();
-  const currentRealisticTread = getRealisticTreadDepth();
-  console.log(`Realistic Tire Metrics - PSI: ${currentRealisticPressure.toFixed(1)} | Temp: ${currentRealisticTemp}°C | Tread: ${currentRealisticTread.toFixed(1)}mm`);
   const replacementMessages = getReplacementMessages();
   
   // DYNAMIC VIBRATION CALCULATION - All data from CSV tire_wear_data.csv

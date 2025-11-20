@@ -311,69 +311,153 @@ const TiresPage = () => {
     let summary = '';
     const recommendations = [];
     
-    // Intelligent analysis based on tire data
-    if (pressure < 28) {
+    // Check for uneven wear patterns
+    const unevenWear = detectUnevenWear();
+    if (unevenWear && unevenWear.detected) {
+      if (unevenWear.severity === 'CRITICAL') {
+        status = 'CRITICAL';
+        riskLevel = 'HIGH';
+        summary = `🚨 UNEVEN TIRE WEAR DETECTED - ${unevenWear.difference}mm difference across tires. `;
+        recommendations.push({
+          action: 'Get wheel alignment and suspension inspection immediately - severe uneven wear detected',
+          priority: 'CRITICAL',
+          reason: `Tread depth varies by ${unevenWear.difference}mm (${unevenWear.minDepth}mm to ${unevenWear.maxDepth}mm). This indicates alignment problems, suspension damage, or improper inflation causing safety concerns.`,
+          urgency: 'Immediate - within 24 hours'
+        });
+        recommendations.push({
+          action: 'Check for vehicle pulling to one side or steering wheel off-center when driving straight',
+          priority: 'HIGH',
+          reason: 'These are early warning signs of alignment issues that cause uneven tire wear.',
+          urgency: 'Before next drive'
+        });
+      } else if (unevenWear.severity === 'WARNING') {
+        status = status === 'CRITICAL' ? 'CRITICAL' : 'WARNING';
+        riskLevel = riskLevel === 'HIGH' ? 'HIGH' : 'MEDIUM';
+        summary = `⚠️ Uneven tire wear pattern detected - ${unevenWear.difference}mm difference. `;
+        recommendations.push({
+          action: 'Schedule wheel alignment check within 1 week',
+          priority: 'HIGH',
+          reason: `Tread depth difference of ${unevenWear.difference}mm indicates developing alignment or suspension issues. Addressing now prevents costly tire replacement.`,
+          urgency: 'Within 1 week'
+        });
+        recommendations.push({
+          action: 'Inspect tires for inner or outer edge wearing faster than center',
+          priority: 'MEDIUM',
+          reason: 'Visual inspection helps identify wear patterns. Look for feathering on tread blocks (feels rough one direction, smooth the other).',
+          urgency: 'This week'
+        });
+      } else if (unevenWear.severity === 'ATTENTION') {
+        summary = `Minor uneven wear developing - ${unevenWear.difference}mm difference. `;
+        recommendations.push({
+          action: 'Check wheel alignment at next scheduled service',
+          priority: 'MEDIUM',
+          reason: `Slight tread depth difference of ${unevenWear.difference}mm detected. Preventive alignment check recommended.`,
+          urgency: 'Within 1 month'
+        });
+      }
+    }
+    
+    // Driver-friendly analysis based on EV Maintenance Manual thresholds
+    if (pressure < 25) {
       status = 'CRITICAL';
       riskLevel = 'HIGH';
-      summary = 'Critical tire pressure detected requiring immediate attention. ';
+      summary = '🚨 STOP DRIVING - Your tire pressure is critically low and unsafe. ';
       recommendations.push({
-        action: 'URGENT: Inflate tire to recommended pressure immediately',
+        action: 'STOP and add air immediately - do not drive until inflated to 32 PSI',
         priority: 'CRITICAL',
-        reason: 'Tire pressure below safe operating threshold',
-        urgency: 'Immediately'
+        reason: 'Pressure below 25 PSI can cause tire failure, blowout, or loss of control. This is a safety emergency.',
+        urgency: 'RIGHT NOW - find nearest gas station (free air at most)'
       });
-    } else if (pressure < 30) {
+    } else if (pressure < 28) {
+      status = 'CRITICAL';
+      riskLevel = 'HIGH';
+      summary = 'Your tire pressure is dangerously low - inflate today. ';
+      recommendations.push({
+        action: 'Add air to your tires today at any gas station (free at most stations)',
+        priority: 'CRITICAL',
+        reason: 'Low pressure increases stopping distance, causes tire failure, and wastes fuel. For EVs, reduces range by 3-5%.',
+        urgency: 'Today - takes 5 minutes'
+      });
+    } else if (pressure < 32) {
       status = 'WARNING';
       riskLevel = 'MEDIUM';
-      summary = 'Low tire pressure detected that should be addressed soon. ';
+      summary = 'Your tire pressure is a bit low - easy fix that saves money. ';
       recommendations.push({
-        action: 'Inflate tire to recommended 32 PSI',
+        action: 'Check and inflate tires to 32-36 PSI (check your driver door sticker for exact number)',
         priority: 'HIGH',
-        reason: 'Tire pressure below optimal range',
-        urgency: 'Within 24 hours'
+        reason: 'Proper pressure improves fuel economy by 3% and extends tire life. For EVs, proper pressure is critical for range.',
+        urgency: 'This week - takes 5 minutes'
       });
     }
     
     if (treadDepth < 3) {
       status = 'CRITICAL';
       riskLevel = 'HIGH';
-      summary += 'Dangerous tread depth requiring immediate tire replacement. ';
+      summary += 'Your tire tread is below safe minimum - replace immediately. ';
       recommendations.push({
-        action: 'URGENT: Replace tire immediately - below legal limit',
+        action: 'Replace your tires this week - below legal minimum (shop Costco, Discount Tire, or local shops)',
         priority: 'CRITICAL',
-        reason: 'Tread depth below safe driving threshold',
-        urgency: 'Immediately'
+        reason: 'Tread below 3mm is dangerous in wet conditions - much longer stopping distance and hydroplaning risk. This is a safety issue.',
+        urgency: 'Within 24 hours - unsafe to drive in rain'
       });
-    } else if (treadDepth < 5) {
+    } else if (treadDepth < 4) {
       status = status === 'CRITICAL' ? 'CRITICAL' : 'WARNING';
       riskLevel = riskLevel === 'HIGH' ? 'HIGH' : 'MEDIUM';
-      summary += 'Low tread depth requiring tire replacement planning. ';
+      summary += 'Your tire tread is at replacement threshold - schedule soon. ';
       recommendations.push({
-        action: 'Schedule tire replacement within 2 weeks',
+        action: 'Schedule tire replacement within 2 weeks - at recommended replacement point',
         priority: 'HIGH',
-        reason: 'Tread depth approaching replacement threshold',
+        reason: 'Manual recommends replacement at 4mm (5/32") for safety. Below this, wet traction is significantly reduced.',
         urgency: 'Within 2 weeks'
+      });
+    } else if (treadDepth < 6) {
+      status = status === 'CRITICAL' ? 'CRITICAL' : 'WARNING';
+      riskLevel = riskLevel === 'HIGH' ? 'HIGH' : 'MEDIUM';
+      summary += 'Your tire tread is getting low - start planning for new tires. ';
+      recommendations.push({
+        action: 'Start shopping for new tires - you have 1-2 months left',
+        priority: 'MEDIUM',
+        reason: 'Tires are approaching replacement point. Planning ahead helps you find better deals and avoid emergency purchases.',
+        urgency: 'Within 1-2 months'
       });
     }
     
     if (temperature > 80) {
       status = status === 'CRITICAL' ? 'CRITICAL' : 'WARNING';
       recommendations.push({
-        action: 'Monitor tire temperature - check for overheating causes',
+        action: 'Your tire is running hot - let it cool down and check pressure when cold',
         priority: 'MEDIUM',
-        reason: 'Elevated tire temperature detected',
-        urgency: 'Next inspection'
+        reason: 'Hot tires (>80°C) can indicate low pressure, overload, or aggressive driving. Check pressure when tires are cold (before driving).',
+        urgency: 'Before your next drive - let cool 15-30 minutes'
       });
     }
     
     // Default good condition
     if (recommendations.length === 0) {
-      summary = 'Tire analysis shows good overall condition with routine maintenance recommended. ';
+      summary = 'Your tires look good! Keep up the routine checks. ';
       recommendations.push({
-        action: 'Continue regular tire pressure monitoring',
+        action: 'Weekly: Check tire pressure with gauge (all 4 tires + spare)',
         priority: 'LOW',
-        reason: 'Preventive maintenance for optimal performance',
-        urgency: 'Next scheduled maintenance'
+        reason: 'Weekly checks recommended for EVs. Proper pressure improves range by 3-5% and extends tire life. Takes 5 minutes.',
+        urgency: 'Weekly - set a phone reminder'
+      });
+      recommendations.push({
+        action: 'Monthly: Inspect for cuts, bulges, uneven wear, and check tread depth',
+        priority: 'LOW',
+        reason: 'Monthly visual inspection catches problems early. Look for embedded objects, sidewall damage, and wear patterns.',
+        urgency: 'Monthly inspection - 5 minutes'
+      });
+      recommendations.push({
+        action: 'Every 8,000-10,000 km: Rotate tires for even wear',
+        priority: 'LOW',
+        reason: 'Rotation extends tire life by 20-30%. EVs are heavier and wear tires 20% faster than gas cars.',
+        urgency: 'Every 6 months or at oil change'
+      });
+      recommendations.push({
+        action: 'Check tire age: Replace tires older than 6 years regardless of tread',
+        priority: 'LOW',
+        reason: 'Rubber degrades over time. Check DOT code on sidewall (last 4 digits = week/year). Tires >6 years old are unsafe.',
+        urgency: 'Annual check - mark calendar'
       });
     }
     
@@ -587,6 +671,60 @@ const TiresPage = () => {
     // Round to realistic precision (0.5mm increments)
     return Math.round(baseTread * 2) / 2;
   };
+
+  // Detect uneven tire wear patterns (Section 5.6 from manual)
+  const detectUnevenWear = () => {
+    if (!csvData || csvData.length === 0) return null;
+    
+    // Get tread depths for all tire positions for current vehicle
+    const vehicleTires = csvData.filter(row => row.vehicle_id === currentData.vehicle_id);
+    if (vehicleTires.length < 4) return null;
+    
+    // Get latest reading for each position
+    const positions = ['front_left', 'front_right', 'rear_left', 'rear_right'];
+    const treadDepths = {};
+    
+    positions.forEach(pos => {
+      const posData = vehicleTires.filter(row => row.position === pos);
+      if (posData.length > 0) {
+        const latest = posData[posData.length - 1];
+        treadDepths[pos] = parseFloat(latest.tread_depth_mm) || 0;
+      }
+    });
+    
+    // Calculate tread depth differences
+    const depths = Object.values(treadDepths);
+    if (depths.length < 4) return null;
+    
+    const maxDepth = Math.max(...depths);
+    const minDepth = Math.min(...depths);
+    const difference = maxDepth - minDepth;
+    
+    // Check for uneven wear based on manual thresholds
+    let severity = null;
+    let status = null;
+    
+    if (difference > 2.0) {
+      severity = 'CRITICAL';
+      status = 'Immediate service needed - tread depth difference >2mm indicates severe alignment or suspension issues';
+    } else if (difference >= 1.0) {
+      severity = 'WARNING';
+      status = 'Schedule alignment check within 1 week - tread depth difference 1-2mm detected';
+    } else if (difference >= 0.5) {
+      severity = 'ATTENTION';
+      status = 'Minor wear pattern developing - check alignment within 1 month';
+    }
+    
+    return severity ? {
+      detected: true,
+      severity: severity,
+      difference: difference.toFixed(1),
+      maxDepth: maxDepth.toFixed(1),
+      minDepth: minDepth.toFixed(1),
+      status: status,
+      treadDepths: treadDepths
+    } : null;
+  };
   
   // Dynamic prediction calculation functions
   const calculateWearPercentage = (treadDepth) => {
@@ -685,7 +823,7 @@ const TiresPage = () => {
     console.log('Using fallback rule-based recommendations');
     const predictions = calculateDynamicPredictions(currentData);
     const currentStatus = predictions?.status || "GOOD";
-    const threadDepth = parseFloat(currentData.tread_depth_mm) || 10.0;
+    const treadDepth = parseFloat(currentData.tread_depth_mm) || 10.0;
     
     const fallbackRecs = [];
     
@@ -709,7 +847,7 @@ const TiresPage = () => {
     }
     
     // Limit based on tread depth
-    const numRecommendations = threadDepth < 4.0 ? 3 : threadDepth < 8.0 ? 2 : 1;
+    const numRecommendations = treadDepth < 4.0 ? 3 : treadDepth < 8.0 ? 2 : 1;
     return fallbackRecs.slice(0, numRecommendations);
   };
 
@@ -850,12 +988,6 @@ const TiresPage = () => {
   // ML INTEGRATION COMPLETE - Using real predictions from tire_predictor.py and enhanced_maintenance_agent.py
   const remainingLife = getRemainingLife();
   const aiRecommendations = getAiRecommendations();
-
-  // Debug logging for realistic tire metrics
-  const currentRealisticPressure = getRealisticPressure();
-  const currentRealisticTemp = getRealisticTemperature();
-  const currentRealisticTread = getRealisticTreadDepth();
-  console.log(`Realistic Tire Metrics - PSI: ${currentRealisticPressure.toFixed(1)} | Temp: ${currentRealisticTemp}°C | Tread: ${currentRealisticTread.toFixed(1)}mm`);
   const replacementMessages = getReplacementMessages();
   
   // DYNAMIC VIBRATION CALCULATION - All data from CSV tire_wear_data.csv
@@ -1167,7 +1299,7 @@ const TiresPage = () => {
                   <div>
                     {/* CSV DATA: Tread depth from tread_depth_mm */}
                     <div className="load">{formatValue(currentData.tread_depth_mm, 'mm', '8.0mm')}</div>
-                    <div className="tire-position">Thread</div>
+                    <div className="tire-position">Tread</div>
                   </div>
                   <div>
                     {/* CSV DATA: Temperature from temperature_c */}
@@ -1197,7 +1329,7 @@ const TiresPage = () => {
                   <div>
                     {/* CSV DATA: Tread depth from tread_depth_mm */}
                     <div className="load">{formatValue(currentData.tread_depth_mm, 'mm', '8.0mm')}</div>
-                    <div className="tire-position">Thread</div>
+                    <div className="tire-position">Tread</div>
                   </div>
                   {/* CSV DATA: Wear pattern from anomaly_type */}
                   <div className="wear-pattern" style={{ marginRight: '15px' }}>{formatWearPattern(currentData.anomaly_type)}</div>
@@ -1226,7 +1358,7 @@ const TiresPage = () => {
                   <div>
                     {/* CSV DATA: Tread depth from tread_depth_mm */}
                     <div className="load">{formatValue(currentData.tread_depth_mm, 'mm', '8.0mm')}</div>
-                    <div className="tire-position">Thread</div>
+                    <div className="tire-position">Tread</div>
                   </div>
                   <div>
                     {/* CSV DATA: Temperature from temperature_c */}
@@ -1256,7 +1388,7 @@ const TiresPage = () => {
                   <div>
                     {/* CSV DATA: Tread depth from tread_depth_mm */}
                     <div className="load">{formatValue(currentData.tread_depth_mm, 'mm', '8.0mm')}</div>
-                    <div className="tire-position">Thread</div>
+                    <div className="tire-position">Tread</div>
                   </div>
                   {/* CSV DATA: Wear pattern from anomaly_type */}
                   <div className="wear-pattern" style={{ marginRight: '15px' }}>{formatWearPattern(currentData.anomaly_type)}</div>

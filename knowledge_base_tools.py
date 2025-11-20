@@ -124,3 +124,71 @@ def get_tread_depth_guidance(tread_depth_mm: float) -> str:
     """
     query = f"Tire tread depth is {tread_depth_mm}mm. What does the manual say about this depth? When should tires be replaced? What are the safety thresholds?"
     return get_tire_maintenance_guidance(query)
+
+
+@tool
+def get_motor_maintenance_guidance(question: str) -> str:
+    """
+    Retrieve motor/drivetrain maintenance guidance from Section 2.1 of the EV Preventive Maintenance Manual.
+    Use this tool for motor overheating, performance issues, temperature monitoring, and drivetrain problems.
+    
+    Args:
+        question: Motor maintenance question (e.g., "What causes motor overheating?", 
+                 "Normal motor temperature range?", "Motor performance degradation?")
+        
+    Returns:
+        Section 2.1 guidance from the EV Maintenance Manual with confidence scores
+    """
+    if not KNOWLEDGE_BASE_ID:
+        return "Knowledge Base not configured. Please set KNOWLEDGE_BASE_ID environment variable."
+    
+    # Enhance query to target Section 2.1
+    enhanced_query = f"Section 2.1 Motor Drivetrain: {question}"
+    
+    try:
+        response = bedrock_runtime.retrieve(
+            knowledgeBaseId=KNOWLEDGE_BASE_ID,
+            retrievalQuery={'text': enhanced_query},
+            retrievalConfiguration={
+                'vectorSearchConfiguration': {
+                    'numberOfResults': 3,
+                    'overrideSearchType': 'HYBRID'
+                }
+            }
+        )
+        
+        if not response.get('retrievalResults'):
+            return "No specific motor guidance found in manual for this question."
+        
+        # Format results with sources
+        passages = []
+        for idx, result in enumerate(response['retrievalResults'], 1):
+            content = result['content']['text']
+            score = result.get('score', 0)
+            
+            location = result.get('location', {})
+            source_info = f"(Confidence: {score:.2f})"
+            if location.get('s3Location'):
+                source_info += f" [Source: {location['s3Location'].get('uri', 'Manual')}]"
+            
+            passages.append(f"**Passage {idx}** {source_info}:\n{content}")
+        
+        return "\n\n".join(passages)
+        
+    except Exception as e:
+        return f"Error retrieving motor guidance: {str(e)}"
+
+
+@tool
+def get_motor_temperature_guidance(temperature_c: float) -> str:
+    """
+    Get motor temperature guidance from Section 2.1 based on current temperature reading.
+    
+    Args:
+        temperature_c: Current motor temperature in Celsius
+        
+    Returns:
+        Temperature-specific guidance from the manual
+    """
+    query = f"Motor temperature {temperature_c}°C - is this normal? What are safe operating temperatures for EV motors?"
+    return get_motor_maintenance_guidance(query)

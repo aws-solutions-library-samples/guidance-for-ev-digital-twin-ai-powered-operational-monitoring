@@ -64,11 +64,12 @@ const Vehicle1ConnVehicle = () => {
   };
 
   const getFault = () => {
-    if (!tireData) return '⚠️ Critical Tire Wear';
+    if (!tireData) return '⚠️ Uneven Tire Wear - Check Alignment';
     if (anomaly === 'puncture') return '🚨 Tire Puncture Detected';
-    if (tread < 4) return '⚠️ Critical Tire Wear';
+    if (anomaly === 'uneven_wear') return '⚠️ Uneven Tire Wear - Check Alignment';
+    if (tread < 4) return '⚠️ Uneven Tire Wear - Check Alignment';
     if (pressure < 28) return '⚠️ Low Tire Pressure';
-    if (anomaly === 'irregular_wear') return '⚠️ Irregular Tire Wear';
+    if (anomaly === 'irregular_wear') return '⚠️ Uneven Tire Wear - Check Alignment';
     if (tread < 6) return '⚠️ Tire Wear Detected';
     return '✅ Tires Normal';
   };
@@ -83,12 +84,13 @@ const Vehicle1ConnVehicle = () => {
   };
 
   const getMessage = () => {
-    if (!tireData) return 'Tire wear below safety threshold';
+    if (!tireData) return 'Uneven tire wear - alignment check needed';
     if (anomaly === 'puncture') return 'Puncture detected - immediate service required';
+    if (anomaly === 'uneven_wear') return 'Uneven tire wear - alignment check needed';
     if (tread < 3) return 'Tread depth critically low - replace immediately';
-    if (tread < 4) return 'Tire wear below safety threshold';
+    if (tread < 4) return 'Uneven tire wear - alignment check needed';
     if (pressure < 28) return 'Tire pressure critically low';
-    if (anomaly === 'irregular_wear') return 'Uneven wear pattern detected';
+    if (anomaly === 'irregular_wear') return 'Uneven tire wear - alignment check needed';
     if (tread < 6) return 'Tire tread approaching replacement threshold';
     return 'All tires within normal parameters';
   };
@@ -225,7 +227,7 @@ const Vehicle1ConnVehicle = () => {
 
                 <div className="connvehicle-safety-checks">
                   <div className="connvehicle-safety-title">Faults</div>
-                  <div className="connvehicle-fault-badge" style={{ backgroundColor: fault.includes('✅') ? '#00ff88' : '#ff4444', color: 'white' }}>{fault}</div>
+                  <div className="connvehicle-fault-badge" style={{ backgroundColor: fault.includes('✅') ? '#00ff88' : fault.includes('🚨') ? '#ff4444' : '#ff9900', color: 'white' }}>{fault}</div>
                 </div>
 
                 <div className="connvehicle-motor-eff">
@@ -249,7 +251,7 @@ const Vehicle1ConnVehicle = () => {
               <div className="connvehicle-card" onClick={() => navigate(`/car/2T1BURHE8JC987654/tires`)}>
                 <img src={require('../assets/icons/tireicon.png')} alt="Tires" style={{ width: '20px', height: '20px', margin: '0 auto' }} />
                 <div className="connvehicle-card-title">Tires</div>
-                <div className="connvehicle-card-error">{message}</div>
+                <div className="connvehicle-card-error" style={{ color: message.includes('Puncture') || message.includes('critically low') ? '#ff4444' : '#ff9900' }}>{message}</div>
               </div>
               <div className="connvehicle-card" onClick={() => navigate(`/car/2T1BURHE8JC987654/invertor`)}>
                 <img src={require('../assets/icons/invertoricon.png')} alt="Inverter" style={{ width: '20px', height: '20px', margin: '0 auto' }} />

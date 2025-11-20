@@ -1,0 +1,10 @@
+# Deployment logs (uncomment to ignore)
+# *.log
+# appointment_scheduler_agent/*.log
+# tire_ordering_agent/*.log
+
+# Deployment artifacts (uncomment to ignore)
+# deployment_arns.txt
+
+# Optional: Ignore deployment summary if you don't want to commit it
+# DEPLOYMENT_SUMMARY.md

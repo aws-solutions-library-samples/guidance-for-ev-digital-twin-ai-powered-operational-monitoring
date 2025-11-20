@@ -1,0 +1,6 @@
+vin,vehicle_type,year,tire_size,recommended_pressure_psi,min_tread_depth_mm,replacement_threshold_mm,rotation_interval_miles,expected_lifespan_miles,load_index,speed_rating,tire_type,curb_weight_lbs,motor_type,drivetrain,vehicle_class,verified,manual_source,verification_date
+EV-1001,Electric Sedan,2023,215/55R17,32,1.6,3.2,7500,60000,91,H,All-Season,3500,Electric Motor,AWD,Electric Sedan,True,Electric Vehicle Preventive Maintenance Manual.pdf,2025-11-06
+EV-1002,Electric Sedan,2023,215/55R17,32,1.6,3.2,7500,60000,91,H,All-Season,3500,Electric Motor,AWD,Electric Sedan,True,Electric Vehicle Preventive Maintenance Manual.pdf,2025-11-06
+EV-1003,Electric SUV,2023,235/55R18,35,1.6,3.2,7500,60000,100,H,All-Season,4200,Electric Motor,AWD,Electric SUV,True,Electric Vehicle Preventive Maintenance Manual.pdf,2025-11-06
+EV-1004,Electric Sedan,2023,215/55R17,32,1.6,3.2,7500,60000,91,H,All-Season,3500,Electric Motor,AWD,Electric Sedan,True,Electric Vehicle Preventive Maintenance Manual.pdf,2025-11-06
+EV-1005,Electric SUV,2023,235/55R18,35,1.6,3.2,7500,60000,100,H,All-Season,4200,Electric Motor,AWD,Electric SUV,True,Electric Vehicle Preventive Maintenance Manual.pdf,2025-11-06
