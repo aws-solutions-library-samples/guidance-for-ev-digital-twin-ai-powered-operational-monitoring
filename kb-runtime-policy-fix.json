@@ -1,0 +1,18 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "BedrockKnowledgeBaseAccess",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock-agent-runtime:Retrieve",
+        "bedrock-agent-runtime:RetrieveAndGenerate",
+        "bedrock:Retrieve",
+        "bedrock:RetrieveAndGenerate"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:us-east-1:009296485814:knowledge-base/HCHPVDE0PX"
+      ]
+    }
+  ]
+}

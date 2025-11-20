@@ -20,6 +20,7 @@ RUN pip install --no-cache-dir -r requirements-agentcore.txt
 # Copy application code
 COPY agentcore_runtime_app.py .
 COPY agentcore_maintenance_agent.py .
+COPY knowledge_base_tools.py .
 COPY tire_predictor.py .
 COPY tire_wear_data.csv .
 COPY motor_sensor_data.csv .
@@ -29,6 +30,9 @@ COPY tire_models_*.pkl .
 
 # Create directory for models if they don't exist
 RUN mkdir -p models
+
+# Set environment variable for Knowledge Base
+ENV KNOWLEDGE_BASE_ID=HCHPVDE0PX
 
 # Expose port (AgentCore Runtime uses 8080)
 EXPOSE 8080

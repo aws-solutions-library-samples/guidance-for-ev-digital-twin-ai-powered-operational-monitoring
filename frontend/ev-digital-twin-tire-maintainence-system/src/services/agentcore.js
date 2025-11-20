@@ -161,7 +161,7 @@ class AgentCoreService {
       }
 
       console.log(`Fetching fresh GenAI analysis for vehicle ${vehicleId}`);
-      const response = await this.chat(`Analyze tire condition for vehicle ${tireData.make} ${tireData.model} (${tireData.year}). Current metrics: Pressure ${tireData.pressure_psi} PSI, Tread ${tireData.tread_depth_mm}mm, Temperature ${tireData.temperature_c}°C. Provide specific maintenance recommendations focusing on safety and performance.`, vin);
+      const response = await this.chat(`Analyze tire condition for my ${tireData.make} ${tireData.model} (${tireData.year}). Current readings: Pressure ${tireData.pressure_psi} PSI, Tread ${tireData.tread_depth_mm}mm, Temperature ${tireData.temperature_c}°C. Give me 2-3 simple, driver-friendly recommendations. Focus on: 1) What should I do? 2) Why does it matter for my safety/wallet? 3) When should I do it? Use everyday language, not mechanic jargon.`, vin);
 
       // Store successful response in cache
       const analysisData = { response, timestamp: Date.now(), fromCache: false };
