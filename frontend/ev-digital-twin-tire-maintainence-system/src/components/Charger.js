@@ -210,11 +210,7 @@ const Charger = () => {
   };
 
   // Initialize GenAI analysis
-  useEffect(() => {
-    // Start analysis after a delay
-    const analysisTimer = setTimeout(analyzeChargerWithGenAI, 3000);
-    return () => clearTimeout(analysisTimer);
-  }, []);
+  // Removed automatic analysis - now triggered by button click
 
   // Calculate dynamic remaining useful life based on charger health
   const calculateChargerRemainingLife = useMemo(() => {
@@ -854,19 +850,34 @@ const Charger = () => {
                 <div className="genai-recommendations" style={{ marginTop: '20px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                     <h3 style={{ fontSize: spacing.titleFontSize, margin: 0 }}>GenAI Recommendations</h3>
-                    {isAnalyzing && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{ 
-                          width: '12px', 
-                          height: '12px', 
-                          border: '2px solid #00ff88', 
-                          borderTop: '2px solid transparent', 
-                          borderRadius: '50%', 
-                          animation: 'spin 1s linear infinite' 
-                        }}></div>
-                        <span style={{ fontSize: '10px', color: '#00ff88' }}>Analyzing...</span>
-                      </div>
-                    )}
+                    <button
+                      onClick={analyzeChargerWithGenAI}
+                      disabled={isAnalyzing}
+                      style={{
+                        background: isAnalyzing ? '#666' : '#00ff88',
+                        color: isAnalyzing ? '#ccc' : '#000',
+                        border: 'none',
+                        padding: '6px 12px',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        cursor: isAnalyzing ? 'not-allowed' : 'pointer',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      {isAnalyzing ? (
+                        <>
+                          <div style={{ width: '10px', height: '10px', border: '2px solid #999', borderTop: '2px solid #ccc', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          🤖 Analyze
+                        </>
+                      )}
+                    </button>
                   </div>
                   
                   <p style={{ 

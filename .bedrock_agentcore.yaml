@@ -36,7 +36,7 @@ agents:
       execution_role: arn:aws:iam::009296485814:role/AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-cdd8445f6e
       source_bucket: bedrock-agentcore-codebuild-sources-009296485814-us-east-1
     memory:
-      mode: STM_ONLY
+      mode: STM_AND_LTM
       memory_id: vehicle_maintenance_agent_mem-Zz75E62LMt
       memory_arn: arn:aws:bedrock-agentcore:us-east-1:009296485814:memory/vehicle_maintenance_agent_mem-Zz75E62LMt
       memory_name: vehicle_maintenance_agent_mem

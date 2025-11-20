@@ -40,17 +40,20 @@ def invoke(payload):
             maintenance_agent.memory_hooks.actor_id = actor_id
     
     # BYPASS: If prompt is tire ordering, call tool directly
-    if "order_tire_online" in user_input.lower():
-        try:
-            import re
-            match = re.search(r'order_tire_online\((\d+)\)', user_input)
-            if match:
-                vehicle_id = int(match.group(1))
-                print(f"BYPASS: Directly calling order_tire_online({vehicle_id})")
-                result = order_tire_online(vehicle_id)
-                return result
-        except Exception as e:
-            print(f"BYPASS FAILED: {str(e)}")
+    # NOTE: Commented out to fix multiple browser sessions issue (was causing 4 sessions)
+    # Uncomment if needed, but agent should handle tool calls naturally
+    # if "order_tire_online" in user_input.lower():
+    #     try:
+    #         import re
+    #         # Match both numeric IDs and VIN strings
+    #         match = re.search(r'order_tire_online\((["\']?)([A-Z0-9]+)\1\)', user_input)
+    #         if match:
+    #             vehicle_id = match.group(2)
+    #             print(f"BYPASS: Directly calling order_tire_online({vehicle_id})")
+    #             result = order_tire_online(vehicle_id)
+    #             return result
+    #     except Exception as e:
+    #         print(f"BYPASS FAILED: {str(e)}")
     
     # Invoke agent with memory hooks active
     response = agent(user_input)

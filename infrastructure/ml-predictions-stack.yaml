@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'DynamoDB table for ML predictions (tire wear and motor failure)'
+
+Resources:
+  MLPredictionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: vehicle-ml-predictions
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: vin
+          AttributeType: S
+        - AttributeName: prediction_type
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: vin
+          KeyType: HASH
+        - AttributeName: prediction_type
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: timestamp-index
+          KeySchema:
+            - AttributeName: prediction_type
+              KeyType: HASH
+            - AttributeName: timestamp
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      Tags:
+        - Key: Application
+          Value: EV-Digital-Twin
+        - Key: Component
+          Value: ML-Predictions
+
+Outputs:
+  TableName:
+    Description: ML Predictions DynamoDB Table Name
+    Value: !Ref MLPredictionsTable
+    Export:
+      Name: !Sub '${AWS::StackName}-TableName'
+  
+  TableArn:
+    Description: ML Predictions DynamoDB Table ARN
+    Value: !GetAtt MLPredictionsTable.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-TableArn'

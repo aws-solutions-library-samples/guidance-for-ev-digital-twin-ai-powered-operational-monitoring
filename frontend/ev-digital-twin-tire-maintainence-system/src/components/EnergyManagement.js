@@ -217,96 +217,90 @@ const EnergyManagement = () => {
   }, [showPrediction]);
 
   // GenAI Analysis for Energy Management
-  useEffect(() => {
-    const analyzeEnergyManagementWithGenAI = async () => {
-      console.log('Starting Energy Management GenAI analysis...');
-      setGenAiLoading(true);
-      
-      // Simulate energy management data for analysis
-      const energyData = {
-        thermalEfficiency: 60 + Math.sin(Date.now() * 0.0005) * 10,
-        motorTemperature: 60 + Math.sin(Date.now() * 0.0003) * 15,
-        coolantFlow: 5 + Math.sin(Date.now() * 0.0004) * 1,
-        hvacUsage: 65 + Math.sin(Date.now() * 0.0007) * 15,
-        regenerativeEfficiency: 40 + Math.sin(Date.now() * 0.0007) * 12,
-        energyRecovered: 0.05 + Math.sin(Date.now() * 0.0006) * 0.02
-      };
-      
-      try {
-        // Simulate GenAI analysis with realistic delay
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Create realistic energy management analysis
-        const analysis = {
-          overall_status: energyData.thermalEfficiency > 70 ? 'GOOD' : energyData.thermalEfficiency > 50 ? 'WARNING' : 'CRITICAL',
-          risk_level: energyData.motorTemperature > 80 ? 'HIGH' : energyData.motorTemperature > 65 ? 'MEDIUM' : 'LOW',
-          key_findings_summary: `Energy management system analysis shows thermal efficiency at ${energyData.thermalEfficiency.toFixed(1)}% with motor temperature at ${energyData.motorTemperature.toFixed(1)}°C. HVAC usage is currently ${energyData.hvacUsage.toFixed(1)}% with regenerative braking recovering ${energyData.energyRecovered.toFixed(3)} kWh per event.`,
-          recommendations: [
-            {
-              action: 'Optimize thermal management system for improved efficiency',
-              priority: energyData.thermalEfficiency < 60 ? 'HIGH' : 'MEDIUM',
-              reason: 'Current thermal efficiency could be improved through better heat management',
-              urgency: energyData.thermalEfficiency < 50 ? 'Within 24 hours' : 'Within 1 week'
-            },
-            {
-              action: 'Monitor coolant system performance and flow rates',
-              priority: energyData.coolantFlow < 4 ? 'HIGH' : 'MEDIUM',
-              reason: 'Coolant flow rate affects overall thermal management efficiency',
-              urgency: 'Next maintenance cycle'
-            },
-            {
-              action: 'Adjust HVAC settings for optimal energy consumption',
-              priority: energyData.hvacUsage > 70 ? 'MEDIUM' : 'LOW',
-              reason: 'High HVAC usage impacts overall vehicle energy efficiency',
-              urgency: 'When convenient'
-            },
-            {
-              action: 'Enhance regenerative braking calibration',
-              priority: energyData.regenerativeEfficiency < 35 ? 'HIGH' : 'MEDIUM',
-              reason: 'Regenerative braking efficiency can be optimized for better energy recovery',
-              urgency: 'Next service appointment'
-            }
-          ],
-          next_inspection: "45 days",
-          source: "Energy Management GenAI Analysis"
-        };
-        
-        setGenAiAnalysis(analysis);
-        console.log('Energy Management GenAI analysis completed:', analysis);
-        
-      } catch (error) {
-        console.error('Energy Management GenAI analysis failed:', error);
-        
-        // Fallback analysis
-        const fallbackAnalysis = {
-          error: true,
-          error_message: 'GenAI service temporarily unavailable. Using intelligent energy management fallback analysis.',
-          overall_status: 'GOOD',
-          risk_level: 'LOW',
-          key_findings_summary: 'Energy management system operating within normal parameters with routine optimization opportunities identified.',
-          recommendations: [
-            {
-              action: 'Continue regular energy management system monitoring',
-              priority: 'LOW',
-              reason: 'Preventive maintenance for optimal energy efficiency',
-              urgency: 'Next scheduled maintenance'
-            }
-          ],
-          next_inspection: "45 days",
-          source: "Energy Management Rule-Based Analysis",
-          fallback: true
-        };
-        
-        setGenAiAnalysis(fallbackAnalysis);
-      } finally {
-        setGenAiLoading(false);
-      }
+  const analyzeEnergyManagementWithGenAI = async () => {
+    console.log('Starting Energy Management GenAI analysis...');
+    setGenAiLoading(true);
+    
+    // Simulate energy management data for analysis
+    const energyData = {
+      thermalEfficiency: 60 + Math.sin(Date.now() * 0.0005) * 10,
+      motorTemperature: 60 + Math.sin(Date.now() * 0.0003) * 15,
+      coolantFlow: 5 + Math.sin(Date.now() * 0.0004) * 1,
+      hvacUsage: 65 + Math.sin(Date.now() * 0.0007) * 15,
+      regenerativeEfficiency: 40 + Math.sin(Date.now() * 0.0007) * 12,
+      energyRecovered: 0.05 + Math.sin(Date.now() * 0.0006) * 0.02
     };
     
-    // Start analysis after a delay
-    const analysisTimer = setTimeout(analyzeEnergyManagementWithGenAI, 3000);
-    return () => clearTimeout(analysisTimer);
-  }, []);
+    try {
+      // Simulate GenAI analysis with realistic delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Create realistic energy management analysis
+      const analysis = {
+        overall_status: energyData.thermalEfficiency > 70 ? 'GOOD' : energyData.thermalEfficiency > 50 ? 'WARNING' : 'CRITICAL',
+        risk_level: energyData.motorTemperature > 80 ? 'HIGH' : energyData.motorTemperature > 65 ? 'MEDIUM' : 'LOW',
+        key_findings_summary: `Energy management system analysis shows thermal efficiency at ${energyData.thermalEfficiency.toFixed(1)}% with motor temperature at ${energyData.motorTemperature.toFixed(1)}°C. HVAC usage is currently ${energyData.hvacUsage.toFixed(1)}% with regenerative braking recovering ${energyData.energyRecovered.toFixed(3)} kWh per event.`,
+        recommendations: [
+          {
+            action: 'Optimize thermal management system for improved efficiency',
+            priority: energyData.thermalEfficiency < 60 ? 'HIGH' : 'MEDIUM',
+            reason: 'Current thermal efficiency could be improved through better heat management',
+            urgency: energyData.thermalEfficiency < 50 ? 'Within 24 hours' : 'Within 1 week'
+          },
+          {
+            action: 'Monitor coolant system performance and flow rates',
+            priority: energyData.coolantFlow < 4 ? 'HIGH' : 'MEDIUM',
+            reason: 'Coolant flow rate affects overall thermal management efficiency',
+            urgency: 'Next maintenance cycle'
+          },
+          {
+            action: 'Adjust HVAC settings for optimal energy consumption',
+            priority: energyData.hvacUsage > 70 ? 'MEDIUM' : 'LOW',
+            reason: 'High HVAC usage impacts overall vehicle energy efficiency',
+            urgency: 'When convenient'
+          },
+          {
+            action: 'Enhance regenerative braking calibration',
+            priority: energyData.regenerativeEfficiency < 35 ? 'HIGH' : 'MEDIUM',
+            reason: 'Regenerative braking efficiency can be optimized for better energy recovery',
+            urgency: 'Next service appointment'
+          }
+        ],
+        next_inspection: "45 days",
+        source: "Energy Management GenAI Analysis"
+      };
+      
+      setGenAiAnalysis(analysis);
+      console.log('Energy Management GenAI analysis completed:', analysis);
+      
+    } catch (error) {
+      console.error('Energy Management GenAI analysis failed:', error);
+      
+      // Fallback analysis
+      const fallbackAnalysis = {
+        error: true,
+        error_message: 'GenAI service temporarily unavailable. Using intelligent energy management fallback analysis.',
+        overall_status: 'GOOD',
+        risk_level: 'LOW',
+        key_findings_summary: 'Energy management system operating within normal parameters with routine optimization opportunities identified.',
+        recommendations: [
+          {
+            action: 'Continue regular energy management system monitoring',
+            priority: 'LOW',
+            reason: 'Preventive maintenance for optimal energy efficiency',
+            urgency: 'Next scheduled maintenance'
+          }
+        ],
+        next_inspection: "45 days",
+        source: "Energy Management Rule-Based Analysis",
+        fallback: true
+      };
+      
+      setGenAiAnalysis(fallbackAnalysis);
+    } finally {
+      setGenAiLoading(false);
+    }
+  };
 
   // Responsive sizing functions
   const spacing = useMemo(() => {
@@ -1372,12 +1366,34 @@ const EnergyManagement = () => {
                 <div className="genai-recommendations" style={{ marginTop: '20px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                     <h3 style={{ fontSize: spacing.titleFontSize, margin: 0 }}>GenAI Recommendations</h3>
-                    {genAiLoading && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#ff9900' }}>
-                        <div className="spinner" style={{ width: '12px', height: '12px', border: '2px solid #333', borderTop: '2px solid #ff9900', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-                        Analyzing...
-                      </div>
-                    )}
+                    <button
+                      onClick={analyzeEnergyManagementWithGenAI}
+                      disabled={genAiLoading}
+                      style={{
+                        background: genAiLoading ? '#666' : '#00ff88',
+                        color: genAiLoading ? '#ccc' : '#000',
+                        border: 'none',
+                        padding: '6px 12px',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        cursor: genAiLoading ? 'not-allowed' : 'pointer',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      {genAiLoading ? (
+                        <>
+                          <div style={{ width: '10px', height: '10px', border: '2px solid #999', borderTop: '2px solid #ccc', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          🤖 Analyze
+                        </>
+                      )}
+                    </button>
                     {genAiAnalysis && !genAiLoading && (
                       <div style={{ fontSize: '11px', color: genAiAnalysis.error ? '#ff6b6b' : '#00ff88', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span>{genAiAnalysis.error ? '🛡️' : '🤖'}</span> 

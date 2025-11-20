@@ -108,7 +108,9 @@ class AgentCoreService {
       }
       
       // Retry logic for 503 errors (Lambda cold start)
-      if (error.message.includes('503') && retryAttempt < this.MAX_RETRIES) {
+      // BUT: Don't retry browser tool calls (they take 60-90 seconds and will always timeout)
+      const isBrowserTool = prompt.includes('order_tire_online');
+      if (error.message.includes('503') && retryAttempt < this.MAX_RETRIES && !isBrowserTool) {
         const delay = Math.pow(2, retryAttempt) * 2000; // Exponential backoff: 2s, 4s - give Lambda more warmup time
         console.log(`Retrying request after ${delay}ms (attempt ${retryAttempt + 1}/${this.MAX_RETRIES})...`);
         await new Promise(resolve => setTimeout(resolve, delay));

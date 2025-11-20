@@ -408,7 +408,7 @@ Then provide a brief explanation of the recommendation.`;
         // CASE 1: Order tires first (separate call)
         setApprovalStatus('browser-tool');
         
-        const tirePrompt = `order_tire_online(${selectedRecommendation.vehicleId})`;
+        const tirePrompt = `order_tire_online(${selectedRecommendation.vehicleName})`;
         
         try {
           const tireResponse = await agentCoreService.chat(tirePrompt);
@@ -569,7 +569,7 @@ Then provide a brief explanation of the recommendation.`;
         // Order tires and show confirmation modal
         setApprovalStatus('browser-tool');
         
-        const tirePrompt = `order_tire_online(${selectedRecommendation.vehicleId})`;
+        const tirePrompt = `order_tire_online(${selectedRecommendation.vehicleName})`;
         
         try {
           const tireResponse = await agentCoreService.chat(tirePrompt);
@@ -618,7 +618,7 @@ Then provide a brief explanation of the recommendation.`;
           }, 1000);
         };
         
-        waitForCompletion();
+        await waitForCompletion();
       } else {
         // No tire ordering - book appointment directly
         setApprovalStatus('processing');

@@ -243,7 +243,7 @@ const Invertor = () => {
     try {
       console.log('Calling enhanced AgentCore service for inverter analysis...');
       
-      const analysisResult = await agentCoreService.getInverterAnalysis('3', inverterDataForAnalysis, '3VWDX7AJ9DM456321');
+      const analysisResult = await agentCoreService.getInverterAnalysis('3VWDX7AJ9DM456321', inverterDataForAnalysis, '3VWDX7AJ9DM456321');
       
       console.log('Received enhanced Inverter GenAI analysis:', analysisResult);
       
