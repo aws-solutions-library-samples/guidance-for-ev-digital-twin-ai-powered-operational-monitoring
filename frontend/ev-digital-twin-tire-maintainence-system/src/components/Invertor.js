@@ -433,7 +433,7 @@ const Invertor = () => {
           recommendations.push({
             action: trimmed,
             priority: priority,
-            reason: "Based on Claude Sonnet 4.5 analysis of current inverter condition",
+            reason: "",
             urgency: priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance'
           });
         }

@@ -404,7 +404,7 @@ const Motor = () => {
         recommendations.push({
           action: cleaned,
           priority: priority,
-          reason: "Based on Claude Sonnet 4.5 analysis of current motor condition",
+          reason: "",
           urgency: priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance'
         });
       });

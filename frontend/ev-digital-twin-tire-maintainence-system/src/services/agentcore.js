@@ -160,8 +160,26 @@ class AgentCoreService {
         };
       }
 
-      console.log(`Fetching fresh GenAI analysis for vehicle ${vehicleId}`);
-      const response = await this.chat(`Analyze tire condition for my ${tireData.make} ${tireData.model} (${tireData.year}). Current readings: Pressure ${tireData.pressure_psi} PSI, Tread ${tireData.tread_depth_mm}mm, Temperature ${tireData.temperature_c}°C. Give me 2-3 simple, driver-friendly recommendations. Focus on: 1) What should I do? 2) Why does it matter for my safety/wallet? 3) When should I do it? Use everyday language, not mechanic jargon.`, vin);
+      console.log(`Fetching fresh GenAI analysis for vehicle ${vehicleId} (VIN: ${vin})`);
+      // Use VIN if available for proper vehicle identification
+      const vehicleIdentifier = vin || vehicleId;
+      
+      // Different prompts for EV-1001 vs other vehicles
+      const isEV1001 = vin === '2T1BURHE8JC987654' || vehicleId === '2T1BURHE8JC987654' || vehicleId === 'EV-1001';
+      
+      let prompt;
+      if (isEV1001) {
+        // EV-1001: Focus on uneven wear and Section 5.6 - use tool to check all tires
+        prompt = `Analyze tire condition for vehicle ${vehicleIdentifier}. Focus on uneven wear and provide 2-3 key recommendations.`;
+      } else {
+        // Other vehicles: Generic tire maintenance recommendations - use provided data
+        const pressure = tireData.pressure_psi || 32;
+        const tread = tireData.tread_depth_mm || 8;
+        const temp = tireData.temperature_c || 25;
+        prompt = `Analyze tire condition for ${tireData.make} ${tireData.model} (${tireData.year}). Current readings: Pressure ${pressure} PSI, Tread ${tread}mm, Temperature ${temp}°C. Provide 2-3 practical maintenance recommendations. Keep it simple and driver-friendly.`;
+      }
+      
+      const response = await this.chat(prompt, vin);
 
       // Store successful response in cache
       const analysisData = { response, timestamp: Date.now(), fromCache: false };

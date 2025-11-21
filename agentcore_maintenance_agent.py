@@ -511,14 +511,16 @@ def analyze_tire_condition(vehicle_id: str) -> str:
         # Get vehicle info
         vehicle_info = latest_data.iloc[0]
         
-        # Get manual specs
+        # Get manual specs - try matching by VIN first (manual uses 'vin' column with EV-XXXX format)
+        # The tire_data 'make' column actually contains the vehicle ID (EV-1001, etc.)
+        vehicle_identifier = str(vehicle_info.get('make', ''))  # This is actually EV-XXXX
+        
         manual_spec = agent_instance.manual_data[
-            (agent_instance.manual_data['make'] == vehicle_info['make']) & 
-            (agent_instance.manual_data['model'] == vehicle_info['model']) &
-            (agent_instance.manual_data['year'] == vehicle_info['year'])
+            agent_instance.manual_data['vin'] == vehicle_identifier
         ]
         
         if manual_spec.empty:
+            # Fallback to first entry if no match
             manual_spec = agent_instance.manual_data.iloc[0]
         else:
             manual_spec = manual_spec.iloc[0]
@@ -526,20 +528,22 @@ def analyze_tire_condition(vehicle_id: str) -> str:
         analysis = {
             "vehicle_info": {
                 "vehicle_id": str(vehicle_id),
-                "make": str(vehicle_info['make']),
-                "model": str(vehicle_info['model']),
-                "year": int(vehicle_info['year']),
-                "tire_size": str(vehicle_info['tire_size']),
-                "tire_brand": str(vehicle_info['tire_brand'])
+                "vehicle_identifier": vehicle_identifier,
+                "model": str(vehicle_info.get('model', 'Unknown')),
+                "year": int(vehicle_info.get('year', 0)),
+                "tire_size": str(vehicle_info.get('tire_size', 'Unknown')),
+                "tire_brand": str(vehicle_info.get('tire_brand', 'Unknown'))
             },
             "tire_conditions": {}
         }
         
         # Analyze each tire
+        tread_depths = {}
         for _, tire in latest_data.iterrows():
             position = tire['position']
             tread_depth = float(tire['tread_depth_mm'])
             pressure = float(tire['pressure_psi'])
+            tread_depths[position] = tread_depth
             
             # Calculate wear percentage
             max_depth = 10.0  # New tire depth
@@ -556,13 +560,54 @@ def analyze_tire_condition(vehicle_id: str) -> str:
             else:
                 status = "GOOD"
             
+            # Check for anomaly type (uneven wear flag from data)
+            anomaly_type = str(tire.get('anomaly_type', 'normal'))
+            
             analysis["tire_conditions"][position] = {
                 "tread_depth_mm": round(tread_depth, 2),
                 "pressure_psi": round(pressure, 1),
                 "temperature_c": round(float(tire['temperature_c']), 1),
                 "wear_percentage": round(wear_pct, 1),
                 "status": status,
+                "anomaly_type": anomaly_type,
                 "recommended_pressure": float(manual_spec['recommended_pressure_psi'])
+            }
+        
+        # CRITICAL: Check for uneven wear patterns (Section 5.6)
+        uneven_wear_detected = False
+        uneven_wear_details = []
+        
+        # Check front axle difference
+        if 'front_left' in tread_depths and 'front_right' in tread_depths:
+            front_diff = abs(tread_depths['front_left'] - tread_depths['front_right'])
+            if front_diff > 2.0:
+                uneven_wear_detected = True
+                uneven_wear_details.append(f"Front axle: {front_diff:.1f}mm difference (FL: {tread_depths['front_left']:.1f}mm, FR: {tread_depths['front_right']:.1f}mm)")
+            elif front_diff > 1.0:
+                uneven_wear_details.append(f"Front axle: {front_diff:.1f}mm difference - monitor closely")
+        
+        # Check rear axle difference
+        if 'rear_left' in tread_depths and 'rear_right' in tread_depths:
+            rear_diff = abs(tread_depths['rear_left'] - tread_depths['rear_right'])
+            if rear_diff > 2.0:
+                uneven_wear_detected = True
+                uneven_wear_details.append(f"Rear axle: {rear_diff:.1f}mm difference (RL: {tread_depths['rear_left']:.1f}mm, RR: {tread_depths['rear_right']:.1f}mm)")
+            elif rear_diff > 1.0:
+                uneven_wear_details.append(f"Rear axle: {rear_diff:.1f}mm difference - monitor closely")
+        
+        # Check for anomaly_type flag
+        for position, tire_data in analysis["tire_conditions"].items():
+            if tire_data.get("anomaly_type") == "uneven_wear":
+                uneven_wear_detected = True
+                uneven_wear_details.append(f"{position}: flagged as uneven_wear in sensor data")
+        
+        # Add uneven wear analysis to output
+        if uneven_wear_detected or uneven_wear_details:
+            analysis["uneven_wear_alert"] = {
+                "detected": uneven_wear_detected,
+                "severity": "CRITICAL - Section 5.6 applies" if uneven_wear_detected else "WARNING - Monitor",
+                "details": uneven_wear_details,
+                "action_required": "IMMEDIATE: Call search_tire_troubleshooting('uneven wear') to get Section 5.6 alignment/suspension guidance" if uneven_wear_detected else "Schedule alignment check within 1 week"
             }
         
         return json.dumps(analysis, indent=2)
