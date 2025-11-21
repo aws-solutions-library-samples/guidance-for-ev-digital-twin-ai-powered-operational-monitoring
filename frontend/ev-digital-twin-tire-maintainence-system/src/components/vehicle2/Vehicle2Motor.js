@@ -431,6 +431,19 @@ const Motor = () => {
       // Create natural language summary instead of bullet points
       const naturalSummary = createMotorNaturalLanguageSummary(response, motorData);
 
+      // Extract citations from KB tool responses
+      const citations = [];
+      const citationPattern = /\(Confidence:\s*([\d.]+)\)/g;
+      let match;
+      while ((match = citationPattern.exec(response)) !== null) {
+        const confidence = parseFloat(match[1]);
+        citations.push({
+          confidence: confidence,
+          source: "EV Maintenance Manual"
+        });
+      }
+      console.log('📚 Citations extracted:', citations.length, citations);
+      
       // Determine source and status based on analysis result
       let sourceInfo = "AgentCore Claude Sonnet 4.5";
       if (analysisResult.fromCache) {
@@ -447,6 +460,7 @@ const Motor = () => {
         recommendations: recommendations.slice(0, 4),
         next_inspection: "30 days",
         source: sourceInfo,
+        citations: citations.length > 0 ? citations : undefined,
         fromCache: analysisResult.fromCache || false,
         stale: analysisResult.stale || false,
         serviceError: analysisResult.error || null,
@@ -1469,6 +1483,23 @@ const Motor = () => {
                       {genAiAnalysis?.next_inspection && (
                         <div style={{ marginTop: '12px', fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontStyle: 'italic' }}>
                           Next inspection recommended: {genAiAnalysis.next_inspection}
+                        </div>
+                      )}
+                      
+                      {/* Citations from Knowledge Base */}
+                      {genAiAnalysis?.citations && genAiAnalysis.citations.length > 0 && (
+                        <div style={{ marginTop: '12px', padding: '8px', backgroundColor: 'rgba(100,149,237,0.1)', borderRadius: '4px', border: '1px solid rgba(100,149,237,0.3)' }}>
+                          <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#6495ED', marginBottom: '6px' }}>📚 Sources:</div>
+                          {genAiAnalysis.citations.map((citation, idx) => (
+                            <div key={idx} style={{ fontSize: '10px', color: 'rgba(255,255,255,0.8)', marginBottom: '4px', paddingLeft: '8px' }}>
+                              <span style={{ color: '#6495ED' }}>•</span> {citation.source}
+                              {citation.confidence < 1.0 && (
+                                <span style={{ marginLeft: '6px', color: 'rgba(255,255,255,0.6)' }}>
+                                  (Confidence: {(citation.confidence * 100).toFixed(0)}%)
+                                </span>
+                              )}
+                            </div>
+                          ))}
                         </div>
                       )}
                       

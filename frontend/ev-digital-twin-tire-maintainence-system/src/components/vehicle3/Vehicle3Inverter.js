@@ -1782,6 +1782,23 @@ const Invertor = () => {
                       </div>
                     )}
                     
+                    {/* Citations from Knowledge Base */}
+                    {genAiAnalysis?.citations && genAiAnalysis.citations.length > 0 && (
+                      <div style={{ marginTop: '12px', padding: '8px', backgroundColor: 'rgba(100,149,237,0.1)', borderRadius: '4px', border: '1px solid rgba(100,149,237,0.3)' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#6495ED', marginBottom: '6px' }}>📚 Sources:</div>
+                        {genAiAnalysis.citations.map((citation, idx) => (
+                          <div key={idx} style={{ fontSize: '10px', color: 'rgba(255,255,255,0.8)', marginBottom: '4px', paddingLeft: '8px' }}>
+                            <span style={{ color: '#6495ED' }}>•</span> {citation.source}
+                            {citation.confidence < 1.0 && (
+                              <span style={{ marginLeft: '6px', color: 'rgba(255,255,255,0.6)' }}>
+                                (Confidence: {(citation.confidence * 100).toFixed(0)}%)
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
                     {genAiAnalysis?.raw_response && (
                       <div 
                         className="more-link" 
