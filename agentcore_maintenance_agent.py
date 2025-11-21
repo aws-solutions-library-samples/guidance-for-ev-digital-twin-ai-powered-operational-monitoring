@@ -150,18 +150,19 @@ class MaintenanceMemoryHooks(HookProvider):
         self.client = client
         self.actor_id = actor_id
         self.session_id = session_id
+        self.browser_tool_active = False  # Track if browser tool is running
     
     def retrieve_context(self, event: MessageAddedEvent):
         """Check for recurring issues and cross-vehicle patterns"""
+        # CRITICAL: Skip ALL memory retrieval if browser tool is active
+        # Browser tools (NovaAct) create internal messages that trigger this hook
+        # Modifying messages during tool execution corrupts conversation state
+        if self.browser_tool_active:
+            return
+        
         messages = event.agent.messages
         if messages[-1]["role"] == "user" and "toolResult" not in messages[-1]["content"][0]:
             user_query = messages[-1]["content"][0]["text"]
-            
-            # CRITICAL: Skip memory retrieval during browser tool execution
-            # Browser tools (NovaAct) create internal messages that trigger this hook
-            # Modifying messages during tool execution corrupts conversation state
-            if "order_tire_online" in user_query.lower():
-                return
             
             # Extract vehicle ID from query
             import re
@@ -1167,7 +1168,14 @@ def order_tire_online(vehicle_id: str) -> str:
     print(f"🔧 TOOL EXECUTION STARTED: order_tire_online(vehicle_id={vehicle_id})")
     print(f"{'='*80}\n")
     
+    # Set flag to disable memory hooks during browser tool execution
+    if agent_instance.memory_hooks:
+        agent_instance.memory_hooks.browser_tool_active = True
+        print("✓ Memory hooks disabled for browser tool execution")
+    
     if not BROWSER_AVAILABLE:
+        if agent_instance.memory_hooks:
+            agent_instance.memory_hooks.browser_tool_active = False
         return json.dumps({
             "error": "Browser automation not available in this runtime",
             "vehicle_id": str(vehicle_id)
@@ -1227,6 +1235,12 @@ def order_tire_online(vehicle_id: str) -> str:
         print(f"\n{'='*80}")
         print(f"✅ TOOL EXECUTION COMPLETED: order_tire_online(vehicle_id={vehicle_id})")
         print(f"{'='*80}\n")
+        
+        # Re-enable memory hooks
+        if agent_instance.memory_hooks:
+            agent_instance.memory_hooks.browser_tool_active = False
+            print("✓ Memory hooks re-enabled")
+        
         return json.dumps({
             "success": True,
             "vehicle_id": str(vehicle_id),
@@ -1239,6 +1253,12 @@ def order_tire_online(vehicle_id: str) -> str:
         print(f"❌ TOOL EXECUTION FAILED: order_tire_online(vehicle_id={vehicle_id})")
         print(f"Error: {str(e)}")
         print(f"{'='*80}\n")
+        
+        # Re-enable memory hooks even on error
+        if agent_instance.memory_hooks:
+            agent_instance.memory_hooks.browser_tool_active = False
+            print("✓ Memory hooks re-enabled after error")
+        
         return json.dumps({
             "success": True,
             "vehicle_id": str(vehicle_id),

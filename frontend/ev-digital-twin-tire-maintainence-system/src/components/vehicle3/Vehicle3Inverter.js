@@ -18,6 +18,7 @@ const Invertor = () => {
   const [genAiLoading, setGenAiLoading] = useState(false);
   const [showPrediction, setShowPrediction] = useState(false);
   const [animationProgress, setAnimationProgress] = useState(0);
+  const [showFullAnalysis, setShowFullAnalysis] = useState(false);
   const [chartData, setChartData] = useState({
     inputVoltage: { current: [], expected: [] },
     outputVoltage: { current: [], expected: [] },
@@ -377,9 +378,9 @@ const Invertor = () => {
       
       // First sentence - overall condition
       if (criticalIssues) {
-        summary = 'Claude has identified critical inverter conditions requiring immediate attention. ';
+        summary = 'Critical inverter conditions detected requiring immediate attention. ';
       } else if (voltageIssues || efficiencyIssues || temperatureIssues) {
-        summary = 'Claude has detected inverter maintenance needs that should be addressed soon. ';
+        summary = 'Inverter maintenance needs detected that should be addressed soon. ';
       } else {
         summary = 'Claude reports your inverter is in good condition with routine maintenance recommended. ';
       }
@@ -537,9 +538,9 @@ const Invertor = () => {
     if (dcVoltage < 390 || dcVoltage > 410) activeMetrics.push(`DC voltage ${dcVoltage.toFixed(1)}V`);
     
     if (activeMetrics.length > 0) {
-      summary += `Real-time data streaming at ${dataUpdateFreq} shows active monitoring of ${activeMetrics.join(', ')} with integrated ML analysis and predictive maintenance alerts.`;
+      summary += `Real-time data streaming at ${dataUpdateFreq} shows active monitoring of ${activeMetrics.join(', ')}.`;
     } else {
-      summary += `Real-time data streaming at ${dataUpdateFreq} with comprehensive inverter health monitoring, ML-powered analysis, and predictive maintenance recommendations.`;
+      summary += `Real-time data streaming at ${dataUpdateFreq} with comprehensive inverter health monitoring.`;
     }
     
     return {
@@ -561,7 +562,7 @@ const Invertor = () => {
 
   // Get AI recommendations - prioritize GenAI (Claude Sonnet 4.5) over rule-based
   const getAiRecommendations = () => {
-    // Priority 1: Use GenAI analysis if available
+    // ONLY show recommendations from GenAI analysis (Analyze button)
     if (genAiAnalysis && genAiAnalysis.recommendations) {
       console.log('Using Inverter GenAI (Claude Sonnet 4.5) recommendations');
       return genAiAnalysis.recommendations.map(rec => ({
@@ -573,36 +574,8 @@ const Invertor = () => {
       }));
     }
     
-    // Priority 2: Use ML analysis if available
-    if (currentMlData?.ml_analysis?.recommendations) {
-      console.log('Using Inverter ML analysis recommendations');
-      const allRecs = currentMlData.ml_analysis.recommendations;
-      return allRecs.slice(0, 3).map(rec => ({...rec, ml: true}));
-    }
-    
-    // Priority 3: Fallback to rule-based recommendations
-    console.log('Using fallback rule-based inverter recommendations');
-    
-    const dcVoltage = parseFloat(currentData.dc_voltage_v) || 400;
-    const efficiency = parseFloat(currentData.efficiency_percent) || 95;
-    const temperature = parseFloat(currentData.temperature_c) || 65;
-    
-    if (temperature > 75 || efficiency < 92) {
-      return [
-        { action: "Monitor inverter temperature and efficiency closely", priority: "HIGH", fallback: true },
-        { action: "Schedule inverter diagnostic within 1 week", priority: "MEDIUM", fallback: true }
-      ];
-    } else if (dcVoltage < 380 || dcVoltage > 420) {
-      return [
-        { action: "Check DC bus voltage stability", priority: "MEDIUM", fallback: true },
-        { action: "Inspect power connections and filters", priority: "LOW", fallback: true }
-      ];
-    }
-    
-    return [
-      { action: "Continue regular inverter maintenance schedule", priority: "LOW", fallback: true },
-      { action: "Monitor power electronics performance monthly", priority: "LOW", fallback: true }
-    ];
+    // Return empty array if no GenAI analysis - user must click Analyze button
+    return [];
   };
 
   const aiRecommendations = getAiRecommendations();
@@ -1697,7 +1670,7 @@ const Invertor = () => {
 
                 {/* GenAI Recommendations */}
                 <div className="genai-recommendations" style={{ marginTop: '0px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                     <h3>GenAI Recommendations</h3>
                     <button
                       onClick={analyzeInverterWithGenAI}
@@ -1713,7 +1686,8 @@ const Invertor = () => {
                         fontWeight: 'bold',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '4px'
+                        gap: '4px',
+                        marginTop: '-6px'
                       }}
                     >
                       {genAiLoading ? (
@@ -1792,10 +1766,9 @@ const Invertor = () => {
                           {rec.ml && <span style={{ fontSize: windowWidth === 1920 ? '13px' : '10px', color: '#ff9900', backgroundColor: 'rgba(255,153,0,0.2)', padding: '2px 6px', borderRadius: '10px' }}>ML</span>}
                           {rec.fallback && <span style={{ fontSize: windowWidth === 1920 ? '13px' : '10px', color: '#888', backgroundColor: 'rgba(136,136,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>Rule</span>}
                         </div>
-                        {(rec.reason || rec.urgency || rec.description) && (
+                        {(rec.urgency || rec.description) && (
                           <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: windowWidth === 1920 ? '15px' : '11px', color: 'rgba(255,255,255,0.8)' }}>
-                            {rec.reason && <p><strong>Reason:</strong> {rec.reason}</p>}
-                            {rec.urgency && <p><strong>Urgency:</strong> {rec.urgency}</p>}
+                            {rec.urgency && <p><strong>Timeline:</strong> {rec.urgency}</p>}
                             {rec.description && <p><strong>Details:</strong> {rec.description}</p>}
                             {rec.estimated_cost && <p><strong>Cost:</strong> {rec.estimated_cost}</p>}
                           </div>
@@ -1809,14 +1782,37 @@ const Invertor = () => {
                       </div>
                     )}
                     
-                    <div className="more-link" style={{ marginTop: '16px', fontSize: '12px', color: '#ff9900', cursor: 'pointer' }}>More.....</div>
+                    {genAiAnalysis?.raw_response && (
+                      <div 
+                        className="more-link" 
+                        onClick={() => setShowFullAnalysis(!showFullAnalysis)}
+                        style={{ marginTop: '16px', fontSize: '12px', color: '#ff9900', cursor: 'pointer', userSelect: 'none' }}
+                      >
+                        {showFullAnalysis ? 'Less ▲' : 'More... ▼'}
+                      </div>
+                    )}
+                    
+                    {showFullAnalysis && genAiAnalysis?.raw_response && (
+                      <div style={{ 
+                        marginTop: '12px', 
+                        padding: '12px', 
+                        backgroundColor: 'rgba(0,0,0,0.3)', 
+                        borderRadius: '6px',
+                        border: '1px solid rgba(0,255,136,0.3)',
+                        fontSize: '11px',
+                        lineHeight: '1.6',
+                        color: 'rgba(255,255,255,0.9)',
+                        whiteSpace: 'pre-wrap',
+                        maxHeight: '400px',
+                        overflowY: 'auto'
+                      }}>
+                        <div style={{ fontWeight: 'bold', color: '#00ff88', marginBottom: '8px' }}>
+                          📋 Full Analysis from Claude Sonnet 4.5
+                        </div>
+                        {genAiAnalysis.raw_response}
+                      </div>
+                    )}
                   </div>
-                  
-                  {(genAiAnalysis?.overall_status === 'CRITICAL') && (
-                    <div style={{ color: '#ff4444', fontWeight: 'bold', marginTop: '10px', padding: '8px', border: '1px solid #ff4444', borderRadius: '3px', backgroundColor: 'rgba(255,68,68,0.1)' }}>
-                      🚨 CRITICAL: {genAiAnalysis?.key_findings_summary?.split('.')[0] || 'Inverter requires immediate attention'}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

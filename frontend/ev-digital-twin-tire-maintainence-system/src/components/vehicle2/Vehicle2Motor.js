@@ -28,6 +28,7 @@ const Motor = () => {
 
   const [showPrediction, setShowPrediction] = useState(false);
   const [animationProgress, setAnimationProgress] = useState(0);
+  const [showFullAnalysisModal, setShowFullAnalysisModal] = useState(false);
   
   // Responsive sizing that updates on window resize
   const spacing = useMemo(() => {
@@ -378,7 +379,32 @@ const Motor = () => {
       const actionVerbs = ['check', 'inspect', 'replace', 'service', 'monitor', 'test', 'verify', 'clean', 'flush', 'change', 'repair', 'schedule', 'perform', 'examine', 'diagnose', 'stop', 'reduce', 'increase', 'adjust'];
       
       numberedItems.forEach(item => {
-        const cleaned = item.replace(/\d+\.\s*/, '').replace(/\*\*/g, '').trim();
+        // Remove numbering and bold markers
+        let cleaned = item.replace(/\d+\.\s*/, '').replace(/\*\*/g, '').trim();
+        
+        // Extract just the main action text (before any "Reason:" or metadata)
+        const actionMatch = cleaned.match(/^([^:]+?)(?:\s*(?:Reason|GenAI|Urgency|Priority):|$)/);
+        if (actionMatch) {
+          cleaned = actionMatch[1].trim();
+        }
+        
+        // Remove emoji icons at the start
+        cleaned = cleaned.replace(/^[⚠️🚨⚡ℹ️✅❌]+\s*/, '').trim();
+        
+        // Take only first 1-2 sentences (stop at period followed by space or newline, or at bullet points)
+        const sentenceMatch = cleaned.match(/^([^.\n]+(?:\.[^.\n]+)?)\./);
+        if (sentenceMatch) {
+          cleaned = sentenceMatch[1] + '.';
+        } else {
+          // If no period, take up to first newline or dash list
+          cleaned = cleaned.split(/\n|(?=\s*-\s)/)[0].trim();
+        }
+        
+        // Limit length to ~150 chars max
+        if (cleaned.length > 150) {
+          cleaned = cleaned.substring(0, 147) + '...';
+        }
+        
         if (cleaned.length < 15) return;
         
         // Only include if it contains an action verb
@@ -491,9 +517,9 @@ const Motor = () => {
     if (vibration > 3) activeMetrics.push(`vibration ${vibration.toFixed(1)}`);
     
     if (activeMetrics.length > 0) {
-      summary += `Real-time data streaming at ${dataUpdateFreq} shows active monitoring of ${activeMetrics.join(', ')} with integrated ML analysis and predictive maintenance alerts.`;
+      summary += `Real-time data streaming at ${dataUpdateFreq} shows active monitoring of ${activeMetrics.join(', ')}.`;
     } else {
-      summary += `Real-time data streaming at ${dataUpdateFreq} with comprehensive motor health monitoring, ML-powered analysis, and predictive maintenance recommendations.`;
+      summary += `Real-time data streaming at ${dataUpdateFreq} with comprehensive motor health monitoring.`;
     }
     
     return {
@@ -547,7 +573,7 @@ const Motor = () => {
   
   // Get AI recommendations - prioritize GenAI (Claude Sonnet 4.5) over rule-based
   const getAiRecommendations = () => {
-    // Priority 1: Use GenAI analysis if available
+    // ONLY show recommendations from GenAI analysis (Analyze button)
     if (genAiAnalysis && genAiAnalysis.recommendations) {
       console.log('Using Motor GenAI (Claude Sonnet 4.5) recommendations');
       return genAiAnalysis.recommendations.map(rec => ({
@@ -559,48 +585,8 @@ const Motor = () => {
       }));
     }
     
-    // Priority 2: Use ML analysis if available
-    const predictions = calculateDynamicMotorPredictions(currentData);
-    const currentStatus = predictions?.status || "GOOD";
-    
-    if (currentMlData?.ml_analysis?.recommendations) {
-      console.log('Using Motor ML analysis recommendations');
-      const allRecs = currentMlData.ml_analysis.recommendations;
-      
-      // Filter recommendations based on current motor status
-      let filteredRecs;
-      if (currentStatus === "CRITICAL") {
-        filteredRecs = allRecs.filter(r => r.priority === "URGENT" || r.priority === "HIGH");
-      } else if (currentStatus === "WARNING") {
-        filteredRecs = allRecs.filter(r => r.priority === "MEDIUM" || r.priority === "HIGH");
-      } else {
-        filteredRecs = allRecs.filter(r => r.priority === "LOW");
-      }
-      
-      const availableRecs = filteredRecs.length > 0 ? filteredRecs : allRecs;
-      return availableRecs.slice(0, 3).map(rec => ({...rec, ml: true}));
-    }
-    
-    // Priority 3: Fallback to rule-based recommendations
-    console.log('Using fallback rule-based motor recommendations');
-    
-    // Dynamic fallback based on current status
-    if (currentStatus === "CRITICAL") {
-      return [
-        { action: "URGENT: Stop driving - engine critical condition", priority: "URGENT", fallback: true },
-        { action: "Schedule emergency engine service immediately", priority: "HIGH", fallback: true }
-      ];
-    } else if (currentStatus === "WARNING") {
-      return [
-        { action: "Schedule engine maintenance within 2 months", priority: "MEDIUM", fallback: true },
-        { action: "Monitor engine parameters daily", priority: "MEDIUM", fallback: true }
-      ];
-    }
-    
-    return [
-      { action: "Continue regular maintenance schedule", priority: "LOW", fallback: true },
-      { action: "Monitor engine performance monthly", priority: "LOW", fallback: true }
-    ];
+    // Return empty array if no GenAI analysis - user must click Analyze button
+    return [];
   };
   
   const formatValue = (value, unit, fallback) => {
@@ -1374,7 +1360,7 @@ const Motor = () => {
 
                   {/* GenAI Recommendations */}
                   <div className="genai-recommendations" style={{ marginTop: '0px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                       <h3>GenAI Recommendations</h3>
                       <button
                         onClick={analyzeMotorWithGenAI}
@@ -1390,7 +1376,8 @@ const Motor = () => {
                           fontWeight: 'bold',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '4px'
+                          gap: '4px',
+                          marginTop: '-6px'
                         }}
                       >
                         {genAiLoading ? (
@@ -1469,10 +1456,9 @@ const Motor = () => {
                             {rec.ml && <span style={{ fontSize: '10px', color: '#ff9900', backgroundColor: 'rgba(255,153,0,0.2)', padding: '2px 6px', borderRadius: '10px' }}>ML</span>}
                             {rec.fallback && <span style={{ fontSize: '10px', color: '#888', backgroundColor: 'rgba(136,136,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>Rule</span>}
                           </div>
-                          {(rec.reason || rec.urgency || rec.description) && (
+                          {(rec.urgency || rec.description) && (
                             <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
-                              {rec.reason && <p><strong>Reason:</strong> {rec.reason}</p>}
-                              {rec.urgency && <p><strong>Urgency:</strong> {rec.urgency}</p>}
+                              {rec.urgency && <p><strong>Timeline:</strong> {rec.urgency}</p>}
                               {rec.description && <p><strong>Details:</strong> {rec.description}</p>}
                               {rec.estimated_cost && <p><strong>Cost:</strong> {rec.estimated_cost}</p>}
                             </div>
@@ -1486,7 +1472,15 @@ const Motor = () => {
                         </div>
                       )}
                       
-                      <div className="more-link" style={{ marginTop: '16px', fontSize: '12px', color: '#ff9900', cursor: 'pointer' }}>More.....</div>
+                      {genAiAnalysis?.raw_response && (
+                        <div 
+                          className="more-link" 
+                          onClick={() => setShowFullAnalysisModal(true)}
+                          style={{ marginTop: '16px', fontSize: '12px', color: '#ff9900', cursor: 'pointer', userSelect: 'none' }}
+                        >
+                          More... ▼
+                        </div>
+                      )}
                     </div>
                     
                     {(currentPredictions?.status === 'CRITICAL' || genAiAnalysis?.overall_status === 'CRITICAL') && (
@@ -1501,6 +1495,119 @@ const Motor = () => {
           </div>
         </div>
       </div>
+      
+      {/* Full Analysis Modal */}
+      {showFullAnalysisModal && genAiAnalysis?.raw_response && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '20px'
+          }}
+          onClick={() => setShowFullAnalysisModal(false)}
+        >
+          <div 
+            style={{
+              backgroundColor: '#1a1a1a',
+              border: '2px solid #00ff88',
+              borderRadius: '12px',
+              padding: '24px',
+              maxWidth: '800px',
+              maxHeight: '80vh',
+              width: '100%',
+              overflowY: 'auto',
+              boxShadow: '0 8px 32px rgba(0,255,136,0.3)',
+              position: 'relative'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setShowFullAnalysisModal(false)}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                background: 'none',
+                border: 'none',
+                color: '#ff9900',
+                fontSize: '24px',
+                cursor: 'pointer',
+                padding: '4px 8px',
+                lineHeight: 1
+              }}
+            >
+              ✕
+            </button>
+            
+            {/* Header */}
+            <div style={{ marginBottom: '20px' }}>
+              <h2 style={{ 
+                color: '#00ff88', 
+                margin: '0 0 8px 0',
+                fontSize: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                📋 Full Motor Analysis
+              </h2>
+              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>
+                Powered by Claude Sonnet 4.5 via AWS Bedrock AgentCore
+              </div>
+            </div>
+            
+            {/* Content */}
+            <div style={{
+              fontSize: '14px',
+              lineHeight: '1.8',
+              color: 'rgba(255,255,255,0.9)',
+              whiteSpace: 'pre-wrap',
+              wordWrap: 'break-word'
+            }}>
+              {genAiAnalysis.raw_response}
+            </div>
+            
+            {/* Footer */}
+            <div style={{
+              marginTop: '24px',
+              paddingTop: '16px',
+              borderTop: '1px solid rgba(255,255,255,0.1)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>
+                {genAiAnalysis.fromCache ? '💾 Cached Analysis' : '✨ Fresh Analysis'}
+              </div>
+              <button
+                onClick={() => setShowFullAnalysisModal(false)}
+                style={{
+                  backgroundColor: '#ff9900',
+                  color: '#000',
+                  border: 'none',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  fontSize: '12px'
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <DataNeededModal open={showModal} onClose={() => setShowModal(false)} type="motor" />
     </div>
   );

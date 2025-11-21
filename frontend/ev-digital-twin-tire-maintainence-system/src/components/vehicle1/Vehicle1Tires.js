@@ -55,6 +55,7 @@ const Vehicle1Tires = () => {
   const [pressureVariation, setPressureVariation] = useState(0);
   const [genAiAnalysis, setGenAiAnalysis] = useState(null);
   const [genAiLoading, setGenAiLoading] = useState(false);
+  const [showFullAnalysis, setShowFullAnalysis] = useState(false);
 
 
   useEffect(() => {
@@ -192,18 +193,6 @@ const Vehicle1Tires = () => {
     return () => clearInterval(pressureInterval);
   }, [csvData, dataIndex]);
 
-  // Auto-fetch GenAI analysis when tire data is loaded
-  useEffect(() => {
-    if (csvData.length > 0 && !genAiAnalysis && !genAiLoading) {
-      console.log('🤖 Auto-fetching GenAI analysis for EV-1001...');
-      // Small delay to ensure data is fully loaded
-      const timer = setTimeout(() => {
-        analyzeWithGenAI();
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [csvData, genAiAnalysis, genAiLoading]);
-
   // On-demand GenAI Analysis function
   const analyzeWithGenAI = async () => {
     const currentData = csvData[dataIndex] || {};
@@ -327,10 +316,7 @@ const Vehicle1Tires = () => {
   // Parse AgentCore response into structured format
   const parseAgentCoreResponse = (response, tireData, analysisResult = {}) => {
     try {
-      console.log('=== PARSING AGENT RESPONSE ===');
-      console.log('Response type:', typeof response);
-      console.log('Response length:', response?.length);
-      console.log('First 500 chars:', response?.substring(0, 500));
+      console.log('Parsing AgentCore response:', response);
       
       // Handle undefined or null response
       if (!response || typeof response !== 'string') {
@@ -343,129 +329,34 @@ const Vehicle1Tires = () => {
       const recommendations = [];
       const keyFindings = [];
       
-      // Extract recommendations - use multiple strategies
-      console.log('Extracting recommendations from response...');
+      // Extract numbered list items (1. Check tires, 2. Inspect, etc.)
+      const numberedPattern = /\d+\.\s*\*\*[^*]+\*\*[^\n]*(?:\n[^\d\n][^\n]*)*|\d+\.\s*[^\n]+/g;
+      const numberedItems = response.match(numberedPattern) || [];
       
-      // Strategy 1: Extract detailed recommendations with context
-      // Split response into sections by ### headers
-      const sections = response.split(/(?=###\s*\*\*\d+\.)/);
+      // Action verbs that indicate real recommendations
+      const actionVerbs = ['check', 'inspect', 'replace', 'service', 'monitor', 'test', 'verify', 'inflate', 'rotate', 'balance', 'align', 'repair', 'schedule', 'perform', 'examine', 'diagnose', 'adjust'];
       
-      if (sections.length > 1) {
-        console.log('Found numbered sections:', sections.length - 1);
-        sections.forEach(section => {
-          if (!section.includes('###')) return;
-          
-          // Extract title (the main action)
-          const titleMatch = section.match(/###\s*\*\*(\d+\.\s*[^*]+)\*\*/);
-          if (!titleMatch) return;
-          
-          let action = titleMatch[1].trim();
-          
-          // Extract "Why:" section for detailed reasoning
-          const whyMatch = section.match(/\*\*Why:\*\*\s*([^\n]+(?:\n(?!\*\*)[^\n]+)*)/);
-          let reason = "";
-          if (whyMatch) {
-            reason = whyMatch[1].replace(/\*\*/g, '').trim();
-            // Limit to reasonable length but keep it verbose
-            if (reason.length > 250) {
-              reason = reason.substring(0, 247) + '...';
-            }
-          }
-          
-          // Extract "What to tell the mechanic:" for additional context
-          const mechanicMatch = section.match(/\*\*What to tell the mechanic:\*\*\s*"([^"]+)"/);
-          if (mechanicMatch) {
-            action += ` — Tell your mechanic: "${mechanicMatch[1]}"`;
-          }
-          
-          // Extract "Action:" for additional details
-          const actionMatch = section.match(/\*\*Action:\*\*\s*([^\n]+)/);
-          if (actionMatch) {
-            const actionDetail = actionMatch[1].replace(/\*\*/g, '').trim();
-            if (!action.includes(actionDetail)) {
-              action += ` — ${actionDetail}`;
-            }
-          }
-          
-          // Extract "Safety impact:" or "Cost savings tip:" for extra context
-          const safetyMatch = section.match(/\*\*Safety impact:\*\*\s*([^\n]+)/);
-          const costMatch = section.match(/\*\*Cost savings tip:\*\*\s*([^\n]+)/);
-          
-          if (safetyMatch && !reason.includes(safetyMatch[1])) {
-            reason += ` Safety note: ${safetyMatch[1].replace(/\*\*/g, '').trim()}`;
-          }
-          if (costMatch && !reason.includes(costMatch[1])) {
-            reason += ` Cost tip: ${costMatch[1].replace(/\*\*/g, '').trim()}`;
-          }
-          
-          // Determine priority and urgency
-          const lowerSection = section.toLowerCase();
-          const priority = lowerSection.includes('urgent') || lowerSection.includes('critical') || lowerSection.includes('immediate') || lowerSection.includes('🚨') ? 'CRITICAL' :
-                          lowerSection.includes('warning') || lowerSection.includes('⚠️') || lowerSection.includes('this week') ? 'HIGH' :
-                          lowerSection.includes('schedule') || lowerSection.includes('within') ? 'MEDIUM' : 'LOW';
-          
-          // Extract timeline from section
-          let urgency = priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance';
-          if (lowerSection.includes('this week')) urgency = 'This week';
-          if (lowerSection.includes('weekly')) urgency = 'Weekly until resolved';
-          
-          recommendations.push({
-            action: action,
-            priority: priority,
-            reason: reason,
-            urgency: urgency
-          });
+      numberedItems.forEach(item => {
+        const cleaned = item.replace(/\d+\.\s*/, '').replace(/\*\*/g, '').trim();
+        if (cleaned.length < 15) return;
+        
+        // Only include if it contains an action verb
+        const lowerCleaned = cleaned.toLowerCase();
+        const hasActionVerb = actionVerbs.some(verb => lowerCleaned.includes(verb));
+        if (!hasActionVerb) return;
+        
+        const lowerItem = item.toLowerCase();
+        const priority = lowerItem.includes('urgent') || lowerItem.includes('critical') || lowerItem.includes('immediate') || lowerItem.includes('stop') ? 'CRITICAL' :
+                        lowerItem.includes('soon') || lowerItem.includes('warning') || lowerItem.includes('attention') ? 'HIGH' :
+                        lowerItem.includes('consider') || lowerItem.includes('schedule') ? 'MEDIUM' : 'LOW';
+        
+        recommendations.push({
+          action: cleaned,
+          priority: priority,
+          reason: "",
+          urgency: priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance'
         });
-      }
-      
-      // Strategy 2: If no numbered sections, look for bullet points or action items
-      if (recommendations.length === 0) {
-        console.log('No numbered sections found, trying bullet points...');
-        const lines = response.split('\n');
-        lines.forEach(line => {
-          const trimmed = line.trim();
-          // Look for lines that start with -, *, or contain action verbs
-          if ((trimmed.startsWith('-') || trimmed.startsWith('*') || trimmed.startsWith('•')) && trimmed.length > 20) {
-            const cleaned = trimmed.replace(/^[-*•]\s*/, '').replace(/\*\*/g, '').trim();
-            const lowerLine = line.toLowerCase();
-            const priority = lowerLine.includes('urgent') || lowerLine.includes('critical') || lowerLine.includes('immediate') ? 'CRITICAL' :
-                            lowerLine.includes('warning') || lowerLine.includes('soon') ? 'HIGH' :
-                            lowerLine.includes('schedule') || lowerLine.includes('consider') ? 'MEDIUM' : 'LOW';
-            
-            recommendations.push({
-              action: cleaned,
-              priority: priority,
-              reason: "",
-              urgency: priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance'
-            });
-          }
-        });
-      }
-      
-      // Strategy 3: If still no recommendations, extract key sentences with action verbs
-      if (recommendations.length === 0) {
-        console.log('No bullet points found, extracting action sentences...');
-        const actionVerbs = ['check', 'inspect', 'replace', 'service', 'monitor', 'inflate', 'rotate', 'schedule', 'align', 'repair'];
-        const sentences = response.split(/[.!?]+/);
-        sentences.forEach(sentence => {
-          const trimmed = sentence.trim();
-          if (trimmed.length > 30 && actionVerbs.some(verb => trimmed.toLowerCase().includes(verb))) {
-            const lowerSentence = sentence.toLowerCase();
-            const priority = lowerSentence.includes('urgent') || lowerSentence.includes('critical') || lowerSentence.includes('immediate') ? 'CRITICAL' :
-                            lowerSentence.includes('warning') || lowerSentence.includes('soon') ? 'HIGH' :
-                            lowerSentence.includes('schedule') || lowerSentence.includes('consider') ? 'MEDIUM' : 'LOW';
-            
-            recommendations.push({
-              action: trimmed,
-              priority: priority,
-              reason: "",
-              urgency: priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance'
-            });
-          }
-        });
-      }
-      
-      console.log('Extracted recommendations:', recommendations.length);
+      });
       
       // Extract key findings from full response
       const sentences = response.split(/[.!?]+/).filter(s => s.trim().length > 10);
@@ -498,7 +389,7 @@ const Vehicle1Tires = () => {
         sourceInfo += " (Service Issues)";
       }
 
-      const result = {
+      return {
         overall_status: status,
         risk_level: status === 'CRITICAL' ? 'HIGH' : status === 'WARNING' ? 'MEDIUM' : 'LOW',
         key_findings_summary: naturalSummary,
@@ -511,12 +402,6 @@ const Vehicle1Tires = () => {
         serviceError: analysisResult.error || null,
         raw_response: response
       };
-      
-      console.log('=== PARSED RESULT ===');
-      console.log('Recommendations count:', result.recommendations.length);
-      console.log('Recommendations:', result.recommendations);
-      
-      return result;
       
     } catch (error) {
       console.error('Error parsing AgentCore response:', error);
@@ -888,7 +773,7 @@ const Vehicle1Tires = () => {
   
   // Get AI recommendations - prioritize GenAI (Claude Sonnet 4.5) over rule-based
   const getAiRecommendations = () => {
-    // Priority 1: Use GenAI analysis if available
+    // ONLY show recommendations from GenAI analysis (Analyze button)
     if (genAiAnalysis && genAiAnalysis.recommendations) {
       console.log('Using GenAI (Claude Sonnet 4.5) recommendations');
       return genAiAnalysis.recommendations.map(rec => ({
@@ -900,157 +785,8 @@ const Vehicle1Tires = () => {
       }));
     }
     
-    // Priority 2: Use ML analysis if available
-    if (currentMlData?.ml_analysis?.recommendations) {
-      console.log('Using ML analysis recommendations');
-      const allRecs = currentMlData.ml_analysis.recommendations;
-      const predictions = calculateDynamicPredictions(currentData);
-      const currentStatus = predictions?.status || "GOOD";
-      
-      // Filter recommendations based on current tire status
-      let filteredRecs;
-      if (currentStatus === "CRITICAL") {
-        filteredRecs = allRecs.filter(r => r.priority === "HIGH" || r.priority === "CRITICAL" || r.priority === "WARNING");
-      } else if (currentStatus === "WARNING") {
-        filteredRecs = allRecs.filter(r => r.priority === "MEDIUM" || r.priority === "WARNING");
-      } else {
-        filteredRecs = allRecs.filter(r => r.priority === "LOW");
-      }
-      
-      const availableRecs = filteredRecs.length > 0 ? filteredRecs : allRecs;
-      return availableRecs.slice(0, 3).map(rec => ({...rec, ml: true}));
-    }
-    
-    // Priority 3: Fallback to rule-based recommendations with Section 5.6 uneven wear detection
-    console.log('Using fallback rule-based recommendations with uneven wear detection');
-    const predictions = calculateDynamicPredictions(currentData);
-    const currentStatus = predictions?.status || "GOOD";
-    const threadDepth = parseFloat(currentData.tread_depth_mm) || 10.0;
-    
-    // SECTION 5.6: Check for uneven wear across all tires
-    const detectUnevenWear = () => {
-      if (csvData.length < 4) return null;
-      
-      const treadByPosition = {};
-      csvData.forEach(tire => {
-        const position = tire.position;
-        const tread = parseFloat(tire.tread_depth_mm);
-        if (position && !isNaN(tread)) {
-          treadByPosition[position] = tread;
-        }
-      });
-      
-      const fl = treadByPosition['front_left'];
-      const fr = treadByPosition['front_right'];
-      const rl = treadByPosition['rear_left'];
-      const rr = treadByPosition['rear_right'];
-      
-      if (!fl || !fr || !rl || !rr) return null;
-      
-      const frontDiff = Math.abs(fl - fr);
-      const rearDiff = Math.abs(rl - rr);
-      
-      // Section 5.6: >2mm difference is CRITICAL
-      if (frontDiff > 2.0 || rearDiff > 2.0) {
-        return {
-          detected: true,
-          severity: 'CRITICAL',
-          frontDiff: frontDiff,
-          rearDiff: rearDiff,
-          tires: { fl, fr, rl, rr }
-        };
-      } else if (frontDiff > 1.0 || rearDiff > 1.0) {
-        return {
-          detected: true,
-          severity: 'WARNING',
-          frontDiff: frontDiff,
-          rearDiff: rearDiff,
-          tires: { fl, fr, rl, rr }
-        };
-      }
-      
-      return null;
-    };
-    
-    const unevenWear = detectUnevenWear();
-    const fallbackRecs = [];
-    
-    // PRIORITY: Section 5.6 uneven wear recommendations come FIRST
-    if (unevenWear && unevenWear.detected) {
-      const { severity, frontDiff, rearDiff, tires } = unevenWear;
-      
-      if (severity === 'CRITICAL') {
-        fallbackRecs.push({
-          action: `🚨 CRITICAL: Uneven tire wear detected (${frontDiff > 2 ? `Front: ${frontDiff.toFixed(1)}mm difference` : `Rear: ${rearDiff.toFixed(1)}mm difference`})`,
-          priority: "CRITICAL",
-          reason: "According to Section 5.6 of the EV Maintenance Manual, tread depth difference >2mm indicates alignment or suspension problems.",
-          urgency: "IMMEDIATE - Within 24 hours",
-          fallback: true,
-          section56: true
-        });
-        
-        fallbackRecs.push({
-          action: "Schedule wheel alignment check and suspension inspection BEFORE replacing tires",
-          priority: "HIGH",
-          reason: "Replacing tires without fixing alignment will cause new tires to wear unevenly too. Fix the root cause first.",
-          urgency: "This week",
-          fallback: true,
-          section56: true
-        });
-        
-        fallbackRecs.push({
-          action: `Replace ${tires.fl < tires.fr ? 'front-left' : tires.fr < tires.fl ? 'front-right' : tires.rl < tires.rr ? 'rear-left' : 'rear-right'} tire (${Math.min(tires.fl, tires.fr, tires.rl, tires.rr).toFixed(1)}mm tread) after alignment is fixed`,
-          priority: "HIGH",
-          reason: "Low tread depth combined with uneven wear creates safety risk in wet conditions.",
-          urgency: "This week - after alignment",
-          fallback: true,
-          section56: true
-        });
-      } else {
-        // WARNING level uneven wear
-        fallbackRecs.push({
-          action: `⚠️ Uneven tire wear developing (${frontDiff > 1 ? `Front: ${frontDiff.toFixed(1)}mm difference` : `Rear: ${rearDiff.toFixed(1)}mm difference`})`,
-          priority: "MEDIUM",
-          reason: "Section 5.6: Tread difference 1-2mm suggests early alignment issues. Address now to prevent premature tire wear.",
-          urgency: "Within 1 week",
-          fallback: true,
-          section56: true
-        });
-        
-        fallbackRecs.push({
-          action: "Schedule alignment check to prevent further uneven wear",
-          priority: "MEDIUM",
-          reason: "Early detection saves money - fixing alignment now prevents having to replace tires prematurely.",
-          urgency: "Within 1 week",
-          fallback: true,
-          section56: true
-        });
-      }
-    }
-    
-    // Add standard recommendations based on tread depth
-    if (currentStatus === "CRITICAL" && !unevenWear) {
-      fallbackRecs.push(
-        { action: "URGENT: Stop driving immediately - tire replacement required", priority: "CRITICAL", fallback: true },
-        { action: "Schedule emergency tire service within 24 hours", priority: "HIGH", fallback: true },
-        { action: "Check for visible tire damage or punctures", priority: "HIGH", fallback: true }
-      );
-    } else if (currentStatus === "WARNING" && !unevenWear) {
-      fallbackRecs.push(
-        { action: "Schedule tire replacement within 2-4 weeks", priority: "MEDIUM", fallback: true },
-        { action: "Monitor tire pressure daily until replacement", priority: "MEDIUM", fallback: true },
-        { action: "Check tire alignment and balancing", priority: "LOW", fallback: true }
-      );
-    } else if (!unevenWear) {
-      fallbackRecs.push(
-        { action: "Rotate tires every 5,000-7,500 miles for even wear", priority: "LOW", fallback: true },
-        { action: "Monitor tire pressure monthly to optimize performance", priority: "LOW", fallback: true }
-      );
-    }
-    
-    // Limit recommendations
-    const numRecommendations = unevenWear ? 3 : (threadDepth < 4.0 ? 3 : threadDepth < 8.0 ? 2 : 1);
-    return fallbackRecs.slice(0, numRecommendations);
+    // Return empty array if no GenAI analysis - user must click Analyze button
+    return [];
   };
 
   // Create dynamic UI page summary based on current tire data and component state
@@ -1101,9 +837,9 @@ const Vehicle1Tires = () => {
     if (temperature > 25) activeMetrics.push(`temperature ${temperature}°C`);
     
     if (activeMetrics.length > 0) {
-      summary += `Real-time data streaming at ${dataUpdateFreq} shows active monitoring of ${activeMetrics.join(', ')} with integrated ML analysis and predictive maintenance alerts.`;
+      summary += `Real-time data streaming at ${dataUpdateFreq} shows active monitoring of ${activeMetrics.join(', ')}.`;
     } else {
-      summary += `Real-time data streaming at ${dataUpdateFreq} with comprehensive tire health monitoring, ML-powered analysis, and predictive maintenance recommendations.`;
+      summary += `Real-time data streaming at ${dataUpdateFreq} with comprehensive tire health monitoring.`;
     }
     
     return {
@@ -1895,7 +1631,7 @@ const Vehicle1Tires = () => {
 
                 {/* GenAI Recommendations */}
                 <div className="genai-recommendations" style={{ marginTop: windowWidth === 1920 ? '-30px' : '0px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                     <h3>GenAI Recommendations</h3>
                     <button
                       onClick={analyzeWithGenAI}
@@ -1911,7 +1647,8 @@ const Vehicle1Tires = () => {
                         fontWeight: 'bold',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '4px'
+                        gap: '4px',
+                        marginTop: '-6px'
                       }}
                     >
                       {genAiLoading ? (
@@ -1980,44 +1717,21 @@ const Vehicle1Tires = () => {
                       `}
                     </style>
                     {aiRecommendations.map((rec, index) => (
-                      <div key={index} style={{ marginBottom: '14px' }}>
-                        <div className="recommendation-item" style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '6px' }}>
-                          <span className="warning-icon" style={{ marginTop: '2px', flexShrink: 0 }}>
+                      <div key={index} style={{ marginBottom: '12px' }}>
+                        <div className="recommendation-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                          <span className="warning-icon">
                             {rec.priority === 'CRITICAL' ? '🚨' : rec.priority === 'HIGH' ? '⚠️' : rec.priority === 'MEDIUM' ? '⚡' : 'ℹ️'}
                           </span>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ 
-                              fontSize: '12px', 
-                              lineHeight: '1.4', 
-                              wordWrap: 'break-word', 
-                              overflowWrap: 'break-word',
-                              whiteSpace: 'normal'
-                            }}>
-                              {rec.action}
-                            </div>
-                            {rec.reason && rec.reason.trim() !== "" && (
-                              <div style={{ 
-                                fontSize: '10px', 
-                                color: 'rgba(255,255,255,0.7)', 
-                                marginTop: '4px',
-                                fontStyle: 'italic',
-                                lineHeight: '1.3'
-                              }}>
-                                {rec.reason}
-                              </div>
-                            )}
-                          </div>
-                          <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                            {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
-                            {rec.ml && <span style={{ fontSize: '10px', color: '#ff9900', backgroundColor: 'rgba(255,153,0,0.2)', padding: '2px 6px', borderRadius: '10px' }}>ML</span>}
-                            {rec.fallback && <span style={{ fontSize: '10px', color: '#888', backgroundColor: 'rgba(136,136,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>Rule</span>}
-                            {rec.section56 && <span style={{ fontSize: '10px', color: '#6495ED', backgroundColor: 'rgba(100,149,237,0.2)', padding: '2px 6px', borderRadius: '10px' }}>§5.6</span>}
-                          </div>
+                          <span style={{ flex: 1 }}>{rec.action}</span>
+                          {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
+                          {rec.ml && <span style={{ fontSize: '10px', color: '#ff9900', backgroundColor: 'rgba(255,153,0,0.2)', padding: '2px 6px', borderRadius: '10px' }}>ML</span>}
+                          {rec.fallback && <span style={{ fontSize: '10px', color: '#888', backgroundColor: 'rgba(136,136,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>Rule</span>}
                         </div>
-                        {rec.urgency && (
-                          <div className="recommendation-details" style={{ marginLeft: '28px', fontSize: '10px', color: 'rgba(255,255,255,0.7)' }}>
-                            <span style={{ fontWeight: 'bold', color: 'rgba(255,255,255,0.9)' }}>Timeline:</span> {rec.urgency}
-                            {rec.estimated_cost && <span style={{ marginLeft: '12px' }}><span style={{ fontWeight: 'bold', color: 'rgba(255,255,255,0.9)' }}>Cost:</span> {rec.estimated_cost}</span>}
+                        {(rec.reason || rec.urgency) && (
+                          <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
+                            {rec.reason && <p><strong>Reason:</strong> {rec.reason}</p>}
+                            {rec.urgency && <p><strong>Urgency:</strong> {rec.urgency}</p>}
+                            {rec.estimated_cost && <p><strong>Cost:</strong> {rec.estimated_cost}</p>}
                           </div>
                         )}
                       </div>
@@ -2029,7 +1743,36 @@ const Vehicle1Tires = () => {
                       </div>
                     )}
                     
-                    <div className="more-link" style={{ marginTop: '16px', fontSize: '12px', color: '#ff9900', cursor: 'pointer' }}>More.....</div>
+                    {genAiAnalysis?.raw_response && (
+                      <div 
+                        className="more-link" 
+                        onClick={() => setShowFullAnalysis(!showFullAnalysis)}
+                        style={{ marginTop: '16px', fontSize: '12px', color: '#ff9900', cursor: 'pointer', userSelect: 'none' }}
+                      >
+                        {showFullAnalysis ? 'Less ▲' : 'More... ▼'}
+                      </div>
+                    )}
+                    
+                    {showFullAnalysis && genAiAnalysis?.raw_response && (
+                      <div style={{ 
+                        marginTop: '12px', 
+                        padding: '12px', 
+                        backgroundColor: 'rgba(0,0,0,0.3)', 
+                        borderRadius: '6px',
+                        border: '1px solid rgba(0,255,136,0.3)',
+                        fontSize: '11px',
+                        lineHeight: '1.6',
+                        color: 'rgba(255,255,255,0.9)',
+                        whiteSpace: 'pre-wrap',
+                        maxHeight: '400px',
+                        overflowY: 'auto'
+                      }}>
+                        <div style={{ fontWeight: 'bold', color: '#00ff88', marginBottom: '8px' }}>
+                          📋 Full Analysis from Claude Sonnet 4.5
+                        </div>
+                        {genAiAnalysis.raw_response}
+                      </div>
+                    )}
                   </div>
                   
                   {/* Citations from Knowledge Base */}

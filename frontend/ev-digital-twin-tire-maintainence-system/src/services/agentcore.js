@@ -230,7 +230,7 @@ class AgentCoreService {
       }
 
       console.log(`Fetching fresh Motor GenAI analysis for vehicle ${vehicleId}`);
-      const response = await this.chat(`Analyze motor condition for vehicle ${motorData.make} ${motorData.model} (${motorData.year}). Current metrics: Engine temp ${motorData.engine_temp_c}°C, Oil pressure ${motorData.oil_pressure_psi} PSI, RPM ${motorData.rpm_avg}, Performance ${motorData.performance_score}%, Vibration ${motorData.vibration_level}. Provide specific motor maintenance recommendations focusing on performance and reliability.`, vin);
+      const response = await this.chat(`Analyze motor for vehicle ${vehicleId} using the analyze_motor_performance tool. Provide 3 concise driver recommendations (1-2 sentences each). Format: "1. Action - brief reason with timeframe". Example: "Schedule motor inspection within 1 week - coolant system check per Section 2.1 due to elevated temperature".`, vin);
 
       // Store successful response in cache
       const analysisData = { response, timestamp: Date.now(), fromCache: false };
@@ -281,7 +281,7 @@ class AgentCoreService {
       }
 
       console.log(`Fetching fresh Inverter GenAI analysis for vehicle ${vehicleId}`);
-      const response = await this.chat(`Analyze inverter for vehicle ${vehicleId} using the analyze_inverter_condition tool. Provide 2-3 numbered maintenance recommendations (format: **1. Action**) with urgency timelines (Within 7 days, Within 30 days).`, vin);
+      const response = await this.chat(`Analyze inverter for vehicle ${vehicleId} using the analyze_inverter_condition tool. Provide 2-3 preventive maintenance suggestions from Section 3.1 of the manual for normal inverter operation.`, vin);
       
       // Store successful response in cache
       const analysisData = { response, timestamp: Date.now(), fromCache: false };

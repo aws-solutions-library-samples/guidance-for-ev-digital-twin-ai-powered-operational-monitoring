@@ -27,11 +27,15 @@ agent = maintenance_agent.create_agent()
 # Initialize the AgentCore Runtime App
 app = BedrockAgentCoreApp()
 
+# Track browser tool executions per session to prevent duplicates
+BROWSER_TOOL_EXECUTED = set()
+
 @app.entrypoint
 def invoke(payload):
     """AgentCore Runtime entrypoint with memory-based pattern detection"""
     user_input = payload.get("prompt", "")
     actor_id = payload.get("actor_id", "fleet_manager")
+    session_id = payload.get("session_id", "default")
     
     # Update actor_id if provided
     if actor_id != maintenance_agent.actor_id:
@@ -39,21 +43,33 @@ def invoke(payload):
         if maintenance_agent.memory_hooks:
             maintenance_agent.memory_hooks.actor_id = actor_id
     
-    # BYPASS: If prompt is tire ordering, call tool directly
-    # NOTE: Commented out to fix multiple browser sessions issue (was causing 4 sessions)
-    # Uncomment if needed, but agent should handle tool calls naturally
-    # if "order_tire_online" in user_input.lower():
-    #     try:
-    #         import re
-    #         # Match both numeric IDs and VIN strings
-    #         match = re.search(r'order_tire_online\((["\']?)([A-Z0-9]+)\1\)', user_input)
-    #         if match:
-    #             vehicle_id = match.group(2)
-    #             print(f"BYPASS: Directly calling order_tire_online({vehicle_id})")
-    #             result = order_tire_online(vehicle_id)
-    #             return result
-    #     except Exception as e:
-    #         print(f"BYPASS FAILED: {str(e)}")
+    # SMART BYPASS: Prevent Strands event loop crash with browser tool
+    # Strands has a bug where it can't handle long-running nested agents (NovaAct)
+    # This bypass calls the tool directly, avoiding the event loop entirely
+    if "order_tire_online" in user_input.lower():
+        # Check if already executed for this session
+        if session_id in BROWSER_TOOL_EXECUTED:
+            print(f"⚠️  BYPASS: Browser tool already executed for session {session_id}")
+            return "Browser tool already executed for this session. Tire order is being processed."
+        
+        try:
+            import re
+            # Match both numeric IDs and VIN strings
+            match = re.search(r'order_tire_online\((["\']?)([A-Z0-9]+)\1\)', user_input)
+            if match:
+                vehicle_id = match.group(2)
+                
+                # Mark as executed BEFORE running to prevent race conditions
+                BROWSER_TOOL_EXECUTED.add(session_id)
+                print(f"✓ BYPASS: Directly calling order_tire_online({vehicle_id}) for session {session_id}")
+                
+                result = order_tire_online(vehicle_id)
+                return result
+        except Exception as e:
+            # Remove from executed set on error so it can be retried
+            BROWSER_TOOL_EXECUTED.discard(session_id)
+            print(f"❌ BYPASS FAILED: {str(e)}")
+            raise
     
     # Invoke agent with memory hooks active
     response = agent(user_input)

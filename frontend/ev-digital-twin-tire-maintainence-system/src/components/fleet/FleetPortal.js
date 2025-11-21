@@ -570,6 +570,7 @@ Then provide a brief explanation of the recommendation.`;
         setApprovalStatus('browser-tool');
         
         const tirePrompt = `order_tire_online(${selectedRecommendation.vehicleName})`;
+        const startTime = Date.now();
         
         try {
           const tireResponse = await agentCoreService.chat(tirePrompt);
@@ -595,30 +596,26 @@ Then provide a brief explanation of the recommendation.`;
           setTireOrderData(fallbackData);
         }
         
-        // Keep showing browser-tool status while waiting
-        // Wait for tire order to complete, then reset session
-        const waitForCompletion = async () => {
-          // Wait up to 90 seconds for tireOrderComplete flag
-          for (let i = 0; i < 90; i++) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            if (tireOrderComplete) break;
-          }
-          
-          // Reset session after tire order completes
-          agentCoreService.resetSession();
-          console.log('Session reset after tire order completion');
-          
-          setApprovalStatus('complete');
-          
-          setTimeout(() => {
-            setApprovalStatus('');
-            setSubmittingApproval(false);
-            setShowSuggestionReview(false);
-            setShowTireConfirmationModal(true);
-          }, 1000);
-        };
+        // Ensure at least 60 seconds have passed (browser tool minimum time)
+        // This prevents showing "complete" on phantom early responses
+        const elapsed = Date.now() - startTime;
+        if (elapsed < 60000) {
+          console.log(`Waiting ${60000 - elapsed}ms more to ensure browser tool completion...`);
+          await new Promise(resolve => setTimeout(resolve, 60000 - elapsed));
+        }
         
-        await waitForCompletion();
+        // Reset session after tire order completes
+        agentCoreService.resetSession();
+        console.log('Session reset after tire order completion');
+        
+        setApprovalStatus('complete');
+        
+        setTimeout(() => {
+          setApprovalStatus('');
+          setSubmittingApproval(false);
+          setShowSuggestionReview(false);
+          setShowTireConfirmationModal(true);
+        }, 1000);
       } else {
         // No tire ordering - book appointment directly
         setApprovalStatus('processing');

@@ -1,14 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import Papa from 'papaparse';
 import '../../css/connvehicle.css';
 import { VEHICLE_INFO } from '../../utils/vinMapping';
 
 const Vehicle2ConnVehicle = () => {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [motorData, setMotorData] = useState(null);
+  const [motorEfficiency, setMotorEfficiency] = useState(75);
 
   const displayVIN = '5YJSA1E26HF123456';
   const vehicleInfo = { vin: displayVIN, type: 'Electric SUV', year: '2022', tireSize: '255/50R20' };
+
+  // Load motor data on mount
+  useEffect(() => {
+    Papa.parse('/motor_sensor_data.csv', {
+      download: true,
+      header: true,
+      complete: (results) => {
+        // Find the earliest data for VIN: 5YJSA1E26HF123456 (shows degraded state)
+        const vehicleData = results.data.filter(row => row.vehicle_id === '5YJSA1E26HF123456');
+        if (vehicleData.length > 0) {
+          // Use first entry to show lower efficiency (motor issues)
+          const firstData = vehicleData[0];
+          setMotorData(firstData);
+          const performanceScore = parseFloat(firstData.performance_score) || 75;
+          // Reduce by 20% to show critical degraded state
+          setMotorEfficiency(Math.round(performanceScore * 0.80));
+        }
+      }
+    });
+  }, []);
 
   return (
     <div className="connvehicle-page">
@@ -141,8 +164,8 @@ const Vehicle2ConnVehicle = () => {
                 </div>
 
                 <div className="connvehicle-motor-eff">
-                  <img src={require('../assets/motor.png')} alt="Motor" style={{ width: '20px', height: '20px' }} />
-                  <span>92%</span>
+                  <span style={{ fontSize: '20px' }}>⚙️</span>
+                  <span>{motorEfficiency}%</span>
                   <div style={{ fontSize: window.innerWidth >= 1920 ? '16px' : '12px', opacity: 0.8 }}>Motor Efficiency</div>
                 </div>
               </div>

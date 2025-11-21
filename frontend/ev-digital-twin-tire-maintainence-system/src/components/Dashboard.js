@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import MapView from './MapView';
+import InteractiveMapView from './InteractiveMapView';
 import CarDetail from './CarDetail';
 import ConnVehicle from './ConnVehicle';
 import Vehicle1ConnVehicle from './vehicle1/Vehicle1ConnVehicle';
