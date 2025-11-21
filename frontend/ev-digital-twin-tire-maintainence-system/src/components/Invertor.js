@@ -861,8 +861,8 @@ const Invertor = () => {
 
   // Calculate remaining useful life percentage
   const calculateRemainingLife = () => {
-    // Check if this is a normal/healthy vehicle
-    const isHealthyVehicle = carId === '1HGBH41JXMN109876' || carId === 'WBADT43452G123789';
+    // Check if this is a normal/healthy vehicle (inverter is healthy even if motor has issues)
+    const isHealthyVehicle = carId === '1HGBH41JXMN109876' || carId === 'WBADT43452G123789' || carId === '5YJSA1E26HF123456' || carId === '2T1BURHE8JC987654';
     
     // Healthy vehicle starts at 92% and stays high
     let baseRemainingLife = isHealthyVehicle ? 92 : 68;

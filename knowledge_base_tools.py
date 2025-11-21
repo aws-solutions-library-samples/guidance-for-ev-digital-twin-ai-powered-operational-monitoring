@@ -16,14 +16,14 @@ KNOWLEDGE_BASE_ID = os.environ.get('KNOWLEDGE_BASE_ID', '')
 
 @tool
 def get_tire_maintenance_guidance(question: str) -> str:
+
     """
     Retrieve tire maintenance guidance from the official EV Preventive Maintenance Manual.
     Use this tool BEFORE analyzing tire data to get authoritative recommendations.
     
     Args:
-        question: Specific tire maintenance question (e.g., "What is the recommended tire pressure for EVs?", 
-                 "How often should I rotate tires?", "What causes uneven tire wear?")
-        
+        Get the guidance from TIRE MONITORING SYSTEM SECTION AND ALL THE INFORMATION AVAILABLE IN THE SUB SECTION
+        - TIRE FAILURE PREDICTION SCENARIOS
     Returns:
         Relevant guidance from the EV Maintenance Manual with confidence scores
     """

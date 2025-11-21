@@ -281,7 +281,7 @@ class AgentCoreService {
       }
 
       console.log(`Fetching fresh Inverter GenAI analysis for vehicle ${vehicleId}`);
-      const response = await this.chat(`Analyze inverter for vehicle ${vehicleId} using the analyze_inverter_condition tool. Provide 2-3 preventive maintenance suggestions from Section 3.1 of the manual for normal inverter operation.`, vin);
+      const response = await this.chat(`Analyze inverter for vehicle ${vehicleId} using the analyze_inverter_condition tool. Provide 2-3 preventive maintenance suggestions.`, vin);
       
       // Store successful response in cache
       const analysisData = { response, timestamp: Date.now(), fromCache: false };
@@ -338,7 +338,7 @@ class AgentCoreService {
 
     // Not cached - fetch fresh with improved prompt
     console.log(`Fetching fresh data for vehicle ${vehicleId}`);
-    const prompt = `Analyze ONLY the tire condition for vehicle ${vehicleId} using the analyze_tire_condition tool. Look for tire pressure issues (below 30 PSI), low tread depth, and wear patterns. Give me specific tire maintenance recommendations in 1-2 sentences. Do NOT analyze motor or engine.`;
+    const prompt = `Analyze ONLY the tire condition for vehicle ${vehicleId} using the analyze_tire_condition tool. Give me specific tire maintenance recommendations in 1-2 sentences.`;
     const response = await this.chat(prompt, vin);
 
     return response;
