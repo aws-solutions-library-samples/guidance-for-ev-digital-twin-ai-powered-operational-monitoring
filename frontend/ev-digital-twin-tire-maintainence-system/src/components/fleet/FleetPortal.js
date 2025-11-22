@@ -596,12 +596,12 @@ Then provide a brief explanation of the recommendation.`;
           setTireOrderData(fallbackData);
         }
         
-        // Ensure at least 60 seconds have passed (browser tool minimum time)
+        // Ensure at least 70 seconds have passed (browser tool minimum time)
         // This prevents showing "complete" on phantom early responses
         const elapsed = Date.now() - startTime;
-        if (elapsed < 60000) {
-          console.log(`Waiting ${60000 - elapsed}ms more to ensure browser tool completion...`);
-          await new Promise(resolve => setTimeout(resolve, 60000 - elapsed));
+        if (elapsed < 70000) {
+          console.log(`Waiting ${70000 - elapsed}ms more to ensure browser tool completion...`);
+          await new Promise(resolve => setTimeout(resolve, 70000 - elapsed));
         }
         
         // Reset session after tire order completes

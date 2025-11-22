@@ -129,21 +129,20 @@ def get_tread_depth_guidance(tread_depth_mm: float) -> str:
 @tool
 def get_motor_maintenance_guidance(question: str) -> str:
     """
-    Retrieve motor/drivetrain maintenance guidance from Section 2.1 of the EV Preventive Maintenance Manual.
-    Use this tool for motor overheating, performance issues, temperature monitoring, and drivetrain problems.
+    Retrieve motor maintenance guidance from the official EV Preventive Maintenance Manual.
+    Use this tool BEFORE analyzing motor data to get authoritative recommendations.
     
     Args:
-        question: Motor maintenance question (e.g., "What causes motor overheating?", 
-                 "Normal motor temperature range?", "Motor performance degradation?")
+        Retrieve guidance from ELECTRIC MOTOR SYSTEM MONITORING section and MOTOR FAILURE PREDICTION SCENARIOS subsection
         
     Returns:
-        Section 2.1 guidance from the EV Maintenance Manual with confidence scores
+        Motor maintenance guidance with confidence scores and source citations
     """
     if not KNOWLEDGE_BASE_ID:
         return "Knowledge Base not configured. Please set KNOWLEDGE_BASE_ID environment variable."
     
-    # Enhance query to target Section 2.1
-    enhanced_query = f"Section 2.1 Motor Drivetrain: {question}"
+    # Enhance query to target ELECTRIC MOTOR SYSTEM MONITORING and MOTOR FAILURE PREDICTION SCENARIOS
+    enhanced_query = f"ELECTRIC MOTOR SYSTEM MONITORING MOTOR FAILURE PREDICTION SCENARIOS: {question}"
     
     try:
         response = bedrock_runtime.retrieve(

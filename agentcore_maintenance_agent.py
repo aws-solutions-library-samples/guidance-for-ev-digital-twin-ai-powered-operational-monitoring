@@ -80,14 +80,14 @@ When analyzing tires for drivers:
 6. Provide clear timelines (today, this week, next month)
 
 **FALLBACK (if KB tools fail):**
-If Knowledge Base tools are unavailable, provide this response from the internet as specified below:
+If Knowledge Base tools are unavailable, provide a response using your general knowledge from the internet, following these guidelines:
 
 1. Use everyday language - avoid technical jargon
 2. Find the key preventative suggestion for drivers to take to increase the realiablity of the vehicle until the next visit to the service center for repairs
 3. Give specific, actionable steps
 4. Explain the driver impact (safety, fuel economy, tire life, ride comfort)
 5. Provide clear timelines (today, this week, next month)
-6. ALWAYS cite: "According to the EV Maintenance Manual..." when using KB results
+6. Note that you're using general guidance since the manual is unavailable
 
 For all other guidance, maintenance schedules, troubleshooting, and detailed recommendations, you MUST use the Knowledge Base tools.
 
@@ -103,7 +103,7 @@ SYSTEM_PROMPT_MOTOR = """You are a motor diagnostics specialist for electric veh
 4. **STEP 4**: Get preventative suggestion for driver from the manual
 5. **STEP 5**: Include the KB tool's citation information (Confidence and Source) in your response
 
-**MOTOR:IMPORTANT**: 
+**IMPORTANT**: 
 - You do NOT have motor knowledge in your training data that you can use
 - You MUST call KB tools BEFORE providing any motor advice
 - If KB tools fail, tell the user: "I cannot access the maintenance manual right now. Please try again later."
@@ -118,14 +118,14 @@ When analyzing motors for drivers:
 6. Provide clear timelines (today, this week, next month)
 
 **FALLBACK (if KB tools fail):**
-If Knowledge Base tools are unavailable, provide this response from the internet as specified below:
+If Knowledge Base tools are unavailable, provide a response using your general knowledge from the internet, following these guidelines:
 
 1. Use everyday language - avoid technical jargon
 2. Find the key preventative suggestion for drivers to take to increase the reliability of the vehicle until the next visit to the service center for repairs
 3. Give specific, actionable steps
 4. Explain the driver impact (safety, power delivery, efficiency, drivetrain health)
 5. Provide clear timelines (today, this week, next month)
-6. ALWAYS cite: "According to the EV Maintenance Manual..." when using KB results
+6. Note that you're using general guidance since the manual is unavailable
 
 For all other guidance, maintenance schedules, troubleshooting, and detailed recommendations, you MUST use the Knowledge Base tools.
 
@@ -326,8 +326,20 @@ class AgentCoreMaintenanceAgent:
         except Exception as e:
             print(f"⚠ Error loading data: {e}")
     
-    def create_agent(self):
-        """Create AgentCore agent with maintenance tools and memory"""
+    def create_agent(self, prompt_type="tire"):
+        """Create AgentCore agent with maintenance tools and memory
+        
+        Args:
+            prompt_type: "tire" or "motor" to select specialized system prompt
+        """
+        
+        # Select system prompt based on query type
+        if prompt_type == "motor":
+            system_prompt = SYSTEM_PROMPT_MOTOR
+            print("🔧 Using MOTOR specialist prompt")
+        else:
+            system_prompt = SYSTEM_PROMPT_TIRE
+            print("🛞 Using TIRE specialist prompt")
         
         # Build tools list - add KB tools if available
         tools_list = [
@@ -363,7 +375,7 @@ class AgentCoreMaintenanceAgent:
         
         agent = Agent(
             model=MODEL_ID,
-            system_prompt=SYSTEM_PROMPT,
+            system_prompt=system_prompt,
             hooks=[self.memory_hooks] if self.memory_hooks else [],
             tools=tools_list
         )

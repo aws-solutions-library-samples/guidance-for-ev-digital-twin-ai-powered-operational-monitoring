@@ -230,7 +230,7 @@ class AgentCoreService {
       }
 
       console.log(`Fetching fresh Motor GenAI analysis for vehicle ${vehicleId}`);
-      const response = await this.chat(`Analyze motor for vehicle ${vehicleId} using the analyze_motor_performance tool. Provide 3 concise driver recommendations (1-2 sentences each). Format: "1. Action - brief reason with timeframe". Example: "Schedule motor inspection within 1 week - coolant system check per Section 2.1 due to elevated temperature".`, vin);
+      const response = await this.chat(`Analyze motor performance for vehicle ${vehicleId}. Provide 2-3 key recommendations for the driver.`, vin);
 
       // Store successful response in cache
       const analysisData = { response, timestamp: Date.now(), fromCache: false };

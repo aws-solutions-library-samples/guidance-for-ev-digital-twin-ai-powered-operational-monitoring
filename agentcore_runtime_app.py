@@ -21,8 +21,9 @@ maintenance_agent = AgentCoreMaintenanceAgent(
 # Load data
 maintenance_agent.load_data()
 
-# Create agent with memory hooks
-agent = maintenance_agent.create_agent()
+# Create specialized agents at startup (faster than per-request creation)
+tire_agent = maintenance_agent.create_agent(prompt_type="tire")
+motor_agent = maintenance_agent.create_agent(prompt_type="motor")
 
 # Initialize the AgentCore Runtime App
 app = BedrockAgentCoreApp()
@@ -32,7 +33,7 @@ BROWSER_TOOL_EXECUTED = set()
 
 @app.entrypoint
 def invoke(payload):
-    """AgentCore Runtime entrypoint with memory-based pattern detection"""
+    """AgentCore Runtime entrypoint with dynamic prompt selection and memory-based pattern detection"""
     user_input = payload.get("prompt", "")
     actor_id = payload.get("actor_id", "fleet_manager")
     session_id = payload.get("session_id", "default")
@@ -42,6 +43,14 @@ def invoke(payload):
         maintenance_agent.actor_id = actor_id
         if maintenance_agent.memory_hooks:
             maintenance_agent.memory_hooks.actor_id = actor_id
+    
+    # Detect query type and select appropriate agent
+    if "motor" in user_input.lower() or "engine" in user_input.lower():
+        agent = motor_agent
+        print("🔧 Using MOTOR agent")
+    else:
+        agent = tire_agent
+        print("🛞 Using TIRE agent")
     
     # SMART BYPASS: Prevent Strands event loop crash with browser tool
     # Strands has a bug where it can't handle long-running nested agents (NovaAct)
