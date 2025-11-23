@@ -253,6 +253,7 @@ const Vehicle1Tires = () => {
   // Extract citations from KB tool responses
   const extractCitations = (response) => {
     const citations = [];
+    const citationMap = new Map(); // Use Map to deduplicate by source
     
     // Pattern 1: (Confidence: 0.XX) [Source: s3://bucket/file.pdf]
     const fullCitationPattern = /\(Confidence:\s*([\d.]+)\)\s*\[Source:\s*([^\]]+)\]/g;
@@ -269,12 +270,21 @@ const Vehicle1Tires = () => {
         displayName = parts[parts.length - 1];
       }
       
-      citations.push({
-        source: displayName,
-        confidence: confidence,
-        uri: source
-      });
+      // Remove .pdf extension for cleaner display
+      displayName = displayName.replace('.pdf', '');
+      
+      // Deduplicate: only keep the highest confidence for each unique source
+      if (!citationMap.has(displayName) || citationMap.get(displayName).confidence < confidence) {
+        citationMap.set(displayName, {
+          source: displayName,
+          confidence: confidence,
+          uri: source
+        });
+      }
     }
+    
+    // Convert map to array
+    citations.push(...citationMap.values());
     
     // Pattern 2: Just (Confidence: 0.XX) without explicit source
     // This happens when KB tools are used but source isn't in the exact format
@@ -310,7 +320,8 @@ const Vehicle1Tires = () => {
       }
     }
     
-    return citations;
+    // Final deduplication: return only one citation (the first/highest confidence)
+    return citations.length > 0 ? [citations[0]] : [];
   };
 
   // Parse AgentCore response into structured format

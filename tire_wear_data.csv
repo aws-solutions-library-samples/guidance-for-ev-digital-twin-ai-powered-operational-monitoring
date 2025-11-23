@@ -3619,7 +3619,11 @@ WBADT43452G123789,2025-09-10,EV-1004,Electric Sedan,2023,215/55R17,Premium EV Ti
 2T1BURHE8JC987654,2025-11-23,EV-1001,Electric Sedan,2023,215/55R17,Premium EV Tires,front_right,8.8,32.8,43.5,16400,city,dry,False,normal,False,False,3500,Electric Motor,AWD,Electric Sedan
 2T1BURHE8JC987654,2025-11-23,EV-1001,Electric Sedan,2023,215/55R17,Premium EV Tires,rear_left,8.5,32.1,42.3,16400,city,dry,False,normal,False,False,3500,Electric Motor,AWD,Electric Sedan
 2T1BURHE8JC987654,2025-11-23,EV-1001,Electric Sedan,2023,215/55R17,Premium EV Tires,rear_right,8.6,32.5,42.8,16400,city,dry,False,normal,False,False,3500,Electric Motor,AWD,Electric Sedan
-2T1BURHE8JC987654,2025-11-24,EV-1001,Electric Sedan,2023,215/55R17,Premium EV Tires,front_left,2.2,27.8,72.5,16600,city,dry,True,uneven_wear,True,False,3500,Electric Motor,AWD,Electric Sedan
+2T1BURHE8JC987654,2025-11-24,EV-1001,Electric Sedan,2023,215/55R17,Premium EV Tires,front_left,3.0,29.5,65.0,16600,city,dry,True,uneven_wear,True,False,3500,Electric Motor,AWD,Electric Sedan
 2T1BURHE8JC987654,2025-11-24,EV-1001,Electric Sedan,2023,215/55R17,Premium EV Tires,front_right,4.8,32.8,44.2,16600,city,dry,False,normal,False,False,3500,Electric Motor,AWD,Electric Sedan
 2T1BURHE8JC987654,2025-11-24,EV-1001,Electric Sedan,2023,215/55R17,Premium EV Tires,rear_left,4.5,32.1,42.5,16600,city,dry,False,normal,False,False,3500,Electric Motor,AWD,Electric Sedan
 2T1BURHE8JC987654,2025-11-24,EV-1001,Electric Sedan,2023,215/55R17,Premium EV Tires,rear_right,4.6,32.5,42.9,16600,city,dry,False,normal,False,False,3500,Electric Motor,AWD,Electric Sedan
+2T1BURHE8JC987654,2025-11-22,EV-1001,Electric Sedan,2023,215/55R17,Premium EV Tires,front_left,3.0,29.5,65.0,16650,city,dry,True,uneven_wear,True,False,3500,Electric Motor,AWD,Electric Sedan
+2T1BURHE8JC987654,2025-11-22,EV-1001,Electric Sedan,2023,215/55R17,Premium EV Tires,front_right,4.8,32.8,44.2,16650,city,dry,False,normal,False,False,3500,Electric Motor,AWD,Electric Sedan
+2T1BURHE8JC987654,2025-11-22,EV-1001,Electric Sedan,2023,215/55R17,Premium EV Tires,rear_left,4.5,32.1,42.5,16650,city,dry,False,normal,False,False,3500,Electric Motor,AWD,Electric Sedan
+2T1BURHE8JC987654,2025-11-22,EV-1001,Electric Sedan,2023,215/55R17,Premium EV Tires,rear_right,4.6,32.5,42.9,16650,city,dry,False,normal,False,False,3500,Electric Motor,AWD,Electric Sedan
