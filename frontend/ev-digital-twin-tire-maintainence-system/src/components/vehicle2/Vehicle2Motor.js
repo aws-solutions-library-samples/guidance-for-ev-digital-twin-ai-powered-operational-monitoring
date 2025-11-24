@@ -99,7 +99,7 @@ const Motor = () => {
         
         // Force component re-render for fresh data
         setMlResults(prev => [...prev]);
-      }, 10000);
+      }, 300000); // 5 minutes
       return () => clearInterval(interval);
     }
   }, [csvData]);
@@ -431,17 +431,79 @@ const Motor = () => {
       // Create natural language summary instead of bullet points
       const naturalSummary = createMotorNaturalLanguageSummary(response, motorData);
 
-      // Extract citations from KB tool responses
-      const citations = [];
-      const citationPattern = /\(Confidence:\s*([\d.]+)\)/g;
-      let match;
-      while ((match = citationPattern.exec(response)) !== null) {
-        const confidence = parseFloat(match[1]);
-        citations.push({
-          confidence: confidence,
-          source: "EV Maintenance Manual"
-        });
-      }
+      // Extract citations from KB tool responses with deduplication
+      const extractCitations = (response) => {
+        const citations = [];
+        const citationMap = new Map(); // Use Map to deduplicate by source
+        
+        // Pattern 1: (Confidence: 0.XX) [Source: s3://bucket/file.pdf]
+        const fullCitationPattern = /\(Confidence:\s*([\d.]+)\)\s*\[Source:\s*([^\]]+)\]/g;
+        let match;
+        
+        while ((match = fullCitationPattern.exec(response)) !== null) {
+          const confidence = parseFloat(match[1]);
+          const source = match[2].trim();
+          
+          // Extract filename from S3 URI
+          let displayName = source;
+          if (source.includes('/')) {
+            const parts = source.split('/');
+            displayName = parts[parts.length - 1];
+          }
+          
+          // Remove .pdf extension for cleaner display
+          displayName = displayName.replace('.pdf', '');
+          
+          // Deduplicate: only keep the highest confidence for each unique source
+          if (!citationMap.has(displayName) || citationMap.get(displayName).confidence < confidence) {
+            citationMap.set(displayName, {
+              source: displayName,
+              confidence: confidence,
+              uri: source
+            });
+          }
+        }
+        
+        // Convert map to array
+        citations.push(...citationMap.values());
+        
+        // Pattern 2: Just (Confidence: 0.XX) without explicit source
+        if (citations.length === 0) {
+          const confidenceOnlyPattern = /\(Confidence:\s*([\d.]+)\)/g;
+          const confidenceMatches = [];
+          
+          while ((match = confidenceOnlyPattern.exec(response)) !== null) {
+            confidenceMatches.push(parseFloat(match[1]));
+          }
+          
+          // If we found confidence scores, KB tools were used
+          if (confidenceMatches.length > 0) {
+            const avgConfidence = confidenceMatches.reduce((a, b) => a + b, 0) / confidenceMatches.length;
+            citations.push({
+              source: 'EV Preventive Maintenance Manual',
+              confidence: avgConfidence,
+              uri: 's3://ev-maintenance-manual-kb/manuals/Electric Vehicle Preventive Maintenance Manual.pdf'
+            });
+          }
+        }
+        
+        // Only add fallback citation if no KB citations were found
+        if (citations.length === 0) {
+          if (response.toLowerCase().includes('maintenance manual') || 
+              response.toLowerCase().includes('ev manual')) {
+            citations.push({
+              source: 'EV Preventive Maintenance Manual (System Fallback)',
+              confidence: 0.5,
+              uri: 'embedded'
+            });
+          }
+        }
+        
+        // Final deduplication: return only one citation (the first/highest confidence)
+        return citations.length > 0 ? [citations[0]] : [];
+      };
+      
+      const citations = extractCitations(response);
       console.log('📚 Citations extracted:', citations.length, citations);
       
       // Determine source and status based on analysis result
@@ -1418,18 +1480,20 @@ const Motor = () => {
                       {genAiAnalysis ? 
                         (genAiAnalysis.error ? 
                           genAiAnalysis.error_message :
-                          `Motor analysis by Claude Sonnet 4.5. Status: ${genAiAnalysis.overall_status} | Risk: ${genAiAnalysis.risk_level}`
+                          ''
                         ) :
                         'AI-powered motor optimization. Click "Analyze" to get Claude Sonnet 4.5 recommendations for current motor condition.'
                       }
                     </p>
                     
-                    {/* GenAI Key Findings - Natural Language Summary */}
-                    {genAiAnalysis?.key_findings_summary && !genAiAnalysis.error && (
-                      <div style={{ marginBottom: '12px', padding: '8px', backgroundColor: 'rgba(0,255,136,0.1)', borderRadius: '4px', border: '1px solid rgba(0,255,136,0.3)' }}>
-                        <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#00ff88', marginBottom: '4px' }}>🔍 Analysis Summary:</div>
-                        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.9)', lineHeight: '1.4' }}>
-                          {genAiAnalysis.key_findings_summary}
+                    {/* GenAI Analysis Summary with Status */}
+                    {genAiAnalysis && !genAiAnalysis.error && (
+                      <div style={{ marginBottom: '12px', padding: '10px', backgroundColor: 'rgba(0,255,136,0.1)', borderRadius: '4px', border: '1px solid rgba(0,255,136,0.3)', textAlign: 'center' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#00ff88' }}>
+                          🔍 Analysis Summary
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.9)', marginTop: '6px' }}>
+                          Motor analysis by Claude Sonnet 4.5. Status: {genAiAnalysis.overall_status} | Risk: {genAiAnalysis.risk_level}
                         </div>
                       </div>
                     )}
@@ -1459,26 +1523,84 @@ const Motor = () => {
                           }
                         `}
                       </style>
-                      {aiRecommendations.map((rec, index) => (
-                        <div key={index} style={{ marginBottom: '12px' }}>
-                          <div className="recommendation-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                            <span className="warning-icon">
-                              {rec.priority === 'CRITICAL' ? '🚨' : rec.priority === 'HIGH' ? '⚠️' : rec.priority === 'MEDIUM' ? '⚡' : 'ℹ️'}
-                            </span>
-                            <span style={{ flex: 1 }}>{rec.action}</span>
-                            {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
-                            {rec.ml && <span style={{ fontSize: '10px', color: '#ff9900', backgroundColor: 'rgba(255,153,0,0.2)', padding: '2px 6px', borderRadius: '10px' }}>ML</span>}
-                            {rec.fallback && <span style={{ fontSize: '10px', color: '#888', backgroundColor: 'rgba(136,136,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>Rule</span>}
-                          </div>
-                          {(rec.urgency || rec.description) && (
-                            <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
-                              {rec.urgency && <p><strong>Timeline:</strong> {rec.urgency}</p>}
-                              {rec.description && <p><strong>Details:</strong> {rec.description}</p>}
-                              {rec.estimated_cost && <p><strong>Cost:</strong> {rec.estimated_cost}</p>}
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                      {(() => {
+                        // Categorize recommendations based on keywords
+                        const serviceKeywords = ['schedule', 'book', 'appointment', 'service visit', 'inspection', 'technician', 'mechanic', 'professional', 'repair shop'];
+                        const driverKeywords = ['check', 'monitor', 'avoid', 'reduce', 'adjust', 'drive', 'take breaks', 'coolant level', 'oil level', 'tire pressure'];
+                        
+                        const driverActions = [];
+                        const serviceRequired = [];
+                        
+                        aiRecommendations.forEach(rec => {
+                          const actionLower = rec.action.toLowerCase();
+                          
+                          // Check if it's a service-related action
+                          const isService = serviceKeywords.some(keyword => actionLower.includes(keyword));
+                          
+                          if (isService) {
+                            serviceRequired.push(rec);
+                          } else {
+                            driverActions.push(rec);
+                          }
+                        });
+                        
+                        return (
+                          <>
+                            {/* Driver Actions Section */}
+                            {driverActions.length > 0 && (
+                              <div style={{ marginBottom: '16px' }}>
+                                <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#00ff88', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <span>🚗</span> Driver Actions
+                                </div>
+                                {driverActions.map((rec, index) => (
+                                  <div key={`driver-${index}`} style={{ marginBottom: '12px' }}>
+                                    <div className="recommendation-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                      <span className="warning-icon">
+                                        {rec.priority === 'CRITICAL' ? '🚨' : rec.priority === 'HIGH' ? '⚠️' : rec.priority === 'MEDIUM' ? '⚡' : 'ℹ️'}
+                                      </span>
+                                      <span style={{ flex: 1 }}>{rec.action}</span>
+                                      {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
+                                    </div>
+                                    {(rec.urgency || rec.description) && (
+                                      <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
+                                        {rec.urgency && <p><strong>Timeline:</strong> {rec.urgency}</p>}
+                                        {rec.description && <p><strong>Details:</strong> {rec.description}</p>}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            
+                            {/* Service Required Section */}
+                            {serviceRequired.length > 0 && (
+                              <div style={{ marginBottom: '16px' }}>
+                                <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#ff9900', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <span>🔧</span> Service Required
+                                </div>
+                                {serviceRequired.map((rec, index) => (
+                                  <div key={`service-${index}`} style={{ marginBottom: '12px' }}>
+                                    <div className="recommendation-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                      <span className="warning-icon">
+                                        {rec.priority === 'CRITICAL' ? '🚨' : rec.priority === 'HIGH' ? '⚠️' : rec.priority === 'MEDIUM' ? '⚡' : 'ℹ️'}
+                                      </span>
+                                      <span style={{ flex: 1 }}>{rec.action}</span>
+                                      {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
+                                    </div>
+                                    {(rec.urgency || rec.description) && (
+                                      <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
+                                        {rec.urgency && <p><strong>Timeline:</strong> {rec.urgency}</p>}
+                                        {rec.description && <p><strong>Details:</strong> {rec.description}</p>}
+                                        {rec.estimated_cost && <p><strong>Cost:</strong> {rec.estimated_cost}</p>}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
                       
                       {genAiAnalysis?.next_inspection && (
                         <div style={{ marginTop: '12px', fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontStyle: 'italic' }}>
@@ -1513,12 +1635,7 @@ const Motor = () => {
                         </div>
                       )}
                     </div>
-                    
-                    {(currentPredictions?.status === 'CRITICAL' || genAiAnalysis?.overall_status === 'CRITICAL') && (
-                      <div style={{ color: '#ff4444', fontWeight: 'bold', marginTop: '10px', padding: '8px', border: '1px solid #ff4444', borderRadius: '3px', backgroundColor: 'rgba(255,68,68,0.1)' }}>
-                        🚨 CRITICAL: {genAiAnalysis?.key_findings_summary?.split('.')[0] || 'Motor requires immediate attention'}
-                      </div>
-                    )}
+
                   </div>
                 </div>
               </div>

@@ -281,7 +281,7 @@ class AgentCoreService {
       }
 
       console.log(`Fetching fresh Inverter GenAI analysis for vehicle ${vehicleId}`);
-      const response = await this.chat(`Analyze inverter for vehicle ${vehicleId} using the analyze_inverter_condition tool. Provide 2-3 preventive maintenance suggestions.`, vin);
+      const response = await this.chat(`Analyze inverter performance for vehicle ${vehicleId}. Provide 2-3 key recommendations for the driver.`, vin);
       
       // Store successful response in cache
       const analysisData = { response, timestamp: Date.now(), fromCache: false };

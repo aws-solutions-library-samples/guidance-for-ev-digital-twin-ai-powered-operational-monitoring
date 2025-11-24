@@ -25,7 +25,8 @@ try:
         get_pressure_temperature_guidance,
         get_tread_depth_guidance,
         get_motor_maintenance_guidance,
-        get_motor_temperature_guidance
+        get_motor_temperature_guidance,
+        get_inverter_maintenance_guidance
     )
     KB_AVAILABLE = bool(os.environ.get('KNOWLEDGE_BASE_ID'))
 except ImportError:
@@ -146,8 +147,45 @@ For all other guidance, maintenance schedules, troubleshooting, and detailed rec
 
 Keep responses friendly, practical, and focused on what the driver should do next."""
 
-# Default system prompt (uses tire prompt as default)
-SYSTEM_PROMPT = SYSTEM_PROMPT_TIRE
+# Inverter-specific system prompt (specialized for inverter diagnostics and Power Electronics)
+SYSTEM_PROMPT_INVERTER = """You are an inverter diagnostics specialist for electric vehicles. You do NOT have inverter maintenance knowledge built-in. You MUST use the Knowledge Base tools to access the official EV Preventive Maintenance Manual.
+
+**MANDATORY WORKFLOW - INVERTER:**
+1. **STEP 1 (REQUIRED)**: Call analyze_inverter_condition() to get current vehicle inverter data
+2. **STEP 2**: Call get_inverter_maintenance_guidance() for general guidance
+3. **STEP 3**: Combine KB manual guidance with real-time data for personalized recommendations
+4. **STEP 4**: Get preventative suggestion for driver from the manual
+5. **STEP 5**: Include the KB tool's citation information (Confidence and Source) in your response
+
+**IMPORTANT**: 
+- You do NOT have inverter knowledge in your training data that you can use
+- You MUST call KB tools BEFORE providing any inverter advice
+- If KB tools fail, tell the user: "I cannot access the maintenance manual right now. Please try again later."
+- When you get KB results, preserve the citation format: (Confidence: X.XX) [Source: ...]
+
+When analyzing inverters for drivers:
+1. FIRST: Call get_inverter_maintenance_guidance() or related KB tools to get manual recommendations
+2. Use everyday language - avoid technical jargon
+3. Find the key preventative suggestion for drivers to take to increase the reliability of the vehicle until the next visit to the service center for repairs
+4. Give specific, actionable steps
+5. Explain the driver impact (safety, power delivery, efficiency, battery health)
+6. Provide clear timelines (today, this week, next month)
+
+**FALLBACK (if KB tools fail):**
+If Knowledge Base tools are unavailable, provide a response using your general knowledge from the internet, following these guidelines:
+
+1. Use everyday language - avoid technical jargon
+2. Find the key preventative suggestion for drivers to take to increase the reliability of the vehicle until the next visit to the service center for repairs
+3. Give specific, actionable steps
+4. Explain the driver impact (safety, power delivery, efficiency, battery health)
+5. Provide clear timelines (today, this week, next month)
+6. Note that you're using general guidance since the manual is unavailable
+
+For all other guidance, maintenance schedules, troubleshooting, and detailed recommendations, you MUST use the Knowledge Base tools.
+
+Keep responses friendly, practical, and focused on what the driver should do next."""
+
+
 
 
 class MaintenanceMemoryHooks(HookProvider):
@@ -345,13 +383,16 @@ class AgentCoreMaintenanceAgent:
         """Create AgentCore agent with maintenance tools and memory
         
         Args:
-            prompt_type: "tire" or "motor" to select specialized system prompt
+            prompt_type: "tire", "motor", or "inverter" to select specialized system prompt
         """
         
         # Select system prompt based on query type
         if prompt_type == "motor":
             system_prompt = SYSTEM_PROMPT_MOTOR
             print("🔧 Using MOTOR specialist prompt")
+        elif prompt_type == "inverter":
+            system_prompt = SYSTEM_PROMPT_INVERTER
+            print("⚡ Using INVERTER specialist prompt")
         else:
             system_prompt = SYSTEM_PROMPT_TIRE
             print("🛞 Using TIRE specialist prompt")
@@ -382,9 +423,10 @@ class AgentCoreMaintenanceAgent:
                 get_pressure_temperature_guidance,
                 get_tread_depth_guidance,
                 get_motor_maintenance_guidance,
-                get_motor_temperature_guidance
+                get_motor_temperature_guidance,
+                get_inverter_maintenance_guidance
             ])
-            print("✅ Knowledge Base tools enabled (Tire + Motor)")
+            print("✅ Knowledge Base tools enabled (Tire + Motor + Inverter)")
         else:
             print("ℹ️  Knowledge Base tools not available - using embedded knowledge only")
         

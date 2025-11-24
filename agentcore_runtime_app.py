@@ -24,6 +24,7 @@ maintenance_agent.load_data()
 # Create specialized agents at startup (faster than per-request creation)
 tire_agent = maintenance_agent.create_agent(prompt_type="tire")
 motor_agent = maintenance_agent.create_agent(prompt_type="motor")
+inverter_agent = maintenance_agent.create_agent(prompt_type="inverter")
 
 # Initialize the AgentCore Runtime App
 app = BedrockAgentCoreApp()
@@ -33,7 +34,7 @@ BROWSER_TOOL_EXECUTED = set()
 
 @app.entrypoint
 def invoke(payload):
-    """AgentCore Runtime entrypoint with dynamic prompt selection and memory-based pattern detection"""
+    """AgentCore Runtime entrypoint with dynamic prompt selection and STM+LTM memory-based pattern detection"""
     user_input = payload.get("prompt", "")
     actor_id = payload.get("actor_id", "fleet_manager")
     session_id = payload.get("session_id", "default")
@@ -48,6 +49,9 @@ def invoke(payload):
     if "motor" in user_input.lower() or "engine" in user_input.lower():
         agent = motor_agent
         print("🔧 Using MOTOR agent")
+    elif "inverter" in user_input.lower() or "power electronics" in user_input.lower():
+        agent = inverter_agent
+        print("⚡ Using INVERTER agent")
     else:
         agent = tire_agent
         print("🛞 Using TIRE agent")

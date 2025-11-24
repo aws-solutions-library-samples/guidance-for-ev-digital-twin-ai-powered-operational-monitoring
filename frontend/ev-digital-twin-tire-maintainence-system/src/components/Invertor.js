@@ -18,7 +18,7 @@ const Invertor = () => {
   const [genAiLoading, setGenAiLoading] = useState(false);
   const [showPrediction, setShowPrediction] = useState(false);
   const [animationProgress, setAnimationProgress] = useState(0);
-  const [showFullAnalysis, setShowFullAnalysis] = useState(false);
+  const [showFullAnalysisModal, setShowFullAnalysisModal] = useState(false);
   const [chartData, setChartData] = useState({
     inputVoltage: { current: [], expected: [] },
     outputVoltage: { current: [], expected: [] },
@@ -420,38 +420,10 @@ const Invertor = () => {
       const numberedItems = response.match(numberedPattern) || [];
       
       // Action verbs that indicate real recommendations
-      const actionVerbs = ['check', 'inspect', 'replace', 'service', 'monitor', 'test', 'verify', 'clean', 'schedule', 'review', 'request', 'have'];
+      const actionVerbs = ['check', 'inspect', 'replace', 'service', 'monitor', 'test', 'verify', 'clean', 'flush', 'change', 'repair', 'schedule', 'perform', 'examine', 'diagnose', 'stop', 'reduce', 'increase', 'adjust', 'avoid', 'limit', 'use'];
       
       numberedItems.forEach(item => {
-        // Remove numbering and bold markers
-        let cleaned = item.replace(/\d+\.\s*/, '').replace(/\*\*/g, '').trim();
-        
-        // Remove all metadata labels (GenAI, Timeline, Urgency, etc.)
-        cleaned = cleaned.replace(/GenAI/gi, '').replace(/Timeline:/gi, '').replace(/Urgency:/gi, '').replace(/Reason:/gi, '').trim();
-        
-        // Extract just the main action text (before any metadata or extra details)
-        const actionMatch = cleaned.match(/^([^:\n]+?)(?:\s*(?:Within|Next|Immediately)|\n|$)/);
-        if (actionMatch) {
-          cleaned = actionMatch[1].trim();
-        }
-        
-        // Remove emoji icons
-        cleaned = cleaned.replace(/[⚠️🚨⚡ℹ️✅❌]/g, '').trim();
-        
-        // Take only first sentence
-        const sentenceMatch = cleaned.match(/^([^.\n]+)\./);
-        if (sentenceMatch) {
-          cleaned = sentenceMatch[1] + '.';
-        } else {
-          cleaned = cleaned.split(/\n/)[0].trim();
-          if (!cleaned.endsWith('.')) cleaned += '.';
-        }
-        
-        // Limit length to ~120 chars max
-        if (cleaned.length > 120) {
-          cleaned = cleaned.substring(0, 117) + '...';
-        }
-        
+        const cleaned = item.replace(/\d+\.\s*/, '').replace(/\*\*/g, '').trim();
         if (cleaned.length < 15) return;
         
         // Only include if it contains an action verb
@@ -460,13 +432,14 @@ const Invertor = () => {
         if (!hasActionVerb) return;
         
         const lowerItem = item.toLowerCase();
-        const priority = lowerItem.includes('urgent') || lowerItem.includes('critical') || lowerItem.includes('immediate') ? 'CRITICAL' :
+        const priority = lowerItem.includes('urgent') || lowerItem.includes('critical') || lowerItem.includes('immediate') || lowerItem.includes('stop') ? 'CRITICAL' :
                         lowerItem.includes('soon') || lowerItem.includes('warning') || lowerItem.includes('attention') ? 'HIGH' :
                         lowerItem.includes('consider') || lowerItem.includes('schedule') ? 'MEDIUM' : 'LOW';
         
         recommendations.push({
           action: cleaned,
           priority: priority,
+          reason: "",
           urgency: priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance'
         });
       });
@@ -1320,7 +1293,7 @@ const Invertor = () => {
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                       <span style={{ fontSize: windowWidth <= 1440 ? '13px' : windowWidth <= 1700 ? '14px' : windowWidth <= 1815 ? '15px' : '16px' }}>🌡️</span>
-                      <div style={{ fontSize: windowWidth <= 1440 ? '13px' : windowWidth <= 1700 ? '14px' : windowWidth <= 1815 ? '16px' : spacing.titleFontSize }}><span style={{ fontSize: windowWidth <= 1440 ? '18px' : windowWidth <= 1700 ? '20px' : windowWidth <= 1815 ? '22px' : `calc(${spacing.titleFontSize} * 1.5)` }}>54</span>°C</div>
+                      <div style={{ fontSize: windowWidth <= 1440 ? '13px' : windowWidth <= 1700 ? '14px' : windowWidth <= 1815 ? '16px' : spacing.titleFontSize }}><span style={{ fontSize: windowWidth <= 1440 ? '18px' : windowWidth <= 1700 ? '20px' : windowWidth <= 1815 ? '22px' : `calc(${spacing.titleFontSize} * 1.5)` }}>{(parseFloat(currentData.temperature_c) || 65).toFixed(1)}</span>°C</div>
                     </div>
                     <div style={{ fontSize: windowWidth <= 1440 ? '9px' : windowWidth <= 1700 ? '10px' : windowWidth <= 1815 ? '11px' : spacing.fontSize }}>Inverter Temperature</div>
                   </div>
@@ -1761,18 +1734,20 @@ const Invertor = () => {
                     {genAiAnalysis ? 
                       (genAiAnalysis.error ? 
                         genAiAnalysis.error_message :
-                        `Analysis by Claude Sonnet 4.5. Status: ${genAiAnalysis.overall_status} | Risk: ${genAiAnalysis.risk_level}`
+                        ''
                       ) :
                       'AI-powered inverter optimization. Click "Analyze" to get Claude Sonnet 4.5 recommendations for current inverter condition.'
                     }
                   </p>
                   
-                  {/* GenAI Key Findings - Natural Language Summary */}
-                  {genAiAnalysis?.key_findings_summary && !genAiAnalysis.error && (
-                    <div style={{ marginBottom: '12px', padding: '8px', backgroundColor: 'rgba(0,255,136,0.1)', borderRadius: '4px', border: '1px solid rgba(0,255,136,0.3)' }}>
-                      <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#00ff88', marginBottom: '4px' }}>🔍 Analysis Summary:</div>
-                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.9)', lineHeight: '1.4' }}>
-                        {genAiAnalysis.key_findings_summary}
+                  {/* GenAI Analysis Summary with Status */}
+                  {genAiAnalysis && !genAiAnalysis.error && (
+                    <div style={{ marginBottom: '12px', padding: '10px', backgroundColor: 'rgba(0,255,136,0.1)', borderRadius: '4px', border: '1px solid rgba(0,255,136,0.3)', textAlign: 'center' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#00ff88' }}>
+                        🔍 Analysis Summary
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.9)', marginTop: '6px' }}>
+                        Inverter analysis by Claude Sonnet 4.5. Status: {genAiAnalysis.overall_status} | Risk: {genAiAnalysis.risk_level}
                       </div>
                     </div>
                   )}
@@ -1802,26 +1777,81 @@ const Invertor = () => {
                         }
                       `}
                     </style>
-                    {aiRecommendations.map((rec, index) => (
-                      <div key={index} style={{ marginBottom: '12px' }}>
-                        <div className="recommendation-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                          <span className="warning-icon">
-                            {rec.priority === 'CRITICAL' ? '🚨' : rec.priority === 'HIGH' ? '⚠️' : rec.priority === 'MEDIUM' ? '⚡' : 'ℹ️'}
-                          </span>
-                          <span style={{ flex: 1 }}>{rec.action}</span>
-                          {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
-                          {rec.ml && <span style={{ fontSize: '10px', color: '#ff9900', backgroundColor: 'rgba(255,153,0,0.2)', padding: '2px 6px', borderRadius: '10px' }}>ML</span>}
-                          {rec.fallback && <span style={{ fontSize: '10px', color: '#888', backgroundColor: 'rgba(136,136,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>Rule</span>}
-                        </div>
-                        {(rec.urgency || rec.description) && (
-                          <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
-                            {rec.urgency && <p><strong>Timeline:</strong> {rec.urgency}</p>}
-                            {rec.description && <p><strong>Details:</strong> {rec.description}</p>}
-                            {rec.estimated_cost && <p><strong>Cost:</strong> {rec.estimated_cost}</p>}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                    {(() => {
+                      // Categorize recommendations based on keywords
+                      const serviceKeywords = ['schedule', 'book', 'appointment', 'service visit', 'inspection', 'technician', 'mechanic', 'professional', 'repair shop'];
+                      
+                      const driverActions = [];
+                      const serviceRequired = [];
+                      
+                      aiRecommendations.forEach(rec => {
+                        const actionLower = rec.action.toLowerCase();
+                        const isService = serviceKeywords.some(keyword => actionLower.includes(keyword));
+                        
+                        if (isService) {
+                          serviceRequired.push(rec);
+                        } else {
+                          driverActions.push(rec);
+                        }
+                      });
+                      
+                      return (
+                        <>
+                          {/* Driver Actions Section */}
+                          {driverActions.length > 0 && (
+                            <div style={{ marginBottom: '16px' }}>
+                              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#00ff88', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span>🚗</span> Driver Actions
+                              </div>
+                              {driverActions.map((rec, index) => (
+                                <div key={`driver-${index}`} style={{ marginBottom: '12px' }}>
+                                  <div className="recommendation-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                    <span className="warning-icon">
+                                      {rec.priority === 'CRITICAL' ? '🚨' : rec.priority === 'HIGH' ? '⚠️' : rec.priority === 'MEDIUM' ? '⚡' : 'ℹ️'}
+                                    </span>
+                                    <span style={{ flex: 1 }}>{rec.action}</span>
+                                    {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
+                                  </div>
+                                  {(rec.urgency || rec.description) && (
+                                    <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
+                                      {rec.urgency && <p><strong>Timeline:</strong> {rec.urgency}</p>}
+                                      {rec.description && <p><strong>Details:</strong> {rec.description}</p>}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {/* Service Required Section */}
+                          {serviceRequired.length > 0 && (
+                            <div style={{ marginBottom: '16px' }}>
+                              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#ff9900', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span>🔧</span> Service Required
+                              </div>
+                              {serviceRequired.map((rec, index) => (
+                                <div key={`service-${index}`} style={{ marginBottom: '12px' }}>
+                                  <div className="recommendation-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                    <span className="warning-icon">
+                                      {rec.priority === 'CRITICAL' ? '🚨' : rec.priority === 'HIGH' ? '⚠️' : rec.priority === 'MEDIUM' ? '⚡' : 'ℹ️'}
+                                    </span>
+                                    <span style={{ flex: 1 }}>{rec.action}</span>
+                                    {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
+                                  </div>
+                                  {(rec.urgency || rec.description) && (
+                                    <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
+                                      {rec.urgency && <p><strong>Timeline:</strong> {rec.urgency}</p>}
+                                      {rec.description && <p><strong>Details:</strong> {rec.description}</p>}
+                                      {rec.estimated_cost && <p><strong>Cost:</strong> {rec.estimated_cost}</p>}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                     
                     {genAiAnalysis?.next_inspection && (
                       <div style={{ marginTop: '12px', fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontStyle: 'italic' }}>
@@ -1849,31 +1879,10 @@ const Invertor = () => {
                     {genAiAnalysis?.raw_response && (
                       <div 
                         className="more-link" 
-                        onClick={() => setShowFullAnalysis(!showFullAnalysis)}
+                        onClick={() => setShowFullAnalysisModal(true)}
                         style={{ marginTop: '16px', fontSize: '12px', color: '#ff9900', cursor: 'pointer', userSelect: 'none' }}
                       >
-                        {showFullAnalysis ? 'Less ▲' : 'More... ▼'}
-                      </div>
-                    )}
-                    
-                    {showFullAnalysis && genAiAnalysis?.raw_response && (
-                      <div style={{ 
-                        marginTop: '12px', 
-                        padding: '12px', 
-                        backgroundColor: 'rgba(0,0,0,0.3)', 
-                        borderRadius: '6px',
-                        border: '1px solid rgba(0,255,136,0.3)',
-                        fontSize: '11px',
-                        lineHeight: '1.6',
-                        color: 'rgba(255,255,255,0.9)',
-                        whiteSpace: 'pre-wrap',
-                        maxHeight: '400px',
-                        overflowY: 'auto'
-                      }}>
-                        <div style={{ fontWeight: 'bold', color: '#00ff88', marginBottom: '8px' }}>
-                          📋 Full Analysis from Claude Sonnet 4.5
-                        </div>
-                        {genAiAnalysis.raw_response}
+                        More... ▼
                       </div>
                     )}
                   </div>
@@ -1883,6 +1892,115 @@ const Invertor = () => {
           </div>
         </div>
       </div>
+      
+      {/* Full Analysis Modal */}
+      {showFullAnalysisModal && genAiAnalysis?.raw_response && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '20px'
+          }}
+          onClick={() => setShowFullAnalysisModal(false)}
+        >
+          <div 
+            style={{
+              backgroundColor: '#1a1a1a',
+              border: '2px solid #00ff88',
+              borderRadius: '12px',
+              padding: '24px',
+              maxWidth: '800px',
+              maxHeight: '80vh',
+              width: '100%',
+              overflowY: 'auto',
+              boxShadow: '0 8px 32px rgba(0,255,136,0.3)',
+              position: 'relative'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowFullAnalysisModal(false)}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                background: 'none',
+                border: 'none',
+                color: '#ff9900',
+                fontSize: '24px',
+                cursor: 'pointer',
+                padding: '4px 8px',
+                lineHeight: 1
+              }}
+            >
+              ✕
+            </button>
+            
+            <div style={{ marginBottom: '20px' }}>
+              <h2 style={{ 
+                color: '#00ff88', 
+                margin: '0 0 8px 0',
+                fontSize: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                📋 Full Inverter Analysis
+              </h2>
+              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>
+                Powered by Claude Sonnet 4.5 via AWS Bedrock AgentCore
+              </div>
+            </div>
+            
+            <div style={{
+              fontSize: '14px',
+              lineHeight: '1.8',
+              color: 'rgba(255,255,255,0.9)',
+              whiteSpace: 'pre-wrap',
+              wordWrap: 'break-word'
+            }}>
+              {genAiAnalysis.raw_response}
+            </div>
+            
+            <div style={{
+              marginTop: '24px',
+              paddingTop: '16px',
+              borderTop: '1px solid rgba(255,255,255,0.1)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>
+                {genAiAnalysis.fromCache ? '💾 Cached Analysis' : '✨ Fresh Analysis'}
+              </div>
+              <button
+                onClick={() => setShowFullAnalysisModal(false)}
+                style={{
+                  backgroundColor: '#ff9900',
+                  color: '#000',
+                  border: 'none',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  fontSize: '12px'
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <DataNeededModal open={showModal} onClose={() => setShowModal(false)} type="inverter" />
     </div>
   );

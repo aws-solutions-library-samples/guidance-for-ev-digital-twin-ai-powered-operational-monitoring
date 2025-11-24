@@ -54,7 +54,7 @@ const TiresPage = () => {
   const [pressureVariation, setPressureVariation] = useState(0);
   const [genAiAnalysis, setGenAiAnalysis] = useState(null);
   const [genAiLoading, setGenAiLoading] = useState(false);
-  const [showFullAnalysis, setShowFullAnalysis] = useState(false);
+  const [showFullAnalysisModal, setShowFullAnalysisModal] = useState(false);
 
 
   useEffect(() => {
@@ -226,14 +226,16 @@ const TiresPage = () => {
       const keyFindings = [];
       
       // Extract numbered list items (1. Check tires, 2. Inspect, etc.)
-      const numberedPattern = /\d+\.\s*\*\*[^*]+\*\*[^\n]*(?:\n[^\d\n][^\n]*)*|\d+\.\s*[^\n]+/g;
+      // Use line-start pattern to avoid matching numbers in middle of text like "5°C" or "92.5%"
+      const numberedPattern = /^[\s]*(?:###\s*)?\*{0,2}\d+\.\s*\*{0,2}([^\n]+)/gm;
       const numberedItems = response.match(numberedPattern) || [];
       
       // Action verbs that indicate real recommendations
       const actionVerbs = ['check', 'inspect', 'replace', 'service', 'monitor', 'test', 'verify', 'inflate', 'rotate', 'balance', 'align', 'repair', 'schedule', 'perform', 'examine', 'diagnose', 'adjust'];
       
       numberedItems.forEach(item => {
-        const cleaned = item.replace(/\d+\.\s*/, '').replace(/\*\*/g, '').trim();
+        // Extract just the title part, removing markdown and numbering
+        const cleaned = item.replace(/^[\s]*(?:###\s*)?\*{0,2}\d+\.\s*\*{0,2}/, '').replace(/\*\*/g, '').trim();
         if (cleaned.length < 15) return;
         
         // Only include if it contains an action verb
@@ -1687,18 +1689,20 @@ const TiresPage = () => {
                     {genAiAnalysis ? 
                       (genAiAnalysis.error ? 
                         genAiAnalysis.error_message :
-                        `Analysis by Claude Sonnet 4.5. Status: ${genAiAnalysis.overall_status} | Risk: ${genAiAnalysis.risk_level}`
+                        ''
                       ) :
                       'AI-powered tire optimization. Click "Analyze" to get Claude Sonnet 4.5 recommendations for current tire condition.'
                     }
                   </p>
                   
-                  {/* GenAI Key Findings - Natural Language Summary */}
-                  {genAiAnalysis?.key_findings_summary && !genAiAnalysis.error && (
-                    <div style={{ marginBottom: '12px', padding: '8px', backgroundColor: 'rgba(0,255,136,0.1)', borderRadius: '4px', border: '1px solid rgba(0,255,136,0.3)' }}>
-                      <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#00ff88', marginBottom: '4px' }}>🔍 Analysis Summary:</div>
-                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.9)', lineHeight: '1.4' }}>
-                        {genAiAnalysis.key_findings_summary}
+                  {/* GenAI Analysis Summary with Status */}
+                  {genAiAnalysis && !genAiAnalysis.error && (
+                    <div style={{ marginBottom: '12px', padding: '10px', backgroundColor: 'rgba(0,255,136,0.1)', borderRadius: '4px', border: '1px solid rgba(0,255,136,0.3)', textAlign: 'center' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#00ff88' }}>
+                        🔍 Analysis Summary
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.9)', marginTop: '6px' }}>
+                        Tire analysis by Claude Sonnet 4.5. Status: {genAiAnalysis.overall_status} | Risk: {genAiAnalysis.risk_level}
                       </div>
                     </div>
                   )}
@@ -1728,26 +1732,81 @@ const TiresPage = () => {
                         }
                       `}
                     </style>
-                    {aiRecommendations.map((rec, index) => (
-                      <div key={index} style={{ marginBottom: '12px' }}>
-                        <div className="recommendation-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                          <span className="warning-icon">
-                            {rec.priority === 'CRITICAL' ? '🚨' : rec.priority === 'HIGH' ? '⚠️' : rec.priority === 'MEDIUM' ? '⚡' : 'ℹ️'}
-                          </span>
-                          <span style={{ flex: 1 }}>{rec.action}</span>
-                          {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
-                          {rec.ml && <span style={{ fontSize: '10px', color: '#ff9900', backgroundColor: 'rgba(255,153,0,0.2)', padding: '2px 6px', borderRadius: '10px' }}>ML</span>}
-                          {rec.fallback && <span style={{ fontSize: '10px', color: '#888', backgroundColor: 'rgba(136,136,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>Rule</span>}
-                        </div>
-                        {(rec.reason || rec.urgency) && (
-                          <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
-                            {rec.reason && <p><strong>Reason:</strong> {rec.reason}</p>}
-                            {rec.urgency && <p><strong>Urgency:</strong> {rec.urgency}</p>}
-                            {rec.estimated_cost && <p><strong>Cost:</strong> {rec.estimated_cost}</p>}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                    {(() => {
+                      // Categorize recommendations based on keywords
+                      const serviceKeywords = ['schedule', 'book', 'appointment', 'service visit', 'inspection', 'technician', 'mechanic', 'professional', 'repair shop'];
+                      
+                      const driverActions = [];
+                      const serviceRequired = [];
+                      
+                      aiRecommendations.forEach(rec => {
+                        const actionLower = rec.action.toLowerCase();
+                        const isService = serviceKeywords.some(keyword => actionLower.includes(keyword));
+                        
+                        if (isService) {
+                          serviceRequired.push(rec);
+                        } else {
+                          driverActions.push(rec);
+                        }
+                      });
+                      
+                      return (
+                        <>
+                          {/* Driver Actions Section */}
+                          {driverActions.length > 0 && (
+                            <div style={{ marginBottom: '16px' }}>
+                              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#00ff88', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span>🚗</span> Driver Actions
+                              </div>
+                              {driverActions.map((rec, index) => (
+                                <div key={`driver-${index}`} style={{ marginBottom: '12px' }}>
+                                  <div className="recommendation-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                    <span className="warning-icon">
+                                      {rec.priority === 'CRITICAL' ? '🚨' : rec.priority === 'HIGH' ? '⚠️' : rec.priority === 'MEDIUM' ? '⚡' : 'ℹ️'}
+                                    </span>
+                                    <span style={{ flex: 1 }}>{rec.action}</span>
+                                    {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
+                                  </div>
+                                  {(rec.urgency || rec.description) && (
+                                    <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
+                                      {rec.urgency && <p><strong>Timeline:</strong> {rec.urgency}</p>}
+                                      {rec.description && <p><strong>Details:</strong> {rec.description}</p>}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {/* Service Required Section */}
+                          {serviceRequired.length > 0 && (
+                            <div style={{ marginBottom: '16px' }}>
+                              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#ff9900', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span>🔧</span> Service Required
+                              </div>
+                              {serviceRequired.map((rec, index) => (
+                                <div key={`service-${index}`} style={{ marginBottom: '12px' }}>
+                                  <div className="recommendation-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                    <span className="warning-icon">
+                                      {rec.priority === 'CRITICAL' ? '🚨' : rec.priority === 'HIGH' ? '⚠️' : rec.priority === 'MEDIUM' ? '⚡' : 'ℹ️'}
+                                    </span>
+                                    <span style={{ flex: 1 }}>{rec.action}</span>
+                                    {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
+                                  </div>
+                                  {(rec.urgency || rec.description) && (
+                                    <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
+                                      {rec.urgency && <p><strong>Timeline:</strong> {rec.urgency}</p>}
+                                      {rec.description && <p><strong>Details:</strong> {rec.description}</p>}
+                                      {rec.estimated_cost && <p><strong>Cost:</strong> {rec.estimated_cost}</p>}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                     
                     {genAiAnalysis?.next_inspection && (
                       <div style={{ marginTop: '12px', fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontStyle: 'italic' }}>
@@ -1775,31 +1834,10 @@ const TiresPage = () => {
                     {genAiAnalysis?.raw_response && (
                       <div 
                         className="more-link" 
-                        onClick={() => setShowFullAnalysis(!showFullAnalysis)}
+                        onClick={() => setShowFullAnalysisModal(true)}
                         style={{ marginTop: '16px', fontSize: '12px', color: '#ff9900', cursor: 'pointer', userSelect: 'none' }}
                       >
-                        {showFullAnalysis ? 'Less ▲' : 'More... ▼'}
-                      </div>
-                    )}
-                    
-                    {showFullAnalysis && genAiAnalysis?.raw_response && (
-                      <div style={{ 
-                        marginTop: '12px', 
-                        padding: '12px', 
-                        backgroundColor: 'rgba(0,0,0,0.3)', 
-                        borderRadius: '6px',
-                        border: '1px solid rgba(0,255,136,0.3)',
-                        fontSize: '11px',
-                        lineHeight: '1.6',
-                        color: 'rgba(255,255,255,0.9)',
-                        whiteSpace: 'pre-wrap',
-                        maxHeight: '400px',
-                        overflowY: 'auto'
-                      }}>
-                        <div style={{ fontWeight: 'bold', color: '#00ff88', marginBottom: '8px' }}>
-                          📋 Full Analysis from Claude Sonnet 4.5
-                        </div>
-                        {genAiAnalysis.raw_response}
+                        More... ▼
                       </div>
                     )}
                   </div>
@@ -1808,6 +1846,80 @@ const TiresPage = () => {
             </div>
         </div>
       </div>
+      
+      {/* Full Analysis Modal */}
+      {showFullAnalysisModal && genAiAnalysis?.raw_response && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '20px'
+          }}
+          onClick={() => setShowFullAnalysisModal(false)}
+        >
+          <div 
+            style={{
+              backgroundColor: '#1a1a1a',
+              border: '2px solid #00ff88',
+              borderRadius: '12px',
+              padding: '24px',
+              maxWidth: '800px',
+              maxHeight: '80vh',
+              width: '100%',
+              overflowY: 'auto',
+              boxShadow: '0 8px 32px rgba(0,255,136,0.3)',
+              position: 'relative'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowFullAnalysisModal(false)}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                background: 'none',
+                border: 'none',
+                color: '#ff9900',
+                fontSize: '24px',
+                cursor: 'pointer',
+                padding: '4px 8px',
+                lineHeight: 1
+              }}
+            >
+              ✕
+            </button>
+            
+            <div style={{ marginBottom: '20px' }}>
+              <h2 style={{ color: '#00ff88', margin: '0 0 8px 0', fontSize: '20px' }}>
+                📋 Full Analysis from Claude Sonnet 4.5
+              </h2>
+              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)' }}>
+                Complete tire analysis and recommendations
+              </div>
+            </div>
+            
+            <div style={{
+              fontSize: '13px',
+              lineHeight: '1.8',
+              color: 'rgba(255,255,255,0.95)',
+              whiteSpace: 'pre-wrap',
+              fontFamily: 'system-ui, -apple-system, sans-serif'
+            }}>
+              {genAiAnalysis.raw_response}
+            </div>
+          </div>
+        </div>
+      )}
+      
       <DataNeededModal open={showModal} onClose={() => setShowModal(false)} type="tire" />
       </div>
     </div>

@@ -191,3 +191,55 @@ def get_motor_temperature_guidance(temperature_c: float) -> str:
     """
     query = f"Motor temperature {temperature_c}°C - is this normal? What are safe operating temperatures for EV motors?"
     return get_motor_maintenance_guidance(query)
+
+
+@tool
+def get_inverter_maintenance_guidance(question: str) -> str:
+    """
+    Retrieve inverter maintenance guidance from the official EV Preventive Maintenance Manual.
+    Use this tool BEFORE analyzing inverter data to get authoritative recommendations.
+    
+    Args:
+        Retrieve guidance from POWER ELECTRONICS (INVERTER) MONITORING section and INVERTER FAILURE PREDICTION SCENARIOS subsection
+        
+    Returns:
+        Inverter maintenance guidance with confidence scores and source citations
+    """
+    if not KNOWLEDGE_BASE_ID:
+        return "Knowledge Base not configured. Please set KNOWLEDGE_BASE_ID environment variable."
+    
+    # Enhance query to target POWER ELECTRONICS (INVERTER) MONITORING and INVERTER FAILURE PREDICTION SCENARIOS
+    enhanced_query = f"POWER ELECTRONICS INVERTER MONITORING INVERTER FAILURE PREDICTION SCENARIOS: {question}"
+    
+    try:
+        response = bedrock_runtime.retrieve(
+            knowledgeBaseId=KNOWLEDGE_BASE_ID,
+            retrievalQuery={'text': enhanced_query},
+            retrievalConfiguration={
+                'vectorSearchConfiguration': {
+                    'numberOfResults': 3,
+                    'overrideSearchType': 'HYBRID'
+                }
+            }
+        )
+        
+        if not response.get('retrievalResults'):
+            return "No specific inverter guidance found in manual for this question."
+        
+        # Format results with sources
+        passages = []
+        for idx, result in enumerate(response['retrievalResults'], 1):
+            content = result['content']['text']
+            score = result.get('score', 0)
+            
+            location = result.get('location', {})
+            source_info = f"(Confidence: {score:.2f})"
+            if location.get('s3Location'):
+                source_info += f" [Source: {location['s3Location'].get('uri', 'Manual')}]"
+            
+            passages.append(f"**Passage {idx}** {source_info}:\n{content}")
+        
+        return "\n\n".join(passages)
+        
+    except Exception as e:
+        return f"Error retrieving inverter guidance: {str(e)}"
