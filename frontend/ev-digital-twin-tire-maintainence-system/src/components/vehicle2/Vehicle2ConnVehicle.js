@@ -13,21 +13,20 @@ const Vehicle2ConnVehicle = () => {
   const displayVIN = '5YJSA1E26HF123456';
   const vehicleInfo = { vin: displayVIN, type: 'Electric SUV', year: '2022', tireSize: '255/50R20' };
 
-  // Load motor data on mount
+  // Load motor data on mount - SYNCED with Vehicle2Motor.js
   useEffect(() => {
     Papa.parse('/motor_sensor_data.csv', {
       download: true,
       header: true,
       complete: (results) => {
-        // Find the earliest data for VIN: 5YJSA1E26HF123456 (shows degraded state)
-        const vehicleData = results.data.filter(row => row.vehicle_id === '5YJSA1E26HF123456');
+        // Filter to match Vehicle2Motor.js: vehicle_id === '5YJSA1E26HF123456' OR vin === 'EV-1005'
+        const vehicleData = results.data.filter(row => row.vehicle_id === '5YJSA1E26HF123456' || row.vin === 'EV-1005');
         if (vehicleData.length > 0) {
-          // Use first entry to show lower efficiency (motor issues)
-          const firstData = vehicleData[0];
-          setMotorData(firstData);
-          const performanceScore = parseFloat(firstData.performance_score) || 75;
-          // Reduce by 20% to show critical degraded state
-          setMotorEfficiency(Math.round(performanceScore * 0.80));
+          // Use latest data to match Vehicle2Motor behavior
+          const latestData = vehicleData[vehicleData.length - 1];
+          setMotorData(latestData);
+          const performanceScore = parseFloat(latestData.performance_score) || 75;
+          setMotorEfficiency(Math.round(performanceScore));
         }
       }
     });

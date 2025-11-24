@@ -22,6 +22,7 @@ const Motor = () => {
   const [csvData, setCsvData] = useState([]);
   const [dataIndex, setDataIndex] = useState(0);
   const [mlResults, setMlResults] = useState([]);
+  const [motorMlData, setMotorMlData] = useState(null); // ML prediction data for Vehicle 2
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [genAiAnalysis, setGenAiAnalysis] = useState(null);
   const [genAiLoading, setGenAiLoading] = useState(false);
@@ -86,6 +87,17 @@ const Motor = () => {
         console.log('Motor ML results loaded:', data);
       })
       .catch(err => console.log('Motor ML results not available:', err));
+    
+    // Load Motor ML prediction data for Vehicle 2 (EV-1005) - for future use
+    fetch('/data/motor_ml_output.json')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.length > 0) {
+          setMotorMlData(data[0]);
+          console.log('✅ Motor ML prediction loaded for Vehicle 2:', data[0]);
+        }
+      })
+      .catch(err => console.log('Motor ML prediction not available:', err));
   }, []);
 
   useEffect(() => {
@@ -647,18 +659,83 @@ const Motor = () => {
     return 70; // fallback
   };
   
+  // Parse bullet points from GenAI raw response for each recommendation
+  const parseRecommendationBullets = (action) => {
+    if (!genAiAnalysis?.raw_response) return [];
+    
+    const rawText = genAiAnalysis.raw_response;
+    
+    // Clean the action text - remove confidence and source
+    const cleanAction = action
+      .replace(/\s*\(Confidence:.*?\)/gi, '')
+      .replace(/\s*\[Source:.*?\]/gi, '')
+      .trim();
+    
+    // Try multiple patterns to find the recommendation section
+    let section = null;
+    
+    // Pattern 1: Numbered item with bold action (e.g., "1. **Check your motor coolant level**")
+    const escapedAction = cleanAction.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    let actionPattern = new RegExp(`\\d+\\.\\s*\\*\\*${escapedAction}\\*\\*([\\s\\S]*?)(?=\\n\\d+\\.|###|$)`, 'i');
+    let match = rawText.match(actionPattern);
+    
+    if (match) {
+      section = match[1];
+    } else {
+      // Pattern 2: Just the action text without numbering
+      actionPattern = new RegExp(`\\*\\*${escapedAction}\\*\\*([\\s\\S]*?)(?=\\n\\n|\\d+\\.|###|$)`, 'i');
+      match = rawText.match(actionPattern);
+      if (match) {
+        section = match[1];
+      }
+    }
+    
+    if (!section) {
+      console.log('No match found for:', cleanAction);
+      return [];
+    }
+    
+    // Extract bullet points (lines starting with - or •)
+    const bullets = [];
+    const lines = section.split('\n');
+    
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('-') || trimmed.startsWith('•')) {
+        let bullet = trimmed.substring(1).trim();
+        // Clean up the bullet text
+        bullet = bullet.replace(/\s*\(Confidence:.*?\)/gi, '').replace(/\s*\[Source:.*?\]/gi, '').trim();
+        if (bullet && bullets.length < 2) { // Only take first 2 bullets
+          bullets.push(bullet);
+        }
+      }
+    }
+    
+    return bullets;
+  };
+
   // Get AI recommendations - prioritize GenAI (Claude Sonnet 4.5) over rule-based
   const getAiRecommendations = () => {
     // ONLY show recommendations from GenAI analysis (Analyze button)
     if (genAiAnalysis && genAiAnalysis.recommendations) {
       console.log('Using Motor GenAI (Claude Sonnet 4.5) recommendations');
-      return genAiAnalysis.recommendations.map(rec => ({
-        action: rec.action,
-        priority: rec.priority,
-        reason: rec.reason,
-        urgency: rec.urgency,
-        genai: true // Mark as GenAI generated
-      }));
+      return genAiAnalysis.recommendations.map(rec => {
+        // Clean action text - remove confidence and source
+        const cleanAction = rec.action
+          .replace(/\s*\(Confidence:.*?\)/gi, '')
+          .replace(/\s*\[Source:.*?\]/gi, '')
+          .trim();
+        
+        return {
+          action: cleanAction,
+          priority: rec.priority,
+          reason: rec.reason,
+          urgency: rec.urgency,
+          description: rec.description,
+          // Motor recommendations have good descriptions - no need for bullet parsing
+          genai: true // Mark as GenAI generated
+        };
+      });
     }
     
     // Return empty array if no GenAI analysis - user must click Analyze button
@@ -1281,12 +1358,12 @@ const Motor = () => {
                         <text x="8" y="90" fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="middle" transform="rotate(-90 8 90)">Health %</text>
                         
                         {/* Critical failure threshold line */}
-                        <line x1="35" y1="105" x2="255" y2="105" stroke="rgba(255,68,68,0.6)" strokeWidth="1" strokeDasharray="3,3"/>
-                        <text x="260" y="110" fill="rgba(255,68,68,0.9)" fontSize="7">Critical</text>
+                        <line x1="35" y1="80" x2="255" y2="80" stroke="rgba(255,68,68,0.6)" strokeWidth="1" strokeDasharray="3,3"/>
+                        <text x="260" y="85" fill="rgba(255,68,68,0.9)" fontSize="7">Critical</text>
                         
                         {/* Warning threshold line */}
-                        <line x1="35" y1="85" x2="255" y2="85" stroke="rgba(255,153,0,0.6)" strokeWidth="1" strokeDasharray="3,3"/>
-                        <text x="260" y="90" fill="rgba(255,153,0,0.9)" fontSize="7">Warning</text>
+                        <line x1="35" y1="68" x2="255" y2="68" stroke="rgba(255,153,0,0.6)" strokeWidth="1" strokeDasharray="3,3"/>
+                        <text x="260" y="73" fill="rgba(255,153,0,0.9)" fontSize="7">Warning</text>
                         
                         {/* Past data (orange) - Declining health: 90% → 65% */}
                         <polyline
@@ -1561,10 +1638,12 @@ const Motor = () => {
                                       <span style={{ flex: 1 }}>{rec.action}</span>
                                       {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
                                     </div>
-                                    {(rec.urgency || rec.description) && (
-                                      <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
-                                        {rec.urgency && <p><strong>Timeline:</strong> {rec.urgency}</p>}
-                                        {rec.description && <p><strong>Details:</strong> {rec.description}</p>}
+                                    {rec.description && (
+                                      <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)', marginTop: '4px' }}>
+                                        <div style={{ display: 'flex', gap: '6px' }}>
+                                          <span>•</span>
+                                          <span>{rec.description}</span>
+                                        </div>
                                       </div>
                                     )}
                                   </div>
@@ -1587,11 +1666,12 @@ const Motor = () => {
                                       <span style={{ flex: 1 }}>{rec.action}</span>
                                       {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
                                     </div>
-                                    {(rec.urgency || rec.description) && (
-                                      <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
-                                        {rec.urgency && <p><strong>Timeline:</strong> {rec.urgency}</p>}
-                                        {rec.description && <p><strong>Details:</strong> {rec.description}</p>}
-                                        {rec.estimated_cost && <p><strong>Cost:</strong> {rec.estimated_cost}</p>}
+                                    {rec.description && (
+                                      <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)', marginTop: '4px' }}>
+                                        <div style={{ display: 'flex', gap: '6px' }}>
+                                          <span>•</span>
+                                          <span>{rec.description}</span>
+                                        </div>
                                       </div>
                                     )}
                                   </div>

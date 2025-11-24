@@ -784,18 +784,71 @@ const Vehicle1Tires = () => {
     return 60; // fallback
   };
   
+  // Parse bullet points from GenAI raw response for each recommendation
+  const parseRecommendationBullets = (action) => {
+    if (!genAiAnalysis?.raw_response) return [];
+    
+    const rawText = genAiAnalysis.raw_response;
+    
+    // Clean the action text - remove confidence and source
+    const cleanAction = action
+      .replace(/\s*\(Confidence:.*?\)/gi, '')
+      .replace(/\s*\[Source:.*?\]/gi, '')
+      .trim();
+    
+    // Find the section for this recommendation
+    // Look for numbered item (e.g., "1. **Check Your Tire Pressure Weekly**")
+    const escapedAction = cleanAction.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const actionPattern = new RegExp(`\\d+\\.\\s*\\*\\*${escapedAction}\\*\\*([\\s\\S]*?)(?=\\n\\d+\\.|###|$)`, 'i');
+    const match = rawText.match(actionPattern);
+    
+    if (!match) {
+      console.log('No match found for:', cleanAction);
+      return [];
+    }
+    
+    const section = match[1];
+    
+    // Extract bullet points (lines starting with -)
+    const bullets = [];
+    const lines = section.split('\n');
+    
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('-')) {
+        let bullet = trimmed.substring(1).trim();
+        // Clean up the bullet text
+        bullet = bullet.replace(/\s*\(Confidence:.*?\)/gi, '').replace(/\s*\[Source:.*?\]/gi, '').trim();
+        if (bullet && bullets.length < 2) { // Only take first 2 bullets
+          bullets.push(bullet);
+        }
+      }
+    }
+    
+    return bullets;
+  };
+
   // Get AI recommendations - prioritize GenAI (Claude Sonnet 4.5) over rule-based
   const getAiRecommendations = () => {
     // ONLY show recommendations from GenAI analysis (Analyze button)
     if (genAiAnalysis && genAiAnalysis.recommendations) {
       console.log('Using GenAI (Claude Sonnet 4.5) recommendations');
-      return genAiAnalysis.recommendations.map(rec => ({
-        action: rec.action,
-        priority: rec.priority,
-        reason: rec.reason,
-        urgency: rec.urgency,
-        genai: true // Mark as GenAI generated
-      }));
+      return genAiAnalysis.recommendations.map(rec => {
+        // Clean action text - remove confidence and source
+        const cleanAction = rec.action
+          .replace(/\s*\(Confidence:.*?\)/gi, '')
+          .replace(/\s*\[Source:.*?\]/gi, '')
+          .trim();
+        
+        return {
+          action: cleanAction,
+          priority: rec.priority,
+          reason: rec.reason,
+          urgency: rec.urgency,
+          bullets: parseRecommendationBullets(rec.action), // Extract bullets using original action
+          genai: true // Mark as GenAI generated
+        };
+      });
     }
     
     // Return empty array if no GenAI analysis - user must click Analyze button
@@ -992,100 +1045,76 @@ const Vehicle1Tires = () => {
   // Calculate current vibration frequency from CSV data
   const currentVibrationHz = calculateVibrationHz(currentData);
   
-  // ML PREDICTION CHART - Uses ML data for chart, keeps CSV for remaining life
-  const getDynamicChartData = () => {
-    // Try to get ML predictions first
-    let mlStatus = null;
-    let mlDaysRemaining = null;
-    
-    if (currentMlData?.ml_analysis?.predictions) {
-      const predictions = Object.values(currentMlData.ml_analysis.predictions);
-      const mostCritical = predictions.reduce((worst, current) => {
-        const statusPriority = { 'CRITICAL': 3, 'WARNING': 2, 'BEST': 1 };
-        return statusPriority[current.replacement_timeline.status] > statusPriority[worst.replacement_timeline.status] 
-          ? current : worst;
-      }, predictions[0]);
-      
-      mlStatus = mostCritical.replacement_timeline.status;
-      mlDaysRemaining = mostCritical.replacement_timeline.days_remaining;
+  // CHART DATA FROM ML SOURCE - Uses tire_ml_results.json
+  const [tireMlData, setTireMlData] = useState(null);
+  
+  useEffect(() => {
+    fetch('/data/tire_ml_results.json')
+      .then(res => res.json())
+      .then(data => setTireMlData(data))
+      .catch(err => console.log('Tire ML data not available:', err));
+  }, []);
+  
+  const getChartDataFromML = () => {
+    // Fallback to hardcoded if ML data not loaded
+    if (!tireMlData) {
+      return {
+        pastPoints: "35,35 50,40 65,45 80,50 95,55 110,60 125,65",
+        futurePoints: "125,65 140,70 155,75 170,82 185,90 200,100 215,112",
+        futureColor: "rgba(56,239,125,1)",
+        status: "GOOD"
+      };
     }
     
-    // Fallback to CSV if ML unavailable
-    const csvPredictions = calculateDynamicPredictions(currentData);
-    const status = mlStatus || csvPredictions?.status || "GOOD";
-    const daysRemaining = mlDaysRemaining || csvPredictions?.days_remaining || 180;
+    // Helper: Convert health % to chart Y coordinate (20=100%, 160=0%)
+    const healthToY = (healthPercent) => {
+      return 20 + ((100 - healthPercent) * 1.4);
+    };
     
-    // Calculate junction point based on ML timeline (not CSV health)
-    const baseJunctionY = 95;
-    const timelineOffset = Math.max(-30, Math.min(30, (180 - daysRemaining) * 0.3));
-    const junctionY = Math.max(40, Math.min(150, baseJunctionY + timelineOffset));
+    // Get historical timeline (past 7 points)
+    const historical = tireMlData.historical_timeline || [];
+    const pastPointsArray = historical.map((point, idx) => {
+      const x = idx * 18; // Space points evenly (0, 18, 36, 54, 72, 90, 108)
+      const y = healthToY(point.health_percent);
+      return `${x},${y}`;
+    });
+    const pastPoints = pastPointsArray.join(' ');
     
-    // Calculate future slope based on ML status
-    let futureSlope, futureColor;
+    // Get future predictions (next 6 points)
+    const future = tireMlData.future_predictions || [];
+    const futurePointsArray = future.map((point, idx) => {
+      const x = 108 + ((idx + 1) * 18); // Continue from last past point (126, 144, 162, 180, 198, 216)
+      const y = healthToY(point.predicted_health_percent);
+      return `${x},${y}`;
+    });
+    
+    // Add junction point at start of future
+    const lastHistorical = historical[historical.length - 1];
+    const junctionY = healthToY(lastHistorical?.health_percent || 22);
+    const futurePoints = `108,${junctionY} ${futurePointsArray.join(' ')}`;
+    
+    // Determine future line color based on overall status
+    const status = tireMlData.current_condition?.status || "GOOD";
+    let futureColor;
     if (status === "CRITICAL") {
-      futureSlope = 8; // Steep decline - ML predicts rapid failure
-      futureColor = "rgba(255,100,100,1)"; // Red for critical
+      futureColor = "rgba(255,100,100,1)"; // Red
     } else if (status === "WARNING") {
-      futureSlope = 5; // Moderate decline - ML predicts accelerated wear
-      futureColor = "rgba(255,200,0,1)"; // Yellow for warning  
+      futureColor = "rgba(255,200,0,1)"; // Yellow
     } else {
-      futureSlope = 3; // Gentle decline - ML predicts normal wear
-      futureColor = "rgba(56,239,125,1)"; // Green for good
+      futureColor = "rgba(56,239,125,1)"; // Green
     }
-    
-    // Generate past data points (orange line) - leads to junction
-    const pastY1 = Math.max(40, junctionY - 55);
-    const pastY2 = Math.max(40, junctionY - 45);
-    const pastY3 = Math.max(40, junctionY - 35);
-    const pastY4 = Math.max(40, junctionY - 25);
-    const pastY5 = Math.max(40, junctionY - 15);
-    const pastY6 = Math.max(40, junctionY - 5);
-    
-    const pastPoints = `0,${pastY1} 18,${pastY2} 36,${pastY3} 54,${pastY4} 72,${pastY5} 90,${pastY6} 108,${junctionY}`;
-    
-    // Generate future prediction points (dynamic color line)
-    const futureY1 = junctionY + futureSlope;
-    const futureY2 = junctionY + (futureSlope * 2);
-    const futureY3 = junctionY + (futureSlope * 3);
-    const futureY4 = junctionY + (futureSlope * 4);
-    const futureY5 = junctionY + (futureSlope * 5);
-    const futureY6 = junctionY + (futureSlope * 6);
-    const futureY7 = junctionY + (futureSlope * 7);
-    
-    const futurePoints = `108,${junctionY} 126,${futureY1} 144,${futureY2} 162,${futureY3} 180,${futureY4} 198,${futureY5} 216,${futureY6} 234,${futureY7}`;
-    
-    // Generate data point circles
-    const dataPoints = [
-      { x: 0, y: pastY1, color: "rgba(255,153,0,1)" },
-      { x: 18, y: pastY2, color: "rgba(255,153,0,1)" },
-      { x: 36, y: pastY3, color: "rgba(255,153,0,1)" },
-      { x: 54, y: pastY4, color: "rgba(255,153,0,1)" },
-      { x: 72, y: pastY5, color: "rgba(255,153,0,1)" },
-      { x: 90, y: pastY6, color: "rgba(255,153,0,1)" },
-      { x: 108, y: junctionY, color: "rgba(255,153,0,1)" }, // Junction point
-      { x: 126, y: futureY1, color: futureColor },
-      { x: 144, y: futureY2, color: futureColor },
-      { x: 162, y: futureY3, color: futureColor },
-      { x: 180, y: futureY4, color: futureColor },
-      { x: 198, y: futureY5, color: futureColor },
-      { x: 216, y: futureY6, color: futureColor }
-    ];
     
     return {
       pastPoints,
       futurePoints,
       futureColor,
-      dataPoints,
-      junctionY,
-      currentHealth: remainingLife,
       status,
-      mlSource: !!mlStatus,
-      daysRemaining
+      junctionY
     };
   };
   
-  // Get dynamic chart data based on current tire condition
-  const chartData = getDynamicChartData();
+  // Get chart data from ML source
+  const chartData = getChartDataFromML();
   
   // DYNAMIC ROAD SURFACE CONDITIONS - Changes every 30 seconds based on CSV data
   const getSurfaceCondition = (currentData) => {
@@ -1497,13 +1526,13 @@ const Vehicle1Tires = () => {
                       <text x="145" y="190" fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="middle">Miles</text>
                       <text x="8" y="90" fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="middle" transform="rotate(-90 8 90)">Health %</text>
                       
-                      {/* Critical failure threshold line */}
-                      <line x1="35" y1="105" x2="255" y2="105" stroke="rgba(255,68,68,0.6)" strokeWidth="1" strokeDasharray="3,3"/>
-                      <text x="260" y="110" fill="rgba(255,68,68,0.9)" fontSize="7">Critical</text>
+                      {/* Critical failure threshold line - Adjusted for 30-day prediction */}
+                      <line x1="35" y1="80" x2="255" y2="80" stroke="rgba(255,68,68,0.6)" strokeWidth="1" strokeDasharray="3,3"/>
+                      <text x="260" y="85" fill="rgba(255,68,68,0.9)" fontSize="7">Critical</text>
                       
-                      {/* Warning threshold line */}
-                      <line x1="35" y1="85" x2="255" y2="85" stroke="rgba(255,153,0,0.6)" strokeWidth="1" strokeDasharray="3,3"/>
-                      <text x="260" y="90" fill="rgba(255,153,0,0.9)" fontSize="7">Warning</text>
+                      {/* Warning threshold line - Adjusted for 30-day prediction */}
+                      <line x1="35" y1="68" x2="255" y2="68" stroke="rgba(255,153,0,0.6)" strokeWidth="1" strokeDasharray="3,3"/>
+                      <text x="260" y="73" fill="rgba(255,153,0,0.9)" fontSize="7">Warning</text>
                       
                       {/* Past data (orange) - Declining tire health */}
                       <polyline
@@ -1563,14 +1592,14 @@ const Vehicle1Tires = () => {
                       <text x="125" y="58" fill="rgba(255,255,255,0.9)" fontSize="7" textAnchor="middle" fontWeight="bold">NOW</text>
                       {displayTirePrediction && tireAnimationStep > 0.5 && (
                         <>
-                          <text x="170" y="75" fill="rgba(255,153,0,0.9)" fontSize="6" textAnchor="middle" opacity={Math.min(1, (tireAnimationStep - 0.5) * 2)}>Replacement</text>
-                          <text x="170" y="83" fill="rgba(255,153,0,0.9)" fontSize="6" textAnchor="middle" opacity={Math.min(1, (tireAnimationStep - 0.5) * 2)}>Needed</text>
+                          <text x="170" y="68" fill="rgba(255,153,0,0.9)" fontSize="6" textAnchor="middle" opacity={Math.min(1, (tireAnimationStep - 0.5) * 2)}>Replacement</text>
+                          <text x="170" y="76" fill="rgba(255,153,0,0.9)" fontSize="6" textAnchor="middle" opacity={Math.min(1, (tireAnimationStep - 0.5) * 2)}>Needed</text>
                         </>
                       )}
                       {displayTirePrediction && tireAnimationStep > 0.8 && (
                         <>
-                          <text x="200" y="93" fill="rgba(255,68,68,0.9)" fontSize="6" textAnchor="middle" opacity={Math.min(1, (tireAnimationStep - 0.8) * 5)}>Failure</text>
-                          <text x="200" y="101" fill="rgba(255,68,68,0.9)" fontSize="6" textAnchor="middle" opacity={Math.min(1, (tireAnimationStep - 0.8) * 5)}>Risk</text>
+                          <text x="200" y="85" fill="rgba(255,68,68,0.9)" fontSize="6" textAnchor="middle" opacity={Math.min(1, (tireAnimationStep - 0.8) * 5)}>Failure</text>
+                          <text x="200" y="93" fill="rgba(255,68,68,0.9)" fontSize="6" textAnchor="middle" opacity={Math.min(1, (tireAnimationStep - 0.8) * 5)}>Risk</text>
                         </>
                       )}
                       </svg>
@@ -1766,10 +1795,14 @@ const Vehicle1Tires = () => {
                                     <span style={{ flex: 1 }}>{rec.action}</span>
                                     {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
                                   </div>
-                                  {(rec.urgency || rec.description) && (
+                                  {rec.bullets && rec.bullets.length > 0 && (
                                     <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
-                                      {rec.urgency && <p><strong>Timeline:</strong> {rec.urgency}</p>}
-                                      {rec.description && <p><strong>Details:</strong> {rec.description}</p>}
+                                      {rec.bullets.map((bullet, bIndex) => (
+                                        <div key={`bullet-${bIndex}`} style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
+                                          <span>•</span>
+                                          <span>{bullet}</span>
+                                        </div>
+                                      ))}
                                     </div>
                                   )}
                                 </div>
@@ -1792,11 +1825,14 @@ const Vehicle1Tires = () => {
                                     <span style={{ flex: 1 }}>{rec.action}</span>
                                     {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
                                   </div>
-                                  {(rec.urgency || rec.description) && (
+                                  {rec.bullets && rec.bullets.length > 0 && (
                                     <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
-                                      {rec.urgency && <p><strong>Timeline:</strong> {rec.urgency}</p>}
-                                      {rec.description && <p><strong>Details:</strong> {rec.description}</p>}
-                                      {rec.estimated_cost && <p><strong>Cost:</strong> {rec.estimated_cost}</p>}
+                                      {rec.bullets.map((bullet, bIndex) => (
+                                        <div key={`bullet-${bIndex}`} style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
+                                          <span>•</span>
+                                          <span>{bullet}</span>
+                                        </div>
+                                      ))}
                                     </div>
                                   )}
                                 </div>

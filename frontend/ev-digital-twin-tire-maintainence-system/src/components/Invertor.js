@@ -414,33 +414,86 @@ const Invertor = () => {
       }
       
       // AgentCore returns text responses, not JSON
-      // Extract numbered list items (1. Check, 2. Inspect, etc.)
+      // Extract numbered list items with their full content
       const recommendations = [];
-      const numberedPattern = /\d+\.\s*\*\*[^*]+\*\*[^\n]*(?:\n[^\d\n][^\n]*)*|\d+\.\s*[^\n]+/g;
-      const numberedItems = response.match(numberedPattern) || [];
+      
+      // Split response into sections by numbered items
+      const sections = response.split(/(?=\d+\.\s+)/);
       
       // Action verbs that indicate real recommendations
-      const actionVerbs = ['check', 'inspect', 'replace', 'service', 'monitor', 'test', 'verify', 'clean', 'flush', 'change', 'repair', 'schedule', 'perform', 'examine', 'diagnose', 'stop', 'reduce', 'increase', 'adjust', 'avoid', 'limit', 'use'];
+      const actionVerbs = ['check', 'inspect', 'replace', 'service', 'monitor', 'test', 'verify', 'clean', 'flush', 'change', 'repair', 'schedule', 'perform', 'examine', 'diagnose', 'stop', 'reduce', 'increase', 'adjust', 'investigate', 'avoid', 'limit', 'use', 'ease', 'give', 'let', 'allow'];
       
-      numberedItems.forEach(item => {
-        const cleaned = item.replace(/\d+\.\s*/, '').replace(/\*\*/g, '').trim();
-        if (cleaned.length < 15) return;
+      sections.forEach(section => {
+        if (!section.match(/^\d+\.\s+/)) return;
+        
+        // Extract title (first line)
+        const lines = section.split('\n').filter(line => line.trim());
+        if (lines.length === 0) return;
+        
+        let title = lines[0]
+          .replace(/^\d+\.\s*/, '')
+          .replace(/\*\*/g, '')
+          .replace(/^###\s*/, '')
+          .trim();
+        
+        // Remove metadata labels
+        title = title.replace(/GenAI/gi, '').replace(/Timeline:/gi, '').replace(/Urgency:/gi, '').replace(/Reason:/gi, '').trim();
+        
+        // If title has a dash, take the part before it
+        if (title.includes(' - ')) {
+          const parts = title.split(' - ');
+          if (parts[0].length > 15) {
+            title = parts[0].trim();
+          }
+        }
+        
+        if (title.length < 15) return;
         
         // Only include if it contains an action verb
-        const lowerCleaned = cleaned.toLowerCase();
-        const hasActionVerb = actionVerbs.some(verb => lowerCleaned.includes(verb));
+        const lowerTitle = title.toLowerCase();
+        const hasActionVerb = actionVerbs.some(verb => lowerTitle.includes(verb));
         if (!hasActionVerb) return;
         
-        const lowerItem = item.toLowerCase();
-        const priority = lowerItem.includes('urgent') || lowerItem.includes('critical') || lowerItem.includes('immediate') || lowerItem.includes('stop') ? 'CRITICAL' :
-                        lowerItem.includes('soon') || lowerItem.includes('warning') || lowerItem.includes('attention') ? 'HIGH' :
-                        lowerItem.includes('consider') || lowerItem.includes('schedule') ? 'MEDIUM' : 'LOW';
+        // Extract description (remaining lines, excluding metadata)
+        let description = '';
+        if (lines.length > 1) {
+          description = lines.slice(1)
+            .filter(line => {
+              const lower = line.toLowerCase();
+              return !lower.includes('timeline:') && 
+                     !lower.includes('urgency:') && 
+                     !lower.includes('reason:') &&
+                     !lower.includes('genai') &&
+                     !lower.includes('confidence:') &&
+                     !lower.includes('[source:') &&
+                     !line.includes('###') &&
+                     line.trim().length > 0;
+            })
+            .map(line => line.replace(/^[-•*]\s*/, '').trim())
+            .join(' ')
+            .trim();
+          
+          // Remove confidence and source citations from description
+          description = description
+            .replace(/\*\(Confidence:.*?\)\*/gi, '')
+            .replace(/\(Confidence:.*?\)/gi, '')
+            .replace(/\[Source:.*?\]/gi, '')
+            .replace(/\*\*/g, '')
+            .replace(/###/g, '')
+            .trim();
+        }
+        
+        const lowerSection = section.toLowerCase();
+        const priority = lowerSection.includes('urgent') || lowerSection.includes('critical') || lowerSection.includes('immediate') || lowerSection.includes('stop') ? 'CRITICAL' :
+                        lowerSection.includes('soon') || lowerSection.includes('warning') || lowerSection.includes('attention') ? 'HIGH' :
+                        lowerSection.includes('consider') || lowerSection.includes('schedule') ? 'MEDIUM' : 'LOW';
         
         recommendations.push({
-          action: cleaned,
+          action: title,
           priority: priority,
           reason: "",
-          urgency: priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance'
+          urgency: priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance',
+          description: description
         });
       });
       
@@ -573,13 +626,22 @@ const Invertor = () => {
     // ONLY show recommendations from GenAI analysis (Analyze button)
     if (genAiAnalysis && genAiAnalysis.recommendations) {
       console.log('Using Inverter GenAI (Claude Sonnet 4.5) recommendations');
-      return genAiAnalysis.recommendations.map(rec => ({
-        action: rec.action,
-        priority: rec.priority,
-        reason: rec.reason,
-        urgency: rec.urgency,
-        genai: true // Mark as GenAI generated
-      }));
+      return genAiAnalysis.recommendations.map(rec => {
+        // Clean action text - remove confidence and source
+        const cleanAction = rec.action
+          .replace(/\s*\(Confidence:.*?\)/gi, '')
+          .replace(/\s*\[Source:.*?\]/gi, '')
+          .trim();
+        
+        return {
+          action: cleanAction,
+          priority: rec.priority,
+          reason: rec.reason,
+          urgency: rec.urgency,
+          description: rec.description,
+          genai: true // Mark as GenAI generated
+        };
+      });
     }
     
     // Return empty array if no GenAI analysis - user must click Analyze button
@@ -1812,10 +1874,12 @@ const Invertor = () => {
                                     <span style={{ flex: 1 }}>{rec.action}</span>
                                     {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
                                   </div>
-                                  {(rec.urgency || rec.description) && (
-                                    <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
-                                      {rec.urgency && <p><strong>Timeline:</strong> {rec.urgency}</p>}
-                                      {rec.description && <p><strong>Details:</strong> {rec.description}</p>}
+                                  {rec.description && (
+                                    <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)', marginTop: '4px' }}>
+                                      <div style={{ display: 'flex', gap: '6px' }}>
+                                        <span>•</span>
+                                        <span>{rec.description}</span>
+                                      </div>
                                     </div>
                                   )}
                                 </div>
@@ -1838,11 +1902,12 @@ const Invertor = () => {
                                     <span style={{ flex: 1 }}>{rec.action}</span>
                                     {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
                                   </div>
-                                  {(rec.urgency || rec.description) && (
-                                    <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
-                                      {rec.urgency && <p><strong>Timeline:</strong> {rec.urgency}</p>}
-                                      {rec.description && <p><strong>Details:</strong> {rec.description}</p>}
-                                      {rec.estimated_cost && <p><strong>Cost:</strong> {rec.estimated_cost}</p>}
+                                  {rec.description && (
+                                    <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)', marginTop: '4px' }}>
+                                      <div style={{ display: 'flex', gap: '6px' }}>
+                                        <span>•</span>
+                                        <span>{rec.description}</span>
+                                      </div>
                                     </div>
                                   )}
                                 </div>

@@ -787,18 +787,71 @@ const TiresPage = () => {
     return 60; // fallback
   };
   
+  // Parse bullet points from GenAI raw response for each recommendation
+  const parseRecommendationBullets = (action) => {
+    if (!genAiAnalysis?.raw_response) return [];
+    
+    const rawText = genAiAnalysis.raw_response;
+    
+    // Clean the action text - remove confidence and source
+    const cleanAction = action
+      .replace(/\s*\(Confidence:.*?\)/gi, '')
+      .replace(/\s*\[Source:.*?\]/gi, '')
+      .trim();
+    
+    // Find the section for this recommendation
+    // Look for numbered item (e.g., "1. **Check Your Tire Pressure Weekly**")
+    const escapedAction = cleanAction.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const actionPattern = new RegExp(`\\d+\\.\\s*\\*\\*${escapedAction}\\*\\*([\\s\\S]*?)(?=\\n\\d+\\.|###|$)`, 'i');
+    const match = rawText.match(actionPattern);
+    
+    if (!match) {
+      console.log('No match found for:', cleanAction);
+      return [];
+    }
+    
+    const section = match[1];
+    
+    // Extract bullet points (lines starting with -)
+    const bullets = [];
+    const lines = section.split('\n');
+    
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('-')) {
+        let bullet = trimmed.substring(1).trim();
+        // Clean up the bullet text
+        bullet = bullet.replace(/\s*\(Confidence:.*?\)/gi, '').replace(/\s*\[Source:.*?\]/gi, '').trim();
+        if (bullet && bullets.length < 2) { // Only take first 2 bullets
+          bullets.push(bullet);
+        }
+      }
+    }
+    
+    return bullets;
+  };
+
   // Get AI recommendations - prioritize GenAI (Claude Sonnet 4.5) over rule-based
   const getAiRecommendations = () => {
     // ONLY show recommendations from GenAI analysis (Analyze button)
     if (genAiAnalysis && genAiAnalysis.recommendations) {
       console.log('Using GenAI (Claude Sonnet 4.5) recommendations');
-      return genAiAnalysis.recommendations.map(rec => ({
-        action: rec.action,
-        priority: rec.priority,
-        reason: rec.reason,
-        urgency: rec.urgency,
-        genai: true // Mark as GenAI generated
-      }));
+      return genAiAnalysis.recommendations.map(rec => {
+        // Clean action text - remove confidence and source
+        const cleanAction = rec.action
+          .replace(/\s*\(Confidence:.*?\)/gi, '')
+          .replace(/\s*\[Source:.*?\]/gi, '')
+          .trim();
+        
+        return {
+          action: cleanAction,
+          priority: rec.priority,
+          reason: rec.reason,
+          urgency: rec.urgency,
+          bullets: parseRecommendationBullets(rec.action), // Extract bullets using original action
+          genai: true // Mark as GenAI generated
+        };
+      });
     }
     
     // Return empty array if no GenAI analysis - user must click Analyze button
@@ -1695,14 +1748,14 @@ const TiresPage = () => {
                     }
                   </p>
                   
-                  {/* GenAI Analysis Summary with Status */}
+                  {/* GenAI Analysis Summary - Using live data status */}
                   {genAiAnalysis && !genAiAnalysis.error && (
                     <div style={{ marginBottom: '12px', padding: '10px', backgroundColor: 'rgba(0,255,136,0.1)', borderRadius: '4px', border: '1px solid rgba(0,255,136,0.3)', textAlign: 'center' }}>
                       <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#00ff88' }}>
                         🔍 Analysis Summary
                       </div>
                       <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.9)', marginTop: '6px' }}>
-                        Tire analysis by Claude Sonnet 4.5. Status: {genAiAnalysis.overall_status} | Risk: {genAiAnalysis.risk_level}
+                        Tire analysis by Claude Sonnet 4.5. Status: {createTireUIPageSummary().status.toUpperCase()} | Risk: {createTireUIPageSummary().status === 'critical' ? 'HIGH' : createTireUIPageSummary().status === 'warning' ? 'MEDIUM' : 'LOW'}
                       </div>
                     </div>
                   )}
@@ -1767,10 +1820,14 @@ const TiresPage = () => {
                                     <span style={{ flex: 1 }}>{rec.action}</span>
                                     {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
                                   </div>
-                                  {(rec.urgency || rec.description) && (
+                                  {rec.bullets && rec.bullets.length > 0 && (
                                     <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
-                                      {rec.urgency && <p><strong>Timeline:</strong> {rec.urgency}</p>}
-                                      {rec.description && <p><strong>Details:</strong> {rec.description}</p>}
+                                      {rec.bullets.map((bullet, bIndex) => (
+                                        <div key={`bullet-${bIndex}`} style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
+                                          <span>•</span>
+                                          <span>{bullet}</span>
+                                        </div>
+                                      ))}
                                     </div>
                                   )}
                                 </div>
@@ -1793,11 +1850,14 @@ const TiresPage = () => {
                                     <span style={{ flex: 1 }}>{rec.action}</span>
                                     {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
                                   </div>
-                                  {(rec.urgency || rec.description) && (
+                                  {rec.bullets && rec.bullets.length > 0 && (
                                     <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
-                                      {rec.urgency && <p><strong>Timeline:</strong> {rec.urgency}</p>}
-                                      {rec.description && <p><strong>Details:</strong> {rec.description}</p>}
-                                      {rec.estimated_cost && <p><strong>Cost:</strong> {rec.estimated_cost}</p>}
+                                      {rec.bullets.map((bullet, bIndex) => (
+                                        <div key={`bullet-${bIndex}`} style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
+                                          <span>•</span>
+                                          <span>{bullet}</span>
+                                        </div>
+                                      ))}
                                     </div>
                                   )}
                                 </div>

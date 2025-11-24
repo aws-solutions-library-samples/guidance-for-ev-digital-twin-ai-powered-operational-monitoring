@@ -1,0 +1,133 @@
+{
+  "vehicle_id": 1,
+  "vin": "2T1BURHE8JC987654",
+  "generated_at": "2025-11-24T13:01:44.343632",
+  "data_source": "tire_wear_data.csv",
+  "ml_model": "linear_regression_wear_prediction",
+  "current_condition": {
+    "position": "front_left",
+    "tread_depth_mm": 2.2,
+    "pressure_psi": 27.8,
+    "health_percent": 22.0,
+    "status": "CRITICAL",
+    "wear_rate_mm_per_day": 0.0004
+  },
+  "predictions": {
+    "days_until_replacement": 508,
+    "predicted_depth_30_days": 2.19,
+    "predicted_health_30_days": 21.9,
+    "replacement_threshold_mm": 2.0,
+    "status": "CRITICAL"
+  },
+  "historical_timeline": [
+    {
+      "point": 1,
+      "tread_depth_mm": 8.0,
+      "health_percent": 80.0,
+      "status": "GOOD",
+      "pressure_psi": 27.7
+    },
+    {
+      "point": 2,
+      "tread_depth_mm": 7.03,
+      "health_percent": 70.3,
+      "status": "GOOD",
+      "pressure_psi": 27.1
+    },
+    {
+      "point": 3,
+      "tread_depth_mm": 6.07,
+      "health_percent": 60.7,
+      "status": "WARNING",
+      "pressure_psi": 29.5
+    },
+    {
+      "point": 4,
+      "tread_depth_mm": 5.1,
+      "health_percent": 51.0,
+      "status": "CRITICAL",
+      "pressure_psi": 26.1
+    },
+    {
+      "point": 5,
+      "tread_depth_mm": 4.13,
+      "health_percent": 41.3,
+      "status": "CRITICAL",
+      "pressure_psi": 27.5
+    },
+    {
+      "point": 6,
+      "tread_depth_mm": 3.17,
+      "health_percent": 31.7,
+      "status": "CRITICAL",
+      "pressure_psi": 28.2
+    },
+    {
+      "point": 7,
+      "tread_depth_mm": 2.2,
+      "health_percent": 22.0,
+      "status": "CRITICAL",
+      "pressure_psi": 27.0
+    }
+  ],
+  "future_predictions": [
+    {
+      "point": 1,
+      "days_ahead": 5,
+      "predicted_depth_mm": 2.18,
+      "predicted_health_percent": 21.8,
+      "status": "CRITICAL"
+    },
+    {
+      "point": 2,
+      "days_ahead": 10,
+      "predicted_depth_mm": 2.16,
+      "predicted_health_percent": 21.6,
+      "status": "CRITICAL"
+    },
+    {
+      "point": 3,
+      "days_ahead": 15,
+      "predicted_depth_mm": 2.14,
+      "predicted_health_percent": 21.4,
+      "status": "CRITICAL"
+    },
+    {
+      "point": 4,
+      "days_ahead": 20,
+      "predicted_depth_mm": 2.12,
+      "predicted_health_percent": 21.2,
+      "status": "CRITICAL"
+    },
+    {
+      "point": 5,
+      "days_ahead": 25,
+      "predicted_depth_mm": 2.1,
+      "predicted_health_percent": 21.0,
+      "status": "CRITICAL"
+    },
+    {
+      "point": 6,
+      "days_ahead": 30,
+      "predicted_depth_mm": 2.08,
+      "predicted_health_percent": 20.8,
+      "status": "CRITICAL"
+    }
+  ],
+  "chart_config": {
+    "warning_threshold": 70,
+    "critical_threshold": 55,
+    "y_axis_min": 0,
+    "y_axis_max": 100,
+    "x_axis_label": "Miles",
+    "y_axis_label": "Health %"
+  },
+  "recommendations": [
+    {
+      "priority": "HIGH",
+      "action": "Replace front_left tire immediately",
+      "reason": "Tread depth 2.2mm is below safe threshold",
+      "estimated_cost": "$150-250"
+    }
+  ]
+}

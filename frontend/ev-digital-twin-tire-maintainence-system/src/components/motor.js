@@ -561,16 +561,19 @@ const Motor = () => {
     const hasAnomaly = currentData.motor_anomaly === 'True';
     const vehicleInfo = `${currentData.make || 'Unknown Vehicle'} - ${currentData.model || 'Electric Vehicle'} (${currentData.year || '2023'})`;
     
-    // Determine overall system status
+    // Determine overall system status (adjusted thresholds for realistic operation)
     let systemStatus = 'optimal';
     let statusColor = '#00ff88';
     let statusIcon = '✅';
     
-    if (hasAnomaly || engineTemp > 105 || oilPressure < 15 || performanceScore < 70) {
+    // Critical: Severe issues requiring immediate attention
+    if (hasAnomaly || engineTemp > 110 || oilPressure < 12 || performanceScore < 70) {
       systemStatus = 'critical';
       statusColor = '#ff4444';
       statusIcon = '🚨';
-    } else if (engineTemp > 95 || oilPressure < 20 || performanceScore < 85 || vibration > 5) {
+    } 
+    // Warning: Issues that need monitoring
+    else if (engineTemp > 100 || oilPressure < 15 || performanceScore < 80 || vibration > 6) {
       systemStatus = 'warning';
       statusColor = '#ff9900';
       statusIcon = '⚠️';
@@ -657,13 +660,22 @@ const Motor = () => {
     // ONLY show recommendations from GenAI analysis (Analyze button)
     if (genAiAnalysis && genAiAnalysis.recommendations) {
       console.log('Using Motor GenAI (Claude Sonnet 4.5) recommendations');
-      return genAiAnalysis.recommendations.map(rec => ({
-        action: rec.action,
-        priority: rec.priority,
-        reason: rec.reason,
-        urgency: rec.urgency,
-        genai: true // Mark as GenAI generated
-      }));
+      return genAiAnalysis.recommendations.map(rec => {
+        // Clean action text - remove confidence and source
+        const cleanAction = rec.action
+          .replace(/\s*\(Confidence:.*?\)/gi, '')
+          .replace(/\s*\[Source:.*?\]/gi, '')
+          .trim();
+        
+        return {
+          action: cleanAction,
+          priority: rec.priority,
+          reason: rec.reason,
+          urgency: rec.urgency,
+          description: rec.description,
+          genai: true // Mark as GenAI generated
+        };
+      });
     }
     
     // Return empty array if no GenAI analysis - user must click Analyze button
@@ -1491,14 +1503,14 @@ const Motor = () => {
                       }
                     </p>
                     
-                    {/* GenAI Analysis Summary with Status */}
+                    {/* GenAI Analysis Summary - Using live data status */}
                     {genAiAnalysis && !genAiAnalysis.error && (
                       <div style={{ marginBottom: '12px', padding: '10px', backgroundColor: 'rgba(0,255,136,0.1)', borderRadius: '4px', border: '1px solid rgba(0,255,136,0.3)', textAlign: 'center' }}>
                         <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#00ff88' }}>
                           🔍 Analysis Summary
                         </div>
                         <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.9)', marginTop: '6px' }}>
-                          Motor analysis by Claude Sonnet 4.5. Status: {genAiAnalysis.overall_status} | Risk: {genAiAnalysis.risk_level}
+                          Motor analysis by Claude Sonnet 4.5. Status: {createUIPageSummary().status.toUpperCase()} | Risk: {createUIPageSummary().status === 'critical' ? 'HIGH' : createUIPageSummary().status === 'warning' ? 'MEDIUM' : 'LOW'}
                         </div>
                       </div>
                     )}
@@ -1566,10 +1578,12 @@ const Motor = () => {
                                       <span style={{ flex: 1 }}>{rec.action}</span>
                                       {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
                                     </div>
-                                    {(rec.urgency || rec.description) && (
-                                      <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
-                                        {rec.urgency && <p><strong>Timeline:</strong> {rec.urgency}</p>}
-                                        {rec.description && <p><strong>Details:</strong> {rec.description}</p>}
+                                    {rec.description && (
+                                      <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)', marginTop: '4px' }}>
+                                        <div style={{ display: 'flex', gap: '6px' }}>
+                                          <span>•</span>
+                                          <span>{rec.description}</span>
+                                        </div>
                                       </div>
                                     )}
                                   </div>
@@ -1592,11 +1606,12 @@ const Motor = () => {
                                       <span style={{ flex: 1 }}>{rec.action}</span>
                                       {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
                                     </div>
-                                    {(rec.urgency || rec.description) && (
-                                      <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
-                                        {rec.urgency && <p><strong>Timeline:</strong> {rec.urgency}</p>}
-                                        {rec.description && <p><strong>Details:</strong> {rec.description}</p>}
-                                        {rec.estimated_cost && <p><strong>Cost:</strong> {rec.estimated_cost}</p>}
+                                    {rec.description && (
+                                      <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)', marginTop: '4px' }}>
+                                        <div style={{ display: 'flex', gap: '6px' }}>
+                                          <span>•</span>
+                                          <span>{rec.description}</span>
+                                        </div>
                                       </div>
                                     )}
                                   </div>

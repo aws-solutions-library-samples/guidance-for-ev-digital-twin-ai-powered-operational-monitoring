@@ -1,12 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import Papa from 'papaparse';
 import '../../css/connvehicle.css';
 
 const Vehicle3ConnVehicle = () => {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [inverterData, setInverterData] = useState(null);
 
   const currentVIN = '3VWDX7AJ9DM456321';
+
+  // Load inverter data on mount - SYNCED with Vehicle3Inverter.js
+  useEffect(() => {
+    Papa.parse('/inverter_sensor_data.csv', {
+      download: true,
+      header: true,
+      complete: (results) => {
+        // Filter to match Vehicle3Inverter.js: vehicle_id === '3VWDX7AJ9DM456321'
+        const vehicleData = results.data.filter(row => row.vehicle_id === '3VWDX7AJ9DM456321');
+        if (vehicleData.length > 0) {
+          // Use latest data to match Vehicle3Inverter behavior
+          const latestData = vehicleData[vehicleData.length - 1];
+          setInverterData(latestData);
+        }
+      }
+    });
+  }, []);
 
   return (
     <div className="connvehicle-page">

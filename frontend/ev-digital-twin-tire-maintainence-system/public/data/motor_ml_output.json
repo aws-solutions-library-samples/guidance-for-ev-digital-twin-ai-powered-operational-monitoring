@@ -1,0 +1,65 @@
+[
+  {
+    "vehicle_id": 2,
+    "ml_analysis": {
+      "vehicle_info": {
+        "vehicle_id": 2,
+        "make": "EV-1005",
+        "model": "Electric SUV",
+        "year": 2023,
+        "engine_type": "Electric Motor",
+        "fuel_type": "electric"
+      },
+      "current_condition": {
+        "engine_temperature_c": 95.8,
+        "oil_pressure_psi": 18.2,
+        "rpm_avg": 3100,
+        "vibration_level": 4.5,
+        "performance_score": 82.3,
+        "status": "WARNING"
+      },
+      "predictions": {
+        "performance_degradation": {
+          "days_until_maintenance": 45,
+          "days_until_critical": 90,
+          "predicted_performance_30_days": 79.8,
+          "replacement_timeline": {
+            "status": "WARNING",
+            "days_remaining": 45,
+            "message": "Schedule maintenance within 45 days"
+          }
+        },
+        "temperature_trend": {
+          "status": "ELEVATED",
+          "trend": "increasing",
+          "risk_level": "medium"
+        },
+        "oil_pressure_trend": {
+          "status": "ATTENTION",
+          "trend": "declining",
+          "risk_level": "medium"
+        }
+      },
+      "recommendations": [
+        {
+          "priority": "HIGH",
+          "action": "Check cooling system - temperature trending high",
+          "description": "Motor running warmer than optimal for electric drivetrain",
+          "estimated_cost": "$300-600"
+        },
+        {
+          "priority": "MEDIUM",
+          "action": "Investigate vibration levels",
+          "description": "Vibration above normal range - potential bearing wear",
+          "estimated_cost": "$200-500"
+        },
+        {
+          "priority": "MEDIUM",
+          "action": "Performance tune-up recommended",
+          "description": "Performance score declining from optimal range",
+          "estimated_cost": "$400-800"
+        }
+      ]
+    }
+  }
+]

@@ -14,14 +14,20 @@ const Vehicle1ConnVehicle = () => {
   const vehicleInfo = VEHICLE_INFO[displayVIN];
 
   useEffect(() => {
-    Papa.parse('/data/tire_wear_data.csv', {
+    Papa.parse('/tire_wear_data.csv', {
       download: true,
       header: true,
       complete: (results) => {
         const vehicle1Data = results.data
-          .filter(row => row.vehicle_id === '1' && row.position === 'front_left')
+          .filter(row => row.vehicle_id === '2T1BURHE8JC987654' || row.vin === 'EV-1001')
           .sort((a, b) => new Date(a.date) - new Date(b.date));
-        if (vehicle1Data.length > 0) setTireData(vehicle1Data);
+        
+        // Get latest data for ALL tire positions
+        if (vehicle1Data.length > 0) {
+          const latestDate = vehicle1Data[vehicle1Data.length - 1]?.date;
+          const allPositions = vehicle1Data.filter(row => row.date === latestDate);
+          setTireData(allPositions);
+        }
       }
     });
   }, []);
@@ -42,11 +48,30 @@ const Vehicle1ConnVehicle = () => {
     }
   }, [tireData]);
 
-  const currentData = tireData?.[dataIndex] || {};
-  const tread = parseFloat(currentData.tread_depth_mm) || 11;
-  const pressure = parseFloat(currentData.pressure_psi) || 32;
-  const anomaly = currentData.anomaly_type;
-  const pattern = currentData.driving_pattern;
+  // Get worst tire status across all positions
+  const getWorstTireStatus = () => {
+    if (!tireData || tireData.length === 0) {
+      return { tread: 11, pressure: 32, anomaly: null, pattern: 'city' };
+    }
+    
+    const worstTread = Math.min(...tireData.map(t => parseFloat(t.tread_depth_mm) || 11));
+    const worstPressure = Math.min(...tireData.map(t => parseFloat(t.pressure_psi) || 32));
+    const criticalAnomaly = tireData.find(t => t.anomaly_type === 'puncture' || t.anomaly_type === 'uneven_wear');
+    const pattern = tireData[0]?.driving_pattern || 'city';
+    
+    return {
+      tread: worstTread,
+      pressure: worstPressure,
+      anomaly: criticalAnomaly?.anomaly_type || null,
+      pattern: pattern
+    };
+  };
+
+  const worstStatus = getWorstTireStatus();
+  const tread = worstStatus.tread;
+  const pressure = worstStatus.pressure;
+  const anomaly = worstStatus.anomaly;
+  const pattern = worstStatus.pattern;
 
   const getMetrics = () => {
     if (!tireData) return { speed: '12 mph', accel: '2 m/s²', throttle: '40%', steering: '54°' };
