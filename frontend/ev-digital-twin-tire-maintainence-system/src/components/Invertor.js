@@ -413,15 +413,13 @@ const Invertor = () => {
         return createEnhancedInverterFallback(inverterData, new Error('No response text'));
       }
       
-      // AgentCore returns text responses, not JSON
-      // Extract numbered list items with their full content
       const recommendations = [];
       
       // Split response into sections by numbered items
       const sections = response.split(/(?=\d+\.\s+)/);
       
       // Action verbs that indicate real recommendations
-      const actionVerbs = ['check', 'inspect', 'replace', 'service', 'monitor', 'test', 'verify', 'clean', 'flush', 'change', 'repair', 'schedule', 'perform', 'examine', 'diagnose', 'stop', 'reduce', 'increase', 'adjust', 'investigate', 'avoid', 'limit', 'use', 'ease', 'give', 'let', 'allow'];
+      const actionVerbs = ['check', 'inspect', 'replace', 'service', 'monitor', 'test', 'verify', 'clean', 'flush', 'change', 'repair', 'schedule', 'perform', 'examine', 'diagnose', 'stop', 'reduce', 'increase', 'adjust', 'investigate', 'avoid', 'limit', 'use', 'ease', 'give', 'let', 'allow', 'drive', 'book'];
       
       sections.forEach(section => {
         if (!section.match(/^\d+\.\s+/)) return;
@@ -434,53 +432,67 @@ const Invertor = () => {
           .replace(/^\d+\.\s*/, '')
           .replace(/\*\*/g, '')
           .replace(/^###\s*/, '')
+          .replace(/^[⚠️🚨⚡ℹ️✅❌🔧🌡️💨]+\s*/, '')
           .trim();
         
-        // Remove metadata labels
+        // Remove metadata labels and GenAI tag
         title = title.replace(/GenAI/gi, '').replace(/Timeline:/gi, '').replace(/Urgency:/gi, '').replace(/Reason:/gi, '').trim();
         
-        // If title has a dash, take the part before it
-        if (title.includes(' - ')) {
-          const parts = title.split(' - ');
-          if (parts[0].length > 15) {
-            title = parts[0].trim();
-          }
-        }
-        
-        if (title.length < 15) return;
+        if (title.length < 10) return;
         
         // Only include if it contains an action verb
         const lowerTitle = title.toLowerCase();
         const hasActionVerb = actionVerbs.some(verb => lowerTitle.includes(verb));
         if (!hasActionVerb) return;
         
-        // Extract description (remaining lines, excluding metadata)
-        let description = '';
-        if (lines.length > 1) {
-          description = lines.slice(1)
-            .filter(line => {
-              const lower = line.toLowerCase();
-              return !lower.includes('timeline:') && 
-                     !lower.includes('urgency:') && 
-                     !lower.includes('reason:') &&
-                     !lower.includes('genai') &&
-                     !lower.includes('confidence:') &&
-                     !lower.includes('[source:') &&
-                     !line.includes('###') &&
-                     line.trim().length > 0;
-            })
-            .map(line => line.replace(/^[-•*]\s*/, '').trim())
-            .join(' ')
-            .trim();
+        // Extract bullet points (lines starting with - or •), excluding "Why it matters" sections
+        const bullets = [];
+        let inWhySection = false;
+        
+        for (let i = 1; i < lines.length && bullets.length < 2; i++) {
+          const line = lines[i].trim();
+          const lowerLine = line.toLowerCase();
           
-          // Remove confidence and source citations from description
-          description = description
-            .replace(/\*\(Confidence:.*?\)\*/gi, '')
-            .replace(/\(Confidence:.*?\)/gi, '')
-            .replace(/\[Source:.*?\]/gi, '')
-            .replace(/\*\*/g, '')
-            .replace(/###/g, '')
-            .trim();
+          // Skip "Why it matters" sections
+          if (lowerLine.includes('*why it matters') || lowerLine.includes('why it matters:') || lowerLine.includes('*bottom line')) {
+            inWhySection = true;
+            continue;
+          }
+          
+          // Skip if we're in a "why" section
+          if (inWhySection) {
+            // Check if we've exited the why section (new bullet or section)
+            if (line.startsWith('-') || line.startsWith('•')) {
+              inWhySection = false;
+            } else {
+              continue;
+            }
+          }
+          
+          // Extract bullet points
+          if (line.startsWith('-') || line.startsWith('•')) {
+            let bullet = line.replace(/^[-•*]\s*/, '').trim();
+            
+            // Remove bold markers
+            bullet = bullet.replace(/\*\*/g, '');
+            
+            // Remove confidence and source citations
+            bullet = bullet
+              .replace(/\(Confidence:.*?\)/gi, '')
+              .replace(/\[Source:.*?\]/gi, '')
+              .trim();
+            
+            // Skip metadata lines
+            if (lowerLine.includes('timeline:') || 
+                lowerLine.includes('urgency:') || 
+                lowerLine.includes('genai') ||
+                lowerLine.includes('confidence:') ||
+                bullet.length < 10) {
+              continue;
+            }
+            
+            bullets.push(bullet);
+          }
         }
         
         const lowerSection = section.toLowerCase();
@@ -493,7 +505,7 @@ const Invertor = () => {
           priority: priority,
           reason: "",
           urgency: priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance',
-          description: description
+          bullets: bullets
         });
       });
       
@@ -502,6 +514,61 @@ const Invertor = () => {
       
       // Create natural language summary instead of bullet points
       const naturalSummary = createInverterNaturalLanguageSummary(response, inverterData);
+
+      // Extract citations from KB tool responses with deduplication
+      const extractCitations = (response) => {
+        const citations = [];
+        const citationMap = new Map();
+        
+        const fullCitationPattern = /\(Confidence:\s*([\d.]+)\)\s*\[Source:\s*([^\]]+)\]/g;
+        let match;
+        
+        while ((match = fullCitationPattern.exec(response)) !== null) {
+          const confidence = parseFloat(match[1]);
+          const source = match[2].trim();
+          
+          let displayName = source;
+          if (source.includes('/')) {
+            const parts = source.split('/');
+            displayName = parts[parts.length - 1];
+          }
+          
+          displayName = displayName.replace('.pdf', '');
+          
+          if (!citationMap.has(displayName) || citationMap.get(displayName).confidence < confidence) {
+            citationMap.set(displayName, {
+              source: displayName,
+              confidence: confidence,
+              uri: source
+            });
+          }
+        }
+        
+        citations.push(...citationMap.values());
+        
+        if (citations.length === 0) {
+          const confidenceOnlyPattern = /\(Confidence:\s*([\d.]+)\)/g;
+          const confidenceMatches = [];
+          
+          while ((match = confidenceOnlyPattern.exec(response)) !== null) {
+            confidenceMatches.push(parseFloat(match[1]));
+          }
+          
+          if (confidenceMatches.length > 0) {
+            const avgConfidence = confidenceMatches.reduce((a, b) => a + b, 0) / confidenceMatches.length;
+            citations.push({
+              source: 'EV Preventive Maintenance Manual',
+              confidence: avgConfidence,
+              uri: 's3://ev-maintenance-manual-kb/manuals/Electric Vehicle Preventive Maintenance Manual.pdf'
+            });
+          }
+        }
+        
+        return citations.length > 0 ? [citations[0]] : [];
+      };
+      
+      const citations = extractCitations(response);
+      console.log('📚 Inverter Citations extracted:', citations.length, citations);
 
       // Determine source and status based on analysis result
       let sourceInfo = "AgentCore Claude Sonnet 4.5";
@@ -519,6 +586,7 @@ const Invertor = () => {
         recommendations: recommendations.slice(0, 4),
         next_inspection: "30 days",
         source: sourceInfo,
+        citations: citations.length > 0 ? citations : undefined,
         fromCache: analysisResult.fromCache || false,
         stale: analysisResult.stale || false,
         serviceError: analysisResult.error || null,
@@ -638,7 +706,7 @@ const Invertor = () => {
           priority: rec.priority,
           reason: rec.reason,
           urgency: rec.urgency,
-          description: rec.description,
+          bullets: rec.bullets || [],
           genai: true // Mark as GenAI generated
         };
       });
@@ -896,33 +964,16 @@ const Invertor = () => {
 
   // Calculate remaining useful life percentage
   const calculateRemainingLife = () => {
-    // Check if this is a normal/healthy vehicle (inverter is healthy even if motor has issues)
-    const isHealthyVehicle = carId === '1HGBH41JXMN109876' || carId === 'WBADT43452G123789' || carId === '5YJSA1E26HF123456' || carId === '2T1BURHE8JC987654';
+    // Time-based degradation for main inverter (healthy case)
+    // Starts at 94% and decreases by ~0.05% every 12 hours (very slow degradation)
+    const startTime = new Date('2025-11-20').getTime(); // Reference start date (recent - Nov 20, 2025)
+    const currentTime = Date.now();
+    const hoursElapsed = (currentTime - startTime) / (1000 * 60 * 60);
+    const degradationRate = 0.05 / 12; // 0.05% per 12 hours (very slow degradation - healthy inverter)
+    const totalDegradation = hoursElapsed * degradationRate;
     
-    // Healthy vehicle starts at 92% and stays high
-    let baseRemainingLife = isHealthyVehicle ? 92 : 68;
-    
-    // Small adjustments based on current real-time conditions
-    let adjustment = 0;
-    const metrics = calculateInverterHealthMetrics();
-    
-    if (isHealthyVehicle) {
-      // Healthy vehicle: very minor adjustments (max ±3%)
-      if (metrics.temperature > 65) adjustment -= 1;
-      if (metrics.efficiency < 95) adjustment -= 1;
-      if (metrics.thd > 2.0) adjustment -= 1;
-    } else {
-      // Problem vehicle: larger adjustments (max ±10%)
-      if (metrics.hasAnomaly) adjustment -= 8;
-      if (metrics.temperature > 75) adjustment -= 5;
-      if (metrics.efficiency < 90) adjustment -= 7;
-      if (metrics.thd > 4) adjustment -= 3;
-    }
-    
-    // Apply adjustment but keep it reasonable
-    const finalRemainingLife = Math.max(15, Math.min(95, baseRemainingLife + adjustment));
-    
-    return Math.round(finalRemainingLife);
+    const remainingLife = Math.max(50, 94 - totalDegradation); // Start at 94%, minimum 50%
+    return Math.round(remainingLife);
   };
 
   const remainingLife = calculateRemainingLife();
@@ -1874,12 +1925,14 @@ const Invertor = () => {
                                     <span style={{ flex: 1 }}>{rec.action}</span>
                                     {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
                                   </div>
-                                  {rec.description && (
+                                  {rec.bullets && rec.bullets.length > 0 && (
                                     <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)', marginTop: '4px' }}>
-                                      <div style={{ display: 'flex', gap: '6px' }}>
-                                        <span>•</span>
-                                        <span>{rec.description}</span>
-                                      </div>
+                                      {rec.bullets.map((bullet, bidx) => (
+                                        <div key={bidx} style={{ display: 'flex', gap: '6px', marginBottom: '2px' }}>
+                                          <span>•</span>
+                                          <span>{bullet}</span>
+                                        </div>
+                                      ))}
                                     </div>
                                   )}
                                 </div>
@@ -1902,12 +1955,14 @@ const Invertor = () => {
                                     <span style={{ flex: 1 }}>{rec.action}</span>
                                     {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
                                   </div>
-                                  {rec.description && (
+                                  {rec.bullets && rec.bullets.length > 0 && (
                                     <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)', marginTop: '4px' }}>
-                                      <div style={{ display: 'flex', gap: '6px' }}>
-                                        <span>•</span>
-                                        <span>{rec.description}</span>
-                                      </div>
+                                      {rec.bullets.map((bullet, bidx) => (
+                                        <div key={bidx} style={{ display: 'flex', gap: '6px', marginBottom: '2px' }}>
+                                          <span>•</span>
+                                          <span>{bullet}</span>
+                                        </div>
+                                      ))}
                                     </div>
                                   )}
                                 </div>
@@ -1931,11 +1986,6 @@ const Invertor = () => {
                         {genAiAnalysis.citations.map((citation, idx) => (
                           <div key={idx} style={{ fontSize: '10px', color: 'rgba(255,255,255,0.8)', marginBottom: '4px', paddingLeft: '8px' }}>
                             <span style={{ color: '#6495ED' }}>•</span> {citation.source}
-                            {citation.confidence < 1.0 && (
-                              <span style={{ marginLeft: '6px', color: 'rgba(255,255,255,0.6)' }}>
-                                (Confidence: {(citation.confidence * 100).toFixed(0)}%)
-                              </span>
-                            )}
                           </div>
                         ))}
                       </div>

@@ -109,7 +109,7 @@ const Motor = () => {
         
         // Force component re-render for fresh data
         setMlResults(prev => [...prev]);
-      }, 300000); // 5 minutes
+      }, 60000); // 1 minute
       return () => clearInterval(interval);
     }
   }, [csvData]);
@@ -148,18 +148,19 @@ const Motor = () => {
       make: currentData.make,
       model: currentData.model,
       year: currentData.year,
-      engine_temp_c: parseFloat(currentData.engine_temp_c) || 90,
-      oil_pressure_psi: parseFloat(currentData.oil_pressure_psi) || 20,
+      // Handle both motor_temp_c (normal CSV) and engine_temp_c (regular CSV)
+      engine_temp_c: parseFloat(currentData.motor_temp_c || currentData.engine_temp_c) || 70,
+      oil_pressure_psi: parseFloat(currentData.oil_pressure_psi) || 25,
       rpm_avg: parseFloat(currentData.rpm_avg) || 2500,
       speed_kmh: parseFloat(currentData.speed_kmh) || 50,
-      vibration_level: parseFloat(currentData.vibration_level) || 3,
-      fuel_consumption_l100km: parseFloat(currentData.fuel_consumption_l100km) || 8,
+      vibration_level: parseFloat(currentData.vibration_level) || 0.8,
+      fuel_consumption_l100km: parseFloat(currentData.energy_consumption_kwh || currentData.fuel_consumption_l100km) || 18,
       performance_score: parseFloat(currentData.performance_score) || 90,
       motor_anomaly: currentData.motor_anomaly === 'True',
-      anomaly_type_motor: currentData.anomaly_type_motor,
-      failure_risk: parseFloat(currentData.failure_risk) || 1,
-      engine_type: currentData.engine_type,
-      fuel_type: currentData.fuel_type
+      anomaly_type_motor: currentData.anomaly_type || currentData.anomaly_type_motor || 'normal',
+      failure_risk: parseFloat(currentData.failure_risk) || 0,
+      engine_type: currentData.motor_type || currentData.engine_type || 'Electric Motor',
+      fuel_type: currentData.fuel_type || 'electric'
     };
     
     try {
@@ -553,11 +554,12 @@ const Motor = () => {
 
   // Create dynamic UI page summary based on current motor data and component state
   const createUIPageSummary = () => {
-    const engineTemp = parseFloat(currentData.engine_temp_c) || 90;
+    // Handle both motor_temp_c (normal CSV) and engine_temp_c (regular CSV)
+    const engineTemp = parseFloat(currentData.motor_temp_c || currentData.engine_temp_c) || 70;
     const oilPressure = parseFloat(currentData.oil_pressure_psi) || 20;
     const performanceScore = parseFloat(currentData.performance_score) || 90;
     const rpm = parseFloat(currentData.rpm_avg) || 2500;
-    const vibration = parseFloat(currentData.vibration_level) || 3;
+    const vibration = parseFloat(currentData.vibration_level) || 0.8;
     const hasAnomaly = currentData.motor_anomaly === 'True';
     const vehicleInfo = `${currentData.make || 'Unknown Vehicle'} - ${currentData.model || 'Electric Vehicle'} (${currentData.year || '2023'})`;
     
@@ -648,11 +650,16 @@ const Motor = () => {
 
   // Get remaining useful life percentage
   const getRemainingLife = () => {
-    const predictions = calculateDynamicMotorPredictions(currentData);
-    if (predictions) {
-      return Math.round(predictions.performance_percentage);
-    }
-    return 70; // fallback
+    // Time-based degradation: slowly decreases over time (simulates normal wear)
+    // Starts at 94% and decreases by ~0.1% every 12 hours
+    const startTime = new Date('2025-01-01').getTime(); // Reference start date
+    const currentTime = Date.now();
+    const hoursElapsed = (currentTime - startTime) / (1000 * 60 * 60);
+    const degradationRate = 0.1 / 12; // 0.1% per 12 hours
+    const totalDegradation = hoursElapsed * degradationRate;
+    
+    const remainingLife = Math.max(60, 94 - totalDegradation); // Start at 94%, minimum 60%
+    return Math.round(remainingLife);
   };
   
   // Get AI recommendations - prioritize GenAI (Claude Sonnet 4.5) over rule-based
@@ -771,7 +778,8 @@ const Motor = () => {
   const electricalMetrics = formatElectricalMetrics(currentData.rpm_avg, currentData.performance_score);
   const bearingHealth = calculateBearingHealth(currentData.vibration_level, currentData.performance_score);
   const rotorPosition = calculateRotorPosition(currentData.rpm_avg, currentData.performance_score);
-  const insulationResistance = calculateInsulationResistance(currentData.engine_temp_c, currentData.performance_score);
+  // Handle both motor_temp_c (normal CSV) and engine_temp_c (regular CSV)
+  const insulationResistance = calculateInsulationResistance(currentData.motor_temp_c || currentData.engine_temp_c, currentData.performance_score);
   
   // Enhanced debug info with ML integration
   const currentPredictions = calculateDynamicMotorPredictions(currentData);
@@ -1025,7 +1033,7 @@ const Motor = () => {
                           color: currentPredictions?.temperature > 100 ? '#ff4444' : 
                                  currentPredictions?.temperature > 95 ? '#ff9900' : '#37bc12'
                         }}>
-                          {formatValue(currentData.engine_temp_c, '°C', '90°C')}
+                          {formatValue(currentData.motor_temp_c || currentData.engine_temp_c, '°C', '70°C')}
                         </div>
                       </div>
                       <div className="temp-label" style={{ fontSize: `calc(${spacing.fontSize} * 0.7)` }}>Motor Temperature</div>
@@ -1635,11 +1643,6 @@ const Motor = () => {
                           {genAiAnalysis.citations.map((citation, idx) => (
                             <div key={idx} style={{ fontSize: '10px', color: 'rgba(255,255,255,0.8)', marginBottom: '4px', paddingLeft: '8px' }}>
                               <span style={{ color: '#6495ED' }}>•</span> {citation.source}
-                              {citation.confidence < 1.0 && (
-                                <span style={{ marginLeft: '6px', color: 'rgba(255,255,255,0.6)' }}>
-                                  (Confidence: {(citation.confidence * 100).toFixed(0)}%)
-                                </span>
-                              )}
                             </div>
                           ))}
                         </div>

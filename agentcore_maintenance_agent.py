@@ -414,6 +414,7 @@ class AgentCoreMaintenanceAgent:
             predict_inverter_degradation,
             detect_tire_anomalies,
             detect_motor_anomalies,
+            get_available_slots,
             schedule_appointment,
             get_fleet_status,
             cross_system_analysis,
@@ -1060,18 +1061,23 @@ def detect_motor_anomalies(vehicle_id: str) -> str:
 
 
 @tool
-def schedule_appointment(vehicle_id: str, service_type: str, preferred_date: str, notes: str = "") -> str:
+def get_available_slots(vehicle_id: str, service_type: str, preferred_date: str) -> str:
     """
-    Schedule a maintenance appointment for a vehicle in DynamoDB.
+    IMPORTANT: Use this tool to find available appointment time slots WITHOUT booking them.
+    This tool queries the appointment database and returns 2-4 available time slots.
+    The user will select one slot, then you use schedule_appointment to book it.
     
     Args:
-        vehicle_id: The vehicle ID
-        service_type: Type of service (tire_replacement, tire_rotation, motor_maintenance, oil_change, inspection)
-        preferred_date: Preferred date in YYYY-MM-DD format
-        notes: Additional notes or concerns
+        vehicle_id: The vehicle ID (e.g., "1", "2", "3")
+        service_type: Type of service - must be one of: tire_replacement, tire_rotation, motor_maintenance, oil_change, inspection
+        preferred_date: Date in YYYY-MM-DD format (e.g., "2025-11-25")
         
     Returns:
-        Appointment confirmation details
+        JSON with available_slots array containing date, time_slot, service_type, and duration for each slot
+    
+    Example:
+        get_available_slots("1", "tire_replacement", "2025-11-25")
+        Returns: {"success": true, "available_slots": [{"date": "2025-11-25", "time_slot": "15:00", ...}]}
     """
     try:
         dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
@@ -1087,19 +1093,63 @@ def schedule_appointment(vehicle_id: str, service_type: str, preferred_date: str
         
         slots = response.get('Items', [])
         if not slots:
-            return json.dumps({"error": f"No available slots on {preferred_date}"})
+            return json.dumps({"error": f"No available slots on {preferred_date}", "available_slots": []})
         
-        # Book first available slot
-        slot = slots[0]
+        # Return 2-4 available slots (don't book them yet)
+        available_slots = []
+        for slot in slots[:4]:  # Max 4 slots
+            available_slots.append({
+                "date": preferred_date,
+                "time_slot": slot['time_slot'],
+                "service_type": service_type,
+                "duration": slot.get('duration', '1 hour')
+            })
+        
+        return json.dumps({
+            "success": True,
+            "vehicle_id": vehicle_id,
+            "service_type": service_type,
+            "available_slots": available_slots,
+            "message": f"Found {len(available_slots)} available time slots"
+        }, indent=2)
+        
+    except Exception as e:
+        return json.dumps({"error": f"Failed to get slots: {str(e)}", "available_slots": []})
+
+
+@tool
+def schedule_appointment(vehicle_id: str, service_type: str, preferred_date: str, time_slot: str, notes: str = "") -> str:
+    """
+    Schedule a maintenance appointment for a vehicle in DynamoDB.
+    This books a specific time slot that was previously shown to the user.
+    
+    Args:
+        vehicle_id: The vehicle ID
+        service_type: Type of service (tire_replacement, tire_rotation, motor_maintenance, oil_change, inspection)
+        preferred_date: Preferred date in YYYY-MM-DD format
+        time_slot: Specific time slot to book in 24-hour format (e.g., "09:00", "15:00")
+        notes: Additional notes or concerns
+        
+    Returns:
+        Appointment confirmation details
+    """
+    try:
+        dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+        table = dynamodb.Table('vehicle-appointment-slots')
+        
+        # Book the specific time slot requested
         table.update_item(
-            Key={'date': preferred_date, 'time_slot': slot['time_slot']},
-            UpdateExpression='SET available = :false, vehicle_id = :vid, service_type = :svc, booked_at = :now',
+            Key={'date': preferred_date, 'time_slot': time_slot},
+            UpdateExpression='SET available = :false, vehicle_id = :vid, service_type = :svc, booked_at = :now, notes = :notes',
             ExpressionAttributeValues={
                 ':false': False,
                 ':vid': vehicle_id,
                 ':svc': service_type,
-                ':now': datetime.now().isoformat()
-            }
+                ':now': datetime.now().isoformat(),
+                ':notes': notes,
+                ':true': True
+            },
+            ConditionExpression='available = :true'  # Only book if still available
         )
         
         return json.dumps({
@@ -1107,10 +1157,11 @@ def schedule_appointment(vehicle_id: str, service_type: str, preferred_date: str
             "appointment": {
                 "vehicle_id": vehicle_id,
                 "date": preferred_date,
-                "time_slot": slot['time_slot'],
+                "time_slot": time_slot,
                 "service_type": service_type,
                 "notes": notes
-            }
+            },
+            "message": f"Appointment booked successfully for {preferred_date} at {time_slot}"
         }, indent=2)
         
     except Exception as e:

@@ -652,11 +652,16 @@ const Motor = () => {
 
   // Get remaining useful life percentage
   const getRemainingLife = () => {
-    const predictions = calculateDynamicMotorPredictions(currentData);
-    if (predictions) {
-      return Math.round(predictions.performance_percentage);
-    }
-    return 70; // fallback
+    // Time-based degradation for Vehicle 2 (degrading case)
+    // Starts at 66% and decreases by ~0.2% every 12 hours (faster degradation)
+    const startTime = new Date('2025-11-20').getTime(); // Reference start date (recent - Nov 20, 2025)
+    const currentTime = Date.now();
+    const hoursElapsed = (currentTime - startTime) / (1000 * 60 * 60);
+    const degradationRate = 0.2 / 12; // 0.2% per 12 hours (faster than normal)
+    const totalDegradation = hoursElapsed * degradationRate;
+    
+    const remainingLife = Math.max(40, 66 - totalDegradation); // Start at 66%, minimum 40%
+    return Math.round(remainingLife);
   };
   
   // Parse bullet points from GenAI raw response for each recommendation
@@ -1695,11 +1700,6 @@ const Motor = () => {
                           {genAiAnalysis.citations.map((citation, idx) => (
                             <div key={idx} style={{ fontSize: '10px', color: 'rgba(255,255,255,0.8)', marginBottom: '4px', paddingLeft: '8px' }}>
                               <span style={{ color: '#6495ED' }}>•</span> {citation.source}
-                              {citation.confidence < 1.0 && (
-                                <span style={{ marginLeft: '6px', color: 'rgba(255,255,255,0.6)' }}>
-                                  (Confidence: {(citation.confidence * 100).toFixed(0)}%)
-                                </span>
-                              )}
                             </div>
                           ))}
                         </div>

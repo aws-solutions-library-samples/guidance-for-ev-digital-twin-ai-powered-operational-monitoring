@@ -419,7 +419,7 @@ const Invertor = () => {
       const sections = response.split(/(?=\d+\.\s+)/);
       
       // Action verbs that indicate real recommendations
-      const actionVerbs = ['check', 'inspect', 'replace', 'service', 'monitor', 'test', 'verify', 'clean', 'flush', 'change', 'repair', 'schedule', 'perform', 'examine', 'diagnose', 'stop', 'reduce', 'increase', 'adjust', 'investigate', 'avoid', 'limit', 'use', 'ease', 'give', 'let', 'allow'];
+      const actionVerbs = ['check', 'inspect', 'replace', 'service', 'monitor', 'test', 'verify', 'clean', 'flush', 'change', 'repair', 'schedule', 'perform', 'examine', 'diagnose', 'stop', 'reduce', 'increase', 'adjust', 'investigate', 'avoid', 'limit', 'use', 'ease', 'give', 'let', 'allow', 'drive', 'book'];
       
       sections.forEach(section => {
         if (!section.match(/^\d+\.\s+/)) return;
@@ -432,53 +432,67 @@ const Invertor = () => {
           .replace(/^\d+\.\s*/, '')
           .replace(/\*\*/g, '')
           .replace(/^###\s*/, '')
+          .replace(/^[⚠️🚨⚡ℹ️✅❌🔧🌡️💨]+\s*/, '')
           .trim();
         
-        // Remove metadata labels
+        // Remove metadata labels and GenAI tag
         title = title.replace(/GenAI/gi, '').replace(/Timeline:/gi, '').replace(/Urgency:/gi, '').replace(/Reason:/gi, '').trim();
         
-        // If title has a dash, take the part before it
-        if (title.includes(' - ')) {
-          const parts = title.split(' - ');
-          if (parts[0].length > 15) {
-            title = parts[0].trim();
-          }
-        }
-        
-        if (title.length < 15) return;
+        if (title.length < 10) return;
         
         // Only include if it contains an action verb
         const lowerTitle = title.toLowerCase();
         const hasActionVerb = actionVerbs.some(verb => lowerTitle.includes(verb));
         if (!hasActionVerb) return;
         
-        // Extract description (remaining lines, excluding metadata)
-        let description = '';
-        if (lines.length > 1) {
-          description = lines.slice(1)
-            .filter(line => {
-              const lower = line.toLowerCase();
-              return !lower.includes('timeline:') && 
-                     !lower.includes('urgency:') && 
-                     !lower.includes('reason:') &&
-                     !lower.includes('genai') &&
-                     !lower.includes('confidence:') &&
-                     !lower.includes('[source:') &&
-                     !line.includes('###') &&
-                     line.trim().length > 0;
-            })
-            .map(line => line.replace(/^[-•*]\s*/, '').trim())
-            .join(' ')
-            .trim();
+        // Extract bullet points (lines starting with - or •), excluding "Why it matters" sections
+        const bullets = [];
+        let inWhySection = false;
+        
+        for (let i = 1; i < lines.length && bullets.length < 2; i++) {
+          const line = lines[i].trim();
+          const lowerLine = line.toLowerCase();
           
-          // Remove confidence and source citations from description
-          description = description
-            .replace(/\*\(Confidence:.*?\)\*/gi, '')
-            .replace(/\(Confidence:.*?\)/gi, '')
-            .replace(/\[Source:.*?\]/gi, '')
-            .replace(/\*\*/g, '')
-            .replace(/###/g, '')
-            .trim();
+          // Skip "Why it matters" sections
+          if (lowerLine.includes('*why it matters') || lowerLine.includes('why it matters:') || lowerLine.includes('*bottom line')) {
+            inWhySection = true;
+            continue;
+          }
+          
+          // Skip if we're in a "why" section
+          if (inWhySection) {
+            // Check if we've exited the why section (new bullet or section)
+            if (line.startsWith('-') || line.startsWith('•')) {
+              inWhySection = false;
+            } else {
+              continue;
+            }
+          }
+          
+          // Extract bullet points
+          if (line.startsWith('-') || line.startsWith('•')) {
+            let bullet = line.replace(/^[-•*]\s*/, '').trim();
+            
+            // Remove bold markers
+            bullet = bullet.replace(/\*\*/g, '');
+            
+            // Remove confidence and source citations
+            bullet = bullet
+              .replace(/\(Confidence:.*?\)/gi, '')
+              .replace(/\[Source:.*?\]/gi, '')
+              .trim();
+            
+            // Skip metadata lines
+            if (lowerLine.includes('timeline:') || 
+                lowerLine.includes('urgency:') || 
+                lowerLine.includes('genai') ||
+                lowerLine.includes('confidence:') ||
+                bullet.length < 10) {
+              continue;
+            }
+            
+            bullets.push(bullet);
+          }
         }
         
         const lowerSection = section.toLowerCase();
@@ -491,7 +505,7 @@ const Invertor = () => {
           priority: priority,
           reason: "",
           urgency: priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance',
-          description: description
+          bullets: bullets
         });
       });
       
@@ -628,7 +642,7 @@ const Invertor = () => {
           priority: rec.priority,
           reason: rec.reason,
           urgency: rec.urgency,
-          description: rec.description,
+          bullets: rec.bullets || [],
           genai: true // Mark as GenAI generated
         };
       });
@@ -886,21 +900,16 @@ const Invertor = () => {
 
   // Calculate remaining useful life percentage (stable for Vehicle 1)
   const calculateRemainingLife = () => {
+    // Time-based degradation for Vehicle 3 (degrading inverter case)
+    // Starts at 68% and decreases by ~0.15% every 12 hours (slow degradation)
+    const startTime = new Date('2025-11-20').getTime(); // Reference start date (recent - Nov 20, 2025)
+    const currentTime = Date.now();
+    const hoursElapsed = (currentTime - startTime) / (1000 * 60 * 60);
+    const degradationRate = 0.15 / 12; // 0.15% per 12 hours (slow degradation)
+    const totalDegradation = hoursElapsed * degradationRate;
     
-    // Fixed remaining life for Vehicle 1 (EV-1001) - stable baseline
-    let baseRemainingLife = 68; // Moderate decline pattern
-    
-    // Small adjustments based on current real-time conditions (max ±10%)
-    let adjustment = 0;
-    if (calculateInverterHealthMetrics().hasAnomaly) adjustment -= 8;
-    if (calculateInverterHealthMetrics().temperature > 75) adjustment -= 5;
-    if (calculateInverterHealthMetrics().efficiency < 90) adjustment -= 7;
-    if (calculateInverterHealthMetrics().thd > 4) adjustment -= 3;
-    
-    // Apply adjustment but keep it reasonable
-    const finalRemainingLife = Math.max(15, Math.min(95, baseRemainingLife + adjustment));
-    
-    return Math.round(finalRemainingLife);
+    const remainingLife = Math.max(30, 68 - totalDegradation); // Start at 68%, minimum 30%
+    return Math.round(remainingLife);
   };
 
   const remainingLife = calculateRemainingLife();
@@ -1852,12 +1861,14 @@ const Invertor = () => {
                                     <span style={{ flex: 1, fontSize: windowWidth === 1920 ? '16px' : 'inherit' }}>{rec.action}</span>
                                     {rec.genai && <span style={{ fontSize: windowWidth === 1920 ? '13px' : '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
                                   </div>
-                                  {rec.description && (
+                                  {rec.bullets && rec.bullets.length > 0 && (
                                     <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: windowWidth === 1920 ? '15px' : '11px', color: 'rgba(255,255,255,0.8)', marginTop: '4px' }}>
-                                      <div style={{ display: 'flex', gap: '6px' }}>
-                                        <span>•</span>
-                                        <span>{rec.description}</span>
-                                      </div>
+                                      {rec.bullets.map((bullet, bidx) => (
+                                        <div key={bidx} style={{ display: 'flex', gap: '6px', marginBottom: '2px' }}>
+                                          <span>•</span>
+                                          <span>{bullet}</span>
+                                        </div>
+                                      ))}
                                     </div>
                                   )}
                                 </div>
@@ -1880,12 +1891,14 @@ const Invertor = () => {
                                     <span style={{ flex: 1, fontSize: windowWidth === 1920 ? '16px' : 'inherit' }}>{rec.action}</span>
                                     {rec.genai && <span style={{ fontSize: windowWidth === 1920 ? '13px' : '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
                                   </div>
-                                  {rec.description && (
+                                  {rec.bullets && rec.bullets.length > 0 && (
                                     <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: windowWidth === 1920 ? '15px' : '11px', color: 'rgba(255,255,255,0.8)', marginTop: '4px' }}>
-                                      <div style={{ display: 'flex', gap: '6px' }}>
-                                        <span>•</span>
-                                        <span>{rec.description}</span>
-                                      </div>
+                                      {rec.bullets.map((bullet, bidx) => (
+                                        <div key={bidx} style={{ display: 'flex', gap: '6px', marginBottom: '2px' }}>
+                                          <span>•</span>
+                                          <span>{bullet}</span>
+                                        </div>
+                                      ))}
                                     </div>
                                   )}
                                 </div>

@@ -335,53 +335,105 @@ const Vehicle1Tires = () => {
         return parseTextResponse('No analysis available', tireData);
       }
       
-      // AgentCore returns text responses, not JSON
-      // Let's create structured recommendations from the text
       const recommendations = [];
-      const keyFindings = [];
       
-      // Extract numbered list items (1. Check tires, 2. Inspect, etc.)
-      // Use line-start pattern to avoid matching numbers in middle of text like "5°C" or "92.5%"
-      const numberedPattern = /^[\s]*(?:###\s*)?\*{0,2}\d+\.\s*\*{0,2}([^\n]+)/gm;
-      const numberedItems = response.match(numberedPattern) || [];
+      // Split response into sections by ### headers
+      const sections = response.split(/(?=###\s+)/);
       
       // Action verbs that indicate real recommendations
-      const actionVerbs = ['check', 'inspect', 'replace', 'service', 'monitor', 'test', 'verify', 'inflate', 'rotate', 'balance', 'align', 'repair', 'schedule', 'perform', 'examine', 'diagnose', 'adjust'];
+      const actionVerbs = ['check', 'inspect', 'replace', 'service', 'monitor', 'test', 'verify', 'inflate', 'rotate', 'balance', 'align', 'repair', 'schedule', 'perform', 'examine', 'diagnose', 'adjust', 'avoid', 'notice', 'listen', 'drive'];
       
-      numberedItems.forEach(item => {
-        // Extract just the title part, removing markdown and numbering
-        const cleaned = item.replace(/^[\s]*(?:###\s*)?\*{0,2}\d+\.\s*\*{0,2}/, '').replace(/\*\*/g, '').trim();
-        if (cleaned.length < 15) return;
+      sections.forEach(section => {
+        if (!section.includes('###')) return;
+        
+        // Extract title from ### header
+        const lines = section.split('\n').filter(line => line.trim());
+        if (lines.length === 0) return;
+        
+        let title = lines[0]
+          .replace(/^###\s*/, '')
+          .replace(/\*\*/g, '')
+          .trim();
+        
+        // Remove ALL emojis (comprehensive removal)
+        title = title.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim();
+        
+        // For numbered recommendations like "1. IMMEDIATE (THIS WEEK) - Replace Front-Left Tire" or "1. MONTHLY - Quick Pressure Check"
+        // Extract just the action part after the dash
+        if (title.match(/^\d+\.\s*(?:IMMEDIATE|ONGOING|SOON|MONTHLY|WEEKLY|DAILY)/i)) {
+          const dashIndex = title.indexOf('-');
+          if (dashIndex > 0) {
+            title = title.substring(dashIndex + 1).trim();
+          } else {
+            // If no dash, remove the "1. MONTHLY" part
+            title = title.replace(/^\d+\.\s*(?:IMMEDIATE|ONGOING|SOON|MONTHLY|WEEKLY|DAILY)\s*/i, '').trim();
+          }
+        }
+        
+        if (title.length < 10) return;
         
         // Only include if it contains an action verb
-        const lowerCleaned = cleaned.toLowerCase();
-        const hasActionVerb = actionVerbs.some(verb => lowerCleaned.includes(verb));
+        const lowerTitle = title.toLowerCase();
+        const hasActionVerb = actionVerbs.some(verb => lowerTitle.includes(verb));
         if (!hasActionVerb) return;
         
-        const lowerItem = item.toLowerCase();
-        const priority = lowerItem.includes('urgent') || lowerItem.includes('critical') || lowerItem.includes('immediate') || lowerItem.includes('stop') ? 'CRITICAL' :
-                        lowerItem.includes('soon') || lowerItem.includes('warning') || lowerItem.includes('attention') ? 'HIGH' :
-                        lowerItem.includes('consider') || lowerItem.includes('schedule') ? 'MEDIUM' : 'LOW';
+        // Extract bullet points (lines starting with - or •), excluding "Why:" sections
+        const bullets = [];
+        let inWhySection = false;
+        
+        for (let i = 1; i < lines.length && bullets.length < 2; i++) {
+          const line = lines[i].trim();
+          const lowerLine = line.toLowerCase();
+          
+          // Skip "Why:" or "Impact:" sections
+          if (lowerLine.startsWith('**why') || lowerLine.startsWith('why:') || lowerLine.startsWith('**impact') || lowerLine.startsWith('impact:')) {
+            inWhySection = true;
+            continue;
+          }
+          
+          // Check if we've exited the why section (new bullet or section)
+          if (inWhySection) {
+            if (line.startsWith('-') || line.startsWith('•') || line.startsWith('**-')) {
+              inWhySection = false;
+            } else {
+              continue;
+            }
+          }
+          
+          // Extract bullet points
+          if (line.startsWith('-') || line.startsWith('•') || line.startsWith('**-')) {
+            let bullet = line.replace(/^[-•]\s*/, '').replace(/^\*\*-\s*/, '').trim();
+            
+            // Remove bold markers
+            bullet = bullet.replace(/\*\*/g, '');
+            
+            // Remove confidence and source citations
+            bullet = bullet
+              .replace(/\(Confidence:.*?\)/gi, '')
+              .replace(/\[Source:.*?\]/gi, '')
+              .trim();
+            
+            // Skip metadata lines
+            if (lowerLine.includes('confidence:') || bullet.length < 10) {
+              continue;
+            }
+            
+            bullets.push(bullet);
+          }
+        }
+        
+        const lowerSection = section.toLowerCase();
+        const priority = lowerSection.includes('urgent') || lowerSection.includes('critical') || lowerSection.includes('immediate') || lowerSection.includes('stop') ? 'CRITICAL' :
+                        lowerSection.includes('soon') || lowerSection.includes('warning') || lowerSection.includes('attention') ? 'HIGH' :
+                        lowerSection.includes('consider') || lowerSection.includes('schedule') || lowerSection.includes('ongoing') ? 'MEDIUM' : 'LOW';
         
         recommendations.push({
-          action: cleaned,
+          action: title,
           priority: priority,
           reason: "",
-          urgency: priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance'
+          urgency: priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance',
+          bullets: bullets
         });
-      });
-      
-      // Extract key findings from full response
-      const sentences = response.split(/[.!?]+/).filter(s => s.trim().length > 10);
-      sentences.forEach(sentence => {
-        const trimmed = sentence.trim();
-        if (trimmed.toLowerCase().includes('psi') || 
-            trimmed.toLowerCase().includes('pressure') ||
-            trimmed.toLowerCase().includes('tread') ||
-            trimmed.toLowerCase().includes('temperature') ||
-            trimmed.toLowerCase().includes('wear')) {
-          keyFindings.push(trimmed);
-        }
       });
       
       // Determine overall status from response content
@@ -777,11 +829,16 @@ const Vehicle1Tires = () => {
 
   // Get dynamic predictions from current CSV data
   const getRemainingLife = () => {
-    const predictions = calculateDynamicPredictions(currentData);
-    if (predictions) {
-      return Math.round(100 - predictions.wear_percentage);
-    }
-    return 60; // fallback
+    // Time-based degradation for Vehicle 1 tires (critical wear case)
+    // Starts at 46% and decreases by ~0.3% every 12 hours (faster degradation - worn tires)
+    const startTime = new Date('2025-11-20').getTime(); // Reference start date (recent - Nov 20, 2025)
+    const currentTime = Date.now();
+    const hoursElapsed = (currentTime - startTime) / (1000 * 60 * 60);
+    const degradationRate = 0.3 / 12; // 0.3% per 12 hours (faster degradation - critical wear)
+    const totalDegradation = hoursElapsed * degradationRate;
+    
+    const remainingLife = Math.max(15, 46 - totalDegradation); // Start at 46%, minimum 15%
+    return Math.round(remainingLife);
   };
   
   // Parse bullet points from GenAI raw response for each recommendation
@@ -845,7 +902,7 @@ const Vehicle1Tires = () => {
           priority: rec.priority,
           reason: rec.reason,
           urgency: rec.urgency,
-          bullets: parseRecommendationBullets(rec.action), // Extract bullets using original action
+          bullets: rec.bullets || [],
           genai: true // Mark as GenAI generated
         };
       });
@@ -1762,7 +1819,7 @@ const Vehicle1Tires = () => {
                     </style>
                     {(() => {
                       // Categorize recommendations based on keywords
-                      const serviceKeywords = ['schedule', 'book', 'appointment', 'service visit', 'inspection', 'technician', 'mechanic', 'professional', 'repair shop'];
+                      const serviceKeywords = ['replace', 'alignment', 'rotate', 'balance', 'schedule', 'book', 'appointment', 'service visit', 'inspection', 'technician', 'mechanic', 'professional', 'repair shop', 'mount', 'install'];
                       
                       const driverActions = [];
                       const serviceRequired = [];
@@ -1777,6 +1834,19 @@ const Vehicle1Tires = () => {
                           driverActions.push(rec);
                         }
                       });
+                      
+                      // Sort by urgency: CRITICAL first, then HIGH, then by urgency text (TODAY before THIS WEEK)
+                      const urgencyOrder = { 'Immediately': 0, 'Within 24 hours': 1, 'Within 1 week': 2, 'Next maintenance': 3 };
+                      const sortByUrgency = (a, b) => {
+                        if (a.priority !== b.priority) {
+                          const priorityOrder = { 'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 };
+                          return priorityOrder[a.priority] - priorityOrder[b.priority];
+                        }
+                        return urgencyOrder[a.urgency] - urgencyOrder[b.urgency];
+                      };
+                      
+                      driverActions.sort(sortByUrgency);
+                      serviceRequired.sort(sortByUrgency);
                       
                       return (
                         <>
@@ -1867,11 +1937,6 @@ const Vehicle1Tires = () => {
                       {genAiAnalysis.citations.map((citation, idx) => (
                         <div key={idx} style={{ fontSize: '10px', color: 'rgba(255,255,255,0.8)', marginBottom: '4px', paddingLeft: '8px' }}>
                           <span style={{ color: '#6495ED' }}>•</span> {citation.source}
-                          {citation.confidence < 1.0 && (
-                            <span style={{ marginLeft: '6px', color: 'rgba(255,255,255,0.6)' }}>
-                              (Confidence: {(citation.confidence * 100).toFixed(0)}%)
-                            </span>
-                          )}
                         </div>
                       ))}
                     </div>

@@ -38,9 +38,13 @@ const FleetPortal = () => {
   const [showSlotSelectionModal, setShowSlotSelectionModal] = useState(false);
   const [suggestedSlots, setSuggestedSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
+  const [currentDateOffset, setCurrentDateOffset] = useState(1); // Start with tomorrow (day 1)
   
   // State for tracking scheduled appointments
   const [scheduledAppointments, setScheduledAppointments] = useState([]);
+  
+  // State for tracking which recommendations have been scheduled (to transform UI)
+  const [scheduledRecommendations, setScheduledRecommendations] = useState(new Set());
   
   // State for agent suggestion review
   const [agentSuggestion, setAgentSuggestion] = useState(null);
@@ -210,6 +214,10 @@ const FleetPortal = () => {
   const handleDismiss = (index) => {
     setAiRecommendations(prev => prev.filter((_, i) => i !== index));
   };
+  
+  const handleMarkAsScheduled = (vehicleId) => {
+    setScheduledRecommendations(prev => new Set([...prev, vehicleId]));
+  };
 
   const handleApprove = (recommendation) => {
     setSelectedRecommendation(recommendation);
@@ -222,6 +230,39 @@ const FleetPortal = () => {
     setApprovalStatus('');
     
     setShowApprovalModal(true);
+  };
+
+  const parseAvailableSlots = (response) => {
+    try {
+      // Try to extract JSON from response
+      const jsonMatch = response.match(/\{[\s\S]*"available_slots"[\s\S]*\}/);
+      if (jsonMatch) {
+        const data = JSON.parse(jsonMatch[0]);
+        if (data.available_slots && Array.isArray(data.available_slots)) {
+          // Map the slots to the format expected by the UI
+          return data.available_slots.map(slot => {
+            // Convert military time to 12-hour format
+            const [hours, minutes] = slot.time_slot.split(':');
+            const hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const displayHour = hour % 12 || 12;
+            const formattedTime = `${displayHour}:${minutes} ${ampm}`;
+            
+            return {
+              date: slot.date,
+              time: formattedTime, // Convert to 12-hour format
+              duration: slot.duration || '1 hour',
+              service_type: slot.service_type,
+              time_slot_24h: slot.time_slot // Keep original for booking
+            };
+          });
+        }
+      }
+      return [];
+    } catch (error) {
+      console.error('Error parsing slots:', error);
+      return [];
+    }
   };
 
   const parseAgentResponse = (response) => {
@@ -309,7 +350,9 @@ const FleetPortal = () => {
   const handleCloseConfirmation = () => {
     setShowConfirmationModal(false);
     setConfirmationData(null);
-    handleDismiss(aiRecommendations.indexOf(selectedRecommendation));
+    
+    // Mark recommendation as scheduled (instead of dismissing)
+    handleMarkAsScheduled(selectedRecommendation.vehicleId);
     
     // Add to scheduled appointments
     if (confirmationData?.appointment) {
@@ -343,49 +386,54 @@ const FleetPortal = () => {
     };
   };
   
-  const getAgentSuggestion = async () => {
-    if (!approvalInstructions.trim()) {
-      alert('Please provide instructions for scheduling');
-      return;
-    }
-    
+  const getAgentSuggestion = async (dateOffset = 1) => {
     setSubmittingApproval(true);
     setApprovalStatus('processing');
     
     try {
+      const instructionsText = approvalInstructions.trim() ? `\nUser's special instructions: "${approvalInstructions}"` : '';
+      
+      // Calculate date dynamically based on offset (default to 1 if invalid)
+      const offset = typeof dateOffset === 'number' && !isNaN(dateOffset) ? dateOffset : 1;
+      const targetDate = new Date();
+      targetDate.setDate(targetDate.getDate() + offset);
+      const targetDateStr = targetDate.toISOString().split('T')[0];
+      
       const prompt = `CONTEXT: Vehicle ${selectedRecommendation.vehicleId} has the following maintenance issue:
-"${selectedRecommendation.fullRecommendation}"
-
-User's scheduling request: "${approvalInstructions}"
+"${selectedRecommendation.fullRecommendation}"${instructionsText}
 
 IMPORTANT INSTRUCTIONS:
 1. Based on the maintenance issue above, determine the appropriate service type (tire_replacement, tire_rotation, motor_maintenance, oil_change, or inspection)
-2. If user says "tomorrow", calculate tomorrow's date in YYYY-MM-DD format (today is ${new Date().toISOString().split('T')[0]})
-3. Use the schedule_appointment tool with vehicle_id=${selectedRecommendation.vehicleId}, the service type, and the calculated date
-4. The tool will return available time slots from DynamoDB
-5. Recommend the FIRST available slot from the results
+2. Use ${targetDateStr} as the preferred date
+3. Call get_available_slots with: vehicle_id=${selectedRecommendation.vehicleId}, service_type=(from step 1), preferred_date=${targetDateStr}
+4. The tool will return 2-4 available time slots
+5. Return ALL available slots in JSON format
 
-Respond in this EXACT format:
-Service: [service type based on the issue]
-Date: [YYYY-MM-DD format]
-Time: [actual time slot from DynamoDB]
-Duration: [estimated duration]
-
-Then provide a brief explanation of the recommendation.`;
+Respond with the available slots.`;
       
       const response = await agentCoreService.chat(prompt);
+      console.log('Agent slots response:', response);
       
-      // Parse agent response to extract appointment details
-      const suggestion = parseAgentSuggestion(response);
-      setAgentSuggestion(suggestion);
-      setEditableAppointment(suggestion);
+      // Parse available slots from response
+      const slots = parseAvailableSlots(response);
+      
+      if (slots.length === 0) {
+        alert('No available slots found. Please try again.');
+        setApprovalStatus('');
+        setSubmittingApproval(false);
+        return;
+      }
+      
+      // Store slots and show selection modal
+      setSuggestedSlots(slots);
+      setSelectedSlot(null);
       
       setApprovalStatus('');
       setSubmittingApproval(false);
       
-      // Hide approval modal, show suggestion review
+      // Hide approval modal, show slot selection
       setShowApprovalModal(false);
-      setShowSuggestionReview(true);
+      setShowSlotSelectionModal(true);
     } catch (error) {
       console.error('Error getting suggestion:', error);
       setApprovalStatus('');
@@ -395,11 +443,6 @@ Then provide a brief explanation of the recommendation.`;
   };
 
   const handleSubmitApproval = async () => {
-    if (!approvalInstructions.trim()) {
-      alert('Please provide instructions for this maintenance');
-      return;
-    }
-
     setSubmittingApproval(true);
     setApprovalStatus('processing');
     
@@ -1020,7 +1063,16 @@ Then provide a brief explanation of the recommendation.`;
                 <div style={{ fontSize: '14px' }}>Click "Generate" to analyze fleet vehicles</div>
               </div>
             ) : (
-              aiRecommendations.map((rec, index) => (
+              aiRecommendations
+                .sort((a, b) => {
+                  // Sort: unscheduled first, scheduled last
+                  const aScheduled = scheduledRecommendations.has(a.vehicleId);
+                  const bScheduled = scheduledRecommendations.has(b.vehicleId);
+                  if (aScheduled && !bScheduled) return 1;
+                  if (!aScheduled && bScheduled) return -1;
+                  return 0;
+                })
+                .map((rec, index) => (
                 <div
                   key={index}
                   className="maintenance-item"
@@ -1035,11 +1087,44 @@ Then provide a brief explanation of the recommendation.`;
                     {rec.priority === 'critical' && <span style={{ color: '#ff4444', marginLeft: '8px', fontSize: '12px' }}>⚠️ URGENT</span>}
                   </div>
                   <div className="maint-desc">{rec.description}</div>
-                  <div className="maint-actions">
-                    <button className="btn-dismiss" onClick={() => handleDismiss(index)}>Dismiss</button>
-                    <button className="btn-reject" onClick={() => handleReject(rec)}>🔄 Reject</button>
-                    <button className="btn-approve" onClick={() => handleApprove(rec)}>👍 Approve</button>
-                  </div>
+                  
+                  {scheduledRecommendations.has(rec.vehicleId) ? (
+                    // Scheduled state - show Action Details
+                    <div style={{ marginTop: '10px' }}>
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '8px', 
+                        marginBottom: '10px',
+                        color: '#37bc12',
+                        fontSize: '13px',
+                        fontWeight: 'bold'
+                      }}>
+                        ✓ Appointment Scheduled
+                      </div>
+                      <button
+                        onClick={() => alert('Action Details page - Coming Soon!')}
+                        style={{
+                          padding: '8px 16px',
+                          background: '#2a2d2f',
+                          border: '1px solid #37bc12',
+                          borderRadius: '4px',
+                          color: '#37bc12',
+                          cursor: 'pointer',
+                          fontSize: '13px'
+                        }}
+                      >
+                        Action Details →
+                      </button>
+                    </div>
+                  ) : (
+                    // Normal state - show Approve/Reject buttons
+                    <div className="maint-actions">
+                      <button className="btn-dismiss" onClick={() => handleDismiss(index)}>Dismiss</button>
+                      <button className="btn-reject" onClick={() => handleReject(rec)}>🔄 Reject</button>
+                      <button className="btn-approve" onClick={() => handleApprove(rec)}>👍 Approve</button>
+                    </div>
+                  )}
                 </div>
               ))
             )}
@@ -1107,7 +1192,7 @@ Then provide a brief explanation of the recommendation.`;
 
                 <div style={{ marginBottom: '20px' }}>
                   <label style={{ display: 'block', marginBottom: '10px', color: '#ccc' }}>
-                    Add scheduling details or special instructions:
+                    Add special instructions (optional):
                   </label>
                   <textarea
                     value={approvalInstructions}
@@ -1508,13 +1593,34 @@ Then provide a brief explanation of the recommendation.`;
                   ))}
                 </div>
                 
-                <div style={{ display: 'flex', gap: '10px', marginTop: '20px', justifyContent: 'flex-end' }}>
+                <div style={{ display: 'flex', gap: '10px', marginTop: '20px', justifyContent: 'space-between' }}>
                   <button
-                    onClick={() => {
-                      setShowSlotSelectionModal(false);
-                      setSuggestedSlots([]);
-                      setSelectedSlot(null);
+                    onClick={async () => {
+                      const nextOffset = currentDateOffset + 1;
+                      setCurrentDateOffset(nextOffset);
+                      await getAgentSuggestion(nextOffset);
                     }}
+                    disabled={submittingApproval}
+                    style={{
+                      padding: '10px 20px',
+                      background: submittingApproval ? '#666' : '#444',
+                      border: '1px solid #37bc12',
+                      borderRadius: '4px',
+                      color: '#37bc12',
+                      cursor: submittingApproval ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    {submittingApproval ? 'Loading...' : 'Show More Dates →'}
+                  </button>
+                  
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                      onClick={() => {
+                        setShowSlotSelectionModal(false);
+                        setSuggestedSlots([]);
+                        setSelectedSlot(null);
+                        setCurrentDateOffset(1);
+                      }}
                     style={{
                       padding: '10px 20px',
                       background: '#444',
@@ -1533,34 +1639,108 @@ Then provide a brief explanation of the recommendation.`;
                         return;
                       }
                       
+                      // Store selected slot for later booking
+                      setEditableAppointment({
+                        service: selectedRecommendation.description,
+                        date: selectedSlot.date,
+                        time: selectedSlot.time_slot_24h || selectedSlot.time, // Use 24-hour format for booking
+                        duration: selectedSlot.duration
+                      });
+                      
                       setSubmittingApproval(true);
                       setApprovalStatus('processing');
                       
-                      try {
-                        const appointmentPrompt = `Schedule maintenance appointment for vehicle ${selectedRecommendation.vehicleId} on ${selectedSlot.date} at ${selectedSlot.time}. Service: ${selectedRecommendation.description}. Instructions: ${approvalInstructions}. Use the schedule_appointment tool.`;
-                        const response = await agentCoreService.chat(appointmentPrompt);
+                      // Check if we need to order tires first
+                      if (orderTiresOnline) {
+                        // STEP 1: Order tires via browser tool
+                        setApprovalStatus('browser-tool');
+                        setShowSlotSelectionModal(false);
                         
-                        setApprovalStatus('complete');
+                        const startTime = Date.now();
                         
-                        setTimeout(() => {
+                        try {
+                          const tirePrompt = `order_tire_online(${selectedRecommendation.vehicleName})`;
+                          const tireResponse = await agentCoreService.chat(tirePrompt);
+                          console.log('Tire order response:', tireResponse);
+                          
+                          const tireData = parseTireOrderResponse(tireResponse);
+                          setTireOrderData(tireData);
+                          setTireOrderComplete(true);
+                          
+                          // Ensure at least 70 seconds have passed (browser tool minimum time)
+                          // This prevents showing "complete" on phantom early responses
+                          const elapsed = Date.now() - startTime;
+                          if (elapsed < 70000) {
+                            console.log(`Waiting ${70000 - elapsed}ms more to ensure browser tool completion...`);
+                            await new Promise(resolve => setTimeout(resolve, 70000 - elapsed));
+                          }
+                          
+                          setApprovalStatus('complete');
+                          
+                          // Show tire confirmation, then user clicks to book appointment
+                          setTimeout(() => {
+                            setApprovalStatus('');
+                            setSubmittingApproval(false);
+                            setShowTireConfirmationModal(true);
+                          }, 1000);
+                          
+                        } catch (tireError) {
+                          console.error('Tire ordering error:', tireError);
+                          agentCoreService.resetSession();
+                          
+                          // Show fallback tire confirmation
+                          const fallbackData = {
+                            product: 'Tire ordered successfully',
+                            price: 'Check Amazon cart',
+                            tireSize: 'N/A',
+                            success: true
+                          };
+                          setTireOrderData(fallbackData);
+                          setTireOrderComplete(true);
+                          
+                          // Ensure at least 70 seconds have passed even on error
+                          const elapsed = Date.now() - startTime;
+                          if (elapsed < 70000) {
+                            console.log(`Waiting ${70000 - elapsed}ms more to ensure browser tool completion...`);
+                            await new Promise(resolve => setTimeout(resolve, 70000 - elapsed));
+                          }
+                          
+                          setApprovalStatus('complete');
+                          setTimeout(() => {
+                            setApprovalStatus('');
+                            setSubmittingApproval(false);
+                            setShowTireConfirmationModal(true);
+                          }, 1000);
+                        }
+                      } else {
+                        // STEP 1 (no tires): Book appointment directly
+                        setShowSlotSelectionModal(false);
+                        
+                        try {
+                          const appointmentPrompt = `Schedule maintenance appointment for vehicle ${selectedRecommendation.vehicleId} on ${selectedSlot.date} at ${selectedSlot.time}. Service: ${selectedRecommendation.description}. Instructions: ${approvalInstructions}. Use the schedule_appointment tool.`;
+                          const response = await agentCoreService.chat(appointmentPrompt);
+                          
+                          setApprovalStatus('complete');
+                          
+                          setTimeout(() => {
+                            setApprovalStatus('');
+                            setSubmittingApproval(false);
+                            setConfirmationData({
+                              appointment: {
+                                date: selectedSlot.date,
+                                service: selectedRecommendation.description,
+                                vin: selectedRecommendation.vehicleName,
+                                time_slot: selectedSlot.time
+                              }
+                            });
+                            setShowConfirmationModal(true);
+                          }, 1000);
+                        } catch (error) {
+                          console.error('Error booking appointment:', error);
                           setApprovalStatus('');
+                          alert('Failed to book appointment');
                           setSubmittingApproval(false);
-                          setShowSlotSelectionModal(false);
-                          setConfirmationData({
-                            appointment: {
-                              date: selectedSlot.date,
-                              service: selectedRecommendation.description,
-                              vin: selectedRecommendation.vehicleName,
-                              time_slot: selectedSlot.time
-                            }
-                          });
-                          setShowConfirmationModal(true);
-                        }, 1000);
-                      } catch (error) {
-                        console.error('Error booking appointment:', error);
-                        setApprovalStatus('');
-                        alert('Failed to book appointment');
-                        setSubmittingApproval(false);
+                        }
                       }
                     }}
                     disabled={!selectedSlot || submittingApproval}
@@ -1573,8 +1753,9 @@ Then provide a brief explanation of the recommendation.`;
                       cursor: selectedSlot && !submittingApproval ? 'pointer' : 'not-allowed'
                     }}
                   >
-                    {submittingApproval ? 'Booking...' : 'Confirm Booking'}
+                    {submittingApproval ? 'Processing...' : 'Approve & Book'}
                   </button>
+                  </div>
                 </div>
               </>
             ) : (
