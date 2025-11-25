@@ -358,16 +358,10 @@ const Vehicle1Tires = () => {
         // Remove ALL emojis (comprehensive removal)
         title = title.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim();
         
-        // For numbered recommendations like "1. IMMEDIATE (THIS WEEK) - Replace Front-Left Tire" or "1. MONTHLY - Quick Pressure Check"
-        // Extract just the action part after the dash
-        if (title.match(/^\d+\.\s*(?:IMMEDIATE|ONGOING|SOON|MONTHLY|WEEKLY|DAILY)/i)) {
-          const dashIndex = title.indexOf('-');
-          if (dashIndex > 0) {
-            title = title.substring(dashIndex + 1).trim();
-          } else {
-            // If no dash, remove the "1. MONTHLY" part
-            title = title.replace(/^\d+\.\s*(?:IMMEDIATE|ONGOING|SOON|MONTHLY|WEEKLY|DAILY)\s*/i, '').trim();
-          }
+        // For numbered recommendations like "1. IMMEDIATE (THIS WEEK) - Replace Front-Left Tire"
+        // Remove ONLY the number prefix, keep the timing and action
+        if (title.match(/^\d+\.\s+/)) {
+          title = title.replace(/^\d+\.\s+/, '').trim();
         }
         
         if (title.length < 10) return;
