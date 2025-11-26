@@ -222,6 +222,58 @@ const TiresPage = () => {
       
       const recommendations = [];
       
+      // First, try to extract driver-focused sections (THIS WEEK, What You Can Do NOW, etc.)
+      const driverSectionPatterns = [
+        /THIS WEEK.*?:/i,
+        /What You Can Do NOW.*?:/i,
+        /What Drivers Should Do.*?:/i,
+        /IMMEDIATE.*?:/i,
+        /Action Items for Driver.*?:/i
+      ];
+      
+      for (const pattern of driverSectionPatterns) {
+        const match = response.match(pattern);
+        if (match) {
+          const startIndex = match.index + match[0].length;
+          let endIndex = response.length;
+          
+          const nextSectionPatterns = [/\n\n###/,  /\n\nNext Steps/i, /\n\nSources:/i, /\n\n📊/];
+          for (const endPattern of nextSectionPatterns) {
+            const endMatch = response.substring(startIndex).match(endPattern);
+            if (endMatch) {
+              endIndex = startIndex + endMatch.index;
+              break;
+            }
+          }
+          
+          const driverSection = response.substring(startIndex, endIndex);
+          const bullets = [];
+          const lines = driverSection.split('\n');
+          
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if ((trimmed.startsWith('-') || trimmed.startsWith('•') || trimmed.startsWith('*')) && trimmed.length > 15) {
+              let bullet = trimmed.replace(/^[-•*]\s*/, '').replace(/\*\*/g, '').trim();
+              if (bullet.length > 10 && !bullet.toLowerCase().includes('confidence:')) {
+                bullets.push(bullet);
+                if (bullets.length >= 2) break;
+              }
+            }
+          }
+          
+          if (bullets.length > 0) {
+            recommendations.push({
+              action: match[0].replace(':', '').trim(),
+              priority: 'HIGH',
+              reason: "",
+              urgency: 'This Week',
+              bullets: bullets.slice(0, 2)
+            });
+            break;
+          }
+        }
+      }
+      
       // Split response into sections by ### headers
       const sections = response.split(/(?=###\s+)/);
       
