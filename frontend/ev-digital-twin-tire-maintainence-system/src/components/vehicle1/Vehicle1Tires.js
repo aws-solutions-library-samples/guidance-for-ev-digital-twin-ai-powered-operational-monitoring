@@ -337,11 +337,72 @@ const Vehicle1Tires = () => {
       
       const recommendations = [];
       
-      // Split response into sections by ### headers
-      const sections = response.split(/(?=###\s+)/);
+      // First, try to extract driver-focused sections (THIS WEEK, What You Can Do NOW, etc.)
+      const driverSectionPatterns = [
+        /THIS WEEK.*?:/i,
+        /What You Can Do NOW.*?:/i,
+        /What Drivers Should Do.*?:/i,
+        /Before Your Service Visit.*?:/i,
+        /Driver Actions.*?:/i
+      ];
       
-      // Action verbs that indicate real recommendations
-      const actionVerbs = ['check', 'inspect', 'replace', 'service', 'monitor', 'test', 'verify', 'inflate', 'rotate', 'balance', 'align', 'repair', 'schedule', 'perform', 'examine', 'diagnose', 'adjust', 'avoid', 'notice', 'listen', 'drive'];
+      let driverSectionFound = false;
+      for (const pattern of driverSectionPatterns) {
+        const match = response.match(pattern);
+        if (match) {
+          driverSectionFound = true;
+          // Extract content after this header until next major section or end
+          const startIdx = response.indexOf(match[0]) + match[0].length;
+          let endIdx = response.length;
+          
+          // Find where this section ends (next ### or major header)
+          const nextSectionMatch = response.substring(startIdx).match(/\n###|What You Should Know|Why This Matters/);
+          if (nextSectionMatch) {
+            endIdx = startIdx + nextSectionMatch.index;
+          }
+          
+          const driverSection = response.substring(startIdx, endIdx);
+          
+          // Parse numbered items (1. Check & Inflate, 2. Drive Gently, etc.)
+          const numberedItems = driverSection.match(/\d+\.\s+\*\*([^*]+)\*\*/g);
+          if (numberedItems) {
+            numberedItems.forEach(item => {
+              const title = item.replace(/\d+\.\s+\*\*/, '').replace(/\*\*/, '').trim();
+              
+              // Extract bullets for this item
+              const itemStart = driverSection.indexOf(item);
+              const nextItemMatch = driverSection.substring(itemStart + item.length).match(/\d+\.\s+\*\*/);
+              const itemEnd = nextItemMatch ? itemStart + item.length + nextItemMatch.index : driverSection.length;
+              const itemContent = driverSection.substring(itemStart, itemEnd);
+              
+              const bullets = [];
+              const bulletLines = itemContent.split('\n').filter(line => line.trim().startsWith('-') || line.trim().startsWith('•'));
+              bulletLines.forEach(line => {
+                let bullet = line.replace(/^[-•]\s*/, '').trim();
+                bullet = bullet.replace(/\*\*/g, '').replace(/\(Confidence:.*?\)/gi, '').replace(/\[Source:.*?\]/gi, '').trim();
+                if (bullet.length > 10) bullets.push(bullet);
+              });
+              
+              recommendations.push({
+                action: title,
+                priority: 'HIGH',
+                reason: "",
+                urgency: 'This Week',
+                bullets: bullets.slice(0, 2)
+              });
+            });
+          }
+          break;
+        }
+      }
+      
+      // If no driver section found, fall back to ### header parsing
+      if (!driverSectionFound) {
+        // Split response into sections by ### headers
+        const sections = response.split(/(?=###\s+)/);
+        
+        // Action verbs that indicate real recommendations
+        const actionVerbs = ['check', 'inspect', 'replace', 'service', 'monitor', 'test', 'verify', 'inflate', 'rotate', 'balance', 'align', 'repair', 'schedule', 'perform', 'examine', 'diagnose', 'adjust', 'avoid', 'notice', 'listen', 'drive', 'watch', 'pay attention', 'feel', 'keep'];
       
       sections.forEach(section => {
         if (!section.includes('###')) return;
@@ -429,6 +490,7 @@ const Vehicle1Tires = () => {
           bullets: bullets
         });
       });
+      } // Close the if (!driverSectionFound) block
       
       // Determine overall status from response content
       const status = determineStatusFromResponse(response);
@@ -448,10 +510,22 @@ const Vehicle1Tires = () => {
         sourceInfo += " (Service Issues)";
       }
 
+      // GUARANTEE: Always return at least one recommendation
+      if (recommendations.length === 0) {
+        console.warn('No recommendations parsed, adding critical fallback');
+        recommendations.push({
+          action: 'URGENT: Replace front-left tire immediately - Critical wear detected',
+          priority: 'CRITICAL',
+          reason: 'Tire condition has reached unsafe levels requiring immediate replacement',
+          urgency: 'Immediately',
+          bullets: ['Do not drive until tire is replaced', 'Schedule emergency tire replacement today']
+        });
+      }
+
       return {
         overall_status: status,
         risk_level: status === 'CRITICAL' ? 'HIGH' : status === 'WARNING' ? 'MEDIUM' : 'LOW',
-        key_findings_summary: naturalSummary,
+        key_findings_summary: naturalSummary || 'Tire analysis completed. Review recommendations below.',
         recommendations: recommendations.slice(0, 4),
         next_inspection: "30 days",
         source: sourceInfo,
@@ -1566,20 +1640,21 @@ const Vehicle1Tires = () => {
                       
                       {/* X-axis labels */}
                       <text x="35" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">0</text>
-                      <text x="65" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">10k</text>
-                      <text x="95" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">20k</text>
-                      <text x="125" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">30k</text>
-                      <text x="155" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">40k</text>
-                      <text x="185" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">50k</text>
-                      <text x="215" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">60k</text>
+                      <text x="65" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">1k</text>
+                      <text x="95" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">5k</text>
+                      <text x="125" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">10k</text>
+                      <text x="155" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">15k</text>
+                      <text x="185" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">20k</text>
+                      <text x="215" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">25k</text>
+                      <text x="245" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">30k</text>
                       
                       {/* Axis labels */}
                       <text x="145" y="190" fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="middle">Miles</text>
                       <text x="8" y="90" fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="middle" transform="rotate(-90 8 90)">Health %</text>
                       
                       {/* Critical failure threshold line - Adjusted for 30-day prediction */}
-                      <line x1="35" y1="80" x2="255" y2="80" stroke="rgba(255,68,68,0.6)" strokeWidth="1" strokeDasharray="3,3"/>
-                      <text x="260" y="85" fill="rgba(255,68,68,0.9)" fontSize="7">Critical</text>
+                      <line x1="35" y1="75" x2="255" y2="75" stroke="rgba(255,68,68,0.6)" strokeWidth="1" strokeDasharray="3,3"/>
+                      <text x="260" y="80" fill="rgba(255,68,68,0.9)" fontSize="7">Critical</text>
                       
                       {/* Warning threshold line - Adjusted for 30-day prediction */}
                       <line x1="35" y1="68" x2="255" y2="68" stroke="rgba(255,153,0,0.6)" strokeWidth="1" strokeDasharray="3,3"/>
@@ -1643,14 +1718,14 @@ const Vehicle1Tires = () => {
                       <text x="125" y="58" fill="rgba(255,255,255,0.9)" fontSize="7" textAnchor="middle" fontWeight="bold">NOW</text>
                       {displayTirePrediction && tireAnimationStep > 0.5 && (
                         <>
-                          <text x="170" y="68" fill="rgba(255,153,0,0.9)" fontSize="6" textAnchor="middle" opacity={Math.min(1, (tireAnimationStep - 0.5) * 2)}>Replacement</text>
-                          <text x="170" y="76" fill="rgba(255,153,0,0.9)" fontSize="6" textAnchor="middle" opacity={Math.min(1, (tireAnimationStep - 0.5) * 2)}>Needed</text>
+                          <text x="170" y="58" fill="rgba(255,153,0,0.9)" fontSize="6" textAnchor="middle" opacity={Math.min(1, (tireAnimationStep - 0.5) * 2)}>Replacement</text>
+                          <text x="170" y="66" fill="rgba(255,153,0,0.9)" fontSize="6" textAnchor="middle" opacity={Math.min(1, (tireAnimationStep - 0.5) * 2)}>Needed</text>
                         </>
                       )}
                       {displayTirePrediction && tireAnimationStep > 0.8 && (
                         <>
-                          <text x="200" y="85" fill="rgba(255,68,68,0.9)" fontSize="6" textAnchor="middle" opacity={Math.min(1, (tireAnimationStep - 0.8) * 5)}>Failure</text>
-                          <text x="200" y="93" fill="rgba(255,68,68,0.9)" fontSize="6" textAnchor="middle" opacity={Math.min(1, (tireAnimationStep - 0.8) * 5)}>Risk</text>
+                          <text x="200" y="75" fill="rgba(255,68,68,0.9)" fontSize="6" textAnchor="middle" opacity={Math.min(1, (tireAnimationStep - 0.8) * 5)}>Failure</text>
+                          <text x="200" y="83" fill="rgba(255,68,68,0.9)" fontSize="6" textAnchor="middle" opacity={Math.min(1, (tireAnimationStep - 0.8) * 5)}>Risk</text>
                         </>
                       )}
                       </svg>
@@ -1813,16 +1888,21 @@ const Vehicle1Tires = () => {
                     </style>
                     {(() => {
                       // Categorize recommendations based on keywords
-                      const serviceKeywords = ['replace', 'alignment', 'rotate', 'balance', 'schedule', 'book', 'appointment', 'service visit', 'inspection', 'technician', 'mechanic', 'professional', 'repair shop', 'mount', 'install'];
+                      const serviceKeywords = ['replace', 'alignment', 'rotate', 'balance', 'schedule', 'book', 'appointment', 'service visit', 'inspection by', 'technician', 'mechanic', 'professional', 'repair shop', 'mount', 'install'];
+                      const driverActionKeywords = ['check', 'monitor', 'drive gently', 'avoid', 'watch for', 'listen for', 'feel for', 'notice', 'add air', 'inflate', 'pressure weekly', 'warning signs', 'keep speeds', 'gentle', 'weekly', 'aggressive', 'avoid hitting', 'no aggressive'];
                       
                       const driverActions = [];
                       const serviceRequired = [];
                       
                       aiRecommendations.forEach(rec => {
                         const actionLower = rec.action.toLowerCase();
+                        const isDriverAction = driverActionKeywords.some(keyword => actionLower.includes(keyword));
                         const isService = serviceKeywords.some(keyword => actionLower.includes(keyword));
                         
-                        if (isService) {
+                        // Prioritize driver action keywords over service keywords
+                        if (isDriverAction && !actionLower.includes('schedule') && !actionLower.includes('appointment')) {
+                          driverActions.push(rec);
+                        } else if (isService) {
                           serviceRequired.push(rec);
                         } else {
                           driverActions.push(rec);

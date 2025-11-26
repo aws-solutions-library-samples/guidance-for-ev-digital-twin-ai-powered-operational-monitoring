@@ -32,6 +32,43 @@ const Vehicle2ConnVehicle = () => {
     });
   }, []);
 
+  // Calculate safety statuses based on motor conditions
+  const getSafetyStatuses = () => {
+    if (!motorData) {
+      return { electrical: 'Good', canBus: 'Good', traction: 'Good', das: 'Good' };
+    }
+
+    const temp = parseFloat(motorData.engine_temp_c) || 90;
+    const vibration = parseFloat(motorData.vibration_level) || 3;
+    const performance = parseFloat(motorData.performance_score) || 90;
+    const hasAnomaly = motorData.motor_anomaly === 'True' || motorData.motor_anomaly === true;
+
+    // Traction Control - affected by motor performance and vibration
+    let tractionStatus = 'Good';
+    if (hasAnomaly || temp > 105 || vibration > 6 || performance < 70) {
+      tractionStatus = 'Error';
+    } else if (temp > 95 || vibration > 4 || performance < 85) {
+      tractionStatus = 'Warning';
+    }
+
+    // DAS - affected by severe motor issues
+    let dasStatus = 'Good';
+    if (hasAnomaly || temp > 105 || performance < 70) {
+      dasStatus = 'Warning';
+    } else if (temp > 100 || vibration > 5) {
+      dasStatus = 'Warning';
+    }
+
+    return {
+      electrical: 'Good',
+      canBus: 'Good',
+      traction: tractionStatus,
+      das: dasStatus
+    };
+  };
+
+  const safetyStatuses = getSafetyStatuses();
+
   return (
     <div className="connvehicle-page">
       <div className="connvehicle-container">
@@ -137,19 +174,27 @@ const Vehicle2ConnVehicle = () => {
                   <div className="connvehicle-safety-title">Safety Checks</div>
                   <div className="connvehicle-safety-items">
                     <div className="connvehicle-safety-item">
-                      <div className="connvehicle-safety-badge">Good</div>
+                      <div className={`connvehicle-safety-badge ${safetyStatuses.electrical === 'Good' ? '' : safetyStatuses.electrical === 'Warning' ? 'warning' : 'error'}`}>
+                        {safetyStatuses.electrical}
+                      </div>
                       <div className="connvehicle-safety-label">Electrical Isolation</div>
                     </div>
                     <div className="connvehicle-safety-item">
-                      <div className="connvehicle-safety-badge">Good</div>
+                      <div className={`connvehicle-safety-badge ${safetyStatuses.canBus === 'Good' ? '' : safetyStatuses.canBus === 'Warning' ? 'warning' : 'error'}`}>
+                        {safetyStatuses.canBus}
+                      </div>
                       <div className="connvehicle-safety-label">CAN Bus Communication</div>
                     </div>
                     <div className="connvehicle-safety-item">
-                      <div className="connvehicle-safety-badge">Good</div>
+                      <div className={`connvehicle-safety-badge ${safetyStatuses.traction === 'Good' ? '' : safetyStatuses.traction === 'Warning' ? 'warning' : 'error'}`}>
+                        {safetyStatuses.traction}
+                      </div>
                       <div className="connvehicle-safety-label">Traction Control Status</div>
                     </div>
                     <div className="connvehicle-safety-item">
-                      <div className="connvehicle-safety-badge">Good</div>
+                      <div className={`connvehicle-safety-badge ${safetyStatuses.das === 'Good' ? '' : safetyStatuses.das === 'Warning' ? 'warning' : 'error'}`}>
+                        {safetyStatuses.das}
+                      </div>
                       <div className="connvehicle-safety-label">DAS Status</div>
                     </div>
                   </div>

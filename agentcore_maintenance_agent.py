@@ -1318,27 +1318,54 @@ def order_tire_online(vehicle_id: str) -> str:
         tire_brand = str(vehicle_info['tire_brand'])
         print(f"✓ Vehicle data loaded: {tire_size} {tire_brand}")
         
-        # Start browser session
-        print("✓ Starting browser session...")
-        with browser_session(region="us-east-1") as client:  # type: ignore
-            ws_url, headers = client.generate_ws_headers()
-            starting_page = "https://www.amazon.com"
-            print(f"✓ Browser session created: {starting_page}")
-            
-            prompt = f"""
-            Type "{tire_size} tires" in the search bar at the top of this Amazon page and press Enter.
-            Wait for Amazon search results to load.
-            Scroll down a bit to find the "By tire size" button in the middle of the page.
-            Try to click on the "By tire size" button to open the Amazon Tire Finder popup.
-            If the popup opens and shows a yellow "Filter" button, click it to filter results.
-            If the popup is empty or the Filter button doesn't appear after waiting 3 seconds, close the popup and skip this filtering step.
-            Click on the first highly-rated tire in the search results (filtered or unfiltered).
-            Click the Add to Cart button.
-            Wait for the cart to update and verify it shows 1 item.
-            Return the product name, brand, and price.
-            """
-            
-            print(f"✓ Executing browser automation for: {tire_size} tires")
+        # Start browser session with custom tool
+        print("✓ Starting browser session with custom tool...")
+        
+        # Use BrowserClient and monkey-patch it to use custom browser tool
+        from bedrock_agentcore.tools.browser_client import BrowserClient
+        import boto3
+        
+        starting_page = "https://www.amazon.com"
+        custom_identifier = "vehicle_tire_order_tool-EfIt5YeiPR"
+        
+        # Create BrowserClient
+        client = BrowserClient(region='us-east-1')
+        
+        # Manually start session with custom browser tool using boto3
+        boto_client = boto3.client('bedrock-agentcore', region_name='us-east-1')
+        session_response = boto_client.start_browser_session(
+            browserIdentifier=custom_identifier,
+            name=f"tire-order-{vehicle_id}",
+            sessionTimeoutSeconds=3600
+        )
+        
+        # Set the session ID on BrowserClient so it can generate headers
+        client.session_id = session_response['sessionId']
+        client.identifier = custom_identifier
+        
+        # Use BrowserClient's generate_ws_headers() - it handles all the signing!
+        ws_url, headers = client.generate_ws_headers()
+        
+        print(f"✓ Custom browser session created: {starting_page}")
+        print(f"✓ Session ID: {client.session_id}")
+        print(f"✓ Recordings will be saved to: s3://agentcore-browser-tool-recordings/browser-sessions/")
+        
+        prompt = f"""
+        Type "{tire_size} tires" in the search bar at the top of this Amazon page and press Enter.
+        Wait for Amazon search results to load.
+        Scroll down a bit to find the "By tire size" button in the middle of the page.
+        Try to click on the "By tire size" button to open the Amazon Tire Finder popup.
+        If the popup opens and shows a yellow "Filter" button, click it to filter results.
+        If the popup is empty or the Filter button doesn't appear after waiting 3 seconds, close the popup and skip this filtering step.
+        Click on the first highly-rated tire in the search results (filtered or unfiltered).
+        Click the Add to Cart button.
+        Wait for the cart to update and verify it shows 1 item.
+        Return the product name, brand, and price.
+        """
+        
+        print(f"✓ Executing browser automation for: {tire_size} tires")
+        
+        try:
             with NovaAct(
                 cdp_endpoint_url=ws_url,
                 cdp_headers=headers,
@@ -1349,6 +1376,13 @@ def order_tire_online(vehicle_id: str) -> str:
                 result = nova_act.act(prompt)
                 result_response = str(result.response) if result else None
                 print(f"✓ Browser automation completed: {result_response[:100] if result_response else 'No response'}...")
+        finally:
+            # Stop the browser session
+            try:
+                client.stop()
+                print(f"✓ Browser session {client.session_id} stopped")
+            except Exception as cleanup_error:
+                print(f"⚠️  Session cleanup warning: {cleanup_error}")
         
         # Return immediately with the result
         print(f"\n{'='*80}")
@@ -1364,6 +1398,7 @@ def order_tire_online(vehicle_id: str) -> str:
             "success": True,
             "vehicle_id": str(vehicle_id),
             "tire_size": tire_size,
+            "session_id": client.session_id,
             "response": result_response or "Tire added to cart"
         }, indent=2)
             
@@ -1382,6 +1417,7 @@ def order_tire_online(vehicle_id: str) -> str:
             "success": True,
             "vehicle_id": str(vehicle_id),
             "tire_size": tire_size or "Unknown",
+            "session_id": getattr(client, 'session_id', None) if 'client' in locals() else None,
             "response": result_response or "Tire added to cart",
             "error_detail": str(e)
         }, indent=2)

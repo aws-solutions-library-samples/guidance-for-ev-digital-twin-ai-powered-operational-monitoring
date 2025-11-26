@@ -44,10 +44,14 @@ const FleetPortal = () => {
   const [scheduledAppointments, setScheduledAppointments] = useState([]);
   
   // State for tracking which recommendations have been scheduled (to transform UI)
-  const [scheduledRecommendations, setScheduledRecommendations] = useState(new Set());
+  const [scheduledRecommendations, setScheduledRecommendations] = useState(new Map());
   
   // State for agent suggestion review
   const [agentSuggestion, setAgentSuggestion] = useState(null);
+  
+  // State for replay viewer modal
+  const [showReplayModal, setShowReplayModal] = useState(false);
+  const [replaySessionId, setReplaySessionId] = useState(null);
   const [showSuggestionReview, setShowSuggestionReview] = useState(false);
   const [editableAppointment, setEditableAppointment] = useState({
     service: '',
@@ -58,6 +62,11 @@ const FleetPortal = () => {
   const [modifyMode, setModifyMode] = useState(false);
   const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  
+  // State for action details modal
+  const [showActionDetailsModal, setShowActionDetailsModal] = useState(false);
+  const [actionDetails, setActionDetails] = useState(null);
+  const [loadingActionDetails, setLoadingActionDetails] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -65,6 +74,20 @@ const FleetPortal = () => {
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Load recommendations from localStorage on mount (for persistence across navigation)
+  useEffect(() => {
+    const savedRecs = localStorage.getItem('fleetRecommendations');
+    if (savedRecs) {
+      try {
+        const parsed = JSON.parse(savedRecs);
+        console.log('Restored recommendations from localStorage:', parsed);
+        setAiRecommendations(parsed);
+      } catch (error) {
+        console.error('Error parsing saved recommendations:', error);
+      }
+    }
   }, []);
 
   // VIN mapping for vehicles
@@ -77,6 +100,10 @@ const FleetPortal = () => {
   // Fetch AI recommendations on demand
   const fetchRecommendations = async () => {
       try {
+        // Clear existing recommendations and localStorage
+        setAiRecommendations([]);
+        localStorage.removeItem('fleetRecommendations');
+        
         setLoadingRecommendations(true);
         console.log('Starting to fetch AI recommendations...');
 
@@ -136,6 +163,10 @@ const FleetPortal = () => {
         }
 
         console.log('Finished fetching all recommendations:', recommendations);
+        
+        // Save to localStorage for persistence across navigation
+        localStorage.setItem('fleetRecommendations', JSON.stringify(recommendations));
+        console.log('Saved recommendations to localStorage');
       } catch (error) {
         console.error('Error fetching AI recommendations:', error);
       } finally {
@@ -197,10 +228,27 @@ const FleetPortal = () => {
       }
     }
 
+    // Intelligently detect service type from recommendation
+    let serviceType = 'Maintenance';
+    if (lowerResponse.includes('tire') && (lowerResponse.includes('replace') || lowerResponse.includes('replacement'))) {
+      serviceType = 'Tire Replacement';
+    } else if (lowerResponse.includes('tire') && lowerResponse.includes('alignment')) {
+      serviceType = 'Tire Replacement & Alignment';
+    } else if (lowerResponse.includes('motor') || lowerResponse.includes('bearing')) {
+      serviceType = 'Motor Maintenance';
+    } else if (lowerResponse.includes('inverter') || lowerResponse.includes('cooling')) {
+      serviceType = 'Inverter Service';
+    } else if (lowerResponse.includes('alignment')) {
+      serviceType = 'Wheel Alignment';
+    } else if (lowerResponse.includes('tire') && lowerResponse.includes('pressure')) {
+      serviceType = 'Tire Pressure Check';
+    }
+
     return {
       vehicleId,
       vehicleName: getVehicleName(vehicleId),
       description: description.substring(0, 150), // Limit length for display
+      serviceType, // Add service type for appointment booking
       fullRecommendation: response, // Store full AI response
       priority,
       timestamp: new Date().toISOString()
@@ -215,8 +263,52 @@ const FleetPortal = () => {
     setAiRecommendations(prev => prev.filter((_, i) => i !== index));
   };
   
-  const handleMarkAsScheduled = (vehicleId) => {
-    setScheduledRecommendations(prev => new Set([...prev, vehicleId]));
+  const handleMarkAsScheduled = (vehicleId, sessionId = null) => {
+    setScheduledRecommendations(prev => {
+      const newMap = new Map(prev);
+      newMap.set(vehicleId, { vehicleId, sessionId });
+      return newMap;
+    });
+  };
+
+  const handleViewAction = (vehicleId) => {
+    const scheduledData = scheduledRecommendations.get(vehicleId);
+    if (scheduledData?.sessionId) {
+      setReplaySessionId(scheduledData.sessionId);
+      setShowReplayModal(true);
+    } else {
+      alert('No session recording available for this action.');
+    }
+  };
+
+  const handleViewActionDetails = async (vehicleId) => {
+    // DEMO: Try different session ID
+    const sessionId = 'b8911c0c-2e6a-4185-8667-f8c08719a9db';
+    
+    console.log('🔍 Using hardcoded session ID for demo:', sessionId);
+    
+    setLoadingActionDetails(true);
+    setShowActionDetailsModal(true);
+    
+    try {
+      const response = await fetch(
+        `https://b4blc4xmh4.execute-api.us-east-1.amazonaws.com/action-logs/${sessionId}`
+      );
+      const data = await response.json();
+      console.log('📊 Action details response:', data);
+      console.log('📊 Response structure:', {
+        hasActions: !!data.actions,
+        actionsLength: data.actions?.length,
+        hasError: !!data.error,
+        keys: Object.keys(data)
+      });
+      setActionDetails(data);
+    } catch (error) {
+      console.error('Error fetching action details:', error);
+      setActionDetails({ error: 'Failed to load action details' });
+    } finally {
+      setLoadingActionDetails(false);
+    }
   };
 
   const handleApprove = (recommendation) => {
@@ -265,6 +357,47 @@ const FleetPortal = () => {
     }
   };
 
+  // Extract only the Top 3 Key Recommendations section (preserve original formatting)
+  const extractKeyRecommendations = (fullText) => {
+    try {
+      // Find the section starting with "🎯 Top 3 Key Recommendations:" 
+      // and ending before "📊 Your Current Tire Status:" or similar sections
+      const startMatch = fullText.match(/🎯\s*Top 3 Key Recommendations:/i);
+      
+      if (!startMatch) {
+        return null; // Section not found, return null to show full text
+      }
+      
+      const startIndex = startMatch.index;
+      
+      // Find where this section ends (before status section, bottom line, or end of text)
+      const endPatterns = [
+        /\n\n📊\s*Your Current/i,
+        /\n\n\*\*Bottom Line:/i,
+        /\n\nBottom Line:/i,
+        /\n\n---\s*\n\n##/
+      ];
+      
+      let endIndex = fullText.length;
+      
+      for (const pattern of endPatterns) {
+        const match = fullText.slice(startIndex).match(pattern);
+        if (match) {
+          endIndex = startIndex + match.index;
+          break;
+        }
+      }
+      
+      // Extract the section
+      const extracted = fullText.slice(startIndex, endIndex).trim();
+      return extracted;
+      
+    } catch (error) {
+      console.error('Error extracting key recommendations:', error);
+      return null;
+    }
+  };
+
   const parseAgentResponse = (response) => {
     try {
       console.log('Parsing agent response:', response);
@@ -306,6 +439,22 @@ const FleetPortal = () => {
         if (match) {
           serviceStr = match[1];
           break;
+        }
+      }
+      
+      // If no service found, intelligently detect from recommendation content
+      if (!serviceStr && selectedRecommendation) {
+        const fullRec = selectedRecommendation.fullRecommendation.toLowerCase();
+        if (fullRec.includes('tire') && (fullRec.includes('replace') || fullRec.includes('replacement'))) {
+          serviceStr = 'Tire Replacement';
+        } else if (fullRec.includes('motor') || fullRec.includes('bearing')) {
+          serviceStr = 'Motor Maintenance';
+        } else if (fullRec.includes('inverter') || fullRec.includes('cooling')) {
+          serviceStr = 'Inverter Service';
+        } else if (fullRec.includes('alignment')) {
+          serviceStr = 'Wheel Alignment';
+        } else {
+          serviceStr = 'Maintenance';
         }
       }
       
@@ -352,7 +501,7 @@ const FleetPortal = () => {
     setConfirmationData(null);
     
     // Mark recommendation as scheduled (instead of dismissing)
-    handleMarkAsScheduled(selectedRecommendation.vehicleId);
+    handleMarkAsScheduled(selectedRecommendation.vehicleId, tireOrderData?.sessionId);
     
     // Add to scheduled appointments
     if (confirmationData?.appointment) {
@@ -570,6 +719,7 @@ Respond with the available slots.`;
             product: (brandMatch?.[1] || productMatch?.[1] || data.tire_size || 'Tire').trim(),
             price: priceMatch ? `$${priceMatch[1]}` : 'See cart',
             tireSize: data.tire_size || 'N/A',
+            sessionId: '5fe96dd0-5caa-456b-924c-3a0ead43472f', // Hardcoded for demo - always use this
             success: data.success !== false
           };
         } catch (e) {
@@ -1089,33 +1239,53 @@ Respond with the available slots.`;
                   <div className="maint-desc">{rec.description}</div>
                   
                   {scheduledRecommendations.has(rec.vehicleId) ? (
-                    // Scheduled state - show Action Details
-                    <div style={{ marginTop: '10px' }}>
+                    // Scheduled state - show Action Details and View Action buttons on the right
+                    <div style={{ 
+                      marginTop: '10px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
                       <div style={{ 
                         display: 'flex', 
                         alignItems: 'center', 
-                        gap: '8px', 
-                        marginBottom: '10px',
+                        gap: '8px',
                         color: '#37bc12',
                         fontSize: '13px',
                         fontWeight: 'bold'
                       }}>
                         ✓ Appointment Scheduled
                       </div>
-                      <button
-                        onClick={() => alert('Action Details page - Coming Soon!')}
-                        style={{
-                          padding: '8px 16px',
-                          background: '#2a2d2f',
-                          border: '1px solid #37bc12',
-                          borderRadius: '4px',
-                          color: '#37bc12',
-                          cursor: 'pointer',
-                          fontSize: '13px'
-                        }}
-                      >
-                        Action Details →
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          onClick={() => handleViewActionDetails(rec.vehicleId)}
+                          style={{
+                            padding: '8px 16px',
+                            background: '#2a2d2f',
+                            border: '1px solid #37bc12',
+                            borderRadius: '4px',
+                            color: '#37bc12',
+                            cursor: 'pointer',
+                            fontSize: '13px'
+                          }}
+                        >
+                          Action Details →
+                        </button>
+                        <button
+                          onClick={() => handleViewAction(rec.vehicleId)}
+                          style={{
+                            padding: '8px 16px',
+                            background: '#2a2d2f',
+                            border: '1px solid #4a9eff',
+                            borderRadius: '4px',
+                            color: '#4a9eff',
+                            cursor: 'pointer',
+                            fontSize: '13px'
+                          }}
+                        >
+                          View Action 🎬
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     // Normal state - show Approve/Reject buttons
@@ -1177,15 +1347,21 @@ Respond with the available slots.`;
                     maxHeight: '300px',
                     overflowY: 'auto'
                   }}>
-                    <strong style={{ display: 'block', marginBottom: '10px', color: '#37bc12' }}>AI Recommendation:</strong>
                     <div style={{ fontSize: '14px', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
-                      {selectedRecommendation.fullRecommendation
-                        .replace(/#{1,6}\s*/g, '')  // Remove markdown headers
-                        .replace(/\*\*/g, '')        // Remove bold markdown
-                        .replace(/\*/g, '')          // Remove italic markdown
-                        .replace(/^[-•]\s*/gm, '• ') // Normalize bullet points
-                        .trim()
-                      }
+                      {(() => {
+                        const keyRecs = extractKeyRecommendations(selectedRecommendation.fullRecommendation);
+                        
+                        // If extraction successful, show only key recommendations
+                        // Otherwise fallback to full text
+                        const textToShow = keyRecs || selectedRecommendation.fullRecommendation;
+                        
+                        return textToShow
+                          .replace(/#{1,6}\s*/g, '')  // Remove markdown headers
+                          .replace(/\*\*/g, '')        // Remove bold markdown
+                          .replace(/\*/g, '')          // Remove italic markdown
+                          .replace(/^[-•]\s*/gm, '• ') // Normalize bullet points
+                          .trim();
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -1564,7 +1740,8 @@ Respond with the available slots.`;
             maxHeight: '80vh',
             overflowY: 'auto'
           }}>
-            <h3 style={{ color: '#37bc12', marginBottom: '20px' }}>Select Appointment Time</h3>
+            <h3 style={{ color: '#37bc12', marginBottom: '10px' }}>Select Appointment Time</h3>
+            <p style={{ color: '#888', fontSize: '12px', marginBottom: '20px', marginTop: '0' }}>Integrated Service Shop Schedule & Fleet Operator Availability</p>
             
             {suggestedSlots.length > 0 ? (
               <>
@@ -1641,7 +1818,7 @@ Respond with the available slots.`;
                       
                       // Store selected slot for later booking
                       setEditableAppointment({
-                        service: selectedRecommendation.description,
+                        service: selectedRecommendation.serviceType || 'Maintenance',
                         date: selectedSlot.date,
                         time: selectedSlot.time_slot_24h || selectedSlot.time, // Use 24-hour format for booking
                         duration: selectedSlot.duration
@@ -1666,6 +1843,12 @@ Respond with the available slots.`;
                           const tireData = parseTireOrderResponse(tireResponse);
                           setTireOrderData(tireData);
                           setTireOrderComplete(true);
+                          
+                          // Store session ID immediately for Action Details
+                          if (tireData?.sessionId) {
+                            handleMarkAsScheduled(selectedRecommendation.vehicleId, tireData.sessionId);
+                            console.log('✅ Stored session ID for Action Details:', tireData.sessionId);
+                          }
                           
                           // Ensure at least 70 seconds have passed (browser tool minimum time)
                           // This prevents showing "complete" on phantom early responses
@@ -1832,6 +2015,139 @@ Respond with the available slots.`;
             
             <button className="done-button" onClick={handleCloseConfirmation}>
               Done
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Replay Modal */}
+      {showReplayModal && replaySessionId && (
+        <div className="confirmation-overlay" onClick={() => setShowReplayModal(false)}>
+          <div 
+            className="confirmation-modal" 
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '90%', width: '1200px', height: '80vh' }}
+          >
+            <h2 style={{ color: '#4a9eff', marginBottom: '20px' }}>🎬 Agent Action Replay</h2>
+            <iframe
+              src={`http://localhost:8081/?session_id=${replaySessionId}`}
+              style={{
+                width: '100%',
+                height: 'calc(100% - 100px)',
+                border: '1px solid #444',
+                borderRadius: '4px',
+                background: '#1a1d1f'
+              }}
+              title="Session Replay"
+            />
+            <button 
+              className="done-button" 
+              onClick={() => setShowReplayModal(false)}
+              style={{ marginTop: '20px' }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Action Details Modal */}
+      {showActionDetailsModal && (
+        <div className="confirmation-overlay" onClick={() => setShowActionDetailsModal(false)}>
+          <div 
+            className="confirmation-modal" 
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '800px', maxHeight: '80vh', overflow: 'auto' }}
+          >
+            <h2 style={{ color: '#37bc12', marginBottom: '20px' }}>📋 Agent Action Details</h2>
+            
+            {loadingActionDetails ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#888' }}>
+                Loading action details...
+              </div>
+            ) : actionDetails?.error ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#ff4444' }}>
+                {actionDetails.error}
+              </div>
+            ) : actionDetails?.actions && actionDetails.actions.length > 0 ? (
+              <>
+                <div style={{ marginBottom: '20px', padding: '15px', background: '#2a2d2f', borderRadius: '8px' }}>
+                  <div style={{ fontSize: '14px', color: '#888', marginBottom: '8px' }}>
+                    Session ID: {actionDetails.sessionId}
+                  </div>
+                  <div style={{ fontSize: '14px', color: '#888', marginBottom: '8px' }}>
+                    Total Actions: {actionDetails.count}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#666', fontStyle: 'italic' }}>
+                    Check CloudWatch Observability logs for more details
+                  </div>
+                </div>
+                
+                <div style={{ marginBottom: '20px' }}>
+                  <h3 style={{ color: '#4a9eff', marginBottom: '15px', fontSize: '16px' }}>Actions Performed:</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {actionDetails.actions.map((action, index) => (
+                      <div 
+                        key={index}
+                        style={{
+                          padding: '12px',
+                          background: action.type === 'result' ? '#1a3a1a' : '#2a2d2f',
+                          border: action.type === 'result' ? '1px solid #37bc12' : '1px solid #444',
+                          borderRadius: '6px',
+                          display: 'flex',
+                          gap: '12px',
+                          alignItems: 'flex-start'
+                        }}
+                      >
+                        <span style={{ fontSize: '20px', flexShrink: 0 }}>{action.icon}</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ 
+                            fontSize: '11px', 
+                            color: '#888', 
+                            textTransform: 'uppercase',
+                            marginBottom: '4px'
+                          }}>
+                            {action.type}
+                          </div>
+                          <div style={{ fontSize: '14px', color: '#fff', lineHeight: '1.4' }}>
+                            {action.text}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {actionDetails.result && (
+                  <div style={{ 
+                    padding: '15px', 
+                    background: '#1a3a1a', 
+                    border: '2px solid #37bc12',
+                    borderRadius: '8px',
+                    marginBottom: '20px'
+                  }}>
+                    <h3 style={{ color: '#37bc12', marginBottom: '10px', fontSize: '16px' }}>✅ Final Result:</h3>
+                    <div style={{ fontSize: '14px', color: '#fff' }}>
+                      {actionDetails.result}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#888' }}>
+                <div style={{ fontSize: '16px', marginBottom: '10px' }}>No action details available</div>
+                <div style={{ fontSize: '13px', color: '#666' }}>
+                  Check CloudWatch logs for more information
+                </div>
+              </div>
+            )}
+            
+            <button 
+              className="done-button" 
+              onClick={() => setShowActionDetailsModal(false)}
+              style={{ marginTop: '20px' }}
+            >
+              Close
             </button>
           </div>
         </div>

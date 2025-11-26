@@ -951,7 +951,7 @@ const Invertor = () => {
         minHeight: '100vh'
       }}>
         {/* Header */}
-        <header className="header" style={{ height: windowWidth <= 1440 ? '45px' : windowWidth <= 1700 ? '50px' : windowWidth <= 1815 ? '60px' : 'auto', padding: windowWidth <= 1440 ? '8px 15px' : windowWidth <= 1700 ? '10px 20px' : windowWidth <= 1815 ? '15px 20px' : '20px' }}>
+        <header className="header" style={{ height: windowWidth <= 1440 ? '45px' : windowWidth <= 1860 ? '50px' : 'auto', padding: windowWidth <= 1440 ? '8px 15px' : windowWidth <= 1860 ? '10px 20px' : '20px' }}>
           <div className="header-left">
             <svg width="43px" height="20px" viewBox="0 0 43 20" style={{ marginRight: '8px' }}>
               <path d="M4.94797 15.7069C4.9294 15.7069 4.91155 15.7069 4.89299 15.7055L2.88435 15.5905C2.10174 15.5834 1.42482 15.3042 0.924977 14.7815C-0.045425 13.7661 -0.00543786 12.2002 0.00241676 12.0245C0.0452601 11.0727 0.283755 10.3158 0.712903 9.77598C0.742179 9.73885 0.771455 9.70458 0.800732 9.67102C0.692195 8.92483 1.01209 8.46426 1.09492 8.3593C1.11634 8.33288 1.13848 8.30717 1.16276 8.28289C2.7958 6.61986 7.60712 5.66159 10.3298 5.23887C11.2152 5.10106 12.07 4.87042 12.8711 4.55266C14.0008 4.10352 15.3054 3.43659 16.45 2.72182C18.3144 1.55791 20.3494 0.773878 22.4995 0.393286C25.1943 -0.0844178 33.9429 -0.0251512 38.9178 0.0526809C41.1885 0.0883838 43.0357 1.96492 43.0357 4.23562C43.0357 6.50632 41.1592 8.41928 38.8521 8.41928L31.7686 8.41928C31.2402 8.41928 30.8111 7.99084 30.8111 7.46173C30.8111 6.93261 31.2395 6.50418 31.7686 6.50418L38.8521 6.50418C40.1031 6.50418 41.1206 5.48665 41.1206 4.23562C41.1206 2.9846 40.1188 1.98635 38.8878 1.96707C30.5383 1.83639 24.6866 1.94993 22.8336 2.27839C20.9264 2.61614 19.1198 3.31163 17.4639 4.34559C16.7363 4.79973 15.2647 5.66159 13.5773 6.33209C12.6434 6.70269 11.6501 6.97117 10.624 7.13041C6.82094 7.72164 3.7862 8.62136 2.71155 9.46323C2.72297 9.50179 2.74082 9.55248 2.77081 9.61532C2.8922 9.87024 2.89434 10.1659 2.77724 10.4229C2.67441 10.6486 2.48805 10.8249 2.26026 10.9156C2.16601 10.992 1.95036 11.3255 1.91537 12.1109C1.90752 12.343 1.96321 13.1021 2.31167 13.4619C2.40093 13.5541 2.56017 13.6769 2.91434 13.6769C2.9329 13.6769 2.95075 13.6769 2.96932 13.6783L4.11895 13.744C4.58951 11.3291 6.72169 9.50036 9.27158 9.50036C11.8215 9.50036 13.8644 11.2327 14.3928 13.5862L32.8526 13.1813C33.1403 12.2623 33.6802 11.4319 34.4164 10.7907C35.3718 9.95878 36.5957 9.50036 37.8638 9.50036C40.3759 9.50036 42.5437 11.2884 43.0186 13.7526C43.1186 14.2717 42.7787 14.7737 42.2595 14.8736C41.7404 14.9736 41.2384 14.6337 41.1385 14.1146C40.8371 12.5508 39.4604 11.4155 37.8638 11.4155C36.2672 11.4155 34.8012 12.6393 34.5634 14.2617C34.4956 14.7237 34.1043 15.07 33.6373 15.08L13.5809 15.5199C13.0604 15.5341 12.6262 15.1243 12.6034 14.6037C12.5262 12.8157 11.0631 11.4155 9.27158 11.4155C7.48001 11.4155 5.93694 12.9114 5.93622 14.7501C5.93622 15.2678 5.52421 15.6919 5.00652 15.7069L4.9751 15.7069C4.96582 15.7084 4.95725 15.7084 4.94797 15.7084L4.94797 15.7069Z" fill="#37bc12"/>
@@ -1020,12 +1020,12 @@ const Invertor = () => {
         
 
 
-        <div style={{ margin: windowWidth <= 1440 ? '-15px 20px 5px' : windowWidth <= 1700 ? '-10px 20px 5px' : windowWidth <= 1815 ? '0px 20px 5px' : '10px 20px 5px' }}>
+        <div style={{ margin: windowWidth <= 1440 ? '-15px 20px 5px' : windowWidth <= 1860 ? '-10px 20px 5px' : '10px 20px 5px' }}>
           <div className="invertor-layout">
             {/* Main Content */}
-            <div className="main-panel" style={{ marginTop: windowWidth <= 1700 ? '70px' : '90px' }}>
+            <div className="main-panel" style={{ marginTop: windowWidth <= 1860 ? '70px' : '90px' }}>
               {/* Power Metrics Container - Top */}
-              <div className="data-container" style={{ marginBottom: '20px', marginTop: '-20px', minHeight: windowWidth <= 1440 ? '400px' : windowWidth <= 1700 ? '430px' : windowWidth <= 1815 ? '480px' : '530px', overflow: 'visible', width: 'calc(100% + 30px)', marginLeft: '-15px' }}>
+              <div className="data-container" style={{ marginBottom: '20px', marginTop: '-20px', minHeight: windowWidth <= 1440 ? '400px' : windowWidth <= 1860 ? '430px' : '530px', overflow: 'visible', width: 'calc(100% + 30px)', marginLeft: '-15px' }}>
                 <h3 style={{ fontSize: windowWidth === 1920 ? '20px' : spacing.titleFontSize }}>Power Metrics</h3>
                 <img 
                   src={require('../assets/invertor.png')} 
@@ -1330,8 +1330,8 @@ const Invertor = () => {
                 {/* Temperature & DC Link Box */}
                 <div style={{ 
                   position: 'absolute', 
-                  right: windowWidth <= 1440 ? '20px' : windowWidth <= 1700 ? '80px' : windowWidth <= 1815 ? '100px' : '150px', 
-                  top: windowWidth <= 1440 ? '350px' : windowWidth <= 1700 ? '360px' : windowWidth <= 1815 ? '370px' : '380px',
+                  right: windowWidth <= 1440 ? '20px' : windowWidth <= 1860 ? '80px' : '150px', 
+                  top: windowWidth <= 1440 ? '350px' : windowWidth <= 1860 ? '360px' : '380px',
                   background: '#000',
                   border: '1px solid #3a4552',
                   borderRadius: '8px',
@@ -1341,10 +1341,10 @@ const Invertor = () => {
                 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <span style={{ fontSize: windowWidth <= 1440 ? '13px' : windowWidth <= 1700 ? '14px' : windowWidth <= 1815 ? '15px' : '16px' }}>🌡️</span>
-                      <div style={{ fontSize: windowWidth <= 1440 ? '13px' : windowWidth <= 1700 ? '14px' : windowWidth <= 1815 ? '16px' : spacing.titleFontSize }}><span style={{ fontSize: windowWidth <= 1440 ? '18px' : windowWidth <= 1700 ? '20px' : windowWidth <= 1815 ? '22px' : `calc(${spacing.titleFontSize} * 1.5)` }}>{Math.round(parseFloat(currentData.temperature_c) || 65)}</span>°C</div>
+                      <span style={{ fontSize: windowWidth <= 1440 ? '13px' : windowWidth <= 1860 ? '14px' : '16px' }}>🌡️</span>
+                      <div style={{ fontSize: windowWidth <= 1440 ? '13px' : windowWidth <= 1860 ? '14px' : spacing.titleFontSize }}><span style={{ fontSize: windowWidth <= 1440 ? '18px' : windowWidth <= 1860 ? '20px' : `calc(${spacing.titleFontSize} * 1.5)` }}>{Math.round(parseFloat(currentData.temperature_c) || 65)}</span>°C</div>
                     </div>
-                    <div style={{ fontSize: windowWidth <= 1440 ? '9px' : windowWidth <= 1700 ? '10px' : windowWidth <= 1815 ? '11px' : spacing.fontSize }}>Inverter Temperature</div>
+                    <div style={{ fontSize: windowWidth <= 1440 ? '9px' : windowWidth <= 1860 ? '10px' : spacing.fontSize }}>Inverter Temperature</div>
                   </div>
                   <div style={{ borderLeft: '1px solid #3a4552', paddingLeft: '30px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                     <div style={{ fontSize: spacing.smallFontSize, color: 'rgba(255,255,255,0.8)' }}>
@@ -1363,14 +1363,14 @@ const Invertor = () => {
               {/* Bottom Containers */}
               <div className="bottom-containers vehicle3-bottom-containers" style={{ 
                 marginBottom: '0',
-                marginTop: windowWidth <= 1440 ? '-40px' : windowWidth <= 1700 ? '-35px' : windowWidth <= 1815 ? '-30px' : '-30px',
-                transform: windowWidth <= 1440 ? 'scaleY(0.75)' : windowWidth <= 1700 ? 'scaleY(0.8)' : windowWidth <= 1815 ? 'scaleY(0.9)' : 'none',
+                marginTop: windowWidth <= 1440 ? '-40px' : windowWidth <= 1860 ? '-35px' : '-30px',
+                transform: windowWidth <= 1440 ? 'scaleY(0.75)' : windowWidth <= 1860 ? 'scaleY(0.8)' : 'none',
                 transformOrigin: 'top'
               }}>
                 <div className="data-container" style={{ 
-                  height: windowWidth <= 1700 ? spacing.bottomContainerHeight : windowWidth <= 1815 ? '350px !important' : '450px', 
-                  minHeight: windowWidth <= 1700 ? 'auto' : windowWidth <= 1815 ? '350px !important' : 'auto', 
-                  maxHeight: windowWidth <= 1700 ? 'auto' : windowWidth <= 1815 ? '350px !important' : 'auto', 
+                  height: windowWidth <= 1700 ? spacing.bottomContainerHeight : windowWidth <= 1860 ? '480px' : '450px', 
+                  minHeight: windowWidth <= 1700 ? 'auto' : windowWidth <= 1860 ? '480px' : 'auto', 
+                  maxHeight: 'auto', 
                   display: 'flex', 
                   flexDirection: 'column', 
                   justifyContent: windowWidth >= 1600 ? 'flex-start' : 'normal',
@@ -1418,13 +1418,13 @@ const Invertor = () => {
                 </div>
 
                 <div className="data-container" style={{ 
-                  height: windowWidth <= 1700 ? spacing.bottomContainerHeight : windowWidth <= 1815 ? '350px !important' : '450px', 
-                  minHeight: windowWidth <= 1700 ? 'auto' : windowWidth <= 1815 ? '350px !important' : 'auto', 
-                  maxHeight: windowWidth <= 1700 ? 'auto' : windowWidth <= 1815 ? '350px !important' : 'auto', 
+                  height: windowWidth <= 1700 ? spacing.bottomContainerHeight : windowWidth <= 1860 ? '480px' : '450px', 
+                  minHeight: windowWidth <= 1700 ? 'auto' : windowWidth <= 1860 ? '480px' : 'auto', 
+                  maxHeight: 'auto', 
                   position: 'relative', 
                   display: 'flex', 
                   flexDirection: 'column', 
-                  justifyContent: windowWidth > 1815 ? 'flex-start' : 'normal', 
+                  justifyContent: windowWidth > 1860 ? 'flex-start' : 'normal', 
                   marginLeft: windowWidth <= 1700 ? '-10px' : '0',
                   padding: '15px',
                   overflow: 'hidden'
@@ -1485,15 +1485,15 @@ const Invertor = () => {
             <div className="right-panel" style={{ overflow: 'hidden' }}>
               <div className="battery-prediction">
                 <div className="prediction-header">
-                  <h2 style={{ fontSize: windowWidth <= 1440 ? '16px' : windowWidth <= 1700 ? '18px' : windowWidth <= 1815 ? '22px' : '24px', marginTop: windowWidth <= 1440 ? '-15px' : windowWidth <= 1700 ? '-10px' : windowWidth <= 1815 ? '-5px' : '0' }}>Inverter Prediction</h2>
-                  <img src={require('../assets/warning.png')} alt="Warning" className="info-icon" style={{ width: '20px', height: '20px', cursor: 'pointer', zIndex: 99999, position: 'relative', marginTop: windowWidth <= 1440 ? '-15px' : windowWidth <= 1700 ? '-10px' : windowWidth <= 1815 ? '-5px' : '0' }} onClick={() => setShowModal(true)} />
+                  <h2 style={{ fontSize: windowWidth <= 1440 ? '16px' : windowWidth <= 1860 ? '18px' : '24px', marginTop: windowWidth <= 1440 ? '-15px' : windowWidth <= 1860 ? '-10px' : '0' }}>Inverter Prediction</h2>
+                  <img src={require('../assets/warning.png')} alt="Warning" className="info-icon" style={{ width: '20px', height: '20px', cursor: 'pointer', zIndex: 99999, position: 'relative', marginTop: windowWidth <= 1440 ? '-15px' : windowWidth <= 1860 ? '-10px' : '0' }} onClick={() => setShowModal(true)} />
                 </div>
 
                 {/* Failure Prediction Chart */}
-                <div className="motor-prediction-container" style={{ paddingLeft: '30px' }}>
-                  <div className="failure-prediction" style={{ marginTop: windowWidth <= 1440 ? '-15px' : windowWidth <= 1700 ? '-10px' : windowWidth <= 1815 ? '-5px' : '0' }}>
+                <div className="motor-prediction-container" style={{ paddingLeft: '30px', paddingRight: '30px' }}>
+                  <div className="failure-prediction" style={{ marginTop: windowWidth <= 1440 ? '-15px' : windowWidth <= 1860 ? '-10px' : '0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                      <h3 style={{ margin: 0, fontSize: windowWidth <= 1440 ? '12px' : windowWidth <= 1700 ? '14px' : windowWidth <= 1815 ? '17px' : windowWidth === 1920 ? '24px' : '20px', marginTop: windowWidth <= 1700 ? '-25px' : '-15px' }}>Inverter Failure Prediction</h3>
+                      <h3 style={{ margin: 0, fontSize: windowWidth <= 1440 ? '12px' : windowWidth <= 1860 ? '14px' : windowWidth === 1920 ? '24px' : '20px', marginTop: windowWidth <= 1860 ? '-25px' : '-15px' }}>Inverter Failure Prediction</h3>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: windowWidth <= 1700 ? '5px' : '10px', position: 'relative', zIndex: 100 }}>
                         <span style={{ fontSize: windowWidth <= 1440 ? '10px' : '11px', color: 'rgba(255,255,255,0.7)' }}>
                           Show Prediction
@@ -1544,7 +1544,7 @@ const Invertor = () => {
                       </div>
                     </div>
                     <div style={{ position: 'relative', marginTop: '100px' }}>
-                      <div className="prediction-chart" style={{ marginTop: windowWidth <= 1440 ? '-180px' : windowWidth <= 1700 ? '-160px' : windowWidth <= 1815 ? '-80px' : windowWidth > 1815 && windowWidth <= 1950 ? '-60px' : windowWidth >= 2560 ? '-100px' : '-60px' }}>
+                      <div className="prediction-chart" style={{ marginTop: windowWidth <= 1440 ? '-180px' : windowWidth <= 1700 ? '-160px' : windowWidth <= 1860 ? '-80px' : windowWidth > 1860 && windowWidth <= 1950 ? '-60px' : windowWidth >= 2560 ? '-100px' : '-60px' }}>
                         <svg width="290" height="180" viewBox="0 0 290 180">
                         {/* Grid lines */}
                         {Array.from({ length: 8 }, (_, i) => (
@@ -1565,24 +1565,24 @@ const Invertor = () => {
                         
                         {/* X-axis labels */}
                         <text x="35" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">0</text>
-                        <text x="65" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">30</text>
-                        <text x="95" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">60</text>
-                        <text x="125" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">90</text>
-                        <text x="155" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">120</text>
-                        <text x="185" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">150</text>
-                        <text x="215" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">180</text>
+                        <text x="72" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">5</text>
+                        <text x="109" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">10</text>
+                        <text x="146" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">15</text>
+                        <text x="183" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">20</text>
+                        <text x="220" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">25</text>
+                        <text x="255" y="175" fill="rgba(255,255,255,0.8)" fontSize="8" textAnchor="middle">30</text>
                         
                         {/* Axis labels */}
                         <text x="145" y="190" fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="middle">Days</text>
                         <text x="8" y="90" fill="rgba(255,255,255,0.6)" fontSize="9" textAnchor="middle" transform="rotate(-90 8 90)">Health %</text>
                         
                         {/* Critical failure threshold line */}
-                        <line x1="35" y1="80" x2="255" y2="80" stroke="rgba(255,68,68,0.6)" strokeWidth="1" strokeDasharray="3,3"/>
-                        <text x="260" y="85" fill="rgba(255,68,68,0.9)" fontSize="7">Critical</text>
+                        <line x1="35" y1="65" x2="255" y2="65" stroke="rgba(255,68,68,0.6)" strokeWidth="1" strokeDasharray="3,3"/>
+                        <text x="260" y="70" fill="rgba(255,68,68,0.9)" fontSize="7">Critical</text>
                         
                         {/* Warning threshold line */}
-                        <line x1="35" y1="68" x2="255" y2="68" stroke="rgba(255,153,0,0.6)" strokeWidth="1" strokeDasharray="3,3"/>
-                        <text x="260" y="73" fill="rgba(255,153,0,0.9)" fontSize="7">Warning</text>
+                        <line x1="35" y1="50" x2="255" y2="50" stroke="rgba(255,153,0,0.6)" strokeWidth="1" strokeDasharray="3,3"/>
+                        <text x="260" y="55" fill="rgba(255,153,0,0.9)" fontSize="7">Warning</text>
                         
                         {/* Dynamic Past data (orange) - Based on current inverter health */}
                         <polyline
@@ -1646,16 +1646,16 @@ const Invertor = () => {
                         )}
                         
                         {/* End point status - Animated */}
-                        {showPrediction && animationProgress > 0.8 && (
+                        {showPrediction && animationProgress > 0.8 && graphData.predicted[5]?.health < 60 && (
                           <text 
                             x="215" 
                             y={graphData.predicted[5]?.y + 12 || 85} 
-                            fill={graphData.predicted[5]?.health < 40 ? "rgba(255,68,68,0.9)" : graphData.predicted[5]?.health < 60 ? "rgba(255,153,0,0.9)" : "rgba(56,239,125,0.9)"} 
+                            fill={graphData.predicted[5]?.health < 40 ? "rgba(255,68,68,0.9)" : "rgba(255,153,0,0.9)"} 
                             fontSize="6" 
                             textAnchor="middle"
                             opacity={Math.min(1, (animationProgress - 0.8) * 5)}
                           >
-                            {graphData.predicted[5]?.health < 40 ? "Critical" : graphData.predicted[5]?.health < 60 ? "Warning" : "Good"}
+                            {graphData.predicted[5]?.health < 40 ? "Critical" : "Warning"}
                           </text>
                         )}
                         </svg>
@@ -1664,7 +1664,7 @@ const Invertor = () => {
                   </div>
 
                   {/* Remaining Useful Life */}
-                  <div className="useful-life" style={{ marginBottom: '20px', marginTop: windowWidth <= 1440 ? '-110px' : windowWidth <= 1700 ? '-90px' : windowWidth <= 1815 ? '-40px' : windowWidth >= 2560 ? '80px' : '0px' }}>
+                  <div className="useful-life" style={{ marginBottom: '20px', marginTop: windowWidth <= 1440 ? '-110px' : windowWidth <= 1700 ? '-90px' : windowWidth <= 1860 ? '20px' : windowWidth >= 2560 ? '80px' : '0px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
                       <span style={{ fontSize: spacing.smallFontSize, color: 'white' }}>Remaining useful life</span>
                       <span style={{ fontSize: spacing.fontSize, color: 'white', fontWeight: 'bold' }}>{remainingLife}%</span>

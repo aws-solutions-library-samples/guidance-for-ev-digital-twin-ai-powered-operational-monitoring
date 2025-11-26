@@ -651,11 +651,11 @@ const Motor = () => {
   // Get remaining useful life percentage
   const getRemainingLife = () => {
     // Time-based degradation: slowly decreases over time (simulates normal wear)
-    // Starts at 94% and decreases by ~0.1% every 12 hours
-    const startTime = new Date('2025-01-01').getTime(); // Reference start date
+    // Starts at 94% and decreases by ~0.05% every 12 hours (very slow degradation)
+    const startTime = new Date('2025-11-20').getTime(); // Reference start date (recent - Nov 20, 2025)
     const currentTime = Date.now();
     const hoursElapsed = (currentTime - startTime) / (1000 * 60 * 60);
-    const degradationRate = 0.1 / 12; // 0.1% per 12 hours
+    const degradationRate = 0.05 / 12; // 0.05% per 12 hours (slower degradation)
     const totalDegradation = hoursElapsed * degradationRate;
     
     const remainingLife = Math.max(60, 94 - totalDegradation); // Start at 94%, minimum 60%

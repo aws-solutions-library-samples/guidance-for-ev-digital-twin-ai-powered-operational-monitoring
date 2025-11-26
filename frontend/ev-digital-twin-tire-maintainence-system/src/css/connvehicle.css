@@ -170,6 +170,16 @@
   margin-bottom: 6px;
 }
 
+.connvehicle-safety-badge.warning {
+  background: #ff9900;
+  border-color: #ffb84d;
+}
+
+.connvehicle-safety-badge.error {
+  background: #ff4444;
+  border-color: #ff6666;
+}
+
 .connvehicle-safety-label {
   font-size: calc(10px + 0.15vw);
   color: white;

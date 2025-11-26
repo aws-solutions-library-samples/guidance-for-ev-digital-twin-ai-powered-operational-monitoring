@@ -9,6 +9,7 @@ const Vehicle1ConnVehicle = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [tireData, setTireData] = useState(null);
   const [dataIndex, setDataIndex] = useState(0);
+  const [, setTick] = useState(0);
 
   const displayVIN = '2T1BURHE8JC987654';
   const vehicleInfo = VEHICLE_INFO[displayVIN];
@@ -48,6 +49,14 @@ const Vehicle1ConnVehicle = () => {
     }
   }, [tireData]);
 
+  // Update metrics every 2 seconds for dynamic feel
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTick(prev => prev + 1);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Get worst tire status across all positions
   const getWorstTireStatus = () => {
     if (!tireData || tireData.length === 0) {
@@ -80,11 +89,16 @@ const Vehicle1ConnVehicle = () => {
     let mod = anomaly === 'puncture' ? [0.3, 0.2, 0.3, 2.5] : tread < 3 ? [0.4, 0.3, 0.4, 2.0] : tread < 4 ? [0.6, 0.5, 0.6, 1.5] : tread < 6 ? [0.8, 0.7, 0.8, 1.2] : anomaly === 'irregular_wear' ? [0.7, 0.6, 0.7, 1.4] : [1, 1, 1, 1];
     if (pressure < 28) mod = mod.map((v, i) => i < 3 ? v * 0.7 : v * 1.3);
     
+    // Add time-based variation to make metrics feel more dynamic
+    const now = Date.now();
+    const timeVariation = Math.sin(now / 5000) * 0.15 + 1; // Oscillates between 0.85 and 1.15 every 10 seconds
+    const steeringVariation = Math.sin(now / 3000) * 15; // Oscillates ±15 degrees
+    
     return {
-      speed: Math.round(base[0] * mod[0]) + ' mph',
-      accel: (base[1] * mod[1]).toFixed(1) + ' m/s²',
-      throttle: Math.round(base[2] * mod[2]) + '%',
-      steering: Math.round(base[3] * mod[3]) + '°'
+      speed: Math.round(base[0] * mod[0] * timeVariation) + ' mph',
+      accel: (base[1] * mod[1] * timeVariation).toFixed(1) + ' m/s²',
+      throttle: Math.round(base[2] * mod[2] * timeVariation) + '%',
+      steering: Math.round(base[3] * mod[3] + steeringVariation) + '°'
     };
   };
 
@@ -120,10 +134,36 @@ const Vehicle1ConnVehicle = () => {
     return 'All tires within normal parameters';
   };
 
+  const getSafetyStatuses = () => {
+    // Traction Control - affected by tire pressure and tread
+    let tractionStatus = 'Good';
+    if (anomaly === 'puncture' || pressure < 26 || tread < 3) {
+      tractionStatus = 'Error';
+    } else if (pressure < 28 || tread < 4 || anomaly === 'uneven_wear') {
+      tractionStatus = 'Warning';
+    }
+
+    // DAS (Driver Assistance Systems) - affected by severe tire issues
+    let dasStatus = 'Good';
+    if (anomaly === 'puncture' || tread < 3) {
+      dasStatus = 'Warning';
+    } else if (pressure < 26) {
+      dasStatus = 'Warning';
+    }
+
+    return {
+      electrical: 'Good', // Always good for this demo
+      canBus: 'Good', // Always good for this demo
+      traction: tractionStatus,
+      das: dasStatus
+    };
+  };
+
   const metrics = getMetrics();
   const fault = getFault();
   const error = getError();
   const message = getMessage();
+  const safetyStatuses = getSafetyStatuses();
 
   return (
     <div className="connvehicle-page">
@@ -230,19 +270,27 @@ const Vehicle1ConnVehicle = () => {
                   <div className="connvehicle-safety-title">Safety Checks</div>
                   <div className="connvehicle-safety-items">
                     <div className="connvehicle-safety-item">
-                      <div className="connvehicle-safety-badge">Good</div>
+                      <div className={`connvehicle-safety-badge ${safetyStatuses.electrical === 'Good' ? '' : safetyStatuses.electrical === 'Warning' ? 'warning' : 'error'}`}>
+                        {safetyStatuses.electrical}
+                      </div>
                       <div className="connvehicle-safety-label">Electrical Isolation</div>
                     </div>
                     <div className="connvehicle-safety-item">
-                      <div className="connvehicle-safety-badge">Good</div>
+                      <div className={`connvehicle-safety-badge ${safetyStatuses.canBus === 'Good' ? '' : safetyStatuses.canBus === 'Warning' ? 'warning' : 'error'}`}>
+                        {safetyStatuses.canBus}
+                      </div>
                       <div className="connvehicle-safety-label">CAN Bus Communication</div>
                     </div>
                     <div className="connvehicle-safety-item">
-                      <div className="connvehicle-safety-badge">Good</div>
+                      <div className={`connvehicle-safety-badge ${safetyStatuses.traction === 'Good' ? '' : safetyStatuses.traction === 'Warning' ? 'warning' : 'error'}`}>
+                        {safetyStatuses.traction}
+                      </div>
                       <div className="connvehicle-safety-label">Traction Control Status</div>
                     </div>
                     <div className="connvehicle-safety-item">
-                      <div className="connvehicle-safety-badge">Good</div>
+                      <div className={`connvehicle-safety-badge ${safetyStatuses.das === 'Good' ? '' : safetyStatuses.das === 'Warning' ? 'warning' : 'error'}`}>
+                        {safetyStatuses.das}
+                      </div>
                       <div className="connvehicle-safety-label">DAS Status</div>
                     </div>
                   </div>

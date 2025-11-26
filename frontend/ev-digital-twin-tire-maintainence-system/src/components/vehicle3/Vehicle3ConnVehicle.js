@@ -27,6 +27,49 @@ const Vehicle3ConnVehicle = () => {
     });
   }, []);
 
+  // Calculate safety statuses based on inverter conditions
+  const getSafetyStatuses = () => {
+    if (!inverterData) {
+      return { electrical: 'Good', canBus: 'Good', traction: 'Good', das: 'Good' };
+    }
+
+    const temp = parseFloat(inverterData.inverter_temp_c) || 65;
+    const dcVoltage = parseFloat(inverterData.dc_link_voltage_v) || 400;
+    const efficiency = parseFloat(inverterData.inverter_efficiency_percent) || 95;
+    const hasAnomaly = inverterData.inverter_anomaly === 'True' || inverterData.inverter_anomaly === true;
+
+    // Traction Control - affected by inverter efficiency and voltage stability
+    let tractionStatus = 'Good';
+    if (hasAnomaly || temp > 85 || dcVoltage < 350 || dcVoltage > 450 || efficiency < 85) {
+      tractionStatus = 'Error';
+    } else if (temp > 75 || dcVoltage < 380 || dcVoltage > 420 || efficiency < 92) {
+      tractionStatus = 'Warning';
+    }
+
+    // DAS - affected by severe inverter issues
+    let dasStatus = 'Good';
+    if (hasAnomaly || temp > 85 || efficiency < 85) {
+      dasStatus = 'Warning';
+    } else if (temp > 80 || dcVoltage < 360 || dcVoltage > 440) {
+      dasStatus = 'Warning';
+    }
+
+    // Electrical Isolation - directly affected by inverter issues
+    let electricalStatus = 'Good';
+    if (hasAnomaly || temp > 85) {
+      electricalStatus = 'Warning';
+    }
+
+    return {
+      electrical: electricalStatus,
+      canBus: 'Good',
+      traction: tractionStatus,
+      das: dasStatus
+    };
+  };
+
+  const safetyStatuses = getSafetyStatuses();
+
   return (
     <div className="connvehicle-page">
       <div className="connvehicle-container">
@@ -132,19 +175,27 @@ const Vehicle3ConnVehicle = () => {
                   <div className="connvehicle-safety-title">Safety Checks</div>
                   <div className="connvehicle-safety-items">
                     <div className="connvehicle-safety-item">
-                      <div className="connvehicle-safety-badge">Good</div>
+                      <div className={`connvehicle-safety-badge ${safetyStatuses.electrical === 'Good' ? '' : safetyStatuses.electrical === 'Warning' ? 'warning' : 'error'}`}>
+                        {safetyStatuses.electrical}
+                      </div>
                       <div className="connvehicle-safety-label">Electrical Isolation</div>
                     </div>
                     <div className="connvehicle-safety-item">
-                      <div className="connvehicle-safety-badge">Good</div>
+                      <div className={`connvehicle-safety-badge ${safetyStatuses.canBus === 'Good' ? '' : safetyStatuses.canBus === 'Warning' ? 'warning' : 'error'}`}>
+                        {safetyStatuses.canBus}
+                      </div>
                       <div className="connvehicle-safety-label">CAN Bus Communication</div>
                     </div>
                     <div className="connvehicle-safety-item">
-                      <div className="connvehicle-safety-badge">Good</div>
+                      <div className={`connvehicle-safety-badge ${safetyStatuses.traction === 'Good' ? '' : safetyStatuses.traction === 'Warning' ? 'warning' : 'error'}`}>
+                        {safetyStatuses.traction}
+                      </div>
                       <div className="connvehicle-safety-label">Traction Control Status</div>
                     </div>
                     <div className="connvehicle-safety-item">
-                      <div className="connvehicle-safety-badge">Good</div>
+                      <div className={`connvehicle-safety-badge ${safetyStatuses.das === 'Good' ? '' : safetyStatuses.das === 'Warning' ? 'warning' : 'error'}`}>
+                        {safetyStatuses.das}
+                      </div>
                       <div className="connvehicle-safety-label">DAS Status</div>
                     </div>
                   </div>

@@ -7,6 +7,9 @@ Proper implementation using bedrock_agentcore.runtime SDK
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from agentcore_maintenance_agent import AgentCoreMaintenanceAgent, order_tire_online
 import os
+import json
+from datetime import datetime
+import boto3
 
 # Get memory ID from environment or config
 MEMORY_ID = os.environ.get("AGENTCORE_MEMORY_ID", "vehicle_maintenance_agent_mem-Zz75E62LMt")
@@ -29,6 +32,9 @@ inverter_agent = maintenance_agent.create_agent(prompt_type="inverter")
 # Initialize the AgentCore Runtime App
 app = BedrockAgentCoreApp()
 
+# Initialize DynamoDB client for session tracking
+dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+
 # Track browser tool executions per session to prevent duplicates
 BROWSER_TOOL_EXECUTED = set()
 
@@ -38,6 +44,8 @@ def invoke(payload):
     user_input = payload.get("prompt", "")
     actor_id = payload.get("actor_id", "fleet_manager")
     session_id = payload.get("session_id", "default")
+    
+    print(f"🚀 INVOKE: {user_input[:50]}")
     
     # Update actor_id if provided
     if actor_id != maintenance_agent.actor_id:
@@ -77,6 +85,9 @@ def invoke(payload):
                 print(f"✓ BYPASS: Directly calling order_tire_online({vehicle_id}) for session {session_id}")
                 
                 result = order_tire_online(vehicle_id)
+                print(f"✓ BYPASS: Tool execution completed, returning full result with session_id")
+                
+                # Return the full JSON result (includes session_id for frontend)
                 return result
         except Exception as e:
             # Remove from executed set on error so it can be retried

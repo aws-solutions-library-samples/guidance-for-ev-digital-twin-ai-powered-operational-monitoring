@@ -111,7 +111,7 @@ const Motor = () => {
         
         // Force component re-render for fresh data
         setMlResults(prev => [...prev]);
-      }, 300000); // 5 minutes
+      }, 10000); // 10 seconds
       return () => clearInterval(interval);
     }
   }, [csvData]);
@@ -379,16 +379,85 @@ const Motor = () => {
         return createEnhancedMotorFallback(motorData, new Error('No response text'));
       }
       
-      // AgentCore returns text responses, not JSON
-      // Let's create structured recommendations from the text
       const recommendations = [];
       
-      // Extract numbered list items (1. Check oil, 2. Inspect, etc.)
-      const numberedPattern = /\d+\.\s*\*\*[^*]+\*\*[^\n]*(?:\n[^\d\n][^\n]*)*|\d+\.\s*[^\n]+/g;
-      const numberedItems = response.match(numberedPattern) || [];
+      // First, try to extract driver-focused sections (TODAY, This Week, Driver Actions, etc.)
+      const driverSectionPatterns = [
+        /\*\*TODAY:\*\*/i,
+        /\*\*This Week:\*\*/i,
+        /Driver Actions.*?:/i,
+        /What You Can Do.*?:/i,
+        /Your Action Plan.*?:/i
+      ];
       
-      // Action verbs that indicate real recommendations
-      const actionVerbs = ['check', 'inspect', 'replace', 'service', 'monitor', 'test', 'verify', 'clean', 'flush', 'change', 'repair', 'schedule', 'perform', 'examine', 'diagnose', 'stop', 'reduce', 'increase', 'adjust'];
+      let driverSectionFound = false;
+      for (const pattern of driverSectionPatterns) {
+        const match = response.match(pattern);
+        if (match) {
+          driverSectionFound = true;
+          // Extract content after this header until next major section or end
+          const startIdx = response.indexOf(match[0]) + match[0].length;
+          let endIdx = response.length;
+          
+          // Find where this section ends (next ** header or major section)
+          const nextSectionMatch = response.substring(startIdx).match(/\n\*\*(?:This Week|Service Required|Why This|What You Should Know)/i);
+          if (nextSectionMatch) {
+            endIdx = startIdx + nextSectionMatch.index;
+          }
+          
+          const driverSection = response.substring(startIdx, endIdx);
+          
+          // Parse numbered items (1. Avoid aggressive driving, 2. Monitor, etc.)
+          const numberedItems = driverSection.match(/\d+\.\s+\*\*([^*]+)\*\*/g);
+          if (numberedItems) {
+            numberedItems.forEach(item => {
+              const title = item.replace(/\d+\.\s+\*\*/, '').replace(/\*\*/, '').trim();
+              
+              // Skip section headers (like "This week:", "Today:", etc.)
+              if (title.toLowerCase().match(/^(this week|today|this month|driver actions?|your action plan):?$/i)) {
+                return;
+              }
+              
+              // Skip if title is too short (likely a header fragment)
+              if (title.length < 10) {
+                return;
+              }
+              
+              // Extract bullets for this item
+              const itemStart = driverSection.indexOf(item);
+              const nextItemMatch = driverSection.substring(itemStart + item.length).match(/\d+\.\s+\*\*/);
+              const itemEnd = nextItemMatch ? itemStart + item.length + nextItemMatch.index : driverSection.length;
+              const itemContent = driverSection.substring(itemStart, itemEnd);
+              
+              const bullets = [];
+              const bulletLines = itemContent.split('\n').filter(line => line.trim().startsWith('-') || line.trim().startsWith('•'));
+              bulletLines.forEach(line => {
+                let bullet = line.replace(/^[-•]\s*/, '').trim();
+                bullet = bullet.replace(/\*\*/g, '').replace(/\(Confidence:.*?\)/gi, '').replace(/\[Source:.*?\]/gi, '').trim();
+                if (bullet.length > 10) bullets.push(bullet);
+              });
+              
+              recommendations.push({
+                action: title,
+                priority: 'HIGH',
+                reason: "",
+                urgency: 'This Week',
+                bullets: bullets.slice(0, 2)
+              });
+            });
+          }
+          break;
+        }
+      }
+      
+      // If no driver section found, fall back to numbered item parsing
+      if (!driverSectionFound) {
+        // Extract numbered list items (1. Check oil, 2. Inspect, etc.)
+        const numberedPattern = /\d+\.\s*\*\*[^*]+\*\*[^\n]*(?:\n[^\d\n][^\n]*)*|\d+\.\s*[^\n]+/g;
+        const numberedItems = response.match(numberedPattern) || [];
+        
+        // Action verbs that indicate real recommendations
+        const actionVerbs = ['check', 'inspect', 'replace', 'service', 'monitor', 'test', 'verify', 'clean', 'flush', 'change', 'repair', 'schedule', 'perform', 'examine', 'diagnose', 'stop', 'reduce', 'increase', 'adjust', 'avoid', 'drive'];
       
       numberedItems.forEach(item => {
         // Remove numbering and bold markers
@@ -436,6 +505,7 @@ const Motor = () => {
           urgency: priority === 'CRITICAL' ? 'Immediately' : priority === 'HIGH' ? 'Within 24 hours' : priority === 'MEDIUM' ? 'Within 1 week' : 'Next maintenance'
         });
       });
+      } // Close the if (!driverSectionFound) block
       
       // Determine overall status from response content
       const status = determineMotorStatusFromResponse(response);
@@ -785,7 +855,7 @@ const Motor = () => {
   };
 
   // Calculate bearing health from motor data
-  const calculateBearingHealth = (vibrationLevel, performanceScore) => {
+  const calculateBearingHealth = (vibrationLevel, performanceScore, dataIndex = 0) => {
     const vibration = parseFloat(vibrationLevel) || 2;
     const performance = parseFloat(performanceScore) || 95;
     
@@ -793,11 +863,14 @@ const Motor = () => {
     const baseWear = Math.min(50, vibration * 8);
     const perfAdjustment = (100 - performance) * 0.5;
     
+    // Add slight variation based on data rotation to show dynamic changes
+    const indexVariation = (dataIndex % 5) * 2; // 0-8 variation
+    
     return {
-      radial: Math.min(100, baseWear + perfAdjustment),
-      outer: Math.min(100, baseWear * 0.8 + perfAdjustment),
-      thrust: Math.min(100, baseWear * 0.6 + perfAdjustment),
-      inner: Math.min(100, baseWear * 0.9 + perfAdjustment)
+      radial: Math.min(100, baseWear + perfAdjustment + indexVariation),
+      outer: Math.min(100, baseWear * 0.8 + perfAdjustment + (indexVariation * 0.7)),
+      thrust: Math.min(100, baseWear * 0.6 + perfAdjustment + (indexVariation * 0.5)),
+      inner: Math.min(100, baseWear * 0.9 + perfAdjustment + (indexVariation * 0.8))
     };
   };
 
@@ -834,7 +907,7 @@ const Motor = () => {
   const remainingLife = getRemainingLife();
   const aiRecommendations = getAiRecommendations();
   const electricalMetrics = formatElectricalMetrics(currentData.rpm_avg, currentData.performance_score);
-  const bearingHealth = calculateBearingHealth(currentData.vibration_level, currentData.performance_score);
+  const bearingHealth = calculateBearingHealth(currentData.vibration_level, currentData.performance_score, dataIndex);
   const rotorPosition = calculateRotorPosition(currentData.rpm_avg, currentData.performance_score);
   const insulationResistance = calculateInsulationResistance(currentData.engine_temp_c, currentData.performance_score);
   
@@ -1607,19 +1680,21 @@ const Motor = () => {
                       </style>
                       {(() => {
                         // Categorize recommendations based on keywords
-                        const serviceKeywords = ['schedule', 'book', 'appointment', 'service visit', 'inspection', 'technician', 'mechanic', 'professional', 'repair shop'];
-                        const driverKeywords = ['check', 'monitor', 'avoid', 'reduce', 'adjust', 'drive', 'take breaks', 'coolant level', 'oil level', 'tire pressure'];
+                        const serviceKeywords = ['schedule', 'book', 'appointment', 'service visit', 'inspection by', 'technician', 'mechanic', 'professional', 'repair shop', 'replace', 'flush', 'repair'];
+                        const driverKeywords = ['check', 'monitor', 'avoid', 'reduce', 'adjust', 'drive', 'take breaks', 'coolant level', 'oil level', 'tire pressure', 'aggressive driving', 'heavy loads', 'temperature warnings', 'power warnings', 'conservatively'];
                         
                         const driverActions = [];
                         const serviceRequired = [];
                         
                         aiRecommendations.forEach(rec => {
                           const actionLower = rec.action.toLowerCase();
-                          
-                          // Check if it's a service-related action
+                          const isDriverAction = driverKeywords.some(keyword => actionLower.includes(keyword));
                           const isService = serviceKeywords.some(keyword => actionLower.includes(keyword));
                           
-                          if (isService) {
+                          // Prioritize driver action keywords over service keywords
+                          if (isDriverAction && !actionLower.includes('schedule') && !actionLower.includes('appointment')) {
+                            driverActions.push(rec);
+                          } else if (isService) {
                             serviceRequired.push(rec);
                           } else {
                             driverActions.push(rec);
@@ -1643,12 +1718,14 @@ const Motor = () => {
                                       <span style={{ flex: 1 }}>{rec.action}</span>
                                       {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
                                     </div>
-                                    {rec.description && (
-                                      <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)', marginTop: '4px' }}>
-                                        <div style={{ display: 'flex', gap: '6px' }}>
-                                          <span>•</span>
-                                          <span>{rec.description}</span>
-                                        </div>
+                                    {rec.bullets && rec.bullets.length > 0 && (
+                                      <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
+                                        {rec.bullets.map((bullet, bIndex) => (
+                                          <div key={`bullet-${bIndex}`} style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
+                                            <span>•</span>
+                                            <span>{bullet}</span>
+                                          </div>
+                                        ))}
                                       </div>
                                     )}
                                   </div>
@@ -1671,12 +1748,14 @@ const Motor = () => {
                                       <span style={{ flex: 1 }}>{rec.action}</span>
                                       {rec.genai && <span style={{ fontSize: '10px', color: '#00ff88', backgroundColor: 'rgba(0,255,136,0.2)', padding: '2px 6px', borderRadius: '10px' }}>GenAI</span>}
                                     </div>
-                                    {rec.description && (
-                                      <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)', marginTop: '4px' }}>
-                                        <div style={{ display: 'flex', gap: '6px' }}>
-                                          <span>•</span>
-                                          <span>{rec.description}</span>
-                                        </div>
+                                    {rec.bullets && rec.bullets.length > 0 && (
+                                      <div className="recommendation-details" style={{ marginLeft: '24px', fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
+                                        {rec.bullets.map((bullet, bIndex) => (
+                                          <div key={`bullet-${bIndex}`} style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
+                                            <span>•</span>
+                                            <span>{bullet}</span>
+                                          </div>
+                                        ))}
                                       </div>
                                     )}
                                   </div>
