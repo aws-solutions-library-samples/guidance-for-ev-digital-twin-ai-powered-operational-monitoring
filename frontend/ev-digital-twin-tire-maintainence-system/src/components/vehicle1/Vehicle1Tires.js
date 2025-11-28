@@ -358,12 +358,15 @@ const Vehicle1Tires = () => {
           // ### **1. Title** 
           // ### 1. **Title**
           // 1. **Check Your Front Left Tire Pressure ASAP** - description (plain numbered list)
-          // **1. Title** 
+          // **1. Title**
+          // ### **THIS WEEK - Title** (no number, just urgency)
           const headerMatch = line.match(/^###\s*[1-9️⃣]+\s*\*\*([^*]+)\*\*/) ||
                              line.match(/^###\s*(\d+)\.\s*\*\*([^*]+)\*\*/) ||
                              line.match(/^###\s*\*\*(\d+)\.\s*([^*]+)\*\*/) ||
                              line.match(/^\*\*(\d+)\.\s+(.+?)\*\*/) ||
                              line.match(/^(\d+)\.\s*\*\*(.+?)\*\*/) ||
+                             line.match(/^(\d+)\.\s+\*\*([^*]+)\*\*/) ||
+                             line.match(/^###\s*\*\*(?:THIS WEEK|MONTHLY|DAILY|IMMEDIATE|URGENT)[:\s-]+([^*]+)\*\*/) ||  // NEW: ### **THIS WEEK - Title**
                              line.match(/^###?\s*\*{0,2}\s*(\d+)\.\s*(.+?)[\*🚨⚠️]*$/);
           if (headerMatch) {
             console.log('Driver item matched:', line.substring(0, 80));
@@ -378,8 +381,9 @@ const Vehicle1Tires = () => {
                 category: 'driver'
               });
             }
-            // Start new item
-            currentItem = { title: headerMatch[2].trim(), bullets: [] };
+            // Start new item - extract title from the right capture group
+            const title = headerMatch[2] || headerMatch[1] || '';
+            currentItem = { title: title.trim(), bullets: [] };
           } else if (currentItem && (line.trim().startsWith('-') || line.trim().startsWith('•') || line.trim().startsWith('**-'))) {
             // Add bullet to current item
             let bullet = line.replace(/^[-•]\s*/, '').replace(/^\*\*-\s*/, '').trim();
@@ -427,6 +431,8 @@ const Vehicle1Tires = () => {
                              line.match(/^###\s*\*\*(\d+)\.\s+(.+?)\*\*$/) ||
                              line.match(/^###\s*(\d+)\.\s*\*\*([^*]+)\*\*/) ||
                              line.match(/^\*\*(\d+)\.\s*([^*]+)\*\*/) ||
+                             line.match(/^(\d+)\.\s+\*\*([^*]+)\*\*/) ||
+                             line.match(/^###\s*\*\*(\d+)\.\s+(?:IMMEDIATE|URGENT|THIS WEEK|THIS MONTH)[:\s(]+([^*]+)\*\*/) ||  // NEW: ### **1. IMMEDIATE (This Week): Title**
                              line.match(/^\*{0,2}\s*(\d+)\.\s*([^:]+):?\s*(.*)$/);
           if (headerMatch) {
             console.log('Service item matched:', line.substring(0, 80));
@@ -442,24 +448,13 @@ const Vehicle1Tires = () => {
                 category: 'service'
               });
             }
-            // Start new item - handle different match formats
-            let title;
-            if (line.includes('Recommendation #')) {
-              // Format: ### **Recommendation #1: Replace Front Left Tire...**
-              title = headerMatch[2].trim();
-            } else if (line.match(/^###\s*\d+\.\s*\*\*/)) {
-              // Format: ### 1. **THIS WEEK - Schedule Wheel Alignment Check**
-              title = headerMatch[2].trim();
-            } else if (line.match(/^\*\*\d+\.\s*[^*]+\*\*/)) {
-              // Format: **1. Replace Front Left Tire Immediately** or **1. IMMEDIATE (THIS WEEK):**
-              title = headerMatch[2].trim();
-            } else {
-              // Format: 1. Title or other variations
-              const urgency = headerMatch[2] ? headerMatch[2].trim() : '';
-              const action = headerMatch[3] ? headerMatch[3].trim() : '';
-              title = action ? `${urgency}: ${action}` : urgency;
+            // Start new item - extract title from available capture groups
+            let title = headerMatch[2] || headerMatch[1] || '';
+            // If there's a third capture group with more content, append it
+            if (headerMatch[3] && headerMatch[3].trim()) {
+              title = title ? `${title}: ${headerMatch[3].trim()}` : headerMatch[3].trim();
             }
-            currentItem = { title: title, bullets: [] };
+            currentItem = { title: title.trim(), bullets: [] };
           } else if (currentItem && (line.trim().startsWith('-') || line.trim().startsWith('•'))) {
             // Add bullet to current item
             let bullet = line.replace(/^[-•]\s*/, '').trim();

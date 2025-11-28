@@ -67,6 +67,9 @@ const FleetPortal = () => {
   const [showActionDetailsModal, setShowActionDetailsModal] = useState(false);
   const [actionDetails, setActionDetails] = useState(null);
   const [loadingActionDetails, setLoadingActionDetails] = useState(false);
+  
+  // State for recording modal
+  const [showRecordingModal, setShowRecordingModal] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -270,13 +273,8 @@ const FleetPortal = () => {
   };
 
   const handleViewAction = (vehicleId) => {
-    const scheduledData = scheduledRecommendations.get(vehicleId);
-    if (scheduledData?.sessionId) {
-      setReplaySessionId(scheduledData.sessionId);
-      setShowReplayModal(true);
-    } else {
-      alert('No session recording available for this action.');
-    }
+    // Show modal to redirect to AgentCore console
+    setShowRecordingModal(true);
   };
 
   const handleViewActionDetails = async (vehicleId) => {
@@ -2071,9 +2069,6 @@ Respond with the available slots.`;
               <>
                 <div style={{ marginBottom: '20px', padding: '15px', background: '#2a2d2f', borderRadius: '8px' }}>
                   <div style={{ fontSize: '14px', color: '#888', marginBottom: '8px' }}>
-                    Session ID: {actionDetails.sessionId}
-                  </div>
-                  <div style={{ fontSize: '14px', color: '#888', marginBottom: '8px' }}>
                     Total Actions: {actionDetails.count}
                   </div>
                   <div style={{ fontSize: '12px', color: '#666', fontStyle: 'italic' }}>
@@ -2147,6 +2142,59 @@ Respond with the available slots.`;
             >
               Close
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Recording Modal */}
+      {showRecordingModal && (
+        <div className="confirmation-overlay" onClick={() => setShowRecordingModal(false)}>
+          <div 
+            className="confirmation-modal" 
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '500px', textAlign: 'center' }}
+          >
+            <h2 style={{ color: '#4a9eff', marginBottom: '20px' }}>🎬 Browser Session Recording</h2>
+            
+            <p style={{ color: '#ccc', fontSize: '15px', lineHeight: '1.6', marginBottom: '30px' }}>
+              View the complete browser recording of the agent's actions
+              in the Amazon Bedrock AgentCore console.
+            </p>
+            
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+              <button
+                onClick={() => setShowRecordingModal(false)}
+                style={{
+                  padding: '12px 24px',
+                  background: '#444',
+                  border: 'none',
+                  borderRadius: '4px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  window.open('https://us-east-1.console.aws.amazon.com/bedrock-agentcore/browser/vehicle_tire_order_tool-EfIt5YeiPR#', '_blank');
+                  setShowRecordingModal(false);
+                }}
+                style={{
+                  padding: '12px 24px',
+                  background: '#4a9eff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 'bold'
+                }}
+              >
+                Open Recording in AgentCore Console →
+              </button>
+            </div>
           </div>
         </div>
       )}
