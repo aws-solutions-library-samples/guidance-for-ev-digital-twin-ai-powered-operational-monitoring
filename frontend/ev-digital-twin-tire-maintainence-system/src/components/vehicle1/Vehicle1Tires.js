@@ -340,8 +340,8 @@ const Vehicle1Tires = () => {
       // FLEXIBLE PARSING: Extract ALL numbered items from the response, then categorize them
       // This handles any format variation the agent produces
       
-      // Step 1: Find driver-focused section (## 🚗 **What You Can Do**)
-      const driverSectionMatch = response.match(/##\s*🚗\s*\*\*.*?\*\*([\s\S]*?)(?=\n##|$)/i);
+      // Step 1: Find driver-focused section (## 🚗 What You Can Do or ## 🚗 **What You Can Do**)
+      const driverSectionMatch = response.match(/##\s*🚗\s*\*{0,2}.*?(?:What You Can Do|Driver Actions).*?\*{0,2}([\s\S]*?)(?=\n##|$)/i);
       if (driverSectionMatch) {
         const driverSection = driverSectionMatch[1];
         console.log('Found driver section, extracting items...');
@@ -362,7 +362,8 @@ const Vehicle1Tires = () => {
           const headerMatch = line.match(/^###\s*[1-9️⃣]+\s*\*\*([^*]+)\*\*/) ||
                              line.match(/^###\s*(\d+)\.\s*\*\*([^*]+)\*\*/) ||
                              line.match(/^###\s*\*\*(\d+)\.\s*([^*]+)\*\*/) ||
-                             line.match(/^(\d+)\.\s*\*\*([^*]+)\*\*/) ||
+                             line.match(/^\*\*(\d+)\.\s+(.+?)\*\*/) ||
+                             line.match(/^(\d+)\.\s*\*\*(.+?)\*\*/) ||
                              line.match(/^###?\s*\*{0,2}\s*(\d+)\.\s*(.+?)[\*🚨⚠️]*$/);
           if (headerMatch) {
             console.log('Driver item matched:', line.substring(0, 80));
@@ -404,9 +405,10 @@ const Vehicle1Tires = () => {
       
       // Step 2: Find service recommendations section - handles multiple formats
       // ## 🔧 **TOP 3 RECOMMENDATIONS** OR ## �  **Key Recommendations** OR ## 🔑 3 KEY RECOMMENDATIONS
-      const serviceSectionMatch = response.match(/##\s*[🔧🔑]?\s*(?:\*\*.*?RECOMMENDATIONS.*?\*\*|[\d\-]+\s*(?:KEY|TOP)\s*RECOMMENDATIONS:?)([\s\S]*?)(?=\n##|Would you like|$)/i);
-      if (serviceSectionMatch) {
-        const serviceSection = serviceSectionMatch[1];
+      const serviceSectionMatch = response.match(/##\s*[🔧🔑🎯]?\s*\*{0,2}(?:.*?RECOMMENDATIONS.*?|[\d\-]+\s*(?:KEY|TOP)\s*RECOMMENDATIONS:?|(?:My\s+)?[\d\-]*\s*Key\s+Recommendations)\*{0,2}/i);
+      const serviceSection = serviceSectionMatch ? response.substring(serviceSectionMatch.index + serviceSectionMatch[0].length).split(/\n##/)[0] : null;
+      
+      if (serviceSection) {
         console.log('Found service section, extracting items...');
         
         // Extract ALL numbered items from this section
@@ -422,7 +424,7 @@ const Vehicle1Tires = () => {
           // **1. Replace Front Left Tire Immediately**
           // 1. Title
           const headerMatch = line.match(/^###\s*\*\*Recommendation\s*#?(\d+):\s*([^*]+)\*\*/) ||
-                             line.match(/^###\s*\*\*(\d+)\.\s*([^*]+)\*\*/) ||
+                             line.match(/^###\s*\*\*(\d+)\.\s+(.+?)\*\*$/) ||
                              line.match(/^###\s*(\d+)\.\s*\*\*([^*]+)\*\*/) ||
                              line.match(/^\*\*(\d+)\.\s*([^*]+)\*\*/) ||
                              line.match(/^\*{0,2}\s*(\d+)\.\s*([^:]+):?\s*(.*)$/);
@@ -805,16 +807,31 @@ const Vehicle1Tires = () => {
       console.log('Driver actions:', recommendations.filter(r => r.category === 'driver').length);
       console.log('Service required:', recommendations.filter(r => r.category === 'service').length);
       
-      // GUARANTEE: Always return at least one recommendation
-      if (recommendations.length === 0) {
-        console.warn('No recommendations parsed, adding critical fallback');
-        console.warn('Response preview:', response.substring(0, 500));
+      // FALLBACK: Ensure at least one driver action and one service recommendation
+      const hasDriverActions = recommendations.filter(r => r.category === 'driver').length > 0;
+      const hasServiceRecs = recommendations.filter(r => r.category === 'service').length > 0;
+      
+      if (!hasDriverActions) {
+        console.warn('No driver actions parsed, adding fallback');
         recommendations.push({
-          action: 'URGENT: Replace front-left tire immediately - Critical wear detected',
+          action: 'Drive gently and avoid hitting potholes',
+          priority: 'HIGH',
+          reason: 'Protect tires from further damage until service',
+          urgency: 'This Week',
+          bullets: ['Avoid aggressive acceleration and braking', 'Take turns smoothly'],
+          category: 'driver'
+        });
+      }
+      
+      if (!hasServiceRecs) {
+        console.warn('No service recommendations parsed, adding fallback');
+        recommendations.push({
+          action: 'Critical tire wear - Schedule replacement immediately',
           priority: 'CRITICAL',
-          reason: 'Tire condition has reached unsafe levels requiring immediate replacement',
+          reason: 'Tire condition requires professional service',
           urgency: 'Immediately',
-          bullets: ['Do not drive until tire is replaced', 'Schedule emergency tire replacement today']
+          bullets: ['Replace worn tire', 'Check wheel alignment'],
+          category: 'service'
         });
       }
 
