@@ -337,43 +337,185 @@ const Vehicle1Tires = () => {
       
       const recommendations = [];
       
-      // First, try to extract driver-focused sections (THIS WEEK, What You Can Do NOW, etc.)
-      const driverSectionPatterns = [
-        /THIS WEEK.*?:/i,
-        /What You Can Do NOW.*?:/i,
-        /What Drivers Should Do.*?:/i,
-        /Before Your Service Visit.*?:/i,
-        /Driver Actions.*?:/i
-      ];
+      // FLEXIBLE PARSING: Extract ALL numbered items from the response, then categorize them
+      // This handles any format variation the agent produces
       
-      let driverSectionFound = false;
-      for (const pattern of driverSectionPatterns) {
-        const match = response.match(pattern);
-        if (match) {
-          driverSectionFound = true;
-          // Extract content after this header until next major section or end
-          const startIdx = response.indexOf(match[0]) + match[0].length;
-          let endIdx = response.length;
-          
-          // Find where this section ends (next ### or major header)
-          const nextSectionMatch = response.substring(startIdx).match(/\n###|What You Should Know|Why This Matters/);
-          if (nextSectionMatch) {
-            endIdx = startIdx + nextSectionMatch.index;
+      // Step 1: Find driver-focused section (## 🚗 **What You Can Do**)
+      const driverSectionMatch = response.match(/##\s*🚗\s*\*\*.*?\*\*([\s\S]*?)(?=\n##|$)/i);
+      if (driverSectionMatch) {
+        const driverSection = driverSectionMatch[1];
+        console.log('Found driver section, extracting items...');
+        
+        // Extract ALL numbered items from this section (handles multiple formats)
+        // Format 1: ### **1. Title** or ### **1.** Title
+        // Format 2: **1. Title** or 1. **Title**
+        const lines = driverSection.split('\n');
+        let currentItem = null;
+        
+        lines.forEach((line, idx) => {
+          // Check if this is a numbered header - handles ALL possible formats:
+          // ### 1️⃣ **Title** (emoji number)
+          // ### **1. Title** 
+          // ### 1. **Title**
+          // 1. **Check Your Front Left Tire Pressure ASAP** - description (plain numbered list)
+          // **1. Title** 
+          const headerMatch = line.match(/^###\s*[1-9️⃣]+\s*\*\*([^*]+)\*\*/) ||
+                             line.match(/^###\s*(\d+)\.\s*\*\*([^*]+)\*\*/) ||
+                             line.match(/^###\s*\*\*(\d+)\.\s*([^*]+)\*\*/) ||
+                             line.match(/^(\d+)\.\s*\*\*([^*]+)\*\*/) ||
+                             line.match(/^###?\s*\*{0,2}\s*(\d+)\.\s*(.+?)[\*🚨⚠️]*$/);
+          if (headerMatch) {
+            console.log('Driver item matched:', line.substring(0, 80));
+            // Save previous item if exists
+            if (currentItem && currentItem.title) {
+              recommendations.push({
+                action: currentItem.title,
+                priority: 'HIGH',
+                reason: "",
+                urgency: 'This Week',
+                bullets: currentItem.bullets.slice(0, 2),
+                category: 'driver'
+              });
+            }
+            // Start new item
+            currentItem = { title: headerMatch[2].trim(), bullets: [] };
+          } else if (currentItem && (line.trim().startsWith('-') || line.trim().startsWith('•') || line.trim().startsWith('**-'))) {
+            // Add bullet to current item
+            let bullet = line.replace(/^[-•]\s*/, '').replace(/^\*\*-\s*/, '').trim();
+            bullet = bullet.replace(/\*\*/g, '').replace(/\(Confidence:.*?\)/gi, '').replace(/\[Source:.*?\]/gi, '').trim();
+            if (bullet.length > 10) currentItem.bullets.push(bullet);
           }
-          
-          const driverSection = response.substring(startIdx, endIdx);
-          
-          // Parse numbered items (1. Check & Inflate, 2. Drive Gently, etc.)
-          const numberedItems = driverSection.match(/\d+\.\s+\*\*([^*]+)\*\*/g);
-          if (numberedItems) {
-            numberedItems.forEach(item => {
-              const title = item.replace(/\d+\.\s+\*\*/, '').replace(/\*\*/, '').trim();
+        });
+        
+        // Don't forget the last item
+        if (currentItem && currentItem.title) {
+          recommendations.push({
+            action: currentItem.title,
+            priority: 'HIGH',
+            reason: "",
+            urgency: 'This Week',
+            bullets: currentItem.bullets.slice(0, 2),
+            category: 'driver'
+          });
+        }
+        
+        console.log('Extracted driver items:', recommendations.filter(r => r.category === 'driver').length);
+      }
+      
+      // Step 2: Find service recommendations section - handles multiple formats
+      // ## 🔧 **TOP 3 RECOMMENDATIONS** OR ## �  **Key Recommendations** OR ## 🔑 3 KEY RECOMMENDATIONS
+      const serviceSectionMatch = response.match(/##\s*[🔧🔑]?\s*(?:\*\*.*?RECOMMENDATIONS.*?\*\*|[\d\-]+\s*(?:KEY|TOP)\s*RECOMMENDATIONS:?)([\s\S]*?)(?=\n##|Would you like|$)/i);
+      if (serviceSectionMatch) {
+        const serviceSection = serviceSectionMatch[1];
+        console.log('Found service section, extracting items...');
+        
+        // Extract ALL numbered items from this section
+        const lines = serviceSection.split('\n');
+        let currentItem = null;
+        
+        lines.forEach((line, idx) => {
+          // Check if this is a numbered item - handles ALL possible formats:
+          // ### **Recommendation #1: Title** 
+          // ### **1. Schedule Wheel Alignment & Front Left Tire Replacement - THIS MONTH**
+          // ### 1. **THIS WEEK - Title**
+          // **1. IMMEDIATE (THIS WEEK):**
+          // **1. Replace Front Left Tire Immediately**
+          // 1. Title
+          const headerMatch = line.match(/^###\s*\*\*Recommendation\s*#?(\d+):\s*([^*]+)\*\*/) ||
+                             line.match(/^###\s*\*\*(\d+)\.\s*([^*]+)\*\*/) ||
+                             line.match(/^###\s*(\d+)\.\s*\*\*([^*]+)\*\*/) ||
+                             line.match(/^\*\*(\d+)\.\s*([^*]+)\*\*/) ||
+                             line.match(/^\*{0,2}\s*(\d+)\.\s*([^:]+):?\s*(.*)$/);
+          if (headerMatch) {
+            console.log('Service item matched:', line.substring(0, 80));
+            // Save previous item if exists
+            if (currentItem && currentItem.title) {
+              const priority = currentItem.title.toLowerCase().includes('immediate') || currentItem.title.toLowerCase().includes('urgent') ? 'CRITICAL' : 'HIGH';
+              recommendations.push({
+                action: currentItem.title,
+                priority: priority,
+                reason: "",
+                urgency: priority === 'CRITICAL' ? 'Immediately' : 'This Week',
+                bullets: currentItem.bullets.slice(0, 3),
+                category: 'service'
+              });
+            }
+            // Start new item - handle different match formats
+            let title;
+            if (line.includes('Recommendation #')) {
+              // Format: ### **Recommendation #1: Replace Front Left Tire...**
+              title = headerMatch[2].trim();
+            } else if (line.match(/^###\s*\d+\.\s*\*\*/)) {
+              // Format: ### 1. **THIS WEEK - Schedule Wheel Alignment Check**
+              title = headerMatch[2].trim();
+            } else if (line.match(/^\*\*\d+\.\s*[^*]+\*\*/)) {
+              // Format: **1. Replace Front Left Tire Immediately** or **1. IMMEDIATE (THIS WEEK):**
+              title = headerMatch[2].trim();
+            } else {
+              // Format: 1. Title or other variations
+              const urgency = headerMatch[2] ? headerMatch[2].trim() : '';
+              const action = headerMatch[3] ? headerMatch[3].trim() : '';
+              title = action ? `${urgency}: ${action}` : urgency;
+            }
+            currentItem = { title: title, bullets: [] };
+          } else if (currentItem && (line.trim().startsWith('-') || line.trim().startsWith('•'))) {
+            // Add bullet to current item
+            let bullet = line.replace(/^[-•]\s*/, '').trim();
+            bullet = bullet.replace(/\*\*/g, '').replace(/\(Confidence:.*?\)/gi, '').replace(/\[Source:.*?\]/gi, '').trim();
+            if (bullet.length > 10 && !bullet.toLowerCase().includes('cost of ignoring')) {
+              currentItem.bullets.push(bullet);
+            }
+          } else if (currentItem && line.trim().length > 20 && !line.includes('**') && !line.includes('##')) {
+            // Add as sentence if no bullets found yet
+            if (currentItem.bullets.length === 0) {
+              currentItem.bullets.push(line.trim());
+            }
+          }
+        });
+        
+        // Don't forget the last item
+        if (currentItem && currentItem.title) {
+          const priority = currentItem.title.toLowerCase().includes('immediate') || currentItem.title.toLowerCase().includes('urgent') ? 'CRITICAL' : 'HIGH';
+          recommendations.push({
+            action: currentItem.title,
+            priority: priority,
+            reason: "",
+            urgency: priority === 'CRITICAL' ? 'Immediately' : 'This Week',
+            bullets: currentItem.bullets.slice(0, 3),
+            category: 'service'
+          });
+        }
+        
+        console.log('Extracted service items:', recommendations.filter(r => r.category === 'service').length);
+      }
+      
+      // Fallback: If flexible parsing didn't find anything, try old patterns
+      let driverSectionFound = recommendations.filter(r => r.category === 'driver').length > 0;
+      
+      const driverMainMatch = response.match(/##\s*🚗\s*\*\*What You Can Do.*?\*\*([\s\S]*?)(?=\n##|\n\n---|\nWould you like|$)/i);
+      
+      if (driverMainMatch) {
+        driverSectionFound = true;
+        const driverMainSection = driverMainMatch[1];
+        console.log('Found driver section, length:', driverMainSection.length);
+        
+        // Parse ### **1. Check Your Tire Pressure THIS WEEK** ⚠️ items
+        const driverItems = driverMainSection.match(/###\s*\*\*\d+\.\s*([^*]+)\*\*\s*([^\n]+)/g);
+        console.log('Driver items found:', driverItems ? driverItems.length : 0);
+        if (driverItems) {
+          driverItems.forEach(item => {
+            // Extract: "1." and "Check Your Tire Pressure THIS WEEK"
+            const match = item.match(/###\s*\*\*\d+\.\s*([^*]*)\*\*\s*([^\n]+)/);
+            if (match) {
+              const titleInBold = match[1].trim(); // Could be empty or have text
+              const titleAfterBold = match[2].trim(); // Main title text
+              const title = titleInBold ? `${titleInBold} ${titleAfterBold}` : titleAfterBold;
               
               // Extract bullets for this item
-              const itemStart = driverSection.indexOf(item);
-              const nextItemMatch = driverSection.substring(itemStart + item.length).match(/\d+\.\s+\*\*/);
-              const itemEnd = nextItemMatch ? itemStart + item.length + nextItemMatch.index : driverSection.length;
-              const itemContent = driverSection.substring(itemStart, itemEnd);
+              const itemStart = driverMainSection.indexOf(item);
+              const nextItemMatch = driverMainSection.substring(itemStart + item.length).match(/###\s*\*\*\d+\./);
+              const itemEnd = nextItemMatch ? itemStart + item.length + nextItemMatch.index : driverMainSection.length;
+              const itemContent = driverMainSection.substring(itemStart, itemEnd);
               
               const bullets = [];
               const bulletLines = itemContent.split('\n').filter(line => line.trim().startsWith('-') || line.trim().startsWith('•'));
@@ -388,16 +530,164 @@ const Vehicle1Tires = () => {
                 priority: 'HIGH',
                 reason: "",
                 urgency: 'This Week',
-                bullets: bullets.slice(0, 2)
+                bullets: bullets.slice(0, 2),
+                category: 'driver' // Mark as driver action
               });
-            });
+            }
+          });
+        }
+      }
+      
+      // Pattern 2: Fallback to simpler patterns (THIS WEEK:, What You Can Do NOW:, etc.)
+      if (!driverSectionFound) {
+        const driverSectionPatterns = [
+          /THIS WEEK.*?:/i,
+          /What You Can Do NOW.*?:/i,
+          /What Drivers Should Do.*?:/i,
+          /Before Your Service Visit.*?:/i,
+          /Driver Actions.*?:/i
+        ];
+        
+        for (const pattern of driverSectionPatterns) {
+          const match = response.match(pattern);
+          if (match) {
+            driverSectionFound = true;
+            const startIdx = response.indexOf(match[0]) + match[0].length;
+            let endIdx = response.length;
+            
+            const nextSectionMatch = response.substring(startIdx).match(/\n###|What You Should Know|Why This Matters/);
+            if (nextSectionMatch) {
+              endIdx = startIdx + nextSectionMatch.index;
+            }
+            
+            const driverSection = response.substring(startIdx, endIdx);
+            
+            const numberedItems = driverSection.match(/\d+\.\s+\*\*([^*]+)\*\*/g);
+            if (numberedItems) {
+              numberedItems.forEach(item => {
+                const title = item.replace(/\d+\.\s+\*\*/, '').replace(/\*\*/, '').trim();
+                
+                const itemStart = driverSection.indexOf(item);
+                const nextItemMatch = driverSection.substring(itemStart + item.length).match(/\d+\.\s+\*\*/);
+                const itemEnd = nextItemMatch ? itemStart + item.length + nextItemMatch.index : driverSection.length;
+                const itemContent = driverSection.substring(itemStart, itemEnd);
+                
+                const bullets = [];
+                const bulletLines = itemContent.split('\n').filter(line => line.trim().startsWith('-') || line.trim().startsWith('•'));
+                bulletLines.forEach(line => {
+                  let bullet = line.replace(/^[-•]\s*/, '').trim();
+                  bullet = bullet.replace(/\*\*/g, '').replace(/\(Confidence:.*?\)/gi, '').replace(/\[Source:.*?\]/gi, '').trim();
+                  if (bullet.length > 10) bullets.push(bullet);
+                });
+                
+                recommendations.push({
+                  action: title,
+                  priority: 'HIGH',
+                  reason: "",
+                  urgency: 'This Week',
+                  bullets: bullets.slice(0, 2),
+                  category: 'driver' // Mark as driver action
+                });
+              });
+            }
+            break;
           }
-          break;
+        }
+      }
+      
+      // Fallback: If flexible parsing didn't find service items, try old pattern
+      const serviceRecsMatch = response.match(/##\s*🔧\s*\*\*.*?Key Recommendations.*?\*\*([\s\S]*?)(?=\n##|\n\n---|\nWould you like|$)/i);
+      if (serviceRecsMatch && recommendations.filter(r => r.category === 'service').length === 0) {
+        const serviceSection = serviceRecsMatch[1];
+        console.log('Found service section, length:', serviceSection.length);
+        // Extract **1. IMMEDIATE (THIS WEEK)**: Replace front-left tire...
+        const serviceItems = serviceSection.match(/\*\*\d+\.\s+([^*]+)\*\*:?\s*([^\n]+)/g);
+        console.log('Service items found:', serviceItems ? serviceItems.length : 0);
+        if (serviceItems) {
+          serviceItems.forEach(item => {
+            // Extract: "1. IMMEDIATE (THIS WEEK)" and "Replace front-left tire..."
+            const match = item.match(/\*\*\d+\.\s+([^*]+)\*\*:?\s*([^\n]+)/);
+            if (match) {
+              const urgencyPart = match[1].trim().replace(/:\s*$/, ''); // "IMMEDIATE (THIS WEEK)"
+              const actionPart = match[2].trim();  // "Replace front-left tire..."
+              const title = `${urgencyPart}: ${actionPart}`;
+              
+              // Extract bullets/content for this item
+              const itemStart = serviceSection.indexOf(item);
+              const nextItemMatch = serviceSection.substring(itemStart + item.length).match(/\*\*\d+\.\s+/);
+              const itemEnd = nextItemMatch ? itemStart + item.length + nextItemMatch.index : serviceSection.length;
+              const itemContent = serviceSection.substring(itemStart, itemEnd);
+              
+              const bullets = [];
+              const bulletLines = itemContent.split('\n').filter(line => line.trim().startsWith('-') || line.trim().startsWith('•'));
+              bulletLines.forEach(line => {
+                let bullet = line.replace(/^[-•]\s*/, '').trim();
+                bullet = bullet.replace(/\*\*/g, '').replace(/\(Confidence:.*?\)/gi, '').replace(/\[Source:.*?\]/gi, '').trim();
+                if (bullet.length > 10) bullets.push(bullet);
+              });
+              
+              // If no bullets, extract first sentence from content
+              if (bullets.length === 0) {
+                const sentences = itemContent.split(/[.!?]\s+/).filter(s => s.trim().length > 15);
+                if (sentences.length > 0) {
+                  bullets.push(sentences[0].trim());
+                }
+              }
+              
+              const priority = urgencyPart.toLowerCase().includes('immediate') || urgencyPart.toLowerCase().includes('urgent') ? 'CRITICAL' : 'HIGH';
+              recommendations.push({
+                action: title,
+                priority: priority,
+                reason: "",
+                urgency: priority === 'CRITICAL' ? 'Immediately' : 'This Week',
+                bullets: bullets.slice(0, 3),
+                category: 'service' // Mark as service recommendation
+              });
+            }
+          });
+        }
+      }
+      
+      // Pattern 2: Fallback to old format - ### 3 Key Recommendations with **1. REPLACE** items
+      // Only run if no service recommendations were found yet
+      if (recommendations.filter(r => r.category === 'service').length === 0) {
+        const keyRecsMatch = response.match(/###\s*\d+\s*Key Recommendations:?([\s\S]*?)(?=\n###|\n\n---|\nWould you like|$)/i);
+        if (keyRecsMatch) {
+          const keyRecsSection = keyRecsMatch[1];
+          const numberedRecs = keyRecsSection.split(/\*\*\d+\.\s+/).filter(s => s.trim());
+          
+          numberedRecs.forEach(recText => {
+            const lines = recText.split('\n');
+            const title = lines[0].replace(/\*\*/g, '').trim();
+            
+            if (title.length > 10) {
+              const bullets = [];
+              lines.slice(1).forEach(line => {
+                const trimmed = line.trim();
+                if ((trimmed.startsWith('-') || trimmed.startsWith('•')) && trimmed.length > 15) {
+                  let bullet = trimmed.replace(/^[-•]\s*/, '').replace(/\*\*/g, '').trim();
+                  if (bullet.length > 10 && !bullet.toLowerCase().includes('confidence:')) {
+                    bullets.push(bullet);
+                  }
+                }
+              });
+              
+              const priority = title.toLowerCase().includes('immediate') || title.toLowerCase().includes('this week') ? 'CRITICAL' : 'HIGH';
+              recommendations.push({
+                action: title,
+                priority: priority,
+                reason: "",
+                urgency: priority === 'CRITICAL' ? 'Immediately' : 'This Week',
+                bullets: bullets.slice(0, 3),
+                category: 'service' // Mark as service recommendation
+              });
+            }
+          });
         }
       }
       
       // If no driver section found, fall back to ### header parsing
-      if (!driverSectionFound) {
+      if (!driverSectionFound && recommendations.length === 0) {
         // Split response into sections by ### headers
         const sections = response.split(/(?=###\s+)/);
         
@@ -510,9 +800,15 @@ const Vehicle1Tires = () => {
         sourceInfo += " (Service Issues)";
       }
 
+      // Debug: Log what was parsed
+      console.log('Parsed recommendations:', recommendations.length, 'total');
+      console.log('Driver actions:', recommendations.filter(r => r.category === 'driver').length);
+      console.log('Service required:', recommendations.filter(r => r.category === 'service').length);
+      
       // GUARANTEE: Always return at least one recommendation
       if (recommendations.length === 0) {
         console.warn('No recommendations parsed, adding critical fallback');
+        console.warn('Response preview:', response.substring(0, 500));
         recommendations.push({
           action: 'URGENT: Replace front-left tire immediately - Critical wear detected',
           priority: 'CRITICAL',
@@ -1895,17 +2191,25 @@ const Vehicle1Tires = () => {
                       const serviceRequired = [];
                       
                       aiRecommendations.forEach(rec => {
-                        const actionLower = rec.action.toLowerCase();
-                        const isDriverAction = driverActionKeywords.some(keyword => actionLower.includes(keyword));
-                        const isService = serviceKeywords.some(keyword => actionLower.includes(keyword));
-                        
-                        // Prioritize driver action keywords over service keywords
-                        if (isDriverAction && !actionLower.includes('schedule') && !actionLower.includes('appointment')) {
+                        // First check if recommendation has explicit category from parsing
+                        if (rec.category === 'driver') {
                           driverActions.push(rec);
-                        } else if (isService) {
+                        } else if (rec.category === 'service') {
                           serviceRequired.push(rec);
                         } else {
-                          driverActions.push(rec);
+                          // Fallback to keyword-based categorization
+                          const actionLower = rec.action.toLowerCase();
+                          const isDriverAction = driverActionKeywords.some(keyword => actionLower.includes(keyword));
+                          const isService = serviceKeywords.some(keyword => actionLower.includes(keyword));
+                          
+                          // Prioritize driver action keywords over service keywords
+                          if (isDriverAction && !actionLower.includes('schedule') && !actionLower.includes('appointment')) {
+                            driverActions.push(rec);
+                          } else if (isService) {
+                            serviceRequired.push(rec);
+                          } else {
+                            driverActions.push(rec);
+                          }
                         }
                       });
                       

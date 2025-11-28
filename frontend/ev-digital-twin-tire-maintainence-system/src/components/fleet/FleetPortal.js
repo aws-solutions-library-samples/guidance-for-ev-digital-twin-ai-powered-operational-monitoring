@@ -116,11 +116,6 @@ const FleetPortal = () => {
             const vin = VIN_MAP[vehicleId];
             console.log(`Fetching recommendations for vehicle ${vehicleId} (VIN: ${vin})...`);
             
-            // Add 15-second delay between vehicles (except first one)
-            if (vehicleId !== vehicleIds[0]) {
-              await new Promise(resolve => setTimeout(resolve, 15000));
-            }
-            
             const startTime = Date.now();
 
             // Check DynamoDB cache first, then call Claude if not cached
@@ -163,6 +158,9 @@ const FleetPortal = () => {
         }
 
         console.log('Finished fetching all recommendations:', recommendations);
+        
+        // Add a 3-second delay before showing results (for better UX)
+        await new Promise(resolve => setTimeout(resolve, 3000));
         
         // Save to localStorage for persistence across navigation
         localStorage.setItem('fleetRecommendations', JSON.stringify(recommendations));
