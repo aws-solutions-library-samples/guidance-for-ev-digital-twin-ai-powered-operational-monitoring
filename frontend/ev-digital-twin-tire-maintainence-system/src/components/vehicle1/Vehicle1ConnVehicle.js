@@ -135,27 +135,11 @@ const Vehicle1ConnVehicle = () => {
   };
 
   const getSafetyStatuses = () => {
-    // Traction Control - affected by tire pressure and tread
-    let tractionStatus = 'Good';
-    if (anomaly === 'puncture' || pressure < 26 || tread < 3) {
-      tractionStatus = 'Error';
-    } else if (pressure < 28 || tread < 4 || anomaly === 'uneven_wear') {
-      tractionStatus = 'Warning';
-    }
-
-    // DAS (Driver Assistance Systems) - affected by severe tire issues
-    let dasStatus = 'Good';
-    if (anomaly === 'puncture' || tread < 3) {
-      dasStatus = 'Warning';
-    } else if (pressure < 26) {
-      dasStatus = 'Warning';
-    }
-
     return {
-      electrical: 'Good', // Always good for this demo
-      canBus: 'Good', // Always good for this demo
-      traction: tractionStatus,
-      das: dasStatus
+      electrical: 'Good',
+      canBus: 'Good',
+      traction: 'Good',
+      das: 'Good'
     };
   };
 

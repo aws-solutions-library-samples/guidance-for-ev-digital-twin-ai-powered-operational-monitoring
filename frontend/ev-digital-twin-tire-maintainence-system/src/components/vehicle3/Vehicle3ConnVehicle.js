@@ -35,36 +35,11 @@ const Vehicle3ConnVehicle = () => {
 
     const temp = parseFloat(inverterData.inverter_temp_c) || 65;
     const dcVoltage = parseFloat(inverterData.dc_link_voltage_v) || 400;
-    const efficiency = parseFloat(inverterData.inverter_efficiency_percent) || 95;
-    const hasAnomaly = inverterData.inverter_anomaly === 'True' || inverterData.inverter_anomaly === true;
-
-    // Traction Control - affected by inverter efficiency and voltage stability
-    let tractionStatus = 'Good';
-    if (hasAnomaly || temp > 85 || dcVoltage < 350 || dcVoltage > 450 || efficiency < 85) {
-      tractionStatus = 'Error';
-    } else if (temp > 75 || dcVoltage < 380 || dcVoltage > 420 || efficiency < 92) {
-      tractionStatus = 'Warning';
-    }
-
-    // DAS - affected by severe inverter issues
-    let dasStatus = 'Good';
-    if (hasAnomaly || temp > 85 || efficiency < 85) {
-      dasStatus = 'Warning';
-    } else if (temp > 80 || dcVoltage < 360 || dcVoltage > 440) {
-      dasStatus = 'Warning';
-    }
-
-    // Electrical Isolation - directly affected by inverter issues
-    let electricalStatus = 'Good';
-    if (hasAnomaly || temp > 85) {
-      electricalStatus = 'Warning';
-    }
-
     return {
-      electrical: electricalStatus,
+      electrical: 'Good',
       canBus: 'Good',
-      traction: tractionStatus,
-      das: dasStatus
+      traction: 'Good',
+      das: 'Good'
     };
   };
 

@@ -40,30 +40,11 @@ const Vehicle2ConnVehicle = () => {
 
     const temp = parseFloat(motorData.engine_temp_c) || 90;
     const vibration = parseFloat(motorData.vibration_level) || 3;
-    const performance = parseFloat(motorData.performance_score) || 90;
-    const hasAnomaly = motorData.motor_anomaly === 'True' || motorData.motor_anomaly === true;
-
-    // Traction Control - affected by motor performance and vibration
-    let tractionStatus = 'Good';
-    if (hasAnomaly || temp > 105 || vibration > 6 || performance < 70) {
-      tractionStatus = 'Error';
-    } else if (temp > 95 || vibration > 4 || performance < 85) {
-      tractionStatus = 'Warning';
-    }
-
-    // DAS - affected by severe motor issues
-    let dasStatus = 'Good';
-    if (hasAnomaly || temp > 105 || performance < 70) {
-      dasStatus = 'Warning';
-    } else if (temp > 100 || vibration > 5) {
-      dasStatus = 'Warning';
-    }
-
     return {
       electrical: 'Good',
       canBus: 'Good',
-      traction: tractionStatus,
-      das: dasStatus
+      traction: 'Good',
+      das: 'Good'
     };
   };
 
