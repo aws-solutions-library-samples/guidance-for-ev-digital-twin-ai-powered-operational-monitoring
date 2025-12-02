@@ -1432,9 +1432,9 @@ const Invertor = () => {
                 transformOrigin: 'top'
               }}>
                 <div className="data-container" style={{ 
-                  height: windowWidth <= 1700 ? spacing.bottomContainerHeight : windowWidth <= 1860 ? '480px' : '450px', 
-                  minHeight: windowWidth <= 1700 ? 'auto' : windowWidth <= 1860 ? '480px' : 'auto', 
-                  maxHeight: windowWidth <= 1700 ? 'auto' : windowWidth <= 1860 ? '480px' : 'auto', 
+                  height: windowWidth <= 1700 ? spacing.bottomContainerHeight : windowWidth <= 1860 ? '480px' : windowWidth === 1920 ? '550px' : '450px', 
+                  minHeight: windowWidth <= 1700 ? 'auto' : windowWidth <= 1860 ? '480px' : windowWidth === 1920 ? '550px' : 'auto', 
+                  maxHeight: windowWidth <= 1700 ? 'auto' : windowWidth <= 1860 ? '480px' : windowWidth === 1920 ? '550px' : 'auto', 
                   display: 'flex', 
                   flexDirection: 'column', 
                   justifyContent: windowWidth >= 1600 ? 'flex-start' : 'normal',
@@ -1451,18 +1451,18 @@ const Invertor = () => {
                     border: '1px solid rgba(255,255,255,0.1)'
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <span style={{ fontSize: spacing.smallFontSize, color: 'rgba(255,255,255,0.7)' }}>THD:</span>
-                      <span style={{ fontSize: spacing.smallFontSize, color: modulationData.harmonicStatus === 'HIGH' ? '#ff4444' : modulationData.harmonicStatus === 'MEDIUM' ? '#ff9900' : '#00ff88', fontWeight: 'bold' }}>
+                      <span style={{ fontSize: windowWidth >= 1860 ? '14px' : spacing.smallFontSize, color: 'rgba(255,255,255,0.7)' }}>THD:</span>
+                      <span style={{ fontSize: windowWidth >= 1860 ? '14px' : spacing.smallFontSize, color: modulationData.harmonicStatus === 'HIGH' ? '#ff4444' : modulationData.harmonicStatus === 'MEDIUM' ? '#ff9900' : '#00ff88', fontWeight: 'bold' }}>
                         {modulationData.thd}%
                       </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <span style={{ fontSize: spacing.smallFontSize, color: 'rgba(255,255,255,0.7)' }}>Modulation:</span>
-                      <span style={{ fontSize: spacing.smallFontSize, color: 'white', fontWeight: 'bold' }}>{modulationData.modulationIndex}%</span>
+                      <span style={{ fontSize: windowWidth >= 1860 ? '14px' : spacing.smallFontSize, color: 'rgba(255,255,255,0.7)' }}>Modulation:</span>
+                      <span style={{ fontSize: windowWidth >= 1860 ? '14px' : spacing.smallFontSize, color: 'white', fontWeight: 'bold' }}>{modulationData.modulationIndex}%</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <span style={{ fontSize: spacing.smallFontSize, color: 'rgba(255,255,255,0.7)' }}>Switching:</span>
-                      <span style={{ fontSize: spacing.smallFontSize, color: 'white', fontWeight: 'bold' }}>{modulationData.switchingFrequency} kHz</span>
+                      <span style={{ fontSize: windowWidth >= 1860 ? '14px' : spacing.smallFontSize, color: 'rgba(255,255,255,0.7)' }}>Switching:</span>
+                      <span style={{ fontSize: windowWidth >= 1860 ? '14px' : spacing.smallFontSize, color: 'white', fontWeight: 'bold' }}>{modulationData.switchingFrequency} kHz</span>
                     </div>
                     <div style={{ 
                       borderTop: '1px solid rgba(255,255,255,0.2)', 
@@ -1471,7 +1471,7 @@ const Invertor = () => {
                       textAlign: 'center'
                     }}>
                       <div style={{ 
-                        fontSize: spacing.smallFontSize, 
+                        fontSize: windowWidth >= 1860 ? '14px' : spacing.smallFontSize, 
                         color: modulationData.harmonicStatus === 'HIGH' ? '#ff4444' : modulationData.harmonicStatus === 'MEDIUM' ? '#ff9900' : '#00ff88',
                         fontWeight: 'bold'
                       }}>
@@ -1482,9 +1482,9 @@ const Invertor = () => {
                 </div>
 
                 <div className="data-container" style={{ 
-                  height: windowWidth <= 1700 ? spacing.bottomContainerHeight : windowWidth <= 1860 ? '480px' : '450px', 
-                  minHeight: windowWidth <= 1700 ? 'auto' : windowWidth <= 1860 ? '480px' : 'auto', 
-                  maxHeight: windowWidth <= 1700 ? 'auto' : windowWidth <= 1860 ? '480px' : 'auto', 
+                  height: windowWidth <= 1700 ? spacing.bottomContainerHeight : windowWidth <= 1860 ? '480px' : windowWidth === 1920 ? '550px' : '450px', 
+                  minHeight: windowWidth <= 1700 ? 'auto' : windowWidth <= 1860 ? '480px' : windowWidth === 1920 ? '550px' : 'auto', 
+                  maxHeight: windowWidth <= 1700 ? 'auto' : windowWidth <= 1860 ? '480px' : windowWidth === 1920 ? '550px' : 'auto', 
                   position: 'relative', 
                   display: 'flex', 
                   flexDirection: 'column', 
@@ -1505,16 +1505,16 @@ const Invertor = () => {
                     backgroundColor: faultData.hasFault ? (faultData.severity === 'HIGH' ? 'rgba(255,68,68,0.1)' : 'rgba(255,153,0,0.1)') : 'rgba(0,0,0,0.3)',
                     boxSizing: 'border-box'
                   }}>
-                    <div style={{ fontSize: spacing.smallFontSize, color: faultData.hasFault ? (faultData.severity === 'HIGH' ? '#ff4444' : '#ff9900') : '#00ff88', fontWeight: 'bold' }}>
+                    <div style={{ fontSize: windowWidth >= 1860 ? '14px' : spacing.smallFontSize, color: faultData.hasFault ? (faultData.severity === 'HIGH' ? '#ff4444' : '#ff9900') : '#00ff88', fontWeight: 'bold' }}>
                       {faultData.faultCode || 'CLEAR'}
                     </div>
-                    <div style={{ fontSize: spacing.smallFontSize, color: 'white', marginTop: '2px' }}>
+                    <div style={{ fontSize: windowWidth >= 1860 ? '14px' : spacing.smallFontSize, color: 'white', marginTop: '2px' }}>
                       {faultData.faultName}
                     </div>
                   </div>
                   <div style={{ marginTop: '20px', borderTop: '1px solid rgba(255,255,255,0.3)' }}></div>
                   <div className="invertor-fault-desc" style={{ 
-                    fontSize: spacing.smallFontSize, 
+                    fontSize: windowWidth >= 1860 ? '14px' : spacing.smallFontSize, 
                     color: 'rgba(255,255,255,0.6)', 
                     marginTop: '15px', 
                     textAlign: 'center', 
@@ -1536,7 +1536,7 @@ const Invertor = () => {
                       maxWidth: '150px',
                       margin: '10px auto 0 auto'
                     }}>
-                      <span style={{ fontSize: spacing.smallFontSize, color: faultData.severity === 'HIGH' ? '#ff4444' : '#ff9900', fontWeight: 'bold' }}>
+                      <span style={{ fontSize: windowWidth >= 1860 ? '14px' : spacing.smallFontSize, color: faultData.severity === 'HIGH' ? '#ff4444' : '#ff9900', fontWeight: 'bold' }}>
                         {faultData.severity} PRIORITY
                       </span>
                     </div>
@@ -1812,7 +1812,7 @@ const Invertor = () => {
                         background: genAiLoading ? '#666' : '#00ff88',
                         color: genAiLoading ? '#ccc' : '#000',
                         border: 'none',
-                        padding: '6px 12px',
+                        padding: windowWidth >= 1860 ? '8px 20px' : '6px 12px',
                         borderRadius: '4px',
                         fontSize: '11px',
                         cursor: genAiLoading ? 'not-allowed' : 'pointer',

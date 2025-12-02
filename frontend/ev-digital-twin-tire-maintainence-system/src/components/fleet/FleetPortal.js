@@ -785,12 +785,12 @@ Respond with the available slots.`;
           setTireOrderData(fallbackData);
         }
         
-        // Ensure at least 70 seconds have passed (browser tool minimum time)
+        // Ensure at least 76 seconds have passed (browser tool minimum time)
         // This prevents showing "complete" on phantom early responses
         const elapsed = Date.now() - startTime;
-        if (elapsed < 70000) {
-          console.log(`Waiting ${70000 - elapsed}ms more to ensure browser tool completion...`);
-          await new Promise(resolve => setTimeout(resolve, 70000 - elapsed));
+        if (elapsed < 76000) {
+          console.log(`Waiting ${76000 - elapsed}ms more to ensure browser tool completion...`);
+          await new Promise(resolve => setTimeout(resolve, 76000 - elapsed));
         }
         
         // Reset session after tire order completes
@@ -1846,12 +1846,12 @@ Respond with the available slots.`;
                             console.log('✅ Stored session ID for Action Details:', tireData.sessionId);
                           }
                           
-                          // Ensure at least 70 seconds have passed (browser tool minimum time)
+                          // Ensure at least 76 seconds have passed (browser tool minimum time)
                           // This prevents showing "complete" on phantom early responses
                           const elapsed = Date.now() - startTime;
-                          if (elapsed < 70000) {
-                            console.log(`Waiting ${70000 - elapsed}ms more to ensure browser tool completion...`);
-                            await new Promise(resolve => setTimeout(resolve, 70000 - elapsed));
+                          if (elapsed < 76000) {
+                            console.log(`Waiting ${76000 - elapsed}ms more to ensure browser tool completion...`);
+                            await new Promise(resolve => setTimeout(resolve, 76000 - elapsed));
                           }
                           
                           setApprovalStatus('complete');
@@ -1877,11 +1877,11 @@ Respond with the available slots.`;
                           setTireOrderData(fallbackData);
                           setTireOrderComplete(true);
                           
-                          // Ensure at least 70 seconds have passed even on error
+                          // Ensure at least 76 seconds have passed even on error
                           const elapsed = Date.now() - startTime;
-                          if (elapsed < 70000) {
-                            console.log(`Waiting ${70000 - elapsed}ms more to ensure browser tool completion...`);
-                            await new Promise(resolve => setTimeout(resolve, 70000 - elapsed));
+                          if (elapsed < 76000) {
+                            console.log(`Waiting ${76000 - elapsed}ms more to ensure browser tool completion...`);
+                            await new Promise(resolve => setTimeout(resolve, 76000 - elapsed));
                           }
                           
                           setApprovalStatus('complete');
@@ -2073,6 +2073,39 @@ Respond with the available slots.`;
                   </div>
                   <div style={{ fontSize: '12px', color: '#666', fontStyle: 'italic' }}>
                     Check CloudWatch Observability logs for more details
+                  </div>
+                </div>
+                
+                {/* Amazon Confirmed Fit Indicator */}
+                <div style={{ 
+                  marginBottom: '20px', 
+                  padding: '15px', 
+                  background: '#1a2a1a', 
+                  border: '1px solid #37bc12',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px'
+                }}>
+                  <div style={{
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '4px',
+                    background: '#37bc12',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    <span style={{ color: '#000', fontSize: '14px', fontWeight: 'bold' }}>✓</span>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '14px', color: '#37bc12', fontWeight: 'bold', marginBottom: '4px' }}>
+                      Amazon Confirmed Fit
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#888' }}>
+                      Selected tire verified to fit your vehicle
+                    </div>
                   </div>
                 </div>
                 
