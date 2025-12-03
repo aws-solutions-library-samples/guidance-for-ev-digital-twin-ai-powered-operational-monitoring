@@ -17,8 +17,8 @@ const MOTOR_DATA_POINTS = [
 const TIRE_DATA_POINTS = [
   { label: "Tire Pressure", freq: "5-min" },
   { label: "Tire Temperature", freq: "5-min" },
-  { label: "Tread Depth", freq: "Daily" },
-  { label: "Wear Patterns", freq: "Daily" },
+  { label: "Tread Depth", freq: "AI Derived Value" },
+  { label: "Wear Patterns", freq: "AI Derived Value" },
   { label: "Load Distribution", freq: "5-min" },
   { label: "Road Surface Conditions", freq: "event based" },
   { label: "Vibration/Frequency Signatures", freq: "event based" },
