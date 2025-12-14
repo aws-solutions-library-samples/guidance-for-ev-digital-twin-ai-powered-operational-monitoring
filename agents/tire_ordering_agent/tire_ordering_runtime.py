@@ -26,7 +26,7 @@ except Exception as e:
 MODEL_ID = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
 
 # Browser Tool configuration
-NOVA_ACT_API_KEY = "645eef64-f306-4f7b-b930-4dff30d63e25"
+NOVA_ACT_API_KEY = "e7bb6472-19ed-4728-b8c1-bea5f1c52a58"
 
 # System prompt for tire ordering agent
 SYSTEM_PROMPT = """You are a tire ordering assistant that helps customers order replacement tires online.

@@ -49,7 +49,7 @@ except Exception as e:
 MODEL_ID = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
 
 # Browser Tool configuration
-NOVA_ACT_API_KEY = "645eef64-f306-4f7b-b930-4dff30d63e25"
+NOVA_ACT_API_KEY = "e7bb6472-19ed-4728-b8c1-bea5f1c52a58"
 
 # DynamoDB configuration for ML predictions
 DYNAMODB_REGION = "us-east-1"
@@ -226,12 +226,14 @@ class MaintenanceMemoryHooks(HookProvider):
             
             try:
                 # Retrieve past issues for this vehicle from LTM
+                print(f"🔍 MEMORY RETRIEVAL: Searching for vehicle {vehicle_id} history...")
                 memories = self.client.retrieve_memories(
                     memory_id=self.memory_id,
-                    namespace="default",
+                    namespace="/strategies/semantic_builtin_j1hpp-7SvGWG8R9T/actors/fleet_manager",
                     query=f"vehicle {vehicle_id} issues problems",
                     top_k=10
                 )
+                print(f"   Found {len(memories) if memories else 0} relevant memories")
                 
                 if not memories:
                     return

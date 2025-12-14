@@ -85,7 +85,6 @@ const FleetPortal = () => {
     if (savedRecs) {
       try {
         const parsed = JSON.parse(savedRecs);
-        console.log('Restored recommendations from localStorage:', parsed);
         setAiRecommendations(parsed);
       } catch (error) {
         console.error('Error parsing saved recommendations:', error);
@@ -108,7 +107,6 @@ const FleetPortal = () => {
         localStorage.removeItem('fleetRecommendations');
         
         setLoadingRecommendations(true);
-        console.log('Starting to fetch AI recommendations...');
 
         // Get recommendations for vehicles 1, 3, and 5
         const vehicleIds = [1, 3, 5];
@@ -117,20 +115,15 @@ const FleetPortal = () => {
         for (const vehicleId of vehicleIds) {
           try {
             const vin = VIN_MAP[vehicleId];
-            console.log(`Fetching recommendations for vehicle ${vehicleId} (VIN: ${vin})...`);
-            
+            console.log(`🔍 Fetching recommendations for vehicle ${vehicleId} (VIN: ${vin})...`);
             const startTime = Date.now();
 
             // Check DynamoDB cache first, then call Claude if not cached
             const response = await agentCoreService.getMaintenanceRecommendations(vehicleId, vin);
 
-            const elapsed = Date.now() - startTime;
-            console.log(`Received response for vehicle ${vehicleId} in ${elapsed}ms:`, response);
-
             // Parse the response to extract key recommendations
             const rec = parseRecommendation(response, vehicleId);
             if (rec) {
-              console.log(`Parsed recommendation for vehicle ${vehicleId}:`, rec);
               recommendations.push(rec);
               // Update state incrementally so user sees results as they come in
               setAiRecommendations([...recommendations]);
@@ -138,14 +131,12 @@ const FleetPortal = () => {
             
             // Reset session after each vehicle to prevent conversation state corruption
             agentCoreService.resetSession();
-            console.log(`Session reset after vehicle ${vehicleId}`);
             
           } catch (error) {
             console.error(`Error fetching recommendations for vehicle ${vehicleId}:`, error);
             
             // Reset session on error to prevent state corruption
             agentCoreService.resetSession();
-            console.log(`Session reset after error for vehicle ${vehicleId}`);
             
             // Add error as a recommendation so user knows something went wrong
             recommendations.push({
@@ -159,15 +150,12 @@ const FleetPortal = () => {
             setAiRecommendations([...recommendations]);
           }
         }
-
-        console.log('Finished fetching all recommendations:', recommendations);
         
         // Add a 3-second delay before showing results (for better UX)
         await new Promise(resolve => setTimeout(resolve, 3000));
         
         // Save to localStorage for persistence across navigation
         localStorage.setItem('fleetRecommendations', JSON.stringify(recommendations));
-        console.log('Saved recommendations to localStorage');
       } catch (error) {
         console.error('Error fetching AI recommendations:', error);
       } finally {
@@ -281,8 +269,6 @@ const FleetPortal = () => {
     // DEMO: Try different session ID
     const sessionId = 'b8911c0c-2e6a-4185-8667-f8c08719a9db';
     
-    console.log('🔍 Using hardcoded session ID for demo:', sessionId);
-    
     setLoadingActionDetails(true);
     setShowActionDetailsModal(true);
     
@@ -291,13 +277,6 @@ const FleetPortal = () => {
         `https://b4blc4xmh4.execute-api.us-east-1.amazonaws.com/action-logs/${sessionId}`
       );
       const data = await response.json();
-      console.log('📊 Action details response:', data);
-      console.log('📊 Response structure:', {
-        hasActions: !!data.actions,
-        actionsLength: data.actions?.length,
-        hasError: !!data.error,
-        keys: Object.keys(data)
-      });
       setActionDetails(data);
     } catch (error) {
       console.error('Error fetching action details:', error);
@@ -396,8 +375,6 @@ const FleetPortal = () => {
 
   const parseAgentResponse = (response) => {
     try {
-      console.log('Parsing agent response:', response);
-      
       // Multiple patterns to try for date
       const datePatterns = [
         /-\s*\*\*Date:\*\*\s*([^\n]+)/,  // - **Date:** Monday, November 20, 2023
@@ -455,10 +432,6 @@ const FleetPortal = () => {
       }
       
       const descriptionStr = descriptionMatch ? descriptionMatch[0].trim() : '';
-      
-      console.log('Extracted date:', dateStr);
-      console.log('Extracted service:', serviceStr);
-      console.log('Extracted description:', descriptionStr);
       
       // Extract tire order details if present
       const tireOrderMatch = response.includes('order_tire_online') || response.includes('tire_size');
@@ -557,7 +530,6 @@ IMPORTANT INSTRUCTIONS:
 Respond with the available slots.`;
       
       const response = await agentCoreService.chat(prompt);
-      console.log('Agent slots response:', response);
       
       // Parse available slots from response
       const slots = parseAvailableSlots(response);
@@ -600,7 +572,6 @@ Respond with the available slots.`;
         
         try {
           const tireResponse = await agentCoreService.chat(tirePrompt);
-          console.log('Tire order response:', tireResponse);
           
           setApprovalStatus('complete');
           
@@ -692,14 +663,11 @@ Respond with the available slots.`;
   
   const parseTireOrderResponse = (response) => {
     try {
-      console.log('Raw tire order response:', response);
-      
       // Try to parse JSON response first
       const jsonMatch = response.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         try {
           const data = JSON.parse(jsonMatch[0]);
-          console.log('Parsed JSON data:', data);
           
           // Extract from nested response field
           const responseText = data.response || '';
@@ -753,7 +721,6 @@ Respond with the available slots.`;
       if (orderTiresOnline) {
         // CRITICAL: Reset session BEFORE tire ordering to clear corrupted conversation history
         agentCoreService.resetSession();
-        console.log('Session reset before tire ordering');
         
         // Order tires and show confirmation modal
         setApprovalStatus('browser-tool');
@@ -763,7 +730,6 @@ Respond with the available slots.`;
         
         try {
           const tireResponse = await agentCoreService.chat(tirePrompt);
-          console.log('Tire order response:', tireResponse);
           
           const tireData = parseTireOrderResponse(tireResponse);
           setTireOrderData(tireData);
@@ -789,13 +755,11 @@ Respond with the available slots.`;
         // This prevents showing "complete" on phantom early responses
         const elapsed = Date.now() - startTime;
         if (elapsed < 76000) {
-          console.log(`Waiting ${76000 - elapsed}ms more to ensure browser tool completion...`);
           await new Promise(resolve => setTimeout(resolve, 76000 - elapsed));
         }
         
         // Reset session after tire order completes
         agentCoreService.resetSession();
-        console.log('Session reset after tire order completion');
         
         setApprovalStatus('complete');
         
@@ -846,7 +810,6 @@ Respond with the available slots.`;
     try {
       // CRITICAL: Reset session to clear tire ordering conversation history
       agentCoreService.resetSession();
-      console.log('Session reset before scheduling appointment');
       
       const appointmentPrompt = `Schedule maintenance appointment for vehicle ${selectedRecommendation.vehicleId}. Service: ${editableAppointment.service}. Date: ${editableAppointment.date}. Time: ${editableAppointment.time}. Use the schedule_appointment tool.`;
       const response = await agentCoreService.chat(appointmentPrompt);
@@ -877,7 +840,6 @@ Respond with the available slots.`;
   };
 
   const handleReject = (recommendation) => {
-    console.log('Rejected:', recommendation);
     alert(`Maintenance rejected for ${recommendation.vehicleName}`);
   };
 
@@ -1834,7 +1796,6 @@ Respond with the available slots.`;
                         try {
                           const tirePrompt = `order_tire_online(${selectedRecommendation.vehicleName})`;
                           const tireResponse = await agentCoreService.chat(tirePrompt);
-                          console.log('Tire order response:', tireResponse);
                           
                           const tireData = parseTireOrderResponse(tireResponse);
                           setTireOrderData(tireData);
@@ -1843,7 +1804,6 @@ Respond with the available slots.`;
                           // Store session ID immediately for Action Details
                           if (tireData?.sessionId) {
                             handleMarkAsScheduled(selectedRecommendation.vehicleId, tireData.sessionId);
-                            console.log('✅ Stored session ID for Action Details:', tireData.sessionId);
                           }
                           
                           // Ensure at least 76 seconds have passed (browser tool minimum time)

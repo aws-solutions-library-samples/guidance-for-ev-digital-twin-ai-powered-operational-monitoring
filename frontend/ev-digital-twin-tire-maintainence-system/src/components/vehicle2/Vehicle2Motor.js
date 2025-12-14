@@ -84,9 +84,8 @@ const Motor = () => {
       .then(res => res.json())
       .then(data => {
         setMlResults(data);
-        console.log('Motor ML results loaded:', data);
       })
-      .catch(err => console.log('Motor ML results not available:', err));
+      .catch(err => console.error('Motor ML results not available:', err));
     
     // Load Motor ML prediction data for Vehicle 2 (EV-1005) - for future use
     fetch('/data/motor_ml_output.json')
@@ -94,10 +93,9 @@ const Motor = () => {
       .then(data => {
         if (data && data.length > 0) {
           setMotorMlData(data[0]);
-          console.log('✅ Motor ML prediction loaded for Vehicle 2:', data[0]);
         }
       })
-      .catch(err => console.log('Motor ML prediction not available:', err));
+      .catch(err => console.error('Motor ML prediction not available:', err));
   }, []);
 
   useEffect(() => {
@@ -105,7 +103,6 @@ const Motor = () => {
       const interval = setInterval(() => {
         setDataIndex(prev => {
           const newIndex = (prev + 1) % csvData.length;
-          console.log(`Motor data updated to index ${newIndex} (Vehicle ${csvData[newIndex]?.vehicle_id || 'N/A'})`);
           return newIndex;
         });
         
@@ -138,11 +135,9 @@ const Motor = () => {
     const currentData = csvData[dataIndex] || {};
     
     if (!csvData.length || !currentData.vehicle_id) {
-      console.log('Motor GenAI Analysis skipped - missing data:', { csvDataLength: csvData.length, vehicleId: currentData.vehicle_id });
       return;
     }
     
-    console.log('Starting enhanced Motor GenAI analysis...');
     setGenAiLoading(true);
     
     const motorDataForAnalysis = {
@@ -165,14 +160,9 @@ const Motor = () => {
     };
     
     try {
-      console.log('Calling enhanced AgentCore service for motor analysis...');
-      
       const analysisResult = await agentCoreService.getMotorAnalysis(currentData.vehicle_id, motorDataForAnalysis, '5YJSA1E26HF123456');
       
-      console.log('Received enhanced Motor GenAI analysis:', analysisResult);
-      
       if (analysisResult.throttled) {
-        console.log('Motor service throttled - using enhanced fallback');
         const enhancedFallback = createEnhancedMotorFallback(motorDataForAnalysis, new Error('Service throttled'));
         setGenAiAnalysis(enhancedFallback);
         return;
@@ -180,7 +170,6 @@ const Motor = () => {
       
       const analysis = parseMotorAgentCoreResponse(analysisResult.response, motorDataForAnalysis, analysisResult);
       
-      console.log('Parsed Motor GenAI analysis:', analysis);
       setGenAiAnalysis(analysis);
       
     } catch (error) {
@@ -371,11 +360,8 @@ const Motor = () => {
   // Parse AgentCore response into structured format for motor analysis
   const parseMotorAgentCoreResponse = (response, motorData, analysisResult = {}) => {
     try {
-      console.log('Parsing Motor AgentCore response:', response);
-      
       // Safety check for undefined/null response
       if (!response || typeof response !== 'string') {
-        console.log('No valid response text, using ML fallback');
         return createEnhancedMotorFallback(motorData, new Error('No response text'));
       }
       
@@ -586,7 +572,6 @@ const Motor = () => {
       };
       
       const citations = extractCitations(response);
-      console.log('📚 Citations extracted:', citations.length, citations);
       
       // Determine source and status based on analysis result
       let sourceInfo = "AgentCore Claude Sonnet 4.5";
@@ -766,7 +751,6 @@ const Motor = () => {
     }
     
     if (!section) {
-      console.log('No match found for:', cleanAction);
       return [];
     }
     
@@ -793,7 +777,6 @@ const Motor = () => {
   const getAiRecommendations = () => {
     // ONLY show recommendations from GenAI analysis (Analyze button)
     if (genAiAnalysis && genAiAnalysis.recommendations) {
-      console.log('Using Motor GenAI (Claude Sonnet 4.5) recommendations');
       return genAiAnalysis.recommendations.map(rec => {
         // Clean action text - remove confidence and source
         const cleanAction = rec.action
@@ -911,17 +894,8 @@ const Motor = () => {
   const rotorPosition = calculateRotorPosition(currentData.rpm_avg, currentData.performance_score);
   const insulationResistance = calculateInsulationResistance(currentData.engine_temp_c, currentData.performance_score);
   
-  // Enhanced debug info with ML integration
+  // Enhanced ML integration
   const currentPredictions = calculateDynamicMotorPredictions(currentData);
-  console.log('=== MOTOR ML DEBUG ===');
-  console.log('Vehicle:', currentData.vehicle_id, '| Index:', dataIndex, '| Performance:', remainingLife + '%');
-  console.log('CSV Temp:', currentPredictions?.temperature + '°C', '| CSV Status:', currentPredictions?.status);
-  console.log('Oil Pressure:', currentPredictions?.oil_pressure + ' PSI', '| RPM:', currentData.rpm_avg);
-  console.log('Rotor Position:', rotorPosition + '°', '| Insulation:', insulationResistance + ' MΩ');
-  console.log('Vibration:', currentData.vibration_level, '| Anomaly:', currentPredictions?.has_anomaly);
-  console.log('ML Data Available:', !!currentMlData, '| Recommendations:', aiRecommendations.length);
-  console.log('=======================');
-  console.log('WINDOW WIDTH DEBUG:', windowWidth);
 
   return (
     <div className="motor-page">

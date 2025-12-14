@@ -93,9 +93,8 @@ const Motor = () => {
       .then(res => res.json())
       .then(data => {
         setMlResults(data);
-        console.log('Motor ML results loaded:', data);
       })
-      .catch(err => console.log('Motor ML results not available:', err));
+      .catch(err => console.error('Motor ML results not available:', err));
   }, [carId]);
 
   useEffect(() => {
@@ -103,7 +102,6 @@ const Motor = () => {
       const interval = setInterval(() => {
         setDataIndex(prev => {
           const newIndex = (prev + 1) % csvData.length;
-          console.log(`Motor data updated to index ${newIndex} (Vehicle ${csvData[newIndex]?.vehicle_id || 'N/A'})`);
           return newIndex;
         });
         
@@ -136,11 +134,9 @@ const Motor = () => {
     const currentData = csvData[dataIndex] || {};
     
     if (!csvData.length || !currentData.vehicle_id) {
-      console.log('Motor GenAI Analysis skipped - missing data:', { csvDataLength: csvData.length, vehicleId: currentData.vehicle_id });
       return;
     }
     
-    console.log('Starting enhanced Motor GenAI analysis...');
     setGenAiLoading(true);
     
     const motorDataForAnalysis = {
@@ -164,14 +160,9 @@ const Motor = () => {
     };
     
     try {
-      console.log('Calling enhanced AgentCore service for motor analysis...');
-      
       const analysisResult = await agentCoreService.getMotorAnalysis(currentData.vehicle_id, motorDataForAnalysis);
       
-      console.log('Received enhanced Motor GenAI analysis:', analysisResult);
-      
       if (analysisResult.throttled) {
-        console.log('Motor service throttled - using enhanced fallback');
         const enhancedFallback = createEnhancedMotorFallback(motorDataForAnalysis, new Error('Service throttled'));
         setGenAiAnalysis(enhancedFallback);
         return;
@@ -179,7 +170,6 @@ const Motor = () => {
       
       const analysis = parseMotorAgentCoreResponse(analysisResult.response, motorDataForAnalysis, analysisResult);
       
-      console.log('Parsed Motor GenAI analysis:', analysis);
       setGenAiAnalysis(analysis);
       
     } catch (error) {
@@ -370,11 +360,8 @@ const Motor = () => {
   // Parse AgentCore response into structured format for motor analysis
   const parseMotorAgentCoreResponse = (response, motorData, analysisResult = {}) => {
     try {
-      console.log('Parsing Motor AgentCore response:', response);
-      
       // Safety check for undefined/null response
       if (!response || typeof response !== 'string') {
-        console.log('No valid response text, using ML fallback');
         return createEnhancedMotorFallback(motorData, new Error('No response text'));
       }
       
@@ -666,7 +653,6 @@ const Motor = () => {
   const getAiRecommendations = () => {
     // ONLY show recommendations from GenAI analysis (Analyze button)
     if (genAiAnalysis && genAiAnalysis.recommendations) {
-      console.log('Using Motor GenAI (Claude Sonnet 4.5) recommendations');
       return genAiAnalysis.recommendations.map(rec => {
         // Clean action text - remove confidence and source
         const cleanAction = rec.action
@@ -781,17 +767,8 @@ const Motor = () => {
   // Handle both motor_temp_c (normal CSV) and engine_temp_c (regular CSV)
   const insulationResistance = calculateInsulationResistance(currentData.motor_temp_c || currentData.engine_temp_c, currentData.performance_score);
   
-  // Enhanced debug info with ML integration
+  // Enhanced ML integration
   const currentPredictions = calculateDynamicMotorPredictions(currentData);
-  console.log('=== MOTOR ML DEBUG ===');
-  console.log('Vehicle:', currentData.vehicle_id, '| Index:', dataIndex, '| Performance:', remainingLife + '%');
-  console.log('CSV Temp:', currentPredictions?.temperature + '°C', '| CSV Status:', currentPredictions?.status);
-  console.log('Oil Pressure:', currentPredictions?.oil_pressure + ' PSI', '| RPM:', currentData.rpm_avg);
-  console.log('Rotor Position:', rotorPosition + '°', '| Insulation:', insulationResistance + ' MΩ');
-  console.log('Vibration:', currentData.vibration_level, '| Anomaly:', currentPredictions?.has_anomaly);
-  console.log('ML Data Available:', !!currentMlData, '| Recommendations:', aiRecommendations.length);
-  console.log('=======================');
-  console.log('WINDOW WIDTH DEBUG:', windowWidth);
 
   return (
     <div className="motor-page">

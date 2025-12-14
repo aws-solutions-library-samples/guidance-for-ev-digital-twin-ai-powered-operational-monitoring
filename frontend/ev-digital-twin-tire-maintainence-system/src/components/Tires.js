@@ -91,8 +91,6 @@ const TiresPage = () => {
             filteredData = results.data.filter(row => row.vehicle_id);
           }
           setCsvData(filteredData);
-          console.log('CSV data loaded:', filteredData.length, 'records');
-          console.log('Sample record:', filteredData[0]);
         } else {
           console.error('No CSV data loaded');
         }
@@ -107,9 +105,8 @@ const TiresPage = () => {
       .then(res => res.json())
       .then(data => {
         setMlResults(data);
-        console.log('ML results loaded:', data);
       })
-      .catch(err => console.log('ML results not available:', err));
+      .catch(err => console.error('ML results not available:', err));
   }, []);
 
   // Realistic pressure simulation - gradual changes instead of jumps
@@ -158,11 +155,9 @@ const TiresPage = () => {
     const currentData = csvData[dataIndex] || {};
     
     if (!csvData.length || !currentData.vehicle_id) {
-      console.log('GenAI Analysis skipped - missing data:', { csvDataLength: csvData.length, vehicleId: currentData.vehicle_id });
       return;
     }
     
-    console.log('Starting enhanced GenAI analysis...');
     setGenAiLoading(true);
     
     const tireDataForAnalysis = {
@@ -182,14 +177,9 @@ const TiresPage = () => {
     };
     
     try {
-      console.log('Calling enhanced AgentCore service...');
-      
       const analysisResult = await agentCoreService.getTireAnalysis(currentData.vehicle_id, tireDataForAnalysis);
       
-      console.log('Received enhanced GenAI analysis:', analysisResult);
-      
       if (analysisResult.throttled) {
-        console.log('Service throttled - using enhanced fallback');
         const enhancedFallback = createEnhancedFallback(tireDataForAnalysis, new Error('Service throttled'));
         setGenAiAnalysis(enhancedFallback);
         return;
@@ -197,7 +187,6 @@ const TiresPage = () => {
       
       const analysis = parseAgentCoreResponse(analysisResult.response, tireDataForAnalysis, analysisResult);
       
-      console.log('Parsed GenAI analysis:', analysis);
       setGenAiAnalysis(analysis);
       
     } catch (error) {
@@ -212,8 +201,6 @@ const TiresPage = () => {
   // Parse AgentCore response into structured format
   const parseAgentCoreResponse = (response, tireData, analysisResult = {}) => {
     try {
-      console.log('Parsing AgentCore response:', response);
-      
       // Safety check for undefined/null response
       if (!response || typeof response !== 'string') {
         console.warn('Invalid response format, using fallback');
@@ -432,7 +419,6 @@ const TiresPage = () => {
       };
       
       const citations = extractCitations(response);
-      console.log('📚 Tire Citations extracted:', citations.length, citations);
 
       // Determine source and status based on analysis result
       let sourceInfo = "AgentCore Claude Sonnet 4.5";
@@ -966,7 +952,6 @@ const TiresPage = () => {
     const match = rawText.match(actionPattern);
     
     if (!match) {
-      console.log('No match found for:', cleanAction);
       return [];
     }
     
@@ -995,7 +980,6 @@ const TiresPage = () => {
   const getAiRecommendations = () => {
     // ONLY show recommendations from GenAI analysis (Analyze button)
     if (genAiAnalysis && genAiAnalysis.recommendations) {
-      console.log('Using GenAI (Claude Sonnet 4.5) recommendations');
       return genAiAnalysis.recommendations.map(rec => {
         // Clean action text - remove confidence and source
         const cleanAction = rec.action
@@ -1620,7 +1604,7 @@ const TiresPage = () => {
                   alt="Warning"
                   className="info-icon"
                   style={{ width: '20px', height: '20px', cursor: 'pointer', marginTop: windowWidth <= 1440 ? '-25px' : windowWidth <= 1700 ? '-20px' : windowWidth <= 1815 ? '-10px' : '0', zIndex: 99999, position: 'relative' }}
-                  onClick={() => { console.log('Modal clicked, showModal:', showModal); setShowModal(true); }}
+                  onClick={() => { setShowModal(true); }}
                 />
               </div>
 

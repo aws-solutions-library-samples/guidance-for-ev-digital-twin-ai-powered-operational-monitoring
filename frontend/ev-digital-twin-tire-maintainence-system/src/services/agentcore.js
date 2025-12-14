@@ -140,7 +140,6 @@ class AgentCoreService {
 
     // Use cached data if available and fresh
     if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
-      console.log(`Using cached GenAI analysis for vehicle ${vehicleId} (age: ${Math.round((Date.now() - cached.timestamp) / 1000)}s)`);
       return { response: cached.response, fromCache: true, timestamp: cached.timestamp };
     }
 
@@ -149,10 +148,8 @@ class AgentCoreService {
       if (!this.shouldCallService()) {
         // Use stale cache if available, otherwise return throttled indicator
         if (cached) {
-          console.log(`Using stale cached data due to service throttling`);
           return { response: cached.response, fromCache: true, stale: true, timestamp: cached.timestamp };
         }
-        console.log(`Service throttled and no cache available - indicating fallback needed`);
         return {
           throttled: true,
           error: 'Service throttled - use enhanced fallback',
@@ -160,7 +157,6 @@ class AgentCoreService {
         };
       }
 
-      console.log(`Fetching fresh GenAI analysis for vehicle ${vehicleId} (VIN: ${vin})`);
       // Use VIN if available for proper vehicle identification
       const vehicleIdentifier = vin || vehicleId;
       
@@ -189,7 +185,6 @@ class AgentCoreService {
     } catch (error) {
       // Try to use stale cache on error
       if (cached) {
-        console.log(`Service error - using stale cached data:`, error.message);
         return { response: cached.response, fromCache: true, stale: true, error: error.message, timestamp: cached.timestamp };
       }
 
@@ -209,7 +204,6 @@ class AgentCoreService {
 
     // Use cached data if available and fresh
     if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
-      console.log(`Using cached Motor GenAI analysis for vehicle ${vehicleId} (age: ${Math.round((Date.now() - cached.timestamp) / 1000)}s)`);
       return { response: cached.response, fromCache: true, timestamp: cached.timestamp };
     }
 
@@ -218,10 +212,8 @@ class AgentCoreService {
       if (!this.shouldCallService()) {
         // Use stale cache if available, otherwise return throttled indicator
         if (cached) {
-          console.log(`Using stale cached motor data due to service throttling`);
           return { response: cached.response, fromCache: true, stale: true, timestamp: cached.timestamp };
         }
-        console.log(`Motor service throttled and no cache available - indicating fallback needed`);
         return {
           throttled: true,
           error: 'Motor service throttled - use enhanced fallback',
@@ -229,7 +221,6 @@ class AgentCoreService {
         };
       }
 
-      console.log(`Fetching fresh Motor GenAI analysis for vehicle ${vehicleId}`);
       const response = await this.chat(`Analyze motor performance for vehicle ${vehicleId}. Provide 2-3 key recommendations for the driver.`, vin);
 
       // Store successful response in cache
@@ -240,7 +231,6 @@ class AgentCoreService {
     } catch (error) {
       // Try to use stale cache on error
       if (cached) {
-        console.log(`Motor service error - using stale cached data:`, error.message);
         return { response: cached.response, fromCache: true, stale: true, error: error.message, timestamp: cached.timestamp };
       }
 
@@ -260,7 +250,6 @@ class AgentCoreService {
     
     // Use cached data if available and fresh
     if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
-      console.log(`Using cached Inverter GenAI analysis for vehicle ${vehicleId} (age: ${Math.round((Date.now() - cached.timestamp) / 1000)}s)`);
       return { response: cached.response, fromCache: true, timestamp: cached.timestamp };
     }
 
@@ -269,10 +258,8 @@ class AgentCoreService {
       if (!this.shouldCallService()) {
         // Use stale cache if available, otherwise return throttled indicator
         if (cached) {
-          console.log(`Using stale cached inverter data due to service throttling`);
           return { response: cached.response, fromCache: true, stale: true, timestamp: cached.timestamp };
         }
-        console.log(`Inverter service throttled and no cache available - indicating fallback needed`);
         return { 
           throttled: true, 
           error: 'Inverter service throttled - use enhanced fallback',
@@ -280,7 +267,6 @@ class AgentCoreService {
         };
       }
 
-      console.log(`Fetching fresh Inverter GenAI analysis for vehicle ${vehicleId}`);
       const response = await this.chat(`Analyze inverter performance for vehicle ${vehicleId}. Provide 2-3 key recommendations for the driver.`, vin);
       
       // Store successful response in cache
@@ -291,7 +277,6 @@ class AgentCoreService {
     } catch (error) {
       // Try to use stale cache on error
       if (cached) {
-        console.log(`Inverter service error - using stale cached data:`, error.message);
         return { response: cached.response, fromCache: true, stale: true, error: error.message, timestamp: cached.timestamp };
       }
       
@@ -329,15 +314,12 @@ class AgentCoreService {
     if (vin && useCache) {
       const cached = await this.getCachedRecommendation(vin);
       if (cached && cached.recommendation) {
-        console.log(`Using DynamoDB cached recommendation for VIN ${vin}`);
+        console.log(`💾 Using DynamoDB cached recommendation for VIN ${vin}`);
         return cached.recommendation;
       }
-    } else if (!useCache) {
-      console.log(`Bypassing DynamoDB cache for VIN ${vin} - using fresh agent call with memory`);
     }
 
     // Not cached - fetch fresh with improved prompt
-    console.log(`Fetching fresh data for vehicle ${vehicleId}`);
     const prompt = `Analyze ONLY the tire condition for vehicle ${vehicleId} using the analyze_tire_condition tool. Give me specific tire maintenance recommendations in 1-2 sentences.`;
     const response = await this.chat(prompt, vin);
 

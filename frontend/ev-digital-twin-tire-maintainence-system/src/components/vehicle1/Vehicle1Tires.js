@@ -61,9 +61,7 @@ const Vehicle1Tires = () => {
   useEffect(() => {
     const handleResize = () => {
       setWindowWidth(window.innerWidth);
-      console.log('🖥️ Window Width:', window.innerWidth);
     };
-    console.log('🖥️ Initial Window Width:', window.innerWidth);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -108,12 +106,6 @@ const Vehicle1Tires = () => {
           const allPositions = Object.values(latestByPosition);
           
           setCsvData(allPositions);
-          console.log('🔍 Vehicle1Tires - Latest Data for All Positions:', {
-            totalPositions: allPositions.length,
-            positions: allPositions.map(r => `${r.position}: ${r.tread_depth_mm}mm, ${r.pressure_psi}PSI, ${r.temperature_c}°C`),
-            date: allPositions[0]?.date
-          });
-
         } else {
           console.error('No CSV data loaded');
         }
@@ -128,14 +120,12 @@ const Vehicle1Tires = () => {
       .then(res => res.json())
       .then(data => {
         setMlResults(data);
-        console.log('ML results loaded:', data);
       })
-      .catch(err => console.log('ML results not available:', err));
+      .catch(err => console.error('ML results not available:', err));
   }, []);
 
   // Realistic pressure simulation - gradual changes instead of jumps
   useEffect(() => {
-    console.log('⚙️ Setting up rotation interval. CSV records available:', csvData.length);
     if (csvData.length > 0) {
       // Load saved index from ConnVehicle
       // Start with the latest data (last index) instead of oldest
@@ -148,15 +138,6 @@ const Vehicle1Tires = () => {
         setDataIndex(prev => {
           const nextIndex = (prev + 1) % csvData.length;
           sessionStorage.setItem('vehicle1TireIndex', nextIndex);
-          const currentRecord = csvData[nextIndex];
-          console.log(`🔄 Tire Data Rotation [${nextIndex + 1}/${csvData.length}]:`, {
-            date: currentRecord?.date,
-            tread_depth_mm: currentRecord?.tread_depth_mm,
-            pressure_psi: currentRecord?.pressure_psi,
-            temperature_c: currentRecord?.temperature_c,
-            weather: currentRecord?.weather_condition,
-            driving: currentRecord?.driving_pattern
-          });
           return nextIndex;
         });
         
@@ -198,11 +179,9 @@ const Vehicle1Tires = () => {
     const currentData = csvData[dataIndex] || {};
     
     if (!csvData.length || !currentData.vehicle_id) {
-      console.log('GenAI Analysis skipped - missing data:', { csvDataLength: csvData.length, vehicleId: currentData.vehicle_id });
       return;
     }
     
-    console.log('Starting enhanced GenAI analysis...');
     setGenAiLoading(true);
     
     // Prepare tire data for analysis
@@ -227,10 +206,7 @@ const Vehicle1Tires = () => {
       
       const analysisResult = await agentCoreService.getTireAnalysis(currentData.vehicle_id, tireDataForAnalysis, '2T1BURHE8JC987654');
       
-      console.log('Received enhanced GenAI analysis:', analysisResult);
-      
       if (analysisResult.throttled) {
-        console.log('Service throttled - using enhanced fallback');
         const enhancedFallback = createEnhancedFallback(tireDataForAnalysis, new Error('Service throttled'));
         setGenAiAnalysis(enhancedFallback);
         return;
@@ -238,7 +214,6 @@ const Vehicle1Tires = () => {
       
       const analysis = parseAgentCoreResponse(analysisResult.response, tireDataForAnalysis, analysisResult);
       
-      console.log('Parsed GenAI analysis:', analysis);
       setGenAiAnalysis(analysis);
       
     } catch (error) {
@@ -327,8 +302,6 @@ const Vehicle1Tires = () => {
   // Parse AgentCore response into structured format
   const parseAgentCoreResponse = (response, tireData, analysisResult = {}) => {
     try {
-      console.log('Parsing AgentCore response:', response);
-      
       // Handle undefined or null response
       if (!response || typeof response !== 'string') {
         console.warn('Invalid response format, using fallback');
@@ -344,7 +317,6 @@ const Vehicle1Tires = () => {
       const driverSectionMatch = response.match(/##\s*🚗\s*\*{0,2}.*?(?:What You Can Do|Driver Actions).*?\*{0,2}([\s\S]*?)(?=\n##|$)/i);
       if (driverSectionMatch) {
         const driverSection = driverSectionMatch[1];
-        console.log('Found driver section, extracting items...');
         
         // Extract ALL numbered items from this section (handles multiple formats)
         // Format 1: ### **1. Title** or ### **1.** Title
@@ -369,7 +341,6 @@ const Vehicle1Tires = () => {
                              line.match(/^###\s*\*\*(?:THIS WEEK|MONTHLY|DAILY|IMMEDIATE|URGENT)[:\s-]+([^*]+)\*\*/) ||  // NEW: ### **THIS WEEK - Title**
                              line.match(/^###?\s*\*{0,2}\s*(\d+)\.\s*(.+?)[\*🚨⚠️]*$/);
           if (headerMatch) {
-            console.log('Driver item matched:', line.substring(0, 80));
             // Save previous item if exists
             if (currentItem && currentItem.title) {
               recommendations.push({
@@ -403,8 +374,6 @@ const Vehicle1Tires = () => {
             category: 'driver'
           });
         }
-        
-        console.log('Extracted driver items:', recommendations.filter(r => r.category === 'driver').length);
       }
       
       // Step 2: Find service recommendations section - handles multiple formats
@@ -413,8 +382,6 @@ const Vehicle1Tires = () => {
       const serviceSection = serviceSectionMatch ? response.substring(serviceSectionMatch.index + serviceSectionMatch[0].length).split(/\n##/)[0] : null;
       
       if (serviceSection) {
-        console.log('Found service section, extracting items...');
-        
         // Extract ALL numbered items from this section
         const lines = serviceSection.split('\n');
         let currentItem = null;
@@ -435,7 +402,6 @@ const Vehicle1Tires = () => {
                              line.match(/^###\s*\*\*(\d+)\.\s+(?:IMMEDIATE|URGENT|THIS WEEK|THIS MONTH)[:\s(]+([^*]+)\*\*/) ||  // NEW: ### **1. IMMEDIATE (This Week): Title**
                              line.match(/^\*{0,2}\s*(\d+)\.\s*([^:]+):?\s*(.*)$/);
           if (headerMatch) {
-            console.log('Service item matched:', line.substring(0, 80));
             // Save previous item if exists
             if (currentItem && currentItem.title) {
               const priority = currentItem.title.toLowerCase().includes('immediate') || currentItem.title.toLowerCase().includes('urgent') ? 'CRITICAL' : 'HIGH';
@@ -482,8 +448,6 @@ const Vehicle1Tires = () => {
             category: 'service'
           });
         }
-        
-        console.log('Extracted service items:', recommendations.filter(r => r.category === 'service').length);
       }
       
       // Fallback: If flexible parsing didn't find anything, try old patterns
@@ -494,11 +458,9 @@ const Vehicle1Tires = () => {
       if (driverMainMatch) {
         driverSectionFound = true;
         const driverMainSection = driverMainMatch[1];
-        console.log('Found driver section, length:', driverMainSection.length);
         
         // Parse ### **1. Check Your Tire Pressure THIS WEEK** ⚠️ items
         const driverItems = driverMainSection.match(/###\s*\*\*\d+\.\s*([^*]+)\*\*\s*([^\n]+)/g);
-        console.log('Driver items found:', driverItems ? driverItems.length : 0);
         if (driverItems) {
           driverItems.forEach(item => {
             // Extract: "1." and "Check Your Tire Pressure THIS WEEK"
@@ -596,10 +558,8 @@ const Vehicle1Tires = () => {
       const serviceRecsMatch = response.match(/##\s*🔧\s*\*\*.*?Key Recommendations.*?\*\*([\s\S]*?)(?=\n##|\n\n---|\nWould you like|$)/i);
       if (serviceRecsMatch && recommendations.filter(r => r.category === 'service').length === 0) {
         const serviceSection = serviceRecsMatch[1];
-        console.log('Found service section, length:', serviceSection.length);
         // Extract **1. IMMEDIATE (THIS WEEK)**: Replace front-left tire...
         const serviceItems = serviceSection.match(/\*\*\d+\.\s+([^*]+)\*\*:?\s*([^\n]+)/g);
-        console.log('Service items found:', serviceItems ? serviceItems.length : 0);
         if (serviceItems) {
           serviceItems.forEach(item => {
             // Extract: "1. IMMEDIATE (THIS WEEK)" and "Replace front-left tire..."
@@ -797,11 +757,6 @@ const Vehicle1Tires = () => {
         sourceInfo += " (Service Issues)";
       }
 
-      // Debug: Log what was parsed
-      console.log('Parsed recommendations:', recommendations.length, 'total');
-      console.log('Driver actions:', recommendations.filter(r => r.category === 'driver').length);
-      console.log('Service required:', recommendations.filter(r => r.category === 'service').length);
-      
       // FALLBACK: Ensure at least one driver action and one service recommendation
       const hasDriverActions = recommendations.filter(r => r.category === 'driver').length > 0;
       const hasServiceRecs = recommendations.filter(r => r.category === 'service').length > 0;
@@ -1236,7 +1191,6 @@ const Vehicle1Tires = () => {
     const match = rawText.match(actionPattern);
     
     if (!match) {
-      console.log('No match found for:', cleanAction);
       return [];
     }
     
@@ -1265,7 +1219,6 @@ const Vehicle1Tires = () => {
   const getAiRecommendations = () => {
     // ONLY show recommendations from GenAI analysis (Analyze button)
     if (genAiAnalysis && genAiAnalysis.recommendations) {
-      console.log('Using GenAI (Claude Sonnet 4.5) recommendations');
       return genAiAnalysis.recommendations.map(rec => {
         // Clean action text - remove confidence and source
         const cleanAction = rec.action
@@ -1485,7 +1438,7 @@ const Vehicle1Tires = () => {
     fetch('/data/tire_ml_results.json')
       .then(res => res.json())
       .then(data => setTireMlData(data))
-      .catch(err => console.log('Tire ML data not available:', err));
+      .catch(err => console.error('Tire ML data not available:', err));
   }, []);
   
   const getChartDataFromML = () => {
@@ -1868,7 +1821,7 @@ const Vehicle1Tires = () => {
                   alt="Warning"
                   className="info-icon"
                   style={{ width: '20px', height: '20px', cursor: 'pointer', marginTop: windowWidth <= 1440 ? '-25px' : windowWidth <= 1700 ? '-20px' : windowWidth <= 1815 ? '-10px' : '0', zIndex: 99999, position: 'relative' }}
-                  onClick={() => { console.log('Modal clicked, showModal:', showModal); setShowModal(true); }}
+                  onClick={() => { setShowModal(true); }}
                 />
               </div>
 

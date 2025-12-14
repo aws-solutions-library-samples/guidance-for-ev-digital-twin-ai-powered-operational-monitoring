@@ -67,8 +67,6 @@ const Invertor = () => {
             filteredData = results.data.filter(row => row.vehicle_id);
           }
           setCsvData(filteredData);
-          console.log('Inverter CSV data loaded:', filteredData.length, 'records');
-          console.log('Sample inverter record:', filteredData[0]);
         } else {
           console.error('No inverter CSV data loaded');
         }
@@ -83,9 +81,8 @@ const Invertor = () => {
       .then(res => res.json())
       .then(data => {
         setMlResults(data);
-        console.log('Inverter ML results loaded:', data);
       })
-      .catch(err => console.log('Inverter ML results not available:', err));
+      .catch(err => console.error('Inverter ML results not available:', err));
   }, []);
 
   // Dynamic chart data generation for Power Metrics
@@ -149,13 +146,6 @@ const Invertor = () => {
       };
       
       setChartData(newChartData);
-      console.log('📊 Dynamic Power Metrics Charts Updated:', {
-        inputVoltage: inputVoltage + 'V',
-        outputVoltage: outputVoltage + 'V', 
-        inputCurrent: inputCurrent + 'A',
-        outputCurrent: outputCurrent + 'A',
-        chartPoints: newChartData.inputVoltage.current.length
-      });
       
       // Calculate gauge angles based on actual values (0-180 degrees for semi-circle)
       const calculateGaugeAngle = (value, min, max) => {
@@ -171,12 +161,6 @@ const Invertor = () => {
       };
       
       setGaugeAngles(newGaugeAngles);
-      console.log('🎯 Dynamic Semi-Circle Gauges Updated:', {
-        inputVoltage: newGaugeAngles.inputVoltage.toFixed(1) + '°',
-        outputVoltage: newGaugeAngles.outputVoltage.toFixed(1) + '°',
-        inputCurrent: newGaugeAngles.inputCurrent.toFixed(1) + '°',
-        outputCurrent: newGaugeAngles.outputCurrent.toFixed(1) + '°'
-      });
     };
     
     // Generate initial data and update every 2 seconds for smooth animation
@@ -210,11 +194,9 @@ const Invertor = () => {
     const currentData = csvData.find(row => row.vehicle_id === '1') || csvData[0] || {};
     
     if (!csvData.length || !currentData.vehicle_id) {
-      console.log('Inverter GenAI Analysis skipped - missing data:', { csvDataLength: csvData.length, vehicleId: currentData.vehicle_id });
       return;
     }
     
-    console.log('Starting enhanced Inverter GenAI analysis...');
     setGenAiLoading(true);
     
     const inverterDataForAnalysis = {
@@ -241,14 +223,9 @@ const Invertor = () => {
     };
     
     try {
-      console.log('Calling enhanced AgentCore service for inverter analysis...');
-      
       const analysisResult = await agentCoreService.getInverterAnalysis(currentData.vehicle_id, inverterDataForAnalysis, 'W1KZF8EB8NA123456');
       
-      console.log('Received enhanced Inverter GenAI analysis:', analysisResult);
-      
       if (analysisResult.throttled) {
-        console.log('Inverter service throttled - using enhanced fallback');
         const enhancedFallback = createEnhancedInverterFallback(inverterDataForAnalysis, new Error('Service throttled'));
         setGenAiAnalysis(enhancedFallback);
         return;
@@ -256,7 +233,6 @@ const Invertor = () => {
       
       const analysis = parseInverterAgentCoreResponse(analysisResult.response, inverterDataForAnalysis, analysisResult);
       
-      console.log('Parsed Inverter GenAI analysis:', analysis);
       setGenAiAnalysis(analysis);
       
     } catch (error) {
@@ -405,11 +381,8 @@ const Invertor = () => {
   // Parse AgentCore response into structured format for inverter analysis
   const parseInverterAgentCoreResponse = (response, inverterData, analysisResult = {}) => {
     try {
-      console.log('Parsing Inverter AgentCore response:', response);
-      
       // Safety check for undefined/null response
       if (!response || typeof response !== 'string') {
-        console.log('No valid response text, using fallback');
         return createEnhancedInverterFallback(inverterData, new Error('No response text'));
       }
       
@@ -568,7 +541,6 @@ const Invertor = () => {
       };
       
       const citations = extractCitations(response);
-      console.log('📚 Inverter Citations extracted:', citations.length, citations);
 
       // Determine source and status based on analysis result
       let sourceInfo = "AgentCore Claude Sonnet 4.5";
@@ -693,7 +665,6 @@ const Invertor = () => {
   const getAiRecommendations = () => {
     // ONLY show recommendations from GenAI analysis (Analyze button)
     if (genAiAnalysis && genAiAnalysis.recommendations) {
-      console.log('Using Inverter GenAI (Claude Sonnet 4.5) recommendations');
       return genAiAnalysis.recommendations.map(rec => {
         // Clean action text - remove confidence and source
         const cleanAction = rec.action
@@ -978,8 +949,8 @@ const Invertor = () => {
 
   const remainingLife = calculateRemainingLife();
   
-  // Log stable calculations for debugging (Vehicle 1 - EV-1001)
-  console.log('Inverter Fixed Vehicle Analysis:', {
+  // Fixed Vehicle Analysis (Vehicle 1 - EV-1001)
+  const vehicleAnalysis = {
     vehicle: `${currentData.year} ${currentData.make}`,
     vehicleId: currentData.vehicle_id,
     currentHealth: Math.round(graphData.currentHealth),
@@ -987,7 +958,7 @@ const Invertor = () => {
     efficiency: parseFloat(currentData.efficiency_percent) || 95,
     temperature: parseFloat(currentData.temperature_c) || 65,
     status: 'Fixed vehicle - no rotation'
-  });
+  };
 
   // Responsive sizing functions
   const spacing = useMemo(() => {
@@ -1564,7 +1535,6 @@ const Invertor = () => {
                         </span>
                         <button
                           onClick={() => {
-                            console.log('Toggle button clicked! Current state:', showPrediction);
                             setShowPrediction(!showPrediction);
                           }}
                           style={{

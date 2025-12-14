@@ -181,15 +181,6 @@ const EnergyManagement = () => {
       };
       
       setGaugeAngles(newGaugeAngles);
-      
-      console.log('🔋 Energy Management Charts Updated:', {
-        thermalEfficiency: thermalEfficiency.toFixed(1) + '%',
-        motorTemp: motorTemp.toFixed(1) + '°C',
-        coolantFlow: coolantFlow.toFixed(1) + ' L/min',
-        heaterPower: heaterPower.toFixed(1) + ' kW',
-        brakingForce: brakingForce.toFixed(0) + ' Nm',
-        energyRecovered: energyRecovered.toFixed(3) + ' kWh'
-      });
     };
     
     // Generate initial data and update every 2 seconds
@@ -218,7 +209,6 @@ const EnergyManagement = () => {
 
   // GenAI Analysis for Energy Management
   const analyzeEnergyManagementWithGenAI = async () => {
-    console.log('Starting Energy Management GenAI analysis...');
     setGenAiLoading(true);
     
     // Simulate energy management data for analysis
@@ -271,7 +261,6 @@ const EnergyManagement = () => {
       };
       
       setGenAiAnalysis(analysis);
-      console.log('Energy Management GenAI analysis completed:', analysis);
       
     } catch (error) {
       console.error('Energy Management GenAI analysis failed:', error);
@@ -1182,7 +1171,6 @@ const EnergyManagement = () => {
                       </span>
                       <button
                         onClick={() => {
-                          console.log('Energy Management Toggle button clicked! Current state:', showPrediction);
                           setShowPrediction(!showPrediction);
                         }}
                         style={{
