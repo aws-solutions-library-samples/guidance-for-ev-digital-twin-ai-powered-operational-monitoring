@@ -19,6 +19,7 @@ import EnergyManagement from './EnergyManagement';
 import Charger from './Charger';
 import Fleet from './fleet/FleetMgmt';
 import FleetPortal from './fleet/FleetPortal';
+import LoginStats from './LoginStats';
 
 const Dashboard = () => {
   return (
@@ -44,6 +45,7 @@ const Dashboard = () => {
       <Route path="/car/:carId/charger" element={<Charger />} />
       <Route path="/fleet" element={<Fleet />} />
       <Route path="/fleet/portal" element={<FleetPortal />} />
+      <Route path="/analytics" element={<LoginStats />} />
     </Routes>
   );
 };

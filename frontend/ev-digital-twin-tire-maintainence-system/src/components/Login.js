@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { signIn } from 'aws-amplify/auth';
+import loginTracker from '../services/loginTracker';
 import './Login.css';
 
 const Login = ({ onSignIn }) => {
@@ -21,6 +22,10 @@ const Login = ({ onSignIn }) => {
       });
       
       console.log('Sign in successful:', user);
+      
+      // Track successful login (fire-and-forget)
+      loginTracker.trackLogin(username);
+      
       onSignIn(user);
     } catch (error) {
       console.error('Error signing in:', error);

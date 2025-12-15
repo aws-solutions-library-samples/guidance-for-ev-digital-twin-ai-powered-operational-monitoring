@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Amplify } from 'aws-amplify';
 import { getCurrentUser, signOut } from 'aws-amplify/auth';
+import loginTracker from './services/loginTracker';
 import './App.css';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
@@ -26,7 +27,12 @@ function App() {
     // In development mode, bypass authentication for GenAI testing
     if (process.env.NODE_ENV === 'development') {
       console.log('Development mode: Bypassing authentication for GenAI testing');
-      setUser({ username: 'demo-user' });
+      const demoUser = { username: 'demo-user' };
+      
+      // Track development mode login
+      loginTracker.trackLogin(demoUser.username);
+      
+      setUser(demoUser);
       setIsAuthenticated(true);
       setIsLoading(false);
       return;
