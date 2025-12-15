@@ -93,7 +93,7 @@ const InteractiveMapView = () => {
                     <img src={require('./assets/car.png')} alt="Car" style={{ width: '16px', height: '16px' }} />
                     Connected Vehicles
                   </div>
-                  <div className="dropdown-item" onClick={() => navigate('/fleet')} style={{ padding: '10px 15px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div className="dropdown-item" onClick={() => navigate('/fleet')} style={{ padding: '10px 15px', cursor: 'pointer', borderBottom: '1px solid #444', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5">
                       <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/>
                       <path d="M15 18H9"/>
@@ -102,6 +102,13 @@ const InteractiveMapView = () => {
                       <circle cx="7" cy="18" r="2"/>
                     </svg>
                     Fleet
+                  </div>
+                  <div className="dropdown-item" onClick={() => navigate('/analytics')} style={{ padding: '10px 15px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5">
+                      <path d="M3 3v18h18"/>
+                      <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
+                    </svg>
+                    System Analytics
                   </div>
                 </div>
               )}
