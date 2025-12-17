@@ -20,12 +20,9 @@ import os
 try:
     from knowledge_base_tools import (
         get_tire_maintenance_guidance,
-        search_tire_troubleshooting,
-        get_tire_maintenance_schedule,
         get_pressure_temperature_guidance,
         get_tread_depth_guidance,
         get_motor_maintenance_guidance,
-        get_motor_temperature_guidance,
         get_inverter_maintenance_guidance
     )
     KB_AVAILABLE = bool(os.environ.get('KNOWLEDGE_BASE_ID'))
@@ -100,7 +97,7 @@ SYSTEM_PROMPT_MOTOR = """You are a motor diagnostics specialist for electric veh
 
 **MANDATORY WORKFLOW - MOTOR:**
 1. **STEP 1 (REQUIRED)**: Call analyze_motor_performance() to get current vehicle motor data
-2. **STEP 2**: Call get_motor_maintenance_guidance() or get_motor_temperature_guidance() for general guidance
+2. **STEP 2**: Call get_motor_maintenance_guidance() for general guidance
 3. **STEP 3**: Combine KB manual guidance with real-time data for personalized recommendations
 4. **STEP 4**: Get preventative suggestion for driver from the manual
 5. **STEP 5**: Include the KB tool's citation information (Confidence and Source) in your response
@@ -418,8 +415,6 @@ class AgentCoreMaintenanceAgent:
             detect_motor_anomalies,
             get_available_slots,
             schedule_appointment,
-            get_fleet_status,
-            cross_system_analysis,
             order_tire_online
         ]
         
@@ -427,12 +422,9 @@ class AgentCoreMaintenanceAgent:
         if KB_AVAILABLE:
             tools_list.extend([
                 get_tire_maintenance_guidance,
-                search_tire_troubleshooting,
-                get_tire_maintenance_schedule,
                 get_pressure_temperature_guidance,
                 get_tread_depth_guidance,
                 get_motor_maintenance_guidance,
-                get_motor_temperature_guidance,
                 get_inverter_maintenance_guidance
             ])
             print("✅ Knowledge Base tools enabled (Tire + Motor + Inverter)")
@@ -679,7 +671,7 @@ def analyze_tire_condition(vehicle_id: str) -> str:
                 "detected": uneven_wear_detected,
                 "severity": "CRITICAL - Section 5.6 applies" if uneven_wear_detected else "WARNING - Monitor",
                 "details": uneven_wear_details,
-                "action_required": "IMMEDIATE: Call search_tire_troubleshooting('uneven wear') to get Section 5.6 alignment/suspension guidance" if uneven_wear_detected else "Schedule alignment check within 1 week"
+                "action_required": "IMMEDIATE: Check Section 5.6 for alignment/suspension guidance" if uneven_wear_detected else "Schedule alignment check within 1 week"
             }
         
         return json.dumps(analysis, indent=2)
@@ -1170,108 +1162,7 @@ def schedule_appointment(vehicle_id: str, service_type: str, preferred_date: str
         return json.dumps({"error": f"Scheduling failed: {str(e)}"})
 
 
-@tool
-def get_fleet_status() -> str:
-    """
-    Get overall fleet health status across all vehicles.
-    
-    Returns:
-        Fleet-wide health summary with vehicle counts by status
-    """
-    try:
-        if agent_instance.tire_data is None:
-            agent_instance.load_data()
-        
-        vehicles = agent_instance.tire_data['vehicle_id'].unique()
-        
-        fleet_status = {
-            "total_vehicles": len(vehicles),
-            "vehicles_by_status": {
-                "good": 0,
-                "attention": 0,
-                "warning": 0,
-                "critical": 0
-            },
-            "vehicles": []
-        }
-        
-        for vid in vehicles:
-            vehicle_data = agent_instance.tire_data[agent_instance.tire_data['vehicle_id'] == vid]
-            latest = vehicle_data.groupby('position').last().reset_index()
-            
-            # Simple status assessment
-            min_depth = latest['tread_depth_mm'].min()
-            
-            if min_depth < 2.0:
-                status = "critical"
-            elif min_depth < 4.0:
-                status = "warning"
-            elif min_depth < 6.0:
-                status = "attention"
-            else:
-                status = "good"
-            
-            fleet_status["vehicles_by_status"][status] += 1
-            
-            vehicle_info = latest.iloc[0]
-            fleet_status["vehicles"].append({
-                "vehicle_id": int(vid),
-                "make": str(vehicle_info['make']),
-                "model": str(vehicle_info['model']),
-                "year": int(vehicle_info['year']),
-                "status": status.upper(),
-                "min_tread_depth_mm": round(min_depth, 2)
-            })
-        
-        return json.dumps(fleet_status, indent=2)
-        
-    except Exception as e:
-        return json.dumps({"error": f"Fleet status retrieval failed: {str(e)}"})
 
-
-@tool
-def cross_system_analysis(vehicle_id: str) -> str:
-    """
-    Perform cross-system analysis correlating tire and motor issues.
-    
-    Args:
-        vehicle_id: The vehicle ID to analyze
-        
-    Returns:
-        Comprehensive analysis of both tire and motor systems with correlations
-    """
-    try:
-        # Get both tire and motor analysis
-        tire_analysis = json.loads(analyze_tire_condition(vehicle_id))
-        motor_analysis = json.loads(analyze_motor_performance(vehicle_id))
-        
-        if "error" in tire_analysis or "error" in motor_analysis:
-            return json.dumps({"error": "Unable to perform cross-system analysis"})
-        
-        # Correlate issues
-        correlations = []
-        
-        # Check if both systems have issues
-        tire_issues = any("WARNING" in str(t.get("status", "")) or "CRITICAL" in str(t.get("status", "")) 
-                         for t in tire_analysis.get("tire_conditions", {}).values())
-        motor_issues = "WARNING" in motor_analysis.get("motor_health", {}).get("status", "") or \
-                      "CRITICAL" in motor_analysis.get("motor_health", {}).get("status", "")
-        
-        if tire_issues and motor_issues:
-            correlations.append("Both tire and motor systems showing degradation - may indicate aggressive driving patterns")
-        
-        result = {
-            "vehicle_id": str(vehicle_id),
-            "tire_system": tire_analysis,
-            "motor_system": motor_analysis,
-            "correlations": correlations,
-            "overall_health": "CRITICAL" if tire_issues and motor_issues else "ATTENTION" if tire_issues or motor_issues else "GOOD"
-        }
-        
-        return json.dumps(result, indent=2)
-        
-    except Exception as e:
-        return json.dumps({"error": f"Cross-system analysis failed: {str(e)}"})
 
 
 @tool
@@ -1425,54 +1316,7 @@ def order_tire_online(vehicle_id: str) -> str:
         }, indent=2)
 
 
-@tool
-def generate_maintenance_report(vehicle_id: str) -> str:
-    """
-    Generate a comprehensive maintenance report for a vehicle.
-    
-    Args:
-        vehicle_id: The vehicle ID
-        
-    Returns:
-        Detailed maintenance report with recommendations and cost estimates
-    """
-    try:
-        # Gather all analyses
-        cross_analysis = json.loads(cross_system_analysis(vehicle_id))
-        tire_predictions = json.loads(predict_tire_wear(vehicle_id, 90))
-        motor_prediction = json.loads(predict_motor_failure(vehicle_id))
-        tire_anomalies = json.loads(detect_tire_anomalies(vehicle_id))
-        motor_anomalies = json.loads(detect_motor_anomalies(vehicle_id))
-        
-        report = {
-            "report_generated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "vehicle_id": str(vehicle_id),
-            "executive_summary": {
-                "overall_health": cross_analysis.get("overall_health", "UNKNOWN"),
-                "tire_anomalies": tire_anomalies.get("anomalies_detected", 0),
-                "motor_anomalies": motor_anomalies.get("anomalies_detected", 0),
-                "immediate_action_required": cross_analysis.get("overall_health") == "CRITICAL"
-            },
-            "detailed_analysis": cross_analysis,
-            "predictions": {
-                "tire_wear": tire_predictions,
-                "motor_failure": motor_prediction
-            },
-            "anomalies": {
-                "tire": tire_anomalies,
-                "motor": motor_anomalies
-            },
-            "recommendations": [
-                "Schedule comprehensive inspection within 30 days" if cross_analysis.get("overall_health") != "GOOD" else "Continue regular maintenance schedule",
-                "Monitor tire pressure weekly",
-                "Check motor oil levels regularly"
-            ]
-        }
-        
-        return json.dumps(report, indent=2)
-        
-    except Exception as e:
-        return json.dumps({"error": f"Report generation failed: {str(e)}"})
+
 
 
 def main():

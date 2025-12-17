@@ -65,34 +65,9 @@ def get_tire_maintenance_guidance(question: str) -> str:
         return f"Error retrieving manual guidance: {str(e)}"
 
 
-@tool
-def search_tire_troubleshooting(symptom: str) -> str:
-    """
-    Search the manual for tire troubleshooting guidance based on symptoms.
-    
-    Args:
-        symptom: Tire issue symptom (e.g., "uneven wear", "vibration", "noise", "pulling to one side")
-        
-    Returns:
-        Troubleshooting steps and potential causes from the manual
-    """
-    query = f"Tire troubleshooting: {symptom}. What causes this and how to fix it?"
-    return get_tire_maintenance_guidance(query)
 
 
-@tool
-def get_tire_maintenance_schedule(vehicle_type: str = "electric vehicle") -> str:
-    """
-    Get the recommended tire maintenance schedule from the manual.
-    
-    Args:
-        vehicle_type: Type of vehicle (default: "electric vehicle")
-        
-    Returns:
-        Maintenance schedule including rotation, inspection, and replacement intervals
-    """
-    query = f"What is the recommended tire maintenance schedule for {vehicle_type}? Include rotation intervals, inspection frequency, and replacement guidelines."
-    return get_tire_maintenance_guidance(query)
+
 
 
 @tool
@@ -178,19 +153,7 @@ def get_motor_maintenance_guidance(question: str) -> str:
         return f"Error retrieving motor guidance: {str(e)}"
 
 
-@tool
-def get_motor_temperature_guidance(temperature_c: float) -> str:
-    """
-    Get motor temperature guidance from Section 2.1 based on current temperature reading.
-    
-    Args:
-        temperature_c: Current motor temperature in Celsius
-        
-    Returns:
-        Temperature-specific guidance from the manual
-    """
-    query = f"Motor temperature {temperature_c}°C - is this normal? What are safe operating temperatures for EV motors?"
-    return get_motor_maintenance_guidance(query)
+
 
 
 @tool

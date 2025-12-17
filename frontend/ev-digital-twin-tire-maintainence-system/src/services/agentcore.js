@@ -326,14 +326,7 @@ class AgentCoreService {
     return response;
   }
 
-  /**
-   * Get fleet-wide maintenance recommendations
-   * @returns {Promise<string>} - Fleet maintenance overview
-   */
-  async getFleetMaintenanceRecommendations() {
-    const prompt = `Analyze the entire fleet and provide maintenance recommendations. Which vehicles need immediate attention? Keep it concise and actionable.`;
-    return await this.chat(prompt);
-  }
+
 
   /**
    * Get tire condition for a vehicle

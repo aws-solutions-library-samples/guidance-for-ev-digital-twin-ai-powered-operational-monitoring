@@ -30,7 +30,7 @@ agents:
     bedrock_agentcore:
       agent_id: vehicle_maintenance_agent-kH9hYvFcCD
       agent_arn: arn:aws:bedrock-agentcore:us-east-1:009296485814:runtime/vehicle_maintenance_agent-kH9hYvFcCD
-      agent_session_id: 25e471f1-d57f-44e8-bbc3-97d2a5099e38
+      agent_session_id: dfd3dbfd-7128-4312-a238-96d06a625f2a
     codebuild:
       project_name: bedrock-agentcore-vehicle_maintenance_agent-builder
       execution_role: arn:aws:iam::009296485814:role/AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-cdd8445f6e
