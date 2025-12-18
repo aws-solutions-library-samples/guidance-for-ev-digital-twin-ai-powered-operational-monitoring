@@ -74,3 +74,10 @@ logs/
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Documentation and analysis files (generated during development)
+docs/optimization-analysis/
+*.md.backup
+*_ANALYSIS.md
+*_COMPARISON.md
+*_PLAN.md

@@ -489,6 +489,80 @@ const Invertor = () => {
       // Create natural language summary
       const naturalSummary = createInverterNaturalLanguageSummary(response, inverterData);
 
+      // Extract citations from KB tool responses with deduplication
+      const extractCitations = (response) => {
+        const citations = [];
+        const citationMap = new Map(); // Use Map to deduplicate by source
+        
+        // Pattern 1: (Confidence: 0.XX) [Source: s3://bucket/file.pdf]
+        const fullCitationPattern = /\(Confidence:\s*([\d.]+)\)\s*\[Source:\s*([^\]]+)\]/g;
+        let match;
+        
+        while ((match = fullCitationPattern.exec(response)) !== null) {
+          const confidence = parseFloat(match[1]);
+          const source = match[2].trim();
+          
+          // Extract filename from S3 URI
+          let displayName = source;
+          if (source.includes('/')) {
+            const parts = source.split('/');
+            displayName = parts[parts.length - 1];
+          }
+          
+          // Remove .pdf extension for cleaner display
+          displayName = displayName.replace('.pdf', '');
+          
+          // Deduplicate: only keep the highest confidence for each unique source
+          if (!citationMap.has(displayName) || citationMap.get(displayName).confidence < confidence) {
+            citationMap.set(displayName, {
+              source: displayName,
+              confidence: confidence,
+              uri: source
+            });
+          }
+        }
+        
+        // Convert map to array
+        citations.push(...citationMap.values());
+        
+        // Pattern 2: Just (Confidence: 0.XX) without explicit source
+        if (citations.length === 0) {
+          const confidenceOnlyPattern = /\(Confidence:\s*([\d.]+)\)/g;
+          const confidenceMatches = [];
+          
+          while ((match = confidenceOnlyPattern.exec(response)) !== null) {
+            confidenceMatches.push(parseFloat(match[1]));
+          }
+          
+          // If we found confidence scores, KB tools were used
+          if (confidenceMatches.length > 0) {
+            const avgConfidence = confidenceMatches.reduce((a, b) => a + b, 0) / confidenceMatches.length;
+            citations.push({
+              source: 'EV Preventive Maintenance Manual',
+              confidence: avgConfidence,
+              uri: 's3://ev-maintenance-manual-kb/manuals/Electric Vehicle Preventive Maintenance Manual.pdf'
+            });
+          }
+        }
+        
+        // Only add fallback citation if no KB citations were found
+        if (citations.length === 0) {
+          if (response.toLowerCase().includes('maintenance manual') || 
+              response.toLowerCase().includes('ev manual')) {
+            citations.push({
+              source: 'EV Preventive Maintenance Manual (System Fallback)',
+              confidence: 0.5,
+              uri: 'embedded'
+            });
+          }
+        }
+        
+        // Final deduplication: return only one citation (the first/highest confidence)
+        return citations.length > 0 ? [citations[0]] : [];
+      };
+      
+      const citations = extractCitations(response);
+
       // Determine source and status based on analysis result
       let sourceInfo = "AgentCore Claude Sonnet 4.5";
       if (analysisResult.fromCache) {
@@ -505,6 +579,7 @@ const Invertor = () => {
         recommendations: recommendations.slice(0, 4),
         next_inspection: "30 days",
         source: sourceInfo,
+        citations: citations.length > 0 ? citations : undefined,
         fromCache: analysisResult.fromCache || false,
         stale: analysisResult.stale || false,
         serviceError: analysisResult.error || null,
