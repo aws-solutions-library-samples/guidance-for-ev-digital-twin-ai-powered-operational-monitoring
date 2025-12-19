@@ -45,8 +45,30 @@ except Exception as e:
 # Model configuration - Claude Sonnet 4.5 via inference profile
 MODEL_ID = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
 
-# Browser Tool configuration
-NOVA_ACT_API_KEY = "e7bb6472-19ed-4728-b8c1-bea5f1c52a58"
+# Browser Tool configuration - Load from Secrets Manager
+def get_nova_act_key():
+    """Retrieve NovaAct API key from AWS Secrets Manager"""
+    try:
+        import boto3
+        import json
+        client = boto3.client('secretsmanager', region_name='us-east-1')
+        response = client.get_secret_value(SecretId='/vehicle-maintenance/novaact-api-key')
+        secret = json.loads(response['SecretString'])
+        return secret['NOVA_ACT_API_KEY']
+    except Exception as e:
+        print(f"Warning: Could not load from Secrets Manager: {e}")
+        # Fallback to environment variable for local development only
+        api_key = os.environ.get('NOVA_ACT_API_KEY')
+        if not api_key:
+            raise ValueError(
+                "NovaAct API key not found! Please either:\n"
+                "1. Create secret in AWS Secrets Manager: /vehicle-maintenance/novaact-api-key\n"
+                "2. Set environment variable: NOVA_ACT_API_KEY\n"
+                "See docs/IAM_POLICIES.md for setup instructions."
+            )
+        return api_key
+
+NOVA_ACT_API_KEY = get_nova_act_key()
 
 # DynamoDB configuration for ML predictions
 DYNAMODB_REGION = "us-east-1"
@@ -1160,18 +1182,19 @@ def schedule_appointment(vehicle_id: str, service_type: str, preferred_date: str
 
 
 @tool
-def order_tire_online(vehicle_id: str) -> str:
+def order_tire_online(vehicle_id: str, job_id: str = None) -> str:
     """
     Automatically order tires online from Amazon Garage using browser automation.
     
     Args:
         vehicle_id: The vehicle ID to order tires for
+        job_id: Optional job ID for tracking browser session in DynamoDB (for live view)
         
     Returns:
         Order status and action log from browser automation
     """
     print(f"\n{'='*80}")
-    print(f"🔧 TOOL EXECUTION STARTED: order_tire_online(vehicle_id={vehicle_id})")
+    print(f"🔧 TOOL EXECUTION STARTED: order_tire_online(vehicle_id={vehicle_id}, job_id={job_id})")
     print(f"{'='*80}\n")
     
     # Set flag to disable memory hooks during browser tool execution
@@ -1233,9 +1256,33 @@ def order_tire_online(vehicle_id: str) -> str:
         # Use BrowserClient's generate_ws_headers() - it handles all the signing!
         ws_url, headers = client.generate_ws_headers()
         
+        # Generate live view URL for frontend
+        live_view_url = client.generate_live_view_url(expires=300)
+        
         print(f"✓ Custom browser session created: {starting_page}")
         print(f"✓ Session ID: {client.session_id}")
+        print(f"✓ Live View URL: {live_view_url[:100]}...")
         print(f"✓ Recordings will be saved to: s3://agentcore-browser-tool-recordings/browser-sessions/")
+        
+        # IMMEDIATELY save browser session info to DynamoDB for live view
+        # This allows frontend to show "Watch Live" button while automation runs
+        if job_id:
+            try:
+                dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+                jobs_table = dynamodb.Table('tire-order-jobs')
+                jobs_table.update_item(
+                    Key={'job_id': job_id},
+                    UpdateExpression='SET browser_session_id = :bsid, browser_id = :bid, live_view_url = :url, progress = :progress',
+                    ExpressionAttributeValues={
+                        ':bsid': client.session_id,
+                        ':bid': custom_identifier,
+                        ':url': live_view_url,
+                        ':progress': 'Browser automation running - Watch live!'
+                    }
+                )
+                print(f"✅ Saved browser session to DynamoDB for live view (job_id: {job_id})")
+            except Exception as db_error:
+                print(f"⚠️  Failed to save browser session to DynamoDB: {db_error}")
         
         prompt = f"""
         Type "{tire_size} tires" in the search bar at the top of this Amazon page and press Enter.
@@ -1261,13 +1308,30 @@ def order_tire_online(vehicle_id: str) -> str:
                 starting_page=starting_page
             ) as nova_act:
                 result = nova_act.act(prompt)
-                result_response = str(result.response) if result else None
+                # NovaAct 3.0+ API change: Extract return value from ActResult
+                # The result object has the return value from the browser automation
+                if result and hasattr(result, 'return_value'):
+                    result_response = result.return_value
+                elif result:
+                    # Fallback: try to extract from string representation
+                    result_str = str(result)
+                    # Look for the last return() call in the logs
+                    import re
+                    match = re.search(r'return\("(.+?)"\)', result_str)
+                    result_response = match.group(1) if match else result_str
+                else:
+                    result_response = None
                 print(f"✓ Browser automation completed: {result_response[:100] if result_response else 'No response'}...")
+                
+                # Save session info BEFORE cleanup
+                saved_session_id = client.session_id
+                saved_browser_id = custom_identifier
+                saved_live_view_url = live_view_url
         finally:
             # Stop the browser session
             try:
                 client.stop()
-                print(f"✓ Browser session {client.session_id} stopped")
+                print(f"✓ Browser session stopped")
             except Exception as cleanup_error:
                 print(f"⚠️  Session cleanup warning: {cleanup_error}")
         
@@ -1285,8 +1349,12 @@ def order_tire_online(vehicle_id: str) -> str:
             "success": True,
             "vehicle_id": str(vehicle_id),
             "tire_size": tire_size,
-            "session_id": client.session_id,
-            "response": result_response or "Tire added to cart"
+            "response": result_response or "Tire added to cart",
+            "metadata": {
+                "browserSessionId": saved_session_id,
+                "browserId": saved_browser_id,
+                "liveViewUrl": saved_live_view_url
+            }
         }, indent=2)
             
     except Exception as e:

@@ -1,6 +1,5 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import MapView from './MapView';
 import InteractiveMapView from './InteractiveMapView';
 import ConnVehicle from './ConnVehicle';
 import Vehicle1ConnVehicle from './vehicle1/Vehicle1ConnVehicle';
@@ -25,7 +24,6 @@ const Dashboard = () => {
   return (
     <Routes>
       <Route path="/" element={<InteractiveMapView />} />
-      <Route path="/mapview" element={<MapView />} />
       <Route path="/car/EV-1001" element={<Vehicle1ConnVehicle />} />
       <Route path="/car/2T1BURHE8JC987654" element={<Vehicle1ConnVehicle />} />
       <Route path="/car/1HGBH41JXMN109876" element={<Vehicle5ConnVehicle />} />

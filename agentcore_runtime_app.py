@@ -37,6 +37,8 @@ dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 
 # Track browser tool executions per session to prevent duplicates
 BROWSER_TOOL_EXECUTED = set()
+# Store browser session info for duplicate calls
+BROWSER_SESSION_INFO = {}
 
 @app.entrypoint
 def invoke(payload):
@@ -68,30 +70,22 @@ def invoke(payload):
     # Strands has a bug where it can't handle long-running nested agents (NovaAct)
     # This bypass calls the tool directly, avoiding the event loop entirely
     if "order_tire_online" in user_input.lower():
-        # Check if already executed for this session
-        if session_id in BROWSER_TOOL_EXECUTED:
-            print(f"⚠️  BYPASS: Browser tool already executed for session {session_id}")
-            return "Browser tool already executed for this session. Tire order is being processed."
-        
         try:
             import re
-            # Match both numeric IDs and VIN strings
-            match = re.search(r'order_tire_online\((["\']?)([A-Z0-9]+)\1\)', user_input)
+            # Match both numeric IDs and VIN strings, with optional job_id parameter
+            match = re.search(r'order_tire_online\((["\']?)([A-Z0-9]+)\1(?:,\s*job_id=([^\)]+))?\)', user_input)
             if match:
                 vehicle_id = match.group(2)
+                job_id = match.group(3)  # May be None if not provided
                 
-                # Mark as executed BEFORE running to prevent race conditions
-                BROWSER_TOOL_EXECUTED.add(session_id)
-                print(f"✓ BYPASS: Directly calling order_tire_online({vehicle_id}) for session {session_id}")
+                print(f"✓ BYPASS: Directly calling order_tire_online({vehicle_id}, job_id={job_id}) for session {session_id}")
                 
-                result = order_tire_online(vehicle_id)
-                print(f"✓ BYPASS: Tool execution completed, returning full result with session_id")
+                result = order_tire_online(vehicle_id, job_id=job_id)
+                print(f"✓ BYPASS: Tool execution completed, returning full result")
                 
-                # Return the full JSON result (includes session_id for frontend)
+                # Return the full JSON result (includes metadata for frontend)
                 return result
         except Exception as e:
-            # Remove from executed set on error so it can be retried
-            BROWSER_TOOL_EXECUTED.discard(session_id)
             print(f"❌ BYPASS FAILED: {str(e)}")
             raise
     

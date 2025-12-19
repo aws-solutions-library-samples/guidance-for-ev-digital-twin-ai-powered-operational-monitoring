@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import agentCoreService from '../../services/agentcore';
+import { BrowserLiveViewModal } from '../browser-live-view/BrowserLiveViewModal';
 import './fleetportal.css';
 
 const FleetPortal = () => {
@@ -33,6 +34,8 @@ const FleetPortal = () => {
   const [showTireConfirmationModal, setShowTireConfirmationModal] = useState(false);
   const [tireOrderData, setTireOrderData] = useState(null);
   const [tireOrderComplete, setTireOrderComplete] = useState(false);
+  const [liveViewUrl, setLiveViewUrl] = useState(null);
+  const [showLiveViewModal, setShowLiveViewModal] = useState(false);
   
   // State for appointment slot selection (after agent suggests)
   const [showSlotSelectionModal, setShowSlotSelectionModal] = useState(false);
@@ -115,7 +118,6 @@ const FleetPortal = () => {
         for (const vehicleId of vehicleIds) {
           try {
             const vin = VIN_MAP[vehicleId];
-            console.log(`🔍 Fetching recommendations for vehicle ${vehicleId} (VIN: ${vin})...`);
             const startTime = Date.now();
 
             // Check DynamoDB cache first, then call Claude if not cached
@@ -565,18 +567,37 @@ Respond with the available slots.`;
     
     try {
       if (orderTiresOnline) {
-        // CASE 1: Order tires first (separate call)
+        // CASE 1: Order tires using async pattern
         setApprovalStatus('browser-tool');
         
-        const tirePrompt = `order_tire_online(${selectedRecommendation.vehicleName})`;
-        
         try {
-          const tireResponse = await agentCoreService.chat(tirePrompt);
+          // Start the async tire order job
+          const { job_id } = await agentCoreService.startTireOrder(selectedRecommendation.vehicleId);
           
-          setApprovalStatus('complete');
+          // Poll for completion with progress updates
+          const result = await agentCoreService.pollTireOrder(job_id, async (status) => {
+            if (status.progress) {
+              setApprovalStatus(status.progress);
+            }
+            
+            // Check if browser session is available for live viewing
+            if (status.browser_session_id && !liveViewUrl) {
+              try {
+                const liveViewData = await agentCoreService.getBrowserLiveView(job_id);
+                if (liveViewData.liveViewUrl) {
+                  setLiveViewUrl(liveViewData.liveViewUrl);
+                  setApprovalStatus('Browser automation running - Watch live!');
+                }
+              } catch (liveViewError) {
+                // Live view not ready yet, will retry
+              }
+            }
+          });
           
           // Parse tire order response
-          const tireData = parseTireOrderResponse(tireResponse);
+          const tireData = parseTireOrderResponse(JSON.stringify(result));
+          
+          setApprovalStatus('complete');
           
           // Show tire confirmation with option to schedule
           setTimeout(() => {
@@ -586,25 +607,22 @@ Respond with the available slots.`;
             setTireOrderData(tireData);
             setShowTireConfirmationModal(true);
           }, 1000);
+          
         } catch (tireError) {
           console.error('Tire ordering error:', tireError);
-          // Reset session after error
-          agentCoreService.resetSession();
           
-          // Even if API fails, show success (tool likely succeeded)
-          setApprovalStatus('complete');
-          
-          // Extract tire info from recommendation if available
+          // Show fallback tire confirmation
           const tireInfo = selectedRecommendation.fullRecommendation || '';
           const tireSizeMatch = tireInfo.match(/([\d]+\/[\d]+R[\d]+)/);
           
           const fallbackData = {
-            product: 'Tire ordered successfully',
-            price: 'Check Amazon cart',
+            product: 'Tire order failed',
+            price: 'Please try again',
             tireSize: tireSizeMatch?.[1] || 'N/A',
-            success: true
+            success: false
           };
           
+          setApprovalStatus('complete');
           setTimeout(() => {
             setApprovalStatus('');
             setSubmittingApproval(false);
@@ -669,6 +687,9 @@ Respond with the available slots.`;
         try {
           const data = JSON.parse(jsonMatch[0]);
           
+          // Log metadata for debugging
+          console.log('🎥 Browser metadata:', data.metadata);
+          
           // Extract from nested response field
           const responseText = data.response || '';
           
@@ -719,47 +740,54 @@ Respond with the available slots.`;
     
     try {
       if (orderTiresOnline) {
-        // CRITICAL: Reset session BEFORE tire ordering to clear corrupted conversation history
-        agentCoreService.resetSession();
-        
-        // Order tires and show confirmation modal
+        // Order tires using async pattern
         setApprovalStatus('browser-tool');
         
-        const tirePrompt = `order_tire_online(${selectedRecommendation.vehicleName})`;
-        const startTime = Date.now();
-        
         try {
-          const tireResponse = await agentCoreService.chat(tirePrompt);
+          // Step 1: Start the async tire order job
+          const { job_id } = await agentCoreService.startTireOrder(selectedRecommendation.vehicleId);
           
-          const tireData = parseTireOrderResponse(tireResponse);
+          // Step 2: Poll for completion with progress updates
+          const result = await agentCoreService.pollTireOrder(job_id, async (status) => {
+            // Check if browser session is available for live viewing
+            if (status.browser_session_id && !liveViewUrl) {
+              try {
+                const liveViewData = await agentCoreService.getBrowserLiveView(job_id);
+                if (liveViewData.liveViewUrl) {
+                  setLiveViewUrl(liveViewData.liveViewUrl);
+                }
+              } catch (liveViewError) {
+                // Live view not ready yet, will retry
+              }
+            }
+            // Update UI with progress if needed
+            if (status.progress) {
+              setApprovalStatus(status.progress);
+            }
+            // Extract live view URL if available
+            if (status.liveViewUrl) {
+              setLiveViewUrl(status.liveViewUrl);
+            }
+          });
+          
+          // Parse the result
+          const tireData = parseTireOrderResponse(JSON.stringify(result));
           setTireOrderData(tireData);
-          
-          // Mark tire order as complete
           setTireOrderComplete(true);
+          
         } catch (tireError) {
           console.error('Tire ordering error:', tireError);
           
-          // Mark tire order as complete even on error (tool likely succeeded)
-          setTireOrderComplete(true);
-          
+          // Fallback data on error
           const fallbackData = {
-            product: 'Tire ordered successfully',
-            price: 'Check Amazon cart',
+            product: 'Tire order failed',
+            price: 'Please try again',
             tireSize: 'N/A',
-            success: true
+            success: false
           };
           setTireOrderData(fallbackData);
+          setTireOrderComplete(true);
         }
-        
-        // Ensure at least 76 seconds have passed (browser tool minimum time)
-        // This prevents showing "complete" on phantom early responses
-        const elapsed = Date.now() - startTime;
-        if (elapsed < 76000) {
-          await new Promise(resolve => setTimeout(resolve, 76000 - elapsed));
-        }
-        
-        // Reset session after tire order completes
-        agentCoreService.resetSession();
         
         setApprovalStatus('complete');
         
@@ -1619,12 +1647,34 @@ Respond with the available slots.`;
           <div className="spinner"></div>
           <div style={{ color: '#fff', fontSize: '18px', textAlign: 'center' }}>
             {approvalStatus === 'processing' && '🤖 AgentCore Processing...'}
-            {approvalStatus === 'browser-tool' && (
+            {(approvalStatus === 'browser-tool' || approvalStatus.includes('Starting') || approvalStatus.includes('Searching') || approvalStatus.includes('running') || approvalStatus.includes('pending')) && (
               <>
                 <div>🌐 Browser Tool Running...</div>
                 <div style={{ fontSize: '14px', color: '#888', marginTop: '10px' }}>
                   Automating tire search and cart addition (30-60 seconds)
                 </div>
+                {liveViewUrl && (
+                  <div style={{ marginTop: '15px' }}>
+                    <button
+                      onClick={() => {
+                        const liveViewPageUrl = `/browser-live-view?url=${encodeURIComponent(liveViewUrl)}`;
+                        window.open(liveViewPageUrl, '_blank', 'noopener,noreferrer');
+                      }}
+                      style={{
+                        backgroundColor: '#37bc12',
+                        color: '#fff',
+                        border: 'none',
+                        padding: '10px 20px',
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      🎥 Watch Live Browser Automation
+                    </button>
+                  </div>
+                )}
               </>
             )}
             {approvalStatus === 'complete' && '✅ Complete!'}
@@ -1787,36 +1837,49 @@ Respond with the available slots.`;
                       
                       // Check if we need to order tires first
                       if (orderTiresOnline) {
-                        // STEP 1: Order tires via browser tool
+                        // STEP 1: Order tires via async pattern
                         setApprovalStatus('browser-tool');
                         setShowSlotSelectionModal(false);
                         
-                        const startTime = Date.now();
-                        
                         try {
-                          const tirePrompt = `order_tire_online(${selectedRecommendation.vehicleName})`;
-                          const tireResponse = await agentCoreService.chat(tirePrompt);
+                          console.log('🚀 Starting async tire order for vehicle:', selectedRecommendation.vehicleId);
                           
-                          const tireData = parseTireOrderResponse(tireResponse);
+                          // Start the async tire order job
+                          const { job_id } = await agentCoreService.startTireOrder(selectedRecommendation.vehicleId);
+                          
+                          // Poll for completion with progress updates
+                          const result = await agentCoreService.pollTireOrder(job_id, async (status) => {
+                            // Check if browser session is available for live viewing
+                            if (status.browser_session_id && !liveViewUrl) {
+                              try {
+                                const liveViewData = await agentCoreService.getBrowserLiveView(job_id);
+                                if (liveViewData.liveViewUrl) {
+                                  console.log('🎥 Live view URL available:', liveViewData.liveViewUrl.substring(0, 100));
+                                  setLiveViewUrl(liveViewData.liveViewUrl);
+                                }
+                              } catch (liveViewError) {
+                                // Live view not ready yet, will retry
+                              }
+                            }
+                            
+                            if (status.progress) {
+                              setApprovalStatus(status.progress);
+                            }
+                          });
+                          
+                          // Parse the result
+                          const tireData = parseTireOrderResponse(JSON.stringify(result));
                           setTireOrderData(tireData);
                           setTireOrderComplete(true);
                           
-                          // Store session ID immediately for Action Details
+                          // Store session ID if available
                           if (tireData?.sessionId) {
                             handleMarkAsScheduled(selectedRecommendation.vehicleId, tireData.sessionId);
                           }
                           
-                          // Ensure at least 76 seconds have passed (browser tool minimum time)
-                          // This prevents showing "complete" on phantom early responses
-                          const elapsed = Date.now() - startTime;
-                          if (elapsed < 76000) {
-                            console.log(`Waiting ${76000 - elapsed}ms more to ensure browser tool completion...`);
-                            await new Promise(resolve => setTimeout(resolve, 76000 - elapsed));
-                          }
-                          
                           setApprovalStatus('complete');
                           
-                          // Show tire confirmation, then user clicks to book appointment
+                          // Show tire confirmation
                           setTimeout(() => {
                             setApprovalStatus('');
                             setSubmittingApproval(false);
@@ -1825,24 +1888,16 @@ Respond with the available slots.`;
                           
                         } catch (tireError) {
                           console.error('Tire ordering error:', tireError);
-                          agentCoreService.resetSession();
                           
                           // Show fallback tire confirmation
                           const fallbackData = {
-                            product: 'Tire ordered successfully',
-                            price: 'Check Amazon cart',
+                            product: 'Tire order failed',
+                            price: 'Please try again',
                             tireSize: 'N/A',
-                            success: true
+                            success: false
                           };
                           setTireOrderData(fallbackData);
                           setTireOrderComplete(true);
-                          
-                          // Ensure at least 76 seconds have passed even on error
-                          const elapsed = Date.now() - startTime;
-                          if (elapsed < 76000) {
-                            console.log(`Waiting ${76000 - elapsed}ms more to ensure browser tool completion...`);
-                            await new Promise(resolve => setTimeout(resolve, 76000 - elapsed));
-                          }
                           
                           setApprovalStatus('complete');
                           setTimeout(() => {
@@ -2191,6 +2246,13 @@ Respond with the available slots.`;
           </div>
         </div>
       )}
+
+      {/* Browser Live View Modal */}
+      <BrowserLiveViewModal
+        isOpen={showLiveViewModal}
+        onClose={() => setShowLiveViewModal(false)}
+        liveViewUrl={liveViewUrl}
+      />
     </div>
   );
 };

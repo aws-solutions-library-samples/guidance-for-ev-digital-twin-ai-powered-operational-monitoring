@@ -7,6 +7,7 @@ import './App.css';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
+import { BrowserLiveViewPage } from './components/browser-live-view/BrowserLiveViewPage';
 import awsExports from './aws-exports';
 
 // Configure Amplify only in production
@@ -86,6 +87,10 @@ function App() {
             <Navigate to="/" replace /> : 
             <Login onSignIn={handleSignIn} />
           } 
+        />
+        <Route 
+          path="/browser-live-view" 
+          element={<BrowserLiveViewPage />} 
         />
         <Route 
           path="/*" 

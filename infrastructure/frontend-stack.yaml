@@ -43,10 +43,112 @@ Resources:
         SigningBehavior: always
         SigningProtocol: sigv4
 
+  # ============================================================================
+  # WAF WEB ACL FOR CLOUDFRONT PROTECTION
+  # ============================================================================
+
+  WebACL:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: !Sub "${ProjectName}-waf"
+      Scope: CLOUDFRONT
+      Description: WAF protection for EV Digital Twin CloudFront distribution
+      DefaultAction:
+        Allow: {}
+      Rules:
+        - Name: AWSManagedRulesAmazonIpReputationList
+          Priority: 0
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesAmazonIpReputationList
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: AmazonIpReputationListMetric
+        
+        - Name: AWSManagedRulesCommonRuleSet
+          Priority: 1
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesCommonRuleSet
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: CommonRuleSetMetric
+        
+        - Name: AWSManagedRulesLinuxRuleSet
+          Priority: 2
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesLinuxRuleSet
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: LinuxRuleSetMetric
+        
+        - Name: AWSManagedRulesPHPRuleSet
+          Priority: 3
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesPHPRuleSet
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: PHPRuleSetMetric
+        
+        - Name: AWSManagedRulesUnixRuleSet
+          Priority: 4
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesUnixRuleSet
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: UnixRuleSetMetric
+        
+        - Name: AWSManagedRulesSQLiRuleSet
+          Priority: 5
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesSQLiRuleSet
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: SQLiRuleSetMetric
+      
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub "${ProjectName}-waf-metric"
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-waf"
+        - Key: Environment
+          Value: !Ref Environment
+
   CloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
     Properties:
       DistributionConfig:
+        WebACLId: !GetAtt WebACL.Arn
         Origins:
           - Id: S3Origin
             DomainName: !GetAtt FrontendBucket.RegionalDomainName
@@ -123,3 +225,9 @@ Outputs:
   FrontendURL:
     Description: Frontend application URL
     Value: !Sub "https://${CloudFrontDistribution.DomainName}"
+
+  WebACLArn:
+    Description: ARN of the WAF Web ACL protecting CloudFront
+    Value: !GetAtt WebACL.Arn
+    Export:
+      Name: !Sub "${ProjectName}-waf-arn"

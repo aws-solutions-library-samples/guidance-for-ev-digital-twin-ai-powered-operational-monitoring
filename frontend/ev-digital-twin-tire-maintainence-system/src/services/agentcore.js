@@ -102,7 +102,6 @@ class AgentCoreService {
 
       // Reset session on ValidationException (corrupted conversation state)
       if (error.message.includes('ValidationException') || error.message.includes('tool_use')) {
-        console.log('Session corrupted, resetting session ID');
         this.sessionId = null;
         throw new Error('Session reset due to conversation state error. Please retry.');
       }
@@ -112,7 +111,6 @@ class AgentCoreService {
       const isBrowserTool = prompt.includes('order_tire_online');
       if (error.message.includes('503') && retryAttempt < this.MAX_RETRIES && !isBrowserTool) {
         const delay = Math.pow(2, retryAttempt) * 2000; // Exponential backoff: 2s, 4s - give Lambda more warmup time
-        console.log(`Retrying request after ${delay}ms (attempt ${retryAttempt + 1}/${this.MAX_RETRIES})...`);
         await new Promise(resolve => setTimeout(resolve, delay));
         return this.chat(prompt, vin, retryAttempt + 1);
       }
@@ -346,6 +344,92 @@ class AgentCoreService {
   async getMotorPerformance(vehicleId) {
     const prompt = `How is the motor performing for vehicle ${vehicleId}?`;
     return await this.chat(prompt);
+  }
+
+  /**
+   * Start async tire order
+   * @param {string} vehicleId - Vehicle ID
+   * @returns {Promise<{job_id: string, status: string}>}
+   */
+  async startTireOrder(vehicleId) {
+    const response = await fetch('https://b4blc4xmh4.execute-api.us-east-1.amazonaws.com/tire-order/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vehicle_id: vehicleId })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to start tire order: ${response.statusText}`);
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Check tire order status
+   * @param {string} jobId - Job ID from startTireOrder
+   * @returns {Promise<{status: string, result?: object, error?: string}>}
+   */
+  async getTireOrderStatus(jobId) {
+    const response = await fetch(`https://b4blc4xmh4.execute-api.us-east-1.amazonaws.com/tire-order/status/${jobId}`);
+
+    if (!response.ok) {
+      throw new Error(`Failed to get tire order status: ${response.statusText}`);
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Poll tire order until complete
+   * @param {string} jobId - Job ID
+   * @param {function} onProgress - Callback for progress updates
+   * @returns {Promise<object>} - Final result
+   */
+  async pollTireOrder(jobId, onProgress = null) {
+    return new Promise((resolve, reject) => {
+      const pollInterval = setInterval(async () => {
+        try {
+          const status = await this.getTireOrderStatus(jobId);
+
+          // Call progress callback if provided
+          if (onProgress) {
+            onProgress(status);
+          }
+
+          if (status.status === 'complete') {
+            clearInterval(pollInterval);
+            resolve(status.result);
+          } else if (status.status === 'failed') {
+            clearInterval(pollInterval);
+            reject(new Error(status.error || 'Tire order failed'));
+          }
+          // else: still running, keep polling
+
+        } catch (error) {
+          clearInterval(pollInterval);
+          reject(error);
+        }
+      }, 3000); // Poll every 3 seconds
+    });
+  }
+
+  /**
+   * Get browser live view URL for a tire order job
+   * @param {string} jobId - Job ID from startTireOrder
+   * @returns {Promise<{liveViewUrl: string, browserSessionId: string, browserId: string}>}
+   */
+  async getBrowserLiveView(jobId) {
+    const response = await fetch(`https://b4blc4xmh4.execute-api.us-east-1.amazonaws.com/browser-live-view/${jobId}`);
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error('Browser session not available yet');
+      }
+      throw new Error(`Failed to get live view URL: ${response.statusText}`);
+    }
+
+    return await response.json();
   }
 
   /**

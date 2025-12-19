@@ -48,7 +48,14 @@ Deploy the complete solution using Infrastructure as Code with nested CloudForma
 ./deploy-aws.sh
 ```
 
-**🔐 Security Note**: The demo is architected with self-registration disabled. Only administrators can add users to access the web application. Create users via AWS Console after deployment.
+**🔐 Security Setup (Required for Browser Automation):**
+
+The browser automation feature (tire ordering) requires a NovaAct API key stored in AWS Secrets Manager. See **[docs/IAM_POLICIES.md](docs/IAM_POLICIES.md)** for complete setup instructions including:
+- Creating the Secrets Manager secret
+- Configuring IAM permissions
+- Deployment checklist
+
+**🔐 Authentication Note**: The demo is architected with self-registration disabled. Only administrators can add users to access the web application. Create users via AWS Console after deployment.
 
 **🏗️ Infrastructure Management:**
 ```bash

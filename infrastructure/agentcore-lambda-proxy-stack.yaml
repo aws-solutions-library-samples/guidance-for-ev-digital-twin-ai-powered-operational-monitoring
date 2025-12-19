@@ -445,6 +445,30 @@ Resources:
       RouteKey: 'GET /genai-recs/{vin}'
       Target: !Sub 'integrations/${AgentCoreLambdaIntegration}'
 
+  # Tire Order Start Route
+  TireOrderStartRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref AgentCoreHttpApi
+      RouteKey: 'POST /tire-order/start'
+      Target: !Sub 'integrations/${AgentCoreLambdaIntegration}'
+
+  # Tire Order Status Route
+  TireOrderStatusRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref AgentCoreHttpApi
+      RouteKey: 'GET /tire-order/status/{job_id}'
+      Target: !Sub 'integrations/${AgentCoreLambdaIntegration}'
+
+  # Browser Live View Route
+  BrowserLiveViewRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref AgentCoreHttpApi
+      RouteKey: 'GET /browser-live-view/{job_id}'
+      Target: !Sub 'integrations/${AgentCoreLambdaIntegration}'
+
   # Default Stage
   AgentCoreHttpApiStage:
     Type: AWS::ApiGatewayV2::Stage
@@ -480,6 +504,12 @@ Outputs:
     Value: !GetAtt AgentCoreLambdaProxy.Arn
     Export:
       Name: !Sub "${ProjectName}-agentcore-lambda-arn"
+  
+  DeployLambdaCode:
+    Description: Deploy the complete Lambda code after stack creation
+    Value: !Sub |
+      zip lambda-proxy.zip lambda_complete.py
+      aws lambda update-function-code --function-name ${AgentCoreLambdaProxy} --zip-file fileb://lambda-proxy.zip
   
   TestCommand:
     Description: Test command
