@@ -1,4 +1,4 @@
-# EV Digital Twin - Predictive Maintenance Powered by AI Agents
+# 🚗 EV Digital Twin - Predictive Maintenance Powered by AI Agents
 
 AI-powered vehicle maintenance system using AWS Bedrock AgentCore for predictive analytics, anomaly detection, and automated tire ordering with real-time browser automation.
 
@@ -10,7 +10,7 @@ AI-powered vehicle maintenance system using AWS Bedrock AgentCore for predictive
 
 The EV Digital Twin combines machine learning predictive analytics with AWS Bedrock AgentCore to deliver intelligent vehicle maintenance management:
 
-- **AgentCore Runtime**: Containerized AI agent with 11 specialized maintenance tools
+- **AgentCore Runtime**: Containerized AI agent with 17 specialized maintenance tools (12 core + 5 Knowledge Base)
 - **AgentCore Memory**: Persistent conversation storage with recurring issue detection
 - **AgentCore Browser**: Automated tire ordering via Amazon with live view streaming
 - **Machine Learning**: Random Forest and Isolation Forest models for tire/motor/inverter predictions
@@ -19,7 +19,7 @@ The EV Digital Twin combines machine learning predictive analytics with AWS Bedr
 
 ---
 
-## Key Features
+## 🎯 Key Features
 
 - **Predictive Maintenance**: ML models forecast tire wear, motor failures, and inverter thermal issues
 - **Anomaly Detection**: Identify unusual patterns across tire, motor, and inverter systems
@@ -53,7 +53,7 @@ The EV Digital Twin combines machine learning predictive analytics with AWS Bedr
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
 ### Deployment Architecture
 
@@ -87,9 +87,9 @@ When deployed to AWS, the solution uses a modern, scalable architecture:
 
 - **Frontend**: React app on ECS Fargate with Cognito authentication, real-time updates, DCV Web Client SDK for browser live view
 - **Backend**: API Gateway + Lambda proxy for AgentCore integration, worker Lambda for async tire ordering
-- **Agent Runtime**: AgentCore Runtime with 11 specialized tools, Claude Sonnet 4.5, AgentCore Memory (STM + LTM for pattern detection)
+- **Agent Runtime**: AgentCore Runtime with 17 specialized tools (12 core + 5 KB), Claude Sonnet 4.5, AgentCore Memory (STM + LTM for pattern detection)
 - **Browser Automation**: AgentCore Browser with NovaAct SDK for automated tire ordering with live view streaming
-- **Data & ML**: CSV sensor data (3,600 tire + 900 motor records), pre-trained Random Forest and Isolation Forest models
+- **Data & ML**: CSV sensor data (3,600 tire + 900 motor records), pre-trained Random Forest and Isolation Forest models, Bedrock Knowledge Base with OpenSearch Serverless
 - **Persistence**: DynamoDB for appointments and job tracking, S3 for browser session recordings
 - **Security**: AWS WAF, Secrets Manager, Cognito JWT validation
 - **Deployment**: CloudFront (+ WAF) → ALB → ECS Fargate (React frontend) + API Gateway + Lambda + AgentCore Runtime
@@ -104,7 +104,7 @@ When deployed to AWS, the solution uses a modern, scalable architecture:
 
 ---
 
-## Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 
@@ -183,29 +183,46 @@ See [docs/AGENTCORE_SETUP.md](docs/AGENTCORE_SETUP.md) for detailed setup instru
 
 ---
 
-## AgentCore Tools
+## 🤖 AgentCore Tools
 
-The system includes 11 specialized tools for comprehensive vehicle maintenance:
+The system includes 17 specialized tools for comprehensive vehicle maintenance:
+
+### Core Maintenance Tools (12 tools)
 
 | Tool | Type | Description | Status |
 |------|------|-------------|--------|
 | `quick_vehicle_check` | Analysis | Quick health check across all systems | ✅ |
 | `analyze_tire_condition` | Analysis | Detailed tire health assessment | ✅ |
 | `analyze_motor_performance` | Analysis | Engine performance evaluation | ✅ |
+| `analyze_inverter_condition` | Analysis | Inverter health assessment | ✅ |
 | `predict_tire_wear` | ML Prediction | 90-day tire wear forecasting | ✅ |
 | `predict_motor_failure` | ML Prediction | Motor failure risk assessment | ✅ |
+| `predict_inverter_degradation` | ML Prediction | Inverter degradation forecasting | ✅ |
 | `detect_tire_anomalies` | ML Detection | Unusual tire wear pattern detection | ✅ |
 | `detect_motor_anomalies` | ML Detection | Motor performance anomaly detection | ✅ |
+| `get_available_slots` | Integration | Find available appointment slots | ✅ |
 | `schedule_appointment` | Integration | DynamoDB appointment scheduling | ✅ |
-| `get_fleet_status` | Analysis | Fleet-wide health overview | ✅ |
-| `cross_system_analysis` | Analysis | Correlate tire and motor issues | ✅ |
 | `order_tire_online` | Browser Automation | Automated Amazon tire ordering with live view | ✅ |
 
-**Total: 11 tools** (11 ✅)
+### Knowledge Base Tools (5 tools)
+
+Powered by AWS Bedrock Knowledge Base with OpenSearch Serverless backend and mock realistic vehicle maintenance manuals:
+
+| Tool | Type | Description | Status |
+|------|------|-------------|--------|
+| `get_tire_maintenance_guidance` | Knowledge Base | Tire maintenance manual guidance | ✅ |
+| `get_pressure_temperature_guidance` | Knowledge Base | Pressure/temperature specifications | ✅ |
+| `get_tread_depth_guidance` | Knowledge Base | Tread depth safety thresholds | ✅ |
+| `get_motor_maintenance_guidance` | Knowledge Base | Motor maintenance procedures | ✅ |
+| `get_inverter_maintenance_guidance` | Knowledge Base | Inverter maintenance guidelines | ✅ |
+
+**Total: 17 tools** (17 ✅)
+
+**Note:** Knowledge Base tools use AWS Bedrock Knowledge Base with OpenSearch Serverless for vector search. Mock realistic vehicle manuals provide maintenance recommendations for demonstration purposes (not actual manufacturer data).
 
 ---
 
-## Machine Learning Models
+## 🧠 Machine Learning Models
 
 ### Tire System
 - **Wear Prediction**: Random Forest (95% R² score)
@@ -225,7 +242,7 @@ Sensor Data (CSV) → Feature Engineering → Model Training → Predictions →
 
 ---
 
-## Security Features
+## 🔒 Security Features
 
 - **AWS WAF**: Deployed in front of CloudFront for web application protection
 - **Secrets Manager**: Secure storage for NovaAct API key
@@ -237,7 +254,7 @@ See [docs/IAM_POLICIES.md](docs/IAM_POLICIES.md) for complete security setup.
 
 ---
 
-## Technology Stack
+## 💻 Technology Stack
 
 **Frontend:**
 - React with modern UI components
@@ -265,7 +282,7 @@ See [docs/IAM_POLICIES.md](docs/IAM_POLICIES.md) for complete security setup.
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 ev-digital-twin-tire-maintainence-system/
@@ -303,7 +320,7 @@ ev-digital-twin-tire-maintainence-system/
 
 ---
 
-## Documentation
+## 📚 Documentation
 
 - **[AGENTCORE_SETUP.md](docs/AGENTCORE_SETUP.md)**: AgentCore Runtime IAM permissions setup
 - **[IAM_POLICIES.md](docs/IAM_POLICIES.md)**: Security configuration and best practices
@@ -311,7 +328,7 @@ ev-digital-twin-tire-maintainence-system/
 
 ---
 
-## Sample Data
+## 📊 Sample Data
 
 The system includes realistic sample data for 5 vehicles:
 
@@ -323,7 +340,7 @@ Vehicles include verified Honda Civic 2020 with real-world specifications.
 
 ---
 
-## Business Impact
+## 💼 Business Impact
 
 ### Quantifiable Benefits
 - **80% reduction** in unexpected failures through predictive maintenance
