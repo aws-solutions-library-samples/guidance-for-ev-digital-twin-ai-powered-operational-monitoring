@@ -1,8 +1,12 @@
 #!/bin/bash
 set -e
 
-# EV Digital Twin - Individual Stack Deployment Script
-# This script deploys each stack individually for easier debugging
+# EV Digital Twin - Flexible Stack Deployment Script
+# Usage:
+#   ./deploy-aws.sh                    # Deploy all stacks
+#   ./deploy-aws.sh cognito            # Deploy only cognito stack
+#   ./deploy-aws.sh --rebuild          # Deploy all + force Docker rebuild
+#   ./deploy-aws.sh cognito --rebuild  # Deploy cognito + rebuild Docker
 
 # Configuration
 AWS_REGION="us-east-1"
@@ -11,6 +15,17 @@ IMAGE_TAG="latest"
 PROJECT_NAME="ev-digital-twin"
 ENVIRONMENT="demo"
 FRONTEND_DIR="frontend/ev-digital-twin-tire-maintainence-system"
+
+# Parse arguments
+STACK_NAME=$1
+REBUILD_FLAG=$2
+
+# Check for rebuild flag
+if [ "$STACK_NAME" == "--rebuild" ] || [ "$REBUILD_FLAG" == "--rebuild" ]; then
+    FORCE_REBUILD=true
+else
+    FORCE_REBUILD=false
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -44,6 +59,14 @@ get_account_id() {
 
 # Build and push Docker image with correct platform
 build_and_push_image() {
+    # Skip if not forcing rebuild and image already exists
+    if [ "$FORCE_REBUILD" != true ]; then
+        if aws ecr describe-images --repository-name $ECR_REPO --image-ids imageTag=$IMAGE_TAG --region $AWS_REGION &> /dev/null; then
+            log_warning "Docker image already exists in ECR. Skipping build. Use --rebuild to force."
+            return
+        fi
+    fi
+    
     log_info "Building and pushing Docker image for linux/amd64..."
     
     # Build the image for the correct platform
@@ -122,6 +145,62 @@ deploy_frontend_stack() {
             Component=frontend
     
     log_success "Frontend stack deployed"
+}
+
+# Deploy Appointment Slots stack
+deploy_appointment_slots() {
+    log_info "Deploying Appointment Slots stack..."
+    
+    aws cloudformation deploy \
+        --template-file infrastructure/appointment-slots-stack.yaml \
+        --stack-name ${PROJECT_NAME}-appointment-slots \
+        --parameter-overrides \
+            ProjectName=$PROJECT_NAME \
+        --region $AWS_REGION \
+        --tags \
+            Project=$PROJECT_NAME \
+            Environment=$ENVIRONMENT \
+            Component=appointment-slots
+    
+    log_success "Appointment Slots stack deployed"
+}
+
+# Deploy Tire Automation stack
+deploy_tire_automation() {
+    log_info "Deploying Tire Automation stack..."
+    
+    aws cloudformation deploy \
+        --template-file infrastructure/tire-automation-stack.yaml \
+        --stack-name ${PROJECT_NAME}-tire-automation \
+        --parameter-overrides \
+            ProjectName=$PROJECT_NAME \
+        --capabilities CAPABILITY_NAMED_IAM \
+        --region $AWS_REGION \
+        --tags \
+            Project=$PROJECT_NAME \
+            Environment=$ENVIRONMENT \
+            Component=tire-automation
+    
+    log_success "Tire Automation stack deployed"
+}
+
+# Deploy AgentCore Lambda Proxy stack
+deploy_agentcore_proxy() {
+    log_info "Deploying AgentCore Lambda Proxy stack..."
+    
+    aws cloudformation deploy \
+        --template-file infrastructure/agentcore-lambda-proxy-stack.yaml \
+        --stack-name ${PROJECT_NAME}-agentcore-proxy \
+        --parameter-overrides \
+            ProjectName=$PROJECT_NAME \
+        --capabilities CAPABILITY_NAMED_IAM \
+        --region $AWS_REGION \
+        --tags \
+            Project=$PROJECT_NAME \
+            Environment=$ENVIRONMENT \
+            Component=agentcore-proxy
+    
+    log_success "AgentCore Lambda Proxy stack deployed"
 }
 
 # Get stack outputs
@@ -273,16 +352,83 @@ test_deployment() {
 
 # Main deployment function
 main() {
-    echo "🚀 EV Digital Twin - Individual Stack Deployment"
-    echo "==============================================="
+    echo "🚀 EV Digital Twin - Flexible Stack Deployment"
+    echo "=============================================="
+    echo ""
     
     get_account_id
+    
+    # Handle individual stack deployment
+    case "$STACK_NAME" in
+        cognito)
+            log_info "Deploying only Cognito stack"
+            deploy_cognito
+            log_success "Cognito stack deployment complete!"
+            exit 0
+            ;;
+        appointment-slots)
+            log_info "Deploying only Appointment Slots stack"
+            deploy_appointment_slots
+            log_success "Appointment Slots stack deployment complete!"
+            exit 0
+            ;;
+        tire-automation)
+            log_info "Deploying only Tire Automation stack"
+            deploy_tire_automation
+            log_success "Tire Automation stack deployment complete!"
+            exit 0
+            ;;
+        agentcore-proxy)
+            log_info "Deploying only AgentCore Proxy stack"
+            deploy_agentcore_proxy
+            log_success "AgentCore Proxy stack deployment complete!"
+            exit 0
+            ;;
+        backend)
+            log_info "Deploying only Backend stack (includes Docker build)"
+            build_and_push_image
+            deploy_backend
+            log_success "Backend stack deployment complete!"
+            exit 0
+            ;;
+        frontend)
+            log_info "Deploying only Frontend stack"
+            deploy_frontend_stack
+            get_stack_outputs
+            deploy_frontend_app
+            log_success "Frontend stack deployment complete!"
+            exit 0
+            ;;
+        "")
+            log_info "Deploying all stacks"
+            ;;
+        *)
+            log_error "Unknown stack: $STACK_NAME"
+            echo ""
+            echo "Usage:"
+            echo "  ./deploy-aws.sh                    # Deploy all stacks"
+            echo "  ./deploy-aws.sh cognito            # Deploy only cognito"
+            echo "  ./deploy-aws.sh appointment-slots  # Deploy only appointment-slots"
+            echo "  ./deploy-aws.sh tire-automation    # Deploy only tire-automation"
+            echo "  ./deploy-aws.sh agentcore-proxy    # Deploy only agentcore-proxy"
+            echo "  ./deploy-aws.sh backend            # Deploy only backend (+ Docker)"
+            echo "  ./deploy-aws.sh frontend           # Deploy only frontend"
+            echo "  ./deploy-aws.sh --rebuild          # Deploy all + force Docker rebuild"
+            exit 1
+            ;;
+    esac
+    
+    # Full deployment
+    log_info "Starting full deployment..."
     
     # Build and push backend image with correct platform
     build_and_push_image
     
-    # Deploy stacks individually
+    # Deploy stacks in order
     deploy_cognito
+    deploy_appointment_slots
+    deploy_tire_automation
+    deploy_agentcore_proxy
     deploy_backend
     deploy_frontend_stack
     
@@ -309,12 +455,15 @@ main() {
     echo "📧 Demo Email: admin@example.com"
     echo "🔑 Temporary Password: TempPass123!"
     echo ""
-    echo "📊 CloudFormation Stacks:"
+    echo "📊 CloudFormation Stacks Deployed:"
     echo "- ${PROJECT_NAME}-cognito (Authentication)"
+    echo "- ${PROJECT_NAME}-appointment-slots (DynamoDB tables)"
+    echo "- ${PROJECT_NAME}-tire-automation (Worker Lambda + DynamoDB)"
+    echo "- ${PROJECT_NAME}-agentcore-proxy (API Gateway + Lambda)"
     echo "- ${PROJECT_NAME}-backend (ECS + ALB)"
     echo "- ${PROJECT_NAME}-frontend (S3 + CloudFront)"
     echo ""
-    echo "💡 Note: Each stack can be debugged independently"
+    echo "💡 Tip: Deploy individual stacks with ./deploy-aws.sh <stack-name>"
 }
 
 # Run main function
