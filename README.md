@@ -1,6 +1,6 @@
 # 🚗 EV Digital Twin - Predictive Maintenance Powered by AI Agents
 
-AI-powered vehicle maintenance system using AWS Bedrock AgentCore for predictive analytics, anomaly detection, and automated tire ordering with real-time browser automation.
+AI-powered vehicle maintenance system using Amazon Bedrock AgentCore for predictive analytics, anomaly detection, and automated tire ordering with real-time browser automation.
 
 **Quick Links:** [🚀 Quick Start](#quick-start) | [🏗️ Architecture](#architecture) | [📹 Live Demo](https://dvm0illvncdsh.cloudfront.net) | [📚 Documentation](#documentation)
 
@@ -8,7 +8,7 @@ AI-powered vehicle maintenance system using AWS Bedrock AgentCore for predictive
 
 ## Overview
 
-The EV Digital Twin combines machine learning predictive analytics with AWS Bedrock AgentCore to deliver intelligent vehicle maintenance management:
+The EV Digital Twin combines machine learning predictive analytics with Amazon Bedrock AgentCore to deliver intelligent vehicle maintenance management:
 
 - **AgentCore Runtime**: Containerized AI agent with 17 specialized maintenance tools (12 core + 5 Knowledge Base)
 - **AgentCore Memory**: Persistent conversation storage with recurring issue detection
@@ -206,7 +206,7 @@ The system includes 17 specialized tools for comprehensive vehicle maintenance:
 
 ### Knowledge Base Tools (5 tools)
 
-Powered by AWS Bedrock Knowledge Base with OpenSearch Serverless backend and mock realistic vehicle maintenance manuals:
+Powered by Amazon Bedrock Knowledge Base with OpenSearch Serverless backend and mock realistic vehicle maintenance manuals:
 
 | Tool | Type | Description | Status |
 |------|------|-------------|--------|
@@ -218,7 +218,7 @@ Powered by AWS Bedrock Knowledge Base with OpenSearch Serverless backend and moc
 
 **Total: 17 tools** (17 ✅)
 
-**Note:** Knowledge Base tools use AWS Bedrock Knowledge Base with OpenSearch Serverless for vector search. Mock realistic vehicle manuals provide maintenance recommendations for demonstration purposes (not actual manufacturer data).
+**Note:** Knowledge Base tools use Amazon Bedrock Knowledge Base with OpenSearch Serverless for vector search. Mock realistic vehicle manuals provide maintenance recommendations for demonstration purposes (not actual manufacturer data).
 
 ---
 
@@ -263,7 +263,7 @@ See [docs/IAM_POLICIES.md](docs/IAM_POLICIES.md) for complete security setup.
 - DCV Web Client SDK for browser live view
 
 **Backend:**
-- AWS Bedrock AgentCore Runtime
+- Amazon Bedrock AgentCore Runtime
 - Claude Sonnet 4.5 for AI reasoning
 - Lambda functions (proxy + worker)
 - API Gateway for HTTP endpoints
@@ -330,24 +330,26 @@ ev-digital-twin-tire-maintainence-system/
 
 ## 📊 Sample Data
 
-The system includes realistic sample data for 5 vehicles:
+The system includes realistic sample data for demonstration:
 
 - **3,600 tire records**: 180 days × 5 vehicles × 4 tire positions
 - **900 motor records**: 180 days × 5 vehicles
-- **5 vehicle specs**: Manufacturer guidelines and thresholds
+- **900 inverter records**: 180 days × 5 vehicles
+- **5 vehicle specs**: Mock manufacturer guidelines and maintenance thresholds
+- **Mock vehicle manuals**: Realistic maintenance procedures for tire, motor, and inverter systems stored in Bedrock Knowledge Base
 
-Vehicles include verified Honda Civic 2020 with real-world specifications.
+All data is synthetically generated for demonstration purposes and does not represent actual vehicle telemetry.
 
 ---
 
 ## 💼 Business Impact
 
 ### Quantifiable Benefits
-- **80% reduction** in unexpected failures through predictive maintenance
-- **25-30% cost savings** via optimized maintenance scheduling
-- **95% prevention** of tire-related safety incidents
-- **10x faster** analysis compared to manual inspection
-- **Unlimited scalability** with cloud-native architecture
+- Reduce unexpected failures through predictive maintenance
+- Optimize maintenance scheduling for cost savings
+- Prevent tire-related safety incidents with early detection
+- Faster analysis compared to manual inspection
+- Unlimited scalability with cloud-native architecture
 
 ### Competitive Advantages
 - AI-first approach with advanced reasoning (Claude Sonnet 4.5)
@@ -355,6 +357,28 @@ Vehicles include verified Honda Civic 2020 with real-world specifications.
 - Real-time browser automation with live viewing capability
 - Comprehensive integration of tire, motor, and inverter data
 - Future-ready architecture for continuous improvement
+
+---
+
+## 🔮 Future Enhancements
+
+### IoT & Real-Time Data
+- **AWS IoT FleetWise**: Real-time vehicle telemetry ingestion from connected vehicles
+- **AWS IoT TwinMaker**: 3D digital twin visualization with spatial context
+- **Live Sensor Streaming**: Replace CSV data with real-time IoT sensor feeds
+
+### Advanced Analytics
+- **Integrated BI Dashboard**: Amazon QuickSuite for executive reporting and KPI tracking
+- **Natural Language Queries**: Enhanced conversational interface for complex fleet analytics
+- **Deep Learning Models**: Neural networks for advanced pattern recognition
+- **Weather Integration**: Real-time weather impact analysis on vehicle performance
+- **Predictive Routing**: Optimize vehicle routes based on maintenance predictions
+
+### Tool Ecosystem Expansion
+- **AgentCore Gateway**: MCP tool integration for external system connectivity (ERP, CRM, parts suppliers)
+- **MCP Tool Protocol**: Standardized tool definitions for third-party integrations
+- **Multi-Agent Orchestration**: Specialized agents for procurement, scheduling, and diagnostics
+- **Mobile Integration**: Smartphone interface for technicians and fleet managers
 
 ---
 
