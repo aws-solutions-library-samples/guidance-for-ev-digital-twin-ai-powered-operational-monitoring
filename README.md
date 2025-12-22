@@ -10,9 +10,11 @@ AI-powered vehicle maintenance system using Amazon Bedrock AgentCore for predict
 
 The EV Digital Twin combines machine learning predictive analytics with Amazon Bedrock AgentCore to deliver intelligent vehicle maintenance management:
 
+- **Strands Agent Framework**: Python-based agent orchestration framework for building AI agents
 - **AgentCore Runtime**: Containerized AI agent with 17 specialized maintenance tools (12 core + 5 Knowledge Base)
 - **AgentCore Memory**: Persistent conversation storage with recurring issue detection
 - **AgentCore Browser**: Automated tire ordering via Amazon with live view streaming
+- **Amazon Nova Act**: Agentic foundation model for browser automation with visual reasoning and natural language control
 - **Machine Learning**: Random Forest and Isolation Forest models for tire/motor/inverter predictions
 - **Predictive Analytics**: 90-day maintenance forecasting with anomaly detection
 - **Fleet Management**: Real-time health monitoring across tire, motor, and inverter systems
@@ -87,7 +89,7 @@ When deployed to AWS, the solution uses a modern, scalable architecture:
 
 - **Frontend**: React app on ECS Fargate with Cognito authentication, real-time updates, DCV Web Client SDK for browser live view
 - **Backend**: API Gateway + Lambda proxy for AgentCore integration, worker Lambda for async tire ordering
-- **Agent Runtime**: AgentCore Runtime with 17 specialized tools (12 core + 5 KB), Claude Sonnet 4.5, AgentCore Memory (STM + LTM for pattern detection)
+- **Agent Runtime**: AgentCore Runtime with Strands Agent framework, 17 specialized tools (12 core + 5 KB), Claude Sonnet 4.5, AgentCore Memory (STM + LTM for pattern detection)
 - **Browser Automation**: AgentCore Browser with NovaAct SDK for automated tire ordering with live view streaming
 - **Data & ML**: CSV sensor data (3,600 tire + 900 motor records), pre-trained Random Forest and Isolation Forest models, Bedrock Knowledge Base with OpenSearch Serverless
 - **Persistence**: DynamoDB for appointments and job tracking, S3 for browser session recordings
@@ -263,7 +265,7 @@ See [docs/IAM_POLICIES.md](docs/IAM_POLICIES.md) for complete security setup.
 - DCV Web Client SDK for browser live view
 
 **Backend:**
-- Amazon Bedrock AgentCore Runtime
+- Amazon Bedrock AgentCore Runtime with Strands Agent orchestration
 - Claude Sonnet 4.5 for AI reasoning
 - Lambda functions (proxy + worker)
 - API Gateway for HTTP endpoints

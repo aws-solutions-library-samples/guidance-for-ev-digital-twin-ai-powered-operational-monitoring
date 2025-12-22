@@ -78,9 +78,37 @@ def invoke(payload):
                 vehicle_id = match.group(2)
                 job_id = match.group(3)  # May be None if not provided
                 
+                # IDEMPOTENCY CHECK: Prevent duplicate browser tool executions for the same job
+                if job_id and job_id in BROWSER_TOOL_EXECUTED:
+                    print(f"⚠️  BYPASS SKIPPED: Browser tool already executed for job {job_id}")
+                    print(f"⚠️  Returning cached result to prevent duplicate browser session")
+                    
+                    # Return cached result if available
+                    if job_id in BROWSER_SESSION_INFO:
+                        cached_result = BROWSER_SESSION_INFO[job_id]
+                        print(f"✅ Returning cached browser session info")
+                        return cached_result
+                    
+                    # Return success message if no cached result
+                    return json.dumps({
+                        "success": True,
+                        "message": "Browser tool already executed for this job",
+                        "job_id": job_id,
+                        "vehicle_id": vehicle_id
+                    })
+                
                 print(f"✓ BYPASS: Directly calling order_tire_online({vehicle_id}, job_id={job_id}) for session {session_id}")
                 
+                # Mark job as being executed
+                if job_id:
+                    BROWSER_TOOL_EXECUTED.add(job_id)
+                
                 result = order_tire_online(vehicle_id, job_id=job_id)
+                
+                # Cache the result for potential duplicate calls
+                if job_id:
+                    BROWSER_SESSION_INFO[job_id] = result
+                
                 print(f"✓ BYPASS: Tool execution completed, returning full result")
                 
                 # Return the full JSON result (includes metadata for frontend)

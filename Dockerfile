@@ -17,16 +17,16 @@ COPY requirements-agentcore.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements-agentcore.txt
 
-# Copy application code
-COPY agentcore_runtime_app.py .
-COPY agentcore_maintenance_agent.py .
+# Copy application code from agents/maintenance-agent/
+COPY agents/maintenance-agent/agentcore_runtime_app.py .
+COPY agents/maintenance-agent/agentcore_maintenance_agent.py .
 COPY knowledge_base_tools.py .
 COPY tire_predictor.py .
 COPY tire_wear_data.csv .
 COPY motor_sensor_data.csv .
 COPY inverter_sensor_data.csv .
 COPY car_manual_specs.csv .
-COPY tire_models_*.pkl .
+COPY models/tire_models_*.pkl .
 
 # Create directory for models if they don't exist
 RUN mkdir -p models

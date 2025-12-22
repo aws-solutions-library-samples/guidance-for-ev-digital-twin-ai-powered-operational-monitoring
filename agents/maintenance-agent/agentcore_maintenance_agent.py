@@ -1366,7 +1366,6 @@ def order_tire_online(vehicle_id: str, job_id: str = None) -> str:
         # Re-enable memory hooks even on error
         if agent_instance.memory_hooks:
             agent_instance.memory_hooks.browser_tool_active = False
-            print("✓ Memory hooks re-enabled after error")
         
         return json.dumps({
             "success": True,

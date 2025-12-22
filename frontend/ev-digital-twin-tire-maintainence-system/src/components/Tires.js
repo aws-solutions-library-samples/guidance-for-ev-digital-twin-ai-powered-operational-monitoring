@@ -209,55 +209,84 @@ const TiresPage = () => {
       
       const recommendations = [];
       
-      // First, try to extract driver-focused sections (THIS WEEK, What You Can Do NOW, etc.)
-      const driverSectionPatterns = [
-        /THIS WEEK.*?:/i,
-        /What You Can Do NOW.*?:/i,
-        /What Drivers Should Do.*?:/i,
-        /IMMEDIATE.*?:/i,
-        /Action Items for Driver.*?:/i
-      ];
+      // First, try to extract driver-focused sections
+      const driverSectionMatch = response.match(/##\s*🚗\s*What You Can Do.*?\n\n([\s\S]*?)(?=\n##|$)/i);
       
-      for (const pattern of driverSectionPatterns) {
-        const match = response.match(pattern);
-        if (match) {
-          const startIndex = match.index + match[0].length;
-          let endIndex = response.length;
-          
-          const nextSectionPatterns = [/\n\n###/,  /\n\nNext Steps/i, /\n\nSources:/i, /\n\n📊/];
-          for (const endPattern of nextSectionPatterns) {
-            const endMatch = response.substring(startIndex).match(endPattern);
-            if (endMatch) {
-              endIndex = startIndex + endMatch.index;
-              break;
+      if (driverSectionMatch) {
+        const driverSection = driverSectionMatch[1];
+        const bullets = [];
+        const lines = driverSection.split('\n');
+        
+        for (const line of lines) {
+          const trimmed = line.trim();
+          // Match numbered items like "1. **Monthly Pressure Checks**" or bullet points
+          if ((trimmed.match(/^\d+\.\s*\*{0,2}/) || trimmed.startsWith('-') || trimmed.startsWith('•') || trimmed.startsWith('*')) && trimmed.length > 15) {
+            let bullet = trimmed
+              .replace(/^\d+\.\s*/, '')  // Remove numbers
+              .replace(/^[-•*]+\s*/, '')   // Remove bullet markers and asterisks
+              .replace(/\*\*/g, '')       // Remove bold markers
+              .replace(/\(Confidence:.*?\)/gi, '')  // Remove confidence
+              .replace(/\[Source:.*?\]/gi, '')      // Remove sources
+              .trim();
+            
+            // Take only the first sentence or up to first dash
+            const firstSentence = bullet.split(/[.!?]|(?= -)/)[0].trim();
+            // Skip generic phrases like "Keep doing what you're doing"
+            if (firstSentence.length > 10 && 
+                !firstSentence.toLowerCase().includes('confidence') &&
+                !firstSentence.toLowerCase().includes('keep doing what')) {
+              bullets.push(firstSentence);
+              if (bullets.length >= 2) break;
             }
           }
-          
-          const driverSection = response.substring(startIndex, endIndex);
-          const bullets = [];
-          const lines = driverSection.split('\n');
-          
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if ((trimmed.startsWith('-') || trimmed.startsWith('•') || trimmed.startsWith('*')) && trimmed.length > 15) {
-              let bullet = trimmed.replace(/^[-•*]\s*/, '').replace(/\*\*/g, '').trim();
-              if (bullet.length > 10 && !bullet.toLowerCase().includes('confidence:')) {
-                bullets.push(bullet);
-                if (bullets.length >= 2) break;
-              }
+        }
+        
+        if (bullets.length > 0) {
+          recommendations.push({
+            action: 'Driver Actions',
+            priority: 'HIGH',
+            reason: "",
+            urgency: 'This Week',
+            bullets: bullets,
+            category: 'driver'
+          });
+        }
+      }
+      
+      // Extract service/maintenance recommendations section
+      const serviceSectionMatch = response.match(/##\s*🎯.*?(?:Recommendations|Maintenance).*?\n\n([\s\S]*?)(?=\n##|---|\n\n\*\*Bottom Line|$)/i);
+      
+      if (serviceSectionMatch) {
+        const serviceSection = serviceSectionMatch[1];
+        const bullets = [];
+        const lines = serviceSection.split('\n');
+        
+        for (const line of lines) {
+          const trimmed = line.trim();
+          // Match numbered items like "1. **THIS MONTH:**" or "2. **WITHIN 6 MONTHS:**"
+          if (trimmed.match(/^\d+\.\s*\*{0,2}(?:THIS|WITHIN|NEXT)/i) && trimmed.length > 15) {
+            let bullet = trimmed
+              .replace(/^\d+\.\s*/, '')
+              .replace(/\*\*/g, '')
+              .trim();
+            
+            // Take the full recommendation
+            if (bullet.length > 10) {
+              bullets.push(bullet);
+              if (bullets.length >= 3) break;
             }
           }
-          
-          if (bullets.length > 0) {
-            recommendations.push({
-              action: match[0].replace(':', '').trim(),
-              priority: 'HIGH',
-              reason: "",
-              urgency: 'This Week',
-              bullets: bullets.slice(0, 2)
-            });
-            break;
-          }
+        }
+        
+        if (bullets.length > 0) {
+          recommendations.push({
+            action: 'Service Required',
+            priority: 'MEDIUM',
+            reason: "",
+            urgency: 'Scheduled',
+            bullets: bullets,
+            category: 'service'
+          });
         }
       }
       
