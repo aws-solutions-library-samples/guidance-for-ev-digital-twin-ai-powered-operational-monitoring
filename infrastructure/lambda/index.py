@@ -119,119 +119,61 @@ def lambda_handler(event, context):
                     'body': json.dumps({'error': str(e)})
                 }
         
-        # GET /action-logs/{sessionId}
+        # GET /action-logs/{job_id}
         if path.startswith('/action-logs/'):
-            session_id = path.split('/')[-1]
+            job_id = path.split('/')[-1]
             
             try:
-                # First, try to read from S3 bucket with pre-exported logs
-                s3_client = boto3.client('s3', region_name='us-east-1')
-                s3_bucket = 'cloudwatch-agentcore-logs'
-                s3_key = f'agentcore-browser-logs/{session_id}.csv'
-                
                 actions = []
                 result_text = None
                 
-                try:
-                    # Try to get CSV from S3 (session-specific file first)
-                    print(f"Attempting to read from S3: s3://{s3_bucket}/{s3_key}")
-                    try:
-                        s3_response = s3_client.get_object(Bucket=s3_bucket, Key=s3_key)
-                    except s3_client.exceptions.NoSuchKey:
-                        # Fallback to generic log file
-                        print(f"Session-specific file not found, trying generic log file")
-                        s3_key = 'agentcore-browser-logs/log-events-viewer-result (3).csv'
-                        s3_response = s3_client.get_object(Bucket=s3_bucket, Key=s3_key)
+                # Query CloudWatch for browser actions using 'agentClick' pattern
+                print(f"Querying CloudWatch for browser actions (job_id: {job_id})")
+                end_time = int(datetime.now().timestamp() * 1000)
+                start_time = int((datetime.now() - timedelta(hours=6)).timestamp() * 1000)  # Last 6 hours
+                
+                # Use 'agentClick' pattern - it finds browser actions reliably
+                log_response = logs_client.filter_log_events(
+                    logGroupName=LOG_GROUP_NAME,
+                    startTime=start_time,
+                    endTime=end_time,
+                    filterPattern='agentClick'  # This pattern works!
+                )
+                
+                for event in log_response.get('events', []):
+                    message = event.get('message', '')
                     
-                    csv_content = s3_response['Body'].read().decode('utf-8')
+                    # Skip if this message doesn't contain relevant action patterns
+                    if not any(pattern in message for pattern in ['think(', 'agentClick', 'agentType', 'agentScroll', 'return "']):
+                        continue
                     
-                    # Parse CSV content
-                    import csv
-                    from io import StringIO
-                    csv_reader = csv.DictReader(StringIO(csv_content))
+                    # Extract think statements
+                    if 'think(' in message:
+                        think_match = re.search(r'think\("(.+?)"\)', message, re.DOTALL)
+                        if think_match:
+                            text = think_match.group(1)[:150]
+                            actions.append({'type': 'think', 'text': text, 'icon': '💭'})
                     
-                    for row in csv_reader:
-                        message = row.get('message', '')
-                        
-                        # Extract think statements
-                        if 'think(' in message:
-                            think_match = re.search(r'think\("(.+?)"\)', message, re.DOTALL)
-                            if think_match:
-                                text = think_match.group(1)[:150]
-                                actions.append({'type': 'think', 'text': text, 'icon': '💭'})
-                        
-                        # Extract clicks
-                        elif 'agentClick(' in message:
-                            actions.append({'type': 'click', 'text': 'Clicked element on page', 'icon': '👆'})
-                        
-                        # Extract typing
-                        elif 'agentType(' in message:
-                            type_match = re.search(r'agentType\("(.+?)"', message)
-                            if type_match:
-                                actions.append({'type': 'type', 'text': f'Typed: {type_match.group(1)}', 'icon': '⌨️'})
-                        
-                        # Extract scrolling
-                        elif 'agentScroll(' in message:
-                            actions.append({'type': 'scroll', 'text': 'Scrolled page', 'icon': '📜'})
-                        
-                        # Extract return value
-                        elif 'return "' in message:
-                            return_match = re.search(r'return "(.+?)"', message)
-                            if return_match:
-                                result_text = return_match.group(1)
-                                actions.append({'type': 'result', 'text': result_text, 'icon': '✅'})
+                    # Extract clicks
+                    elif 'agentClick(' in message:
+                        actions.append({'type': 'click', 'text': 'Clicked element on page', 'icon': '👆'})
                     
-                    print(f"Successfully parsed {len(actions)} actions from S3 CSV")
+                    # Extract typing
+                    elif 'agentType(' in message:
+                        type_match = re.search(r'agentType\("(.+?)"', message)
+                        if type_match:
+                            actions.append({'type': 'type', 'text': f'Typed: {type_match.group(1)}', 'icon': '⌨️'})
                     
-                except s3_client.exceptions.NoSuchKey:
-                    print(f"No S3 file found for session {session_id}, falling back to CloudWatch")
+                    # Extract scrolling
+                    elif 'agentScroll(' in message:
+                        actions.append({'type': 'scroll', 'text': 'Scrolled page', 'icon': '📜'})
                     
-                    # Fallback to CloudWatch if S3 file doesn't exist
-                    end_time = int(datetime.now().timestamp() * 1000)
-                    start_time = int((datetime.now() - timedelta(days=7)).timestamp() * 1000)
-                    session_prefix = session_id[:4]
-                    
-                    log_response = logs_client.filter_log_events(
-                        logGroupName=LOG_GROUP_NAME,
-                        startTime=start_time,
-                        endTime=end_time,
-                        filterPattern=f'"{session_prefix}"'
-                    )
-                    
-                    for event in log_response.get('events', []):
-                        message = event.get('message', '')
-                        
-                        # Skip if this message doesn't contain relevant action patterns
-                        if not any(pattern in message for pattern in ['think(', 'agentClick', 'agentType', 'agentScroll', 'return "']):
-                            continue
-                        
-                        # Extract think statements
-                        if 'think(' in message:
-                            think_match = re.search(r'think\("(.+?)"\)', message, re.DOTALL)
-                            if think_match:
-                                text = think_match.group(1)[:150]
-                                actions.append({'type': 'think', 'text': text, 'icon': '💭'})
-                        
-                        # Extract clicks
-                        elif 'agentClick(' in message:
-                            actions.append({'type': 'click', 'text': 'Clicked element on page', 'icon': '👆'})
-                        
-                        # Extract typing
-                        elif 'agentType(' in message:
-                            type_match = re.search(r'agentType\("(.+?)"', message)
-                            if type_match:
-                                actions.append({'type': 'type', 'text': f'Typed: {type_match.group(1)}', 'icon': '⌨️'})
-                        
-                        # Extract scrolling
-                        elif 'agentScroll(' in message:
-                            actions.append({'type': 'scroll', 'text': 'Scrolled page', 'icon': '📜'})
-                        
-                        # Extract return value
-                        elif 'return "' in message:
-                            return_match = re.search(r'return "(.+?)"', message)
-                            if return_match:
-                                result_text = return_match.group(1)
-                                actions.append({'type': 'result', 'text': result_text, 'icon': '✅'})
+                    # Extract return value
+                    elif 'return "' in message:
+                        return_match = re.search(r'return "(.+?)"', message)
+                        if return_match:
+                            result_text = return_match.group(1)
+                            actions.append({'type': 'result', 'text': result_text, 'icon': '✅'})
                 
                 return {
                     'statusCode': 200,
@@ -242,7 +184,7 @@ def lambda_handler(event, context):
                         'Access-Control-Allow-Methods': 'GET,POST,OPTIONS'
                     },
                     'body': json.dumps({
-                        'sessionId': session_id,
+                        'job_id': job_id,
                         'actions': actions,
                         'count': len(actions),
                         'result': result_text

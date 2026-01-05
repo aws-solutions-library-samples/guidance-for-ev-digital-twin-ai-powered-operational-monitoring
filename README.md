@@ -384,6 +384,16 @@ All data is synthetically generated for demonstration purposes and does not repr
 
 ---
 
+## 👥 Contributors
+
+This project was built by:
+
+- **Amit Sinha** - Project Lead
+- **Eduardo Ramirez** - Frontend Lead
+- **Vanshaj Kochar** - Backend Lead
+
+---
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

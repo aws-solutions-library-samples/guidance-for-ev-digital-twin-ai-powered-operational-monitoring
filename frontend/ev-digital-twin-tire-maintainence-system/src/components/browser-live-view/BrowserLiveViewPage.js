@@ -175,7 +175,7 @@ export function BrowserLiveViewPage() {
         <h2 style={{ margin: 0, fontSize: '18px' }}>🖥️ Browser Live View</h2>
       </div>
 
-      <div style={{ width: '100%', height: 'calc(100vh - 50px)', position: 'relative' }}>
+      <div style={{ width: '100%', height: 'calc(100vh - 50px)', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'auto', backgroundColor: '#000' }}>
         {loading && (
           <div style={{ 
             position: 'absolute', 

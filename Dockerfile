@@ -20,7 +20,7 @@ RUN pip install --no-cache-dir -r requirements-agentcore.txt
 # Copy application code from agents/maintenance-agent/
 COPY agents/maintenance-agent/agentcore_runtime_app.py .
 COPY agents/maintenance-agent/agentcore_maintenance_agent.py .
-COPY knowledge_base_tools.py .
+COPY knowledge-base/knowledge_base_tools.py .
 COPY tire_predictor.py .
 COPY tire_wear_data.csv .
 COPY motor_sensor_data.csv .

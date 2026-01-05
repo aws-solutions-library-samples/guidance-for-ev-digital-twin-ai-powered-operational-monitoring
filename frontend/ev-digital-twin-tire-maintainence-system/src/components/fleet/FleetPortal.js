@@ -69,6 +69,7 @@ const FleetPortal = () => {
   // State for action details modal
   const [showActionDetailsModal, setShowActionDetailsModal] = useState(false);
   const [actionDetails, setActionDetails] = useState(null);
+  const [actionJobId, setActionJobId] = useState(null);  // Store job_id instead of session_id
   const [loadingActionDetails, setLoadingActionDetails] = useState(false);
   
   // State for recording modal
@@ -267,16 +268,22 @@ const FleetPortal = () => {
     setShowRecordingModal(true);
   };
 
-  const handleViewActionDetails = async (vehicleId) => {
-    // DEMO: Try different session ID
-    const sessionId = 'b8911c0c-2e6a-4185-8667-f8c08719a9db';
+  const handleViewActionDetails = async (jobId) => {
+    // Use the passed job_id
+    console.log('🔍 Action Details - Job ID:', jobId);
+    
+    if (!jobId) {
+      setActionDetails({ error: 'No session ID available. Complete a tire order first.' });
+      setShowActionDetailsModal(true);
+      return;
+    }
     
     setLoadingActionDetails(true);
     setShowActionDetailsModal(true);
     
     try {
       const response = await fetch(
-        `https://b4blc4xmh4.execute-api.us-east-1.amazonaws.com/action-logs/${sessionId}`
+        `https://b4blc4xmh4.execute-api.us-east-1.amazonaws.com/action-logs/${jobId}`
       );
       const data = await response.json();
       setActionDetails(data);
@@ -1244,7 +1251,7 @@ Respond with the available slots.`;
                       </div>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button
-                          onClick={() => handleViewActionDetails(rec.vehicleId)}
+                          onClick={() => handleViewActionDetails(actionJobId)}
                           style={{
                             padding: '8px 16px',
                             background: '#2a2d2f',
@@ -1847,6 +1854,9 @@ Respond with the available slots.`;
                           // Start the async tire order job
                           const { job_id } = await agentCoreService.startTireOrder(selectedRecommendation.vehicleId);
                           
+                          // Store job_id for Action Details
+                          setActionJobId(job_id);
+                          
                           // Poll for completion with progress updates
                           const result = await agentCoreService.pollTireOrder(job_id, async (status) => {
                             // Check if browser session is available for live viewing
@@ -1856,6 +1866,11 @@ Respond with the available slots.`;
                                 if (liveViewData.liveViewUrl) {
                                   console.log('🎥 Live view URL available:', liveViewData.liveViewUrl.substring(0, 100));
                                   setLiveViewUrl(liveViewData.liveViewUrl);
+                                }
+                                
+                                // Store browser session ID for Action Details
+                                if (liveViewData.browserSessionId) {
+                                  // No longer needed - using job_id instead
                                 }
                               } catch (liveViewError) {
                                 // Live view not ready yet, will retry

@@ -50,6 +50,37 @@ def lambda_handler(event, context):
     
     print(f"🚀 Starting tire order job {job_id} for vehicle {vehicle_id}")
     
+    # IDEMPOTENCY CHECK: Prevent duplicate executions
+    try:
+        response = table.get_item(Key={'job_id': job_id})
+        existing_job = response.get('Item')
+        
+        if existing_job and existing_job.get('status') == 'running':
+            print(f"⚠️  Job {job_id} is already running. Skipping duplicate execution.")
+            return {
+                'statusCode': 200,
+                'body': json.dumps({
+                    'job_id': job_id,
+                    'status': 'running',
+                    'message': 'Job already in progress'
+                })
+            }
+        
+        if existing_job and existing_job.get('status') == 'complete':
+            print(f"⚠️  Job {job_id} already completed. Returning cached result.")
+            return {
+                'statusCode': 200,
+                'body': json.dumps({
+                    'job_id': job_id,
+                    'status': 'complete',
+                    'result': existing_job.get('result', {}),
+                    'message': 'Job already completed'
+                }, default=decimal_default)
+            }
+    except Exception as check_error:
+        print(f"⚠️  Error checking job status: {str(check_error)}")
+        # Continue with execution if check fails
+    
     # Update status to running
     try:
         table.update_item(
