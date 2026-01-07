@@ -45,30 +45,43 @@ except Exception as e:
 # Model configuration - Claude Sonnet 4.5 via inference profile
 MODEL_ID = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
 
-# Browser Tool configuration - Load from Secrets Manager
+# Browser Tool configuration - Load from Secrets Manager (lazy-loaded)
+_NOVA_ACT_API_KEY_CACHE = None  # Cache the key once loaded
+
 def get_nova_act_key():
-    """Retrieve NovaAct API key from AWS Secrets Manager"""
+    """Retrieve NovaAct API key from AWS Secrets Manager (lazy-loaded on first use)"""
+    global _NOVA_ACT_API_KEY_CACHE
+    
+    # Return cached key if already loaded
+    if _NOVA_ACT_API_KEY_CACHE is not None:
+        return _NOVA_ACT_API_KEY_CACHE
+    
     try:
         import boto3
         import json
         client = boto3.client('secretsmanager', region_name='us-east-1')
         response = client.get_secret_value(SecretId='/vehicle-maintenance/novaact-api-key')
         secret = json.loads(response['SecretString'])
-        return secret['NOVA_ACT_API_KEY']
+        _NOVA_ACT_API_KEY_CACHE = secret['NOVA_ACT_API_KEY']
+        print("✅ NovaAct API key loaded from Secrets Manager")
+        return _NOVA_ACT_API_KEY_CACHE
     except Exception as e:
-        print(f"Warning: Could not load from Secrets Manager: {e}")
+        print(f"⚠️  Could not load NovaAct API key from Secrets Manager: {e}")
         # Fallback to environment variable for local development only
         api_key = os.environ.get('NOVA_ACT_API_KEY')
         if not api_key:
             raise ValueError(
-                "NovaAct API key not found! Please either:\n"
+                "NovaAct API key not found! Browser automation (order_tire_online) requires the API key.\n"
+                "Please either:\n"
                 "1. Create secret in AWS Secrets Manager: /vehicle-maintenance/novaact-api-key\n"
                 "2. Set environment variable: NOVA_ACT_API_KEY\n"
-                "See docs/IAM_POLICIES.md for setup instructions."
+                "See docs/AGENTCORE_SETUP.md for setup instructions."
             )
-        return api_key
+        _NOVA_ACT_API_KEY_CACHE = api_key
+        print("✅ NovaAct API key loaded from environment variable")
+        return _NOVA_ACT_API_KEY_CACHE
 
-NOVA_ACT_API_KEY = get_nova_act_key()
+# Don't load at startup - will be loaded when order_tire_online is called
 
 # DynamoDB configuration for ML predictions
 DYNAMODB_REGION = "us-east-1"
@@ -1299,12 +1312,15 @@ def order_tire_online(vehicle_id: str, job_id: str = None) -> str:
         
         print(f"✓ Executing browser automation for: {tire_size} tires")
         
+        # Lazy-load the NovaAct API key only when this tool is called
+        api_key = get_nova_act_key()
+        
         try:
             with NovaAct(
                 cdp_endpoint_url=ws_url,
                 cdp_headers=headers,
                 preview={"playwright_actuation": True},
-                nova_act_api_key=NOVA_ACT_API_KEY,
+                nova_act_api_key=api_key,
                 starting_page=starting_page
             ) as nova_act:
                 result = nova_act.act(prompt)

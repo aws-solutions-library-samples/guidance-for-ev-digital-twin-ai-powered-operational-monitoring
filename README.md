@@ -293,31 +293,50 @@ ev-digital-twin-tire-maintainence-system/
 │       ├── src/
 │       │   ├── components/           # React components
 │       │   │   ├── fleet/           # Fleet management portal
-│       │   │   └── browser-live-view/ # Live browser viewing
-│       │   └── services/            # API services
+│       │   │   ├── browser-live-view/ # Live browser viewing
+│       │   │   ├── vehicle1/        # Vehicle 1 tire monitoring
+│       │   │   ├── vehicle2/        # Vehicle 2 motor monitoring
+│       │   │   └── vehicle3/        # Vehicle 3 inverter monitoring
+│       │   └── services/            # API services (agentcore.js)
 │       └── public/
 │           └── dcv-sdk/             # DCV Web Client SDK
 │
-├── infrastructure/                    # CloudFormation stacks
-│   ├── lambda/                       # Lambda function code
-│   │   ├── index.py                 # AgentCore proxy Lambda
-│   │   └── tire_order_worker.py     # Tire order worker Lambda
-│   ├── agentcore-runtime-policies/  # IAM policy setup
-│   ├── tire-automation-stack.yaml   # Tire ordering infrastructure
+├── agents/                           # AgentCore agents
+│   ├── README.md                    # Agent documentation
+│   ├── maintenance-agent/           # Main maintenance agent (17 tools)
+│   ├── appointment_scheduler_agent/ # Appointment scheduling agent
+│   └── tire_ordering_agent/         # Tire ordering agent
+│
+├── infrastructure/                   # CloudFormation stacks
+│   ├── lambda/                      # Lambda function code
+│   │   ├── index.py                # AgentCore proxy Lambda
+│   │   └── tire_order_worker.py    # Tire order worker Lambda
+│   ├── agentcore-runtime-policies/ # IAM policy setup
+│   ├── tire-automation-stack.yaml  # Tire ordering infrastructure
 │   ├── agentcore-lambda-proxy-stack.yaml  # API Gateway + Lambda
 │   ├── appointment-slots-stack.yaml # DynamoDB tables
-│   ├── cognito-stack.yaml           # Authentication
-│   └── frontend-stack.yaml          # CloudFront + S3
+│   ├── cognito-stack.yaml          # Authentication
+│   └── frontend-stack.yaml         # CloudFront + S3
 │
-├── docs/                             # Documentation
-│   ├── AGENTCORE_SETUP.md           # AgentCore Runtime setup guide
-│   └── IAM_POLICIES.md              # Security configuration
+├── knowledge-base/                  # Bedrock Knowledge Base
+│   ├── README.md                   # KB documentation
+│   ├── knowledge_base_tools.py     # 5 KB tools for agent
+│   ├── create_knowledge_base.sh    # Automated setup script
+│   ├── create_opensearch_index.py  # OpenSearch index creation
+│   ├── kb-permissions-policy.json  # IAM policy
+│   └── kb-runtime-policy-fix.json  # Fixed IAM policy
 │
-├── agentcore_maintenance_agent.py   # AgentCore agent with 11 tools
-├── agentcore_runtime_app.py         # AgentCore Runtime entrypoint
-├── tire_predictor.py                # ML model training
-├── data_generator.py                # Sample data generation
-└── *.csv                            # Sensor data and specifications
+├── docs/                            # Documentation
+│   ├── AGENTCORE_SETUP.md          # AgentCore Runtime setup guide
+│   ├── IAM_POLICIES.md             # Security configuration
+│   ├── TIRE_ORDER_WORKER_SETUP.md  # Worker Lambda setup
+│   └── ASYNC_TIRE_ORDER_COMPLETE.md # Async implementation docs
+│
+├── manuals/                         # Vehicle maintenance manuals
+│   └── Electric Vehicle Preventive Maintenance Manual.pdf
+│
+└── models/                          # Pre-trained ML models
+    └── tire_models_*.pkl           # Random Forest & Isolation Forest
 ```
 
 ---
