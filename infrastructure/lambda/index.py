@@ -136,24 +136,32 @@ def lambda_handler(event, context):
                 actions = []
                 result_text = None
                 
-                # Query CloudWatch for browser actions using 'agentClick' pattern
+                # Query CloudWatch for browser actions (no filter - get all logs)
                 print(f"Querying CloudWatch for browser actions (job_id: {job_id})")
                 end_time = int(datetime.now().timestamp() * 1000)
                 start_time = int((datetime.now() - timedelta(hours=6)).timestamp() * 1000)  # Last 6 hours
                 
-                # Use 'agentClick' pattern - it finds browser actions reliably
+                # Query without filter pattern to get all logs (same as test script)
                 log_response = logs_client.filter_log_events(
                     logGroupName=LOG_GROUP_NAME,
                     startTime=start_time,
-                    endTime=end_time,
-                    filterPattern='agentClick'  # This pattern works!
+                    endTime=end_time
+                    # No filterPattern - parse in Python instead
                 )
                 
                 for event in log_response.get('events', []):
                     message = event.get('message', '')
                     
+                    # Extract return value FIRST (highest priority)
+                    if 'return(' in message:
+                        return_match = re.search(r'return\(["\'](.+?)["\']\);?', message, re.DOTALL)
+                        if return_match:
+                            result_text = return_match.group(1)
+                            actions.append({'type': 'result', 'text': result_text, 'icon': '✅'})
+                            continue
+                    
                     # Skip if this message doesn't contain relevant action patterns
-                    if not any(pattern in message for pattern in ['think(', 'agentClick', 'agentType', 'agentScroll', 'return "']):
+                    if not any(pattern in message for pattern in ['think(', 'agentClick', 'agentType', 'agentScroll']):
                         continue
                     
                     # Extract think statements
@@ -176,13 +184,6 @@ def lambda_handler(event, context):
                     # Extract scrolling
                     elif 'agentScroll(' in message:
                         actions.append({'type': 'scroll', 'text': 'Scrolled page', 'icon': '📜'})
-                    
-                    # Extract return value
-                    elif 'return "' in message:
-                        return_match = re.search(r'return "(.+?)"', message)
-                        if return_match:
-                            result_text = return_match.group(1)
-                            actions.append({'type': 'result', 'text': result_text, 'icon': '✅'})
                 
                 return {
                     'statusCode': 200,

@@ -16,5 +16,5 @@ strands-agents-tools>=0.1.0
 boto3>=1.34.0
 botocore>=1.34.0
 bedrock-agentcore
-nova-act
+nova-act>=3.0.0  # GA version with model selection support
 duckduckgo-search>=4.0.0
