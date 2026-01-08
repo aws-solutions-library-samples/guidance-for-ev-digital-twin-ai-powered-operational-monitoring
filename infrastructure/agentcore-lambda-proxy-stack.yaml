@@ -7,10 +7,14 @@ Parameters:
     Default: ev-digital-twin
     Description: Name of the project
   
-  AgentCoreRuntimeArn:
+  AgentCoreRuntimeId:
     Type: String
-    Default: arn:aws:bedrock-agentcore:us-east-1:009296485814:runtime/vehicle_maintenance_agent-kH9hYvFcCD
-    Description: ARN of the AgentCore Runtime
+    Description: AgentCore Runtime ID (e.g., vehicle_maintenance_agent-3R5q196E7Q)
+  
+  AgentCoreLogGroupSuffix:
+    Type: String
+    Default: DEFAULT
+    Description: Log group suffix for AgentCore Runtime
 
 Resources:
   # Lambda Execution Role
@@ -36,12 +40,12 @@ Resources:
                 Action:
                   - bedrock-agentcore:InvokeAgentRuntime
                 Resource: 
-                  - !Ref AgentCoreRuntimeArn
-                  - !Sub '${AgentCoreRuntimeArn}/runtime-endpoint/DEFAULT'
+                  - !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:runtime/${AgentCoreRuntimeId}'
+                  - !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:runtime/${AgentCoreRuntimeId}/runtime-endpoint/${AgentCoreLogGroupSuffix}'
               - Effect: Allow
                 Action:
                   - logs:FilterLogEvents
-                Resource: arn:aws:logs:us-east-1:009296485814:log-group:/aws/bedrock-agentcore/runtimes/vehicle_maintenance_agent-kH9hYvFcCD-DEFAULT:*
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/bedrock-agentcore/runtimes/${AgentCoreRuntimeId}-${AgentCoreLogGroupSuffix}:*'
               - Effect: Allow
                 Action:
                   - dynamodb:Query
@@ -64,134 +68,104 @@ Resources:
       MemorySize: 2048
       Environment:
         Variables:
-          AGENT_RUNTIME_ARN: !Ref AgentCoreRuntimeArn
+          AGENT_RUNTIME_ARN: !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:runtime/${AgentCoreRuntimeId}'
+          LOG_GROUP_NAME: !Sub '/aws/bedrock-agentcore/runtimes/${AgentCoreRuntimeId}-${AgentCoreLogGroupSuffix}'
       Code:
         ZipFile: |
           import json
           import boto3
           import os
-          import re
-          from datetime import datetime, timedelta
-          from decimal import Decimal
+          import uuid
+          import logging
           
-          def decimal_default(obj):
-              if isinstance(obj, Decimal):
-                  return float(obj)
-              raise TypeError
+          # Configure logging
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
           
-          bedrock_agentcore = boto3.client('bedrock-agentcore', region_name='us-east-1')
-          logs_client = boto3.client('logs', region_name='us-east-1')
-          dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
-          
-          LOG_GROUP_NAME = '/aws/bedrock-agentcore/runtimes/vehicle_maintenance_agent-kH9hYvFcCD-DEFAULT'
-          APPOINTMENTS_TABLE = 'vehicle-appointment-slots'
-          GENAI_RECS_TABLE = 'vehicle-genai-recs'
-          
-          def get_available_appointments(date):
-              """Query DynamoDB for available appointment slots on a specific date"""
-              table = dynamodb.Table(APPOINTMENTS_TABLE)
-              
-              try:
-                  response = table.query(
-                      KeyConditionExpression='#d = :date',
-                      FilterExpression='available = :avail',
-                      ExpressionAttributeNames={'#d': 'date'},
-                      ExpressionAttributeValues={':date': date, ':avail': True}
-                  )
-                  
-                  slots = response.get('Items', [])
-                  return sorted(slots, key=lambda x: x['time_slot'])
-              except Exception as e:
-                  print(f"DynamoDB query error: {e}")
-                  return []
-          
-          def save_genai_recommendation(vin, recommendation):
-              """Save GenAI recommendation to DynamoDB"""
-              if not vin:
-                  return
-              
-              table = dynamodb.Table(GENAI_RECS_TABLE)
-              try:
-                  table.put_item(
-                      Item={
-                          'vin': vin,
-                          'recommendation': recommendation,
-                          'timestamp': datetime.now().isoformat(),
-                          'ttl': int((datetime.now() + timedelta(hours=24)).timestamp())
-                      }
-                  )
-                  print(f"Saved recommendation for VIN: {vin}")
-              except Exception as e:
-                  print(f"Error saving to DynamoDB: {e}")
+          # Initialize Bedrock AgentCore client
+          bedrock_agentcore = boto3.client('bedrock-agentcore')
           
           def lambda_handler(event, context):
-              print(f"Event: {json.dumps(event)}")
+              """Lambda proxy for Bedrock AgentCore Runtime - reads response from 'response' key"""
+              # Handle OPTIONS requests (CORS preflight)
+              if event.get('requestContext', {}).get('http', {}).get('method') == 'OPTIONS':
+                  return {
+                      'statusCode': 200,
+                      'headers': {
+                          'Access-Control-Allow-Origin': '*',
+                          'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+                          'Access-Control-Allow-Methods': 'GET,POST,OPTIONS'
+                      },
+                      'body': ''
+                  }
               
-              # Handle GET requests
-              if event.get('requestContext', {}).get('http', {}).get('method') == 'GET':
-                  path = event.get('rawPath', '')
+              try:
+                  agent_runtime_arn = os.environ.get('AGENT_RUNTIME_ARN')
                   
-                  # GET /genai-recs/{vin}
-                  if path.startswith('/genai-recs/'):
-                      vin = path.split('/')[-1]
-                      table = dynamodb.Table(GENAI_RECS_TABLE)
-                      
-                      try:
-                          response = table.get_item(Key={'vin': vin})
-                          item = response.get('Item')
-                          
-                          if item:
-                              return {
-                                  'statusCode': 200,
-                                  'headers': {
-                                      'Content-Type': 'application/json',
-                                      'Access-Control-Allow-Origin': '*',
-                                      'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-                                      'Access-Control-Allow-Methods': 'GET,POST,OPTIONS'
-                                  },
-                                  'body': json.dumps(item, default=decimal_default)
-                              }
-                          else:
-                              return {
-                                  'statusCode': 404,
-                                  'headers': {
-                                      'Content-Type': 'application/json',
-                                      'Access-Control-Allow-Origin': '*',
-                                      'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-                                      'Access-Control-Allow-Methods': 'GET,POST,OPTIONS'
-                                  },
-                                  'body': json.dumps({'error': 'No cached recommendation found'})
-                              }
-                      except Exception as e:
-                          print(f"DynamoDB get error: {e}")
-                          return {
-                              'statusCode': 500,
-                              'headers': {
-                                  'Content-Type': 'application/json',
-                                  'Access-Control-Allow-Origin': '*',
-                                  'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-                                  'Access-Control-Allow-Methods': 'GET,POST,OPTIONS'
-                              },
-                              'body': json.dumps({'error': str(e)})
-                          }
-                  
-                  # GET /available-appointments
-                  query_params = event.get('queryStringParameters', {}) or {}
-                  date = query_params.get('date')
-                  
-                  if not date:
+                  if not agent_runtime_arn:
+                      logger.error("AGENT_RUNTIME_ARN environment variable not set")
                       return {
-                          'statusCode': 400,
-                          'headers': {
-                              'Content-Type': 'application/json',
-                              'Access-Control-Allow-Origin': '*',
-                              'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-                              'Access-Control-Allow-Methods': 'GET,POST,OPTIONS'
-                          },
-                          'body': json.dumps({'error': 'date parameter required (YYYY-MM-DD)'})
+                          'statusCode': 500,
+                          'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                          'body': json.dumps({'error': 'AgentCore Runtime ARN not configured'})
                       }
                   
-                  slots = get_available_appointments(date)
+                  # Parse the incoming request
+                  if 'body' in event:
+                      body = json.loads(event['body']) if isinstance(event['body'], str) else event['body']
+                  else:
+                      body = event
+                  
+                  prompt = body.get('prompt', body.get('message', ''))
+                  session_id = body.get('session_id')
+                  vin = body.get('vin')
+                  
+                  # Generate session ID if not provided
+                  if not session_id or session_id == 'null':
+                      session_id = f"session-{uuid.uuid4()}"
+                  
+                  logger.info(f"Processing request - Prompt: {prompt[:100]}..., VIN: {vin}")
+                  
+                  if not prompt:
+                      return {
+                          'statusCode': 400,
+                          'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                          'body': json.dumps({'error': 'prompt or message is required'})
+                      }
+                  
+                  payload_dict = {'prompt': prompt}
+                  
+                  logger.info(f"Calling AgentCore Runtime: {agent_runtime_arn}")
+                  logger.info(f"Session ID: {session_id}")
+                  
+                  # Call Bedrock AgentCore Runtime
+                  response = bedrock_agentcore.invoke_agent_runtime(
+                      agentRuntimeArn=agent_runtime_arn,
+                      runtimeSessionId=session_id,
+                      payload=json.dumps(payload_dict)
+                  )
+                  
+                  # CRITICAL: Extract response from 'response' key (not 'payload')
+                  response_text = ""
+                  
+                  if 'response' in response:
+                      streaming_body = response['response']
+                      response_bytes = streaming_body.read()
+                      
+                      if isinstance(response_bytes, bytes):
+                          response_text = response_bytes.decode('utf-8')
+                      else:
+                          response_text = str(response_bytes)
+                      
+                      # Try to parse as JSON and extract text
+                      try:
+                          response_json = json.loads(response_text)
+                          if isinstance(response_json, str):
+                              response_text = response_json
+                      except json.JSONDecodeError:
+                          pass
+                  
+                  logger.info(f"AgentCore response length: {len(response_text)}")
                   
                   return {
                       'statusCode': 200,
@@ -199,206 +173,23 @@ Resources:
                           'Content-Type': 'application/json',
                           'Access-Control-Allow-Origin': '*',
                           'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-                          'Access-Control-Allow-Methods': 'GET,POST,OPTIONS'
-                      },
-                      'body': json.dumps({
-                          'date': date,
-                          'available_slots': slots,
-                          'count': len(slots)
-                      }, default=decimal_default)
-                  }
-              
-              # Handle POST /chat (existing logic - unchanged)
-              try:
-                  body = json.loads(event.get('body', '{}'))
-                  prompt = body.get('prompt', body.get('message', ''))
-                  session_id = body.get('session_id')
-                  vin = body.get('vin')
-                  
-                  if not session_id or session_id == 'null':
-                      import uuid
-                      session_id = f"session-{uuid.uuid4()}"
-                  
-                  if not prompt:
-                      return {
-                          'statusCode': 400,
-                          'headers': {
-                              'Content-Type': 'application/json',
-                              'Access-Control-Allow-Origin': '*',
-                              'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-                              'Access-Control-Allow-Methods': 'POST,OPTIONS'
-                          },
-                          'body': json.dumps({'error': 'prompt or message is required'})
-                      }
-                  
-                  agent_arn = os.environ['AGENT_RUNTIME_ARN']
-                  
-                  print(f"Invoking AgentCore Runtime: {agent_arn}")
-                  print(f"Session ID: {session_id}")
-                  print(f"Prompt: {prompt}")
-                  
-                  is_tire_order = 'order_tire_online' in prompt.lower() or 'order replacement tires' in prompt.lower()
-                  
-                  payload_data = {"prompt": prompt}
-                  
-                  try:
-                      response = bedrock_agentcore.invoke_agent_runtime(
-                          agentRuntimeArn=agent_arn,
-                          runtimeSessionId=session_id,
-                          payload=json.dumps(payload_data)
-                      )
-                      
-                      full_response = ""
-                      
-                      if 'response' in response:
-                          streaming_body = response['response']
-                          response_bytes = streaming_body.read()
-                          
-                          if isinstance(response_bytes, bytes):
-                              full_response = response_bytes.decode('utf-8')
-                          else:
-                              full_response = str(response_bytes)
-                          
-                          try:
-                              response_json = json.loads(full_response)
-                              if isinstance(response_json, str):
-                                  full_response = response_json
-                          except:
-                              pass
-                      
-                      print(f"Response length: {len(full_response)}")
-                      
-                      # Save to DynamoDB if VIN provided
-                      if vin and full_response:
-                          save_genai_recommendation(vin, full_response)
-                      
-                      return {
-                          'statusCode': 200,
-                          'headers': {
-                              'Content-Type': 'application/json',
-                              'Access-Control-Allow-Origin': '*',
-                              'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-                              'Access-Control-Allow-Methods': 'POST,OPTIONS'
-                          },
-                          'body': json.dumps({
-                              'response': full_response,
-                              'session_id': session_id,
-                              'agent': 'AgentCore Runtime',
-                              'timestamp': datetime.now().isoformat()
-                          })
-                      }
-                      
-                  except Exception as runtime_error:
-                      error_str = str(runtime_error)
-                      print(f"AgentCore Runtime error: {error_str}")
-                      
-                      # SESSION RESET LOGIC - Break infinite loop
-                      # BUT: Don't reset for browser tool timeouts (they're expected)
-                      is_browser_tool_timeout = is_tire_order and 'timeout' in error_str.lower()
-                      if not is_browser_tool_timeout and any(keyword in error_str.lower() for keyword in ['validationexception', 'timeout', 'tool_use', 'tool_id']):
-                          import uuid
-                          new_session_id = f"session-{uuid.uuid4()}"
-                          print(f"Session corrupted - resetting from {session_id} to {new_session_id}")
-                          
-                          return {
-                              'statusCode': 200,
-                              'headers': {
-                                  'Content-Type': 'application/json',
-                                  'Access-Control-Allow-Origin': '*',
-                                  'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-                                  'Access-Control-Allow-Methods': 'POST,OPTIONS'
-                              },
-                              'body': json.dumps({
-                                  'session_reset': True,
-                                  'new_session_id': new_session_id,
-                                  'message': 'Session reset due to error. Please retry with new session.',
-                                  'original_error': error_str
-                              })
-                          }
-                      
-                      # For browser tool timeouts, return success without session reset
-                      if is_browser_tool_timeout:
-                          print("Browser tool timeout - this is expected for tire ordering")
-                          return {
-                              'statusCode': 200,
-                              'headers': {
-                                  'Content-Type': 'application/json',
-                                  'Access-Control-Allow-Origin': '*',
-                                  'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-                                  'Access-Control-Allow-Methods': 'POST,OPTIONS'
-                              },
-                              'body': json.dumps({
-                                  'response': 'Tire order is being processed. Browser automation is adding tires to your Amazon cart.',
-                                  'session_id': session_id,
-                                  'agent': 'AgentCore Runtime',
-                                  'timestamp': datetime.now().isoformat(),
-                                  'browser_tool_running': True
-                              })
-                          }
-                      
-                      if '500' in error_str and is_tire_order:
-                          print("Attempting to extract tire order result from CloudWatch...")
-                          
-                          try:
-                              end_time = int(datetime.now().timestamp() * 1000)
-                              start_time = int((datetime.now() - timedelta(minutes=2)).timestamp() * 1000)
-                              
-                              log_response = logs_client.filter_log_events(
-                                  logGroupName=LOG_GROUP_NAME,
-                                  startTime=start_time,
-                                  endTime=end_time,
-                                  filterPattern='"order_tire_online"'
-                              )
-                              
-                              for event in reversed(log_response.get('events', [])):
-                                  message = event.get('message', '')
-                                  
-                                  product_match = re.search(r'Product name:\s*([^,]+)', message)
-                                  brand_match = re.search(r'Brand:\s*([^,]+)', message)
-                                  price_match = re.search(r'Price:\s*\$?([\d.]+)', message)
-                                  
-                                  if product_match and brand_match and price_match:
-                                      extracted_response = f"Product name: {product_match.group(1).strip()}, Brand: {brand_match.group(1).strip()}, Price: ${price_match.group(1).strip()}"
-                                      
-                                      print(f"Extracted from logs: {extracted_response}")
-                                      
-                                      return {
-                                          'statusCode': 200,
-                                          'headers': {
-                                              'Content-Type': 'application/json',
-                                              'Access-Control-Allow-Origin': '*',
-                                              'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-                                              'Access-Control-Allow-Methods': 'POST,OPTIONS'
-                                          },
-                                          'body': json.dumps({
-                                              'response': extracted_response,
-                                              'session_id': session_id,
-                                              'agent': 'AgentCore Runtime',
-                                              'timestamp': datetime.now().isoformat(),
-                                              'extracted_from_logs': True
-                                          })
-                                      }
-                              
-                              print("No tire data found in CloudWatch logs")
-                              
-                          except Exception as log_error:
-                              print(f"CloudWatch query error: {log_error}")
-                      
-                      raise runtime_error
-                  
-              except Exception as e:
-                  print(f"Error: {str(e)}")
-                  import traceback
-                  traceback.print_exc()
-                  return {
-                      'statusCode': 500,
-                      'headers': {
-                          'Content-Type': 'application/json',
-                          'Access-Control-Allow-Origin': '*',
-                          'Access-Control-Allow-Headers': 'Content-Type,Authorization',
                           'Access-Control-Allow-Methods': 'POST,OPTIONS'
                       },
-                      'body': json.dumps({'error': str(e)})
+                      'body': json.dumps({
+                          'response': response_text,
+                          'session_id': session_id
+                      })
+                  }
+                  
+              except Exception as e:
+                  logger.error(f"Lambda proxy error: {str(e)}")
+                  import traceback
+                  traceback.print_exc()
+                  
+                  return {
+                      'statusCode': 500,
+                      'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                      'body': json.dumps({'error': f'Proxy error: {str(e)}'})
                   }
 
   # HTTP API Gateway
@@ -409,6 +200,7 @@ Resources:
       ProtocolType: HTTP
       CorsConfiguration:
         AllowOrigins:
+          - 'https://d1bo5awedntspd.cloudfront.net'
           - 'https://dvm0illvncdsh.cloudfront.net'
           - 'http://localhost:3000'
         AllowMethods:

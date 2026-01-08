@@ -139,11 +139,20 @@ npm start
 
 ### AWS Cloud Deployment
 
-Deploy the complete solution using Infrastructure as Code with CloudFormation stacks.
+Deploy the complete solution using Infrastructure as Code with CloudFormation stacks. All infrastructure is modular and works with any AWS account.
+
+**Prerequisites:**
+- AWS CLI configured with named profiles (e.g., `--profile demo` or `--profile working`)
+- Docker installed and running
+- For ARM64 Macs: Use `--local-build` flag with bedrock-agentcore CLI
 
 **Quick Deploy:**
 ```bash
+# Deploy all infrastructure (uses default AWS profile)
 ./deploy-aws.sh
+
+# Or specify a profile
+AWS_PROFILE=demo ./deploy-aws.sh
 ```
 
 Deploys all infrastructure automatically: Cognito, DynamoDB, Lambda functions, API Gateway, and Frontend (CloudFront + ECS).
@@ -160,23 +169,59 @@ Deploys all infrastructure automatically: Cognito, DynamoDB, Lambda functions, A
 
 **Post-Deployment Steps:**
 
-1. **Deploy AgentCore Runtime** (containerized agent):
+1. **Set up Knowledge Base** (required for KB tools):
    ```bash
-   docker build -t bedrock-agentcore-vehicle_maintenance_agent .
-   docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-vehicle_maintenance_agent:latest
+   # Get your Knowledge Base ID
+   aws bedrock-agent list-knowledge-bases --profile demo \
+     --query "knowledgeBaseSummaries[*].[knowledgeBaseId,name]" --output table
+   ```
+   See [docs/KNOWLEDGE_BASE_SETUP.md](docs/KNOWLEDGE_BASE_SETUP.md) for detailed setup.
+
+2. **Deploy AgentCore Runtime** (containerized agent):
+   ```bash
+   cd agents/maintenance-agent
+   
+   # For ARM64 Macs - build locally and deploy
+   bedrock-agentcore launch --local-build --profile demo
+   
+   # For x86 machines or CI/CD - use CodeBuild
+   bedrock-agentcore launch --profile demo
+   ```
+   
+   The deployment automatically:
+   - Creates/updates the AgentCore Runtime
+   - Sets up Memory (STM + LTM) for pattern detection
+   - Configures environment variables from `.bedrock_agentcore.yaml`
+
+3. **Configure environment variables** (in Dockerfile or during build):
+   ```bash
+   # Knowledge Base ID - enables KB tools (tire/motor/inverter guidance)
+   KNOWLEDGE_BASE_ID=YOUR_KB_ID
+   
+   # Memory ID - enables pattern detection (auto-created during launch)
+   AGENTCORE_MEMORY_ID=YOUR_MEMORY_ID
+   ```
+   
+   Or pass as build args:
+   ```bash
+   docker build \
+     --build-arg KNOWLEDGE_BASE_ID=5CZPTMJB9R \
+     --build-arg AGENTCORE_MEMORY_ID=vehicle_maintenance_agent_mem-BriFmNCg0Q \
+     -t bedrock-agentcore-vehicle_maintenance_agent .
    ```
 
-2. **Configure AgentCore permissions**:
-   ```bash
-   ./infrastructure/agentcore-runtime-policies/setup-agentcore-permissions.sh
-   ```
-
-3. **Create NovaAct API key secret**:
+4. **Create NovaAct API key secret** (for browser automation):
    ```bash
    aws secretsmanager create-secret \
      --name /vehicle-maintenance/novaact-api-key \
-     --secret-string '{"api_key":"YOUR_NOVAACT_API_KEY"}' \
-     --region us-east-1
+     --secret-string '{"NOVA_ACT_API_KEY":"YOUR_NOVAACT_API_KEY"}' \
+     --region us-east-1 \
+     --profile demo
+   ```
+
+5. **Configure AgentCore permissions**:
+   ```bash
+   ./infrastructure/agentcore-runtime-policies/setup-agentcore-permissions.sh
    ```
 
 See [docs/AGENTCORE_SETUP.md](docs/AGENTCORE_SETUP.md) for detailed setup instructions.

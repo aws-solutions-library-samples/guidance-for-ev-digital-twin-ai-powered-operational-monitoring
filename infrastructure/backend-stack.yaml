@@ -234,6 +234,28 @@ Resources:
                   - logs:PutLogEvents
                 Resource: "*"
               
+              # Bedrock permissions for AgentCore
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                  - bedrock:GetFoundationModel
+                  - bedrock:ListFoundationModels
+                  - bedrock:Retrieve
+                  - bedrock:RetrieveAndGenerate
+                Resource: "*"
+              
+              # DynamoDB permissions for session tracking
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource: "*"
+              
               # Secrets Manager (for NovaAct API key - optional)
               - Effect: Allow
                 Action:
@@ -272,6 +294,8 @@ Resources:
           Environment:
             - Name: PORT
               Value: "8000"
+            - Name: KNOWLEDGE_BASE_ID
+              Value: "5CZPTMJB9R"
           HealthCheck:
             Command:
               - CMD-SHELL

@@ -7,10 +7,9 @@ Parameters:
     Default: ev-digital-twin
     Description: Name of the project
   
-  AgentCoreRuntimeArn:
+  AgentCoreRuntimeId:
     Type: String
-    Default: arn:aws:bedrock-agentcore:us-east-1:009296485814:runtime/vehicle_maintenance_agent-kH9hYvFcCD
-    Description: ARN of the AgentCore Runtime
+    Description: AgentCore Runtime ID (e.g., vehicle_maintenance_agent-3R5q196E7Q)
 
 Resources:
   # DynamoDB Table for Tire Order Jobs
@@ -58,8 +57,8 @@ Resources:
                 Action:
                   - bedrock-agentcore:InvokeAgentRuntime
                 Resource:
-                  - !Ref AgentCoreRuntimeArn
-                  - !Sub '${AgentCoreRuntimeArn}/runtime-endpoint/DEFAULT'
+                  - !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:runtime/${AgentCoreRuntimeId}'
+                  - !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:runtime/${AgentCoreRuntimeId}/runtime-endpoint/DEFAULT'
               
               # DynamoDB Access
               - Effect: Allow
@@ -89,7 +88,7 @@ Resources:
       MemorySize: 2048
       Environment:
         Variables:
-          AGENT_RUNTIME_ARN: !Ref AgentCoreRuntimeArn
+          AGENT_RUNTIME_ARN: !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:runtime/${AgentCoreRuntimeId}'
       Code:
         ZipFile: |
           """

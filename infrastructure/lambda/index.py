@@ -1,3 +1,11 @@
+"""
+AgentCore Lambda Proxy - Full-featured version with DynamoDB caching and tire order support
+Handler: index.lambda_handler
+
+CRITICAL: The invoke_agent_runtime response uses 'response' key, NOT 'payload'
+Set LOG_GROUP_NAME env var to match your AgentCore Runtime log group
+"""
+
 import json
 import boto3
 import os
@@ -15,7 +23,8 @@ bedrock_agentcore = boto3.client('bedrock-agentcore', region_name='us-east-1')
 logs_client = boto3.client('logs', region_name='us-east-1')
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 
-LOG_GROUP_NAME = '/aws/bedrock-agentcore/runtimes/vehicle_maintenance_agent-kH9hYvFcCD-DEFAULT'
+# Get log group from environment variable (set by CloudFormation)
+LOG_GROUP_NAME = os.environ.get('LOG_GROUP_NAME', '/aws/bedrock-agentcore/runtimes/vehicle_maintenance_agent-DEFAULT')
 APPOINTMENTS_TABLE = 'vehicle-appointment-slots'
 GENAI_RECS_TABLE = 'vehicle-genai-recs'
 

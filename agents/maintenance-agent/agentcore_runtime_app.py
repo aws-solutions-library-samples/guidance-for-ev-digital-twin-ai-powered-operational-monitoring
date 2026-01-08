@@ -11,8 +11,15 @@ import json
 from datetime import datetime
 import boto3
 
-# Get memory ID from environment or config
-MEMORY_ID = os.environ.get("AGENTCORE_MEMORY_ID", "vehicle_maintenance_agent_mem-Zz75E62LMt")
+# Get memory ID from environment variable (set by AgentCore deployment)
+# The memory ID is created during 'bedrock-agentcore launch' and stored in .bedrock_agentcore.yaml
+# If not set, the agent will work without memory features
+MEMORY_ID = os.environ.get("AGENTCORE_MEMORY_ID")
+
+if not MEMORY_ID:
+    print("⚠️  AGENTCORE_MEMORY_ID not set - memory features disabled")
+    print("   Set via: export AGENTCORE_MEMORY_ID=your_memory_id")
+    print("   Or configure in .bedrock_agentcore.yaml during deployment")
 
 # Create agent with memory for pattern detection
 maintenance_agent = AgentCoreMaintenanceAgent(

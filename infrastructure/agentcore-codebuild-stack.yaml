@@ -1,0 +1,206 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CodeBuild project and IAM roles for Bedrock AgentCore deployment'
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: ev-digital-twin
+    Description: Name of the project
+
+Resources:
+  # S3 Bucket for CodeBuild sources (reference existing bucket)
+  # Note: Bucket already exists from previous AgentCore deployment
+
+  # ECR Repository for AgentCore container images
+  AgentCoreECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: bedrock-agentcore-vehicle_maintenance_agent
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep last 10 images",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 10
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+
+  # IAM Role for Bedrock AgentCore Runtime
+  BedrockAgentCoreRuntimeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "AmazonBedrockAgentCoreSDKRuntime-${AWS::Region}-cdd8445f6e"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: bedrock-agentcore.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonBedrockFullAccess
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+      Policies:
+        - PolicyName: BedrockAgentCoreRuntimePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock:*
+                  - bedrock-agentcore:*
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource: 
+                  - !Sub "arn:aws:s3:::bedrock-agentcore-codebuild-sources-${AWS::AccountId}-${AWS::Region}/*"
+                  - !Sub "arn:aws:s3:::ev-digital-twin-knowledge-base-${AWS::AccountId}/*"
+              - Effect: Allow
+                Action:
+                  - bedrock:Retrieve
+                  - bedrock:RetrieveAndGenerate
+                Resource: 
+                  - !Sub "arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:knowledge-base/*"
+
+  # IAM Role for CodeBuild
+  BedrockAgentCoreCodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "AmazonBedrockAgentCoreSDKCodeBuild-${AWS::Region}-cdd8445f6e"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CodeBuildPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*"
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource: !Sub "arn:aws:s3:::bedrock-agentcore-codebuild-sources-${AWS::AccountId}-${AWS::Region}/*"
+              - Effect: Allow
+                Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                  - ecr:GetAuthorizationToken
+                  - ecr:PutImage
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - bedrock-agentcore:*
+                Resource: '*'
+
+  # CodeBuild Project for AgentCore deployment
+  AgentCoreCodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: bedrock-agentcore-vehicle_maintenance_agent-builder
+      Description: CodeBuild project for Bedrock AgentCore vehicle maintenance agent
+      ServiceRole: !GetAtt BedrockAgentCoreCodeBuildRole.Arn
+      Artifacts:
+        Type: S3
+        Location: !Sub "bedrock-agentcore-codebuild-sources-${AWS::AccountId}-${AWS::Region}"
+        Path: artifacts
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_LARGE
+        Image: aws/codebuild/amazonlinux2-aarch64-standard:3.0
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref AWS::Region
+          - Name: AWS_ACCOUNT_ID
+            Value: !Ref AWS::AccountId
+          - Name: IMAGE_REPO_NAME
+            Value: bedrock-agentcore-vehicle_maintenance_agent
+          - Name: IMAGE_TAG
+            Value: latest
+      Source:
+        Type: S3
+        Location: !Sub "bedrock-agentcore-codebuild-sources-${AWS::AccountId}-${AWS::Region}"
+        SourceIdentifier: vehicle_maintenance_agent/source.zip
+        BuildSpec: |
+          version: 0.2
+          phases:
+            pre_build:
+              commands:
+                - echo Logging in to Amazon ECR...
+                - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+            build:
+              commands:
+                - echo Build started on `date`
+                - echo Building the Docker image...
+                - docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG .
+                - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
+            post_build:
+              commands:
+                - echo Build completed on `date`
+                - echo Pushing the Docker image...
+                - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
+      TimeoutInMinutes: 30
+
+Outputs:
+  CodeBuildProjectName:
+    Description: Name of the CodeBuild project
+    Value: !Ref AgentCoreCodeBuildProject
+    Export:
+      Name: !Sub "${ProjectName}-agentcore-codebuild-project"
+
+  RuntimeRoleArn:
+    Description: ARN of the Bedrock AgentCore Runtime role
+    Value: !GetAtt BedrockAgentCoreRuntimeRole.Arn
+    Export:
+      Name: !Sub "${ProjectName}-agentcore-runtime-role-arn"
+
+  CodeBuildRoleArn:
+    Description: ARN of the CodeBuild role
+    Value: !GetAtt BedrockAgentCoreCodeBuildRole.Arn
+    Export:
+      Name: !Sub "${ProjectName}-agentcore-codebuild-role-arn"
+
+  ECRRepositoryUri:
+    Description: URI of the ECR repository
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${AgentCoreECRRepository}"
+    Export:
+      Name: !Sub "${ProjectName}-agentcore-ecr-repository-uri"
+
+  SourceBucketName:
+    Description: Name of the S3 bucket for CodeBuild sources
+    Value: !Sub "bedrock-agentcore-codebuild-sources-${AWS::AccountId}-${AWS::Region}"
+    Export:
+      Name: !Sub "${ProjectName}-agentcore-source-bucket"

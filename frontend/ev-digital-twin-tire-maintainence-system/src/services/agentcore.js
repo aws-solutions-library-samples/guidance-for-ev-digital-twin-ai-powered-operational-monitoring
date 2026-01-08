@@ -1,5 +1,5 @@
 // AgentCore Service for AI-powered vehicle maintenance recommendations
-const AGENTCORE_API_ENDPOINT = "https://b4blc4xmh4.execute-api.us-east-1.amazonaws.com/chat";
+const AGENTCORE_API_ENDPOINT = "https://vohmbll8l6.execute-api.us-east-1.amazonaws.com/chat";
 
 class AgentCoreService {
   constructor() {
@@ -57,6 +57,8 @@ class AgentCoreService {
     try {
       this.lastCallTime = now;
 
+      console.log('🔗 AgentCore API Endpoint:', AGENTCORE_API_ENDPOINT); // DEBUG: Log the actual endpoint being used
+
       const response = await fetch(AGENTCORE_API_ENDPOINT, {
         method: 'POST',
         headers: {
@@ -72,6 +74,7 @@ class AgentCoreService {
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => 'Unknown error');
+        console.error('❌ AgentCore API Response:', response.status, response.statusText, errorText); // DEBUG: Log response details
         throw new Error(`AgentCore API error (${response.status}): ${response.statusText} - ${errorText}`);
       }
 
