@@ -63,10 +63,23 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  min-height: 0; /* ✅ CRITICAL: Allows flex child to shrink */
 }
 
 #dcv-display-container {
+  width: 100%;      /* ✅ Fill container width */
+  height: 100%;     /* ✅ Fill container height */
   background: #000;
+  position: relative; /* ✅ For proper positioning */
+  overflow: hidden;  /* ✅ Prevent canvas overflow */
+}
+
+/* ✅ Force canvas to scale */
+#dcv-display-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;  /* ✅ Fill space, may crop edges */
+  display: block;  /* ✅ Remove inline spacing */
 }
 
 .loading-overlay,

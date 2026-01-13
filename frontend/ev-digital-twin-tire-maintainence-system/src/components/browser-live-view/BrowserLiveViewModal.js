@@ -62,6 +62,28 @@ export function BrowserLiveViewModal({ isOpen, onClose, liveViewUrl }) {
           throw new Error('DCV SDK not loaded');
         }
 
+        // ✅ Wait for container to have dimensions
+        const container = document.getElementById('dcv-display-container');
+        if (!container) {
+          throw new Error('Container not found');
+        }
+
+        // Wait for container to have actual dimensions (retry up to 10 times)
+        let rect = container.getBoundingClientRect();
+        let retries = 0;
+        while ((rect.width === 0 || rect.height === 0) && retries < 10) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          rect = container.getBoundingClientRect();
+          retries++;
+        }
+
+        if (rect.width === 0 || rect.height === 0) {
+          console.warn('⚠️ Container still has zero dimensions, using fallback');
+          rect = { width: 1600, height: 900 };
+        }
+
+        console.log(`📐 Container dimensions: ${rect.width}×${rect.height}`);
+
         dcv.setLogLevel(dcv.LogLevel.ERROR);
         console.log('🔌 Connecting to browser live view...');
 
@@ -69,9 +91,6 @@ export function BrowserLiveViewModal({ isOpen, onClose, liveViewUrl }) {
         const url = new URL(liveViewUrl);
         const baseUrl = `${url.protocol}//${url.host}${url.pathname}`;
         const sigV4Params = url.searchParams;
-        
-        console.log('🔑 Base URL:', baseUrl);
-        console.log('🔑 SigV4 Params:', Array.from(sigV4Params.entries()));
 
         // Callback to inject AWS SigV4 query parameters
         const httpExtraSearchParams = () => {
@@ -97,6 +116,9 @@ export function BrowserLiveViewModal({ isOpen, onClose, liveViewUrl }) {
                 authToken: authToken,
                 divId: 'dcv-display-container',
                 baseUrl: window.location.origin + '/dcv-sdk/dcvjs-umd',
+                screenScaling: 'stretch-to-window',  // ✅ Force scaling
+                screenWidth: Math.floor(rect.width) || 1920,  // ✅ Explicit width
+                screenHeight: Math.floor(rect.height) || 1080, // ✅ Explicit height
                 observers: {
                   httpExtraSearchParams: httpExtraSearchParams,
                   firstFrame: () => {

@@ -139,7 +139,7 @@ def lambda_handler(event, context):
                 # Query CloudWatch for browser actions (no filter - get all logs)
                 print(f"Querying CloudWatch for browser actions (job_id: {job_id})")
                 end_time = int(datetime.now().timestamp() * 1000)
-                start_time = int((datetime.now() - timedelta(hours=6)).timestamp() * 1000)  # Last 6 hours
+                start_time = int((datetime.now() - timedelta(minutes=5)).timestamp() * 1000)  # Last 5 minutes
                 
                 # Query without filter pattern to get all logs (same as test script)
                 log_response = logs_client.filter_log_events(

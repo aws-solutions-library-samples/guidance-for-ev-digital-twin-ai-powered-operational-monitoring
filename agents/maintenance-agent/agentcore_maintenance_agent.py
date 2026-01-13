@@ -1305,8 +1305,9 @@ def order_tire_online(vehicle_id: str, job_id: str = None) -> str:
         If the popup opens and shows a yellow "Filter" button, click it to filter results.
         If the popup is empty or the Filter button doesn't appear after waiting 3 seconds, close the popup and skip this filtering step.
         Click on the first highly-rated tire in the search results (filtered or unfiltered).
-        Click the Add to Cart button.
-        Wait for the cart to update and verify it shows 1 item.
+        Find and click the "Add to Cart" button on the product page.
+        Wait 2 seconds for the cart to update.
+        Verify the cart shows 1 item added.
         Return the product name, brand, and price.
         """
         

@@ -65,6 +65,28 @@ export function BrowserLiveViewPage() {
           throw new Error('DCV SDK not loaded');
         }
 
+        // ✅ Wait for container to have dimensions
+        const container = document.getElementById('dcv-display-container');
+        if (!container) {
+          throw new Error('Container not found');
+        }
+
+        // Wait for container to have actual dimensions (retry up to 10 times)
+        let rect = container.getBoundingClientRect();
+        let retries = 0;
+        while ((rect.width === 0 || rect.height === 0) && retries < 10) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          rect = container.getBoundingClientRect();
+          retries++;
+        }
+
+        if (rect.width === 0 || rect.height === 0) {
+          console.warn('⚠️ Container still has zero dimensions, using fallback');
+          rect = { width: 1920, height: 1080 };
+        }
+
+        console.log(`📐 Container dimensions: ${rect.width}×${rect.height}`);
+
         dcv.setLogLevel(dcv.LogLevel.ERROR);
         console.log('🔌 Connecting to browser live view...');
 
@@ -97,6 +119,9 @@ export function BrowserLiveViewPage() {
                 authToken: authToken,
                 divId: 'dcv-display-container',
                 baseUrl: window.location.origin + '/dcv-sdk/dcvjs-umd',
+                screenScaling: 'stretch-to-window',  // ✅ Force scaling
+                screenWidth: Math.floor(rect.width) || window.innerWidth,  // ✅ Explicit width
+                screenHeight: Math.floor(rect.height) || (window.innerHeight - 50), // ✅ Explicit height
                 observers: {
                   httpExtraSearchParams: httpExtraSearchParams,  // CRITICAL for WebSocket
                   firstFrame: () => {

@@ -209,6 +209,33 @@ chmod +x scripts/setup_ml_predictions.sh
 
 ## Local Development
 
+### Frontend Configuration
+
+**Configure API Endpoints:**
+
+The frontend uses environment variables for API configuration. Create `.env.local` in the frontend directory:
+
+```bash
+cd frontend/ev-digital-twin-tire-maintainence-system
+cp .env.example .env.local
+```
+
+**Edit `.env.local` with your API Gateway URLs:**
+
+```bash
+# Get your API Gateway URL from CloudFormation
+aws cloudformation describe-stacks \
+  --stack-name ev-digital-twin-agentcore-proxy \
+  --query 'Stacks[0].Outputs[?OutputKey==`ApiGatewayUrl`].OutputValue' \
+  --output text
+
+# Add to .env.local:
+REACT_APP_AGENTCORE_API=https://YOUR-API-ID.execute-api.us-east-1.amazonaws.com/chat
+REACT_APP_TIRE_ORDER_API=https://YOUR-API-ID.execute-api.us-east-1.amazonaws.com
+```
+
+**Note:** `.env.local` is gitignored and safe for your credentials.
+
 ### Frontend Only
 
 ```bash
@@ -292,8 +319,17 @@ aws lambda update-function-code \
 
 ### Update Frontend
 
+**Build with API Configuration:**
+
 ```bash
 cd frontend/ev-digital-twin-tire-maintainence-system
+
+# Option 1: Build with environment variables (recommended)
+REACT_APP_AGENTCORE_API=https://YOUR-API-ID.execute-api.us-east-1.amazonaws.com/chat \
+REACT_APP_TIRE_ORDER_API=https://YOUR-API-ID.execute-api.us-east-1.amazonaws.com \
+npm run build
+
+# Option 2: Build using .env.local (if configured)
 npm run build
 
 # Deploy to S3
@@ -302,6 +338,8 @@ aws s3 sync build/ s3://ev-digital-twin-frontend-<account-id>-us-east-1/ --delet
 # Invalidate CloudFront cache
 aws cloudfront create-invalidation --distribution-id <dist-id> --paths "/*"
 ```
+
+**Note:** Environment variables are baked into the JavaScript bundle at build time. The `.env.local` file is not deployed to S3.
 
 ---
 

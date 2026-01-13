@@ -1,5 +1,7 @@
 // AgentCore Service for AI-powered vehicle maintenance recommendations
-const AGENTCORE_API_ENDPOINT = "https://vohmbll8l6.execute-api.us-east-1.amazonaws.com/chat";
+// Use environment variable if set, otherwise use placeholder (users must configure their own)
+const AGENTCORE_API_ENDPOINT = process.env.REACT_APP_AGENTCORE_API || "https://YOUR-API-GATEWAY-ID.execute-api.us-east-1.amazonaws.com/chat";
+const TIRE_ORDER_API_BASE = process.env.REACT_APP_TIRE_ORDER_API || "https://YOUR-API-GATEWAY-ID.execute-api.us-east-1.amazonaws.com";
 
 class AgentCoreService {
   constructor() {
@@ -292,7 +294,7 @@ class AgentCoreService {
    */
   async getCachedRecommendation(vin) {
     try {
-      const response = await fetch(`https://b4blc4xmh4.execute-api.us-east-1.amazonaws.com/genai-recs/${vin}`);
+      const response = await fetch(`${TIRE_ORDER_API_BASE}/genai-recs/${vin}`);
       if (response.ok) {
         const data = await response.json();
         return data.recommendation ? data : null;
@@ -355,7 +357,7 @@ class AgentCoreService {
    * @returns {Promise<{job_id: string, status: string}>}
    */
   async startTireOrder(vehicleId) {
-    const response = await fetch('https://b4blc4xmh4.execute-api.us-east-1.amazonaws.com/tire-order/start', {
+    const response = await fetch(`${TIRE_ORDER_API_BASE}/tire-order/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ vehicle_id: vehicleId })
@@ -374,7 +376,7 @@ class AgentCoreService {
    * @returns {Promise<{status: string, result?: object, error?: string}>}
    */
   async getTireOrderStatus(jobId) {
-    const response = await fetch(`https://b4blc4xmh4.execute-api.us-east-1.amazonaws.com/tire-order/status/${jobId}`);
+    const response = await fetch(`${TIRE_ORDER_API_BASE}/tire-order/status/${jobId}`);
 
     if (!response.ok) {
       throw new Error(`Failed to get tire order status: ${response.statusText}`);
@@ -423,7 +425,7 @@ class AgentCoreService {
    * @returns {Promise<{liveViewUrl: string, browserSessionId: string, browserId: string}>}
    */
   async getBrowserLiveView(jobId) {
-    const response = await fetch(`https://b4blc4xmh4.execute-api.us-east-1.amazonaws.com/browser-live-view/${jobId}`);
+    const response = await fetch(`${TIRE_ORDER_API_BASE}/browser-live-view/${jobId}`);
 
     if (!response.ok) {
       if (response.status === 404) {
