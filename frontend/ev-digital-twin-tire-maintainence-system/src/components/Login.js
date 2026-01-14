@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { signIn } from 'aws-amplify/auth';
+import { signIn, signInWithRedirect } from 'aws-amplify/auth';
 import loginTracker from '../services/loginTracker';
 import './Login.css';
 
@@ -8,6 +8,7 @@ const Login = ({ onSignIn }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isMidwayLoading, setIsMidwayLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
@@ -35,6 +36,34 @@ const Login = ({ onSignIn }) => {
     }
   };
 
+  const handleMidwaySignIn = async () => {
+    setIsMidwayLoading(true);
+    setError('');
+    
+    try {
+      console.log('Initiating Midway sign-in...');
+      // Redirect to Midway OIDC provider
+      await signInWithRedirect({
+        provider: {
+          custom: 'Midway'
+        }
+      });
+      console.log('Redirect initiated');
+    } catch (error) {
+      console.error('Error signing in with Midway:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      
+      // Fallback: Direct redirect to Cognito hosted UI with Midway provider
+      console.log('Attempting fallback redirect...');
+      const domain = 'ev-digital-twin.auth.us-east-1.amazoncognito.com';
+      const clientId = '5pnsuntr6epe0s6v17lqq4bfms';
+      const redirectUri = encodeURIComponent('http://localhost:3000/');
+      const url = `https://${domain}/oauth2/authorize?identity_provider=Midway&redirect_uri=${redirectUri}&response_type=code&client_id=${clientId}&scope=openid`;
+      console.log('Redirect URL:', url);
+      window.location.href = url;
+    }
+  };
+
   const handleForgotPassword = () => {
     // TODO: Implement forgot password functionality
     alert('Please contact your administrator to reset your password.');
@@ -51,6 +80,24 @@ const Login = ({ onSignIn }) => {
             <h1 className="login-title">Sign in</h1>
           </div>
 
+          {/* Midway SSO Button */}
+          <div className="midway-section">
+            <button
+              type="button"
+              className="midway-button"
+              onClick={handleMidwaySignIn}
+              disabled={isMidwayLoading || isLoading}
+            >
+              <span className="midway-icon">🔐</span>
+              {isMidwayLoading ? 'Redirecting to Midway...' : 'Sign in with Amazon Midway'}
+            </button>
+            <p className="midway-hint">For Amazon employees</p>
+          </div>
+
+          <div className="divider">
+            <span className="divider-text">or</span>
+          </div>
+
           <form onSubmit={handleSubmit} className="login-form">
             <div className="form-group">
               <label htmlFor="username" className="form-label">
@@ -64,7 +111,7 @@ const Login = ({ onSignIn }) => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
-                disabled={isLoading}
+                disabled={isLoading || isMidwayLoading}
               />
             </div>
 
@@ -81,13 +128,13 @@ const Login = ({ onSignIn }) => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  disabled={isLoading}
+                  disabled={isLoading || isMidwayLoading}
                 />
                 <button
                   type="button"
                   className="password-toggle"
                   onClick={() => setShowPassword(!showPassword)}
-                  disabled={isLoading}
+                  disabled={isLoading || isMidwayLoading}
                 >
                   {showPassword ? '🙈' : '👁️'}
                 </button>
@@ -103,7 +150,7 @@ const Login = ({ onSignIn }) => {
             <button
               type="submit"
               className="sign-in-button"
-              disabled={isLoading || !username || !password}
+              disabled={isLoading || isMidwayLoading || !username || !password}
             >
               {isLoading ? 'Signing in...' : 'Sign in'}
             </button>
@@ -112,7 +159,7 @@ const Login = ({ onSignIn }) => {
               type="button"
               className="forgot-password-link"
               onClick={handleForgotPassword}
-              disabled={isLoading}
+              disabled={isLoading || isMidwayLoading}
             >
               Forgot your password?
             </button>
