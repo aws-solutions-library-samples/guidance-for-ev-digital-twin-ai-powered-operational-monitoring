@@ -12,8 +12,8 @@
         "s3:AbortMultipartUpload"
       ],
       "Resource": [
-        "arn:aws:s3:::agentcore-browser-tool-recordings",
-        "arn:aws:s3:::agentcore-browser-tool-recordings/*"
+        "arn:aws:s3:::agentcore-browser-*",
+        "arn:aws:s3:::agentcore-browser-*/*"
       ]
     }
   ]

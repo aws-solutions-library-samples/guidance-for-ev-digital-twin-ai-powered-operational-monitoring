@@ -55,6 +55,7 @@ Resources:
                 Resource: 
                   - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/vehicle-appointment-slots'
                   - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/vehicle-genai-recs'
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/tire-order-jobs'
 
   # Lambda Function
   AgentCoreLambdaProxy:

@@ -74,6 +74,8 @@ logs/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.demo
+.env.handover
 
 # Documentation and analysis files (generated during development)
 docs/optimization-analysis/

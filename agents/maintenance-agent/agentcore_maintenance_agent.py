@@ -1249,13 +1249,18 @@ def order_tire_online(vehicle_id: str, job_id: str = None) -> str:
         import boto3
         
         starting_page = "https://www.amazon.com"
-        custom_identifier = "vehicle_tire_order_tool-EfIt5YeiPR"
+        custom_identifier = "vehicle_tire_order_tool-x0Jx5FieZc"
         
         # Create BrowserClient
         client = BrowserClient(region='us-east-1')
         
         # Manually start session with custom browser tool using boto3
         boto_client = boto3.client('bedrock-agentcore', region_name='us-east-1')
+        session_response = boto_client.start_browser_session(
+            browserIdentifier=custom_identifier,
+            name=f"tire-order-{vehicle_id}",
+            sessionTimeoutSeconds=3600
+        )
         session_response = boto_client.start_browser_session(
             browserIdentifier=custom_identifier,
             name=f"tire-order-{vehicle_id}",

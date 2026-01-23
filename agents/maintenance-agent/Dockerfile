@@ -4,6 +4,7 @@ FROM public.ecr.aws/docker/library/python:3.11-slim
 # Build arguments for Knowledge Base ID and Memory ID (set during deployment)
 ARG KNOWLEDGE_BASE_ID=""
 ARG AGENTCORE_MEMORY_ID=""
+ARG BROWSER_TOOL_ID=""
 
 # Set working directory
 WORKDIR /app
@@ -53,12 +54,16 @@ RUN mkdir -p models
 # IMPORTANT: Set KNOWLEDGE_BASE_ID to enable KB tools (tire/motor/inverter guidance)
 # Get your KB ID from: aws bedrock-agent list-knowledge-bases --query "knowledgeBaseSummaries[*].[knowledgeBaseId,name]"
 # Or pass as build arg: docker build --build-arg KNOWLEDGE_BASE_ID=YOUR_KB_ID .
-ENV KNOWLEDGE_BASE_ID=${KNOWLEDGE_BASE_ID:-5CZPTMJB9R}
+ENV KNOWLEDGE_BASE_ID=${KNOWLEDGE_BASE_ID:-}
 
 # IMPORTANT: Set AGENTCORE_MEMORY_ID to enable memory features (pattern detection, recurring issues)
 # Get your Memory ID from: .bedrock_agentcore.yaml after running 'bedrock-agentcore launch'
 # Or pass as build arg: docker build --build-arg AGENTCORE_MEMORY_ID=YOUR_MEMORY_ID .
 ENV AGENTCORE_MEMORY_ID=${AGENTCORE_MEMORY_ID:-}
+
+# OPTIONAL: Set BROWSER_TOOL_ID to override auto-detection
+# If not set, the agent will auto-detect from CloudFormation stack 'ev-digital-twin-browser-tool'
+ENV BROWSER_TOOL_ID=${BROWSER_TOOL_ID:-}
 
 # Expose port (AgentCore Runtime uses 8000 to match ALB configuration)
 EXPOSE 8000

@@ -1,0 +1,16 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "BrowserToolPermissions",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock-agentcore:StartBrowserSession",
+        "bedrock-agentcore:StopBrowserSession",
+        "bedrock-agentcore:GetBrowserSession",
+        "bedrock-agentcore:UpdateBrowserStream"
+      ],
+      "Resource": "arn:aws:bedrock-agentcore:us-east-1:*:browser-custom/vehicle_tire_order_tool-*"
+    }
+  ]
+}

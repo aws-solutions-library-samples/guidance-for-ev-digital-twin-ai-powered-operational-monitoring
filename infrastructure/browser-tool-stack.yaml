@@ -1,0 +1,92 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AgentCore Browser Tool for Automated Tire Ordering'
+
+Parameters:
+  RecordingBucketName:
+    Type: String
+    Default: ''
+    Description: S3 bucket name for browser session recordings (leave empty to auto-generate with account ID)
+  
+  AgentCoreRuntimeRoleName:
+    Type: String
+    Default: ''
+    Description: IAM role name for AgentCore Runtime (leave empty to use default pattern, or provide full role name)
+
+Conditions:
+  UseProvidedRole: !Not [!Equals [!Ref AgentCoreRuntimeRoleName, '']]
+  UseProvidedBucket: !Not [!Equals [!Ref RecordingBucketName, '']]
+
+Resources:
+  # S3 Bucket for browser session recordings
+  BrowserRecordingBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !If
+        - UseProvidedBucket
+        - !Ref RecordingBucketName
+        - !Sub 'agentcore-browser-recordings-${AWS::AccountId}'
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldRecordings
+            Status: Enabled
+            ExpirationInDays: 7  # Keep recordings for 7 days
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Project
+          Value: EV-Digital-Twin
+        - Key: Component
+          Value: Browser-Tool
+
+  # Browser Tool for Tire Ordering
+  VehicleTireOrderBrowser:
+    Type: AWS::BedrockAgentCore::BrowserCustom
+    DependsOn: BrowserRecordingBucket
+    Properties:
+      Name: vehicle_tire_order_tool
+      Description: Automates tire ordering from Amazon Garage for digital twin vehicle maintenance system
+      NetworkConfiguration:
+        NetworkMode: PUBLIC
+      ExecutionRoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${AgentCoreRuntimeRoleName}'
+      RecordingConfig:
+        Enabled: true
+        S3Location:
+          Bucket: !If
+            - UseProvidedBucket
+            - !Ref RecordingBucketName
+            - !Sub 'agentcore-browser-recordings-${AWS::AccountId}'
+          Prefix: browser-sessions/
+      Tags:
+        Project: EV-Digital-Twin
+        Component: Browser-Tool
+        Purpose: Tire-Ordering
+
+Outputs:
+  BrowserToolId:
+    Description: Browser Tool ID (use this in your agent code)
+    Value: !GetAtt VehicleTireOrderBrowser.BrowserId
+    Export:
+      Name: !Sub '${AWS::StackName}-BrowserToolId'
+  
+  BrowserToolArn:
+    Description: Browser Tool ARN
+    Value: !GetAtt VehicleTireOrderBrowser.BrowserArn
+    Export:
+      Name: !Sub '${AWS::StackName}-BrowserToolArn'
+  
+  BrowserToolName:
+    Description: Browser Tool Name
+    Value: vehicle_tire_order_tool
+  
+  RecordingBucket:
+    Description: S3 bucket for browser session recordings
+    Value: !Ref BrowserRecordingBucket
+  
+  BrowserToolStatus:
+    Description: Browser Tool Status
+    Value: !GetAtt VehicleTireOrderBrowser.Status

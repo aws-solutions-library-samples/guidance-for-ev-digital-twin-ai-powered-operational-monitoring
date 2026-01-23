@@ -11,21 +11,8 @@ echo "📦 Packaging tire order worker Lambda..."
 rm -rf lambda-package
 mkdir -p lambda-package
 
-# Copy Python files
-cp tire_order_worker.py lambda-package/
-cp agentcore_maintenance_agent.py lambda-package/
-cp agentcore_runtime_app.py lambda-package/
-cp knowledge-base/knowledge_base_tools.py lambda-package/
-cp tire_predictor.py lambda-package/
-cp tire_wear_data.csv lambda-package/
-cp motor_sensor_data.csv lambda-package/
-cp inverter_sensor_data.csv lambda-package/
-cp car_manual_specs.csv lambda-package/
-cp tire_models_*.pkl lambda-package/ 2>/dev/null || true
-
-# Install dependencies
-echo "📥 Installing Python dependencies..."
-pip3 install -r requirements-agentcore.txt -t lambda-package/ --quiet
+# Copy worker Lambda code
+cp infrastructure/lambda/tire_order_worker.py lambda-package/
 
 # Create zip
 echo "🗜️  Creating deployment package..."
@@ -50,7 +37,3 @@ rm tire-order-worker.zip
 
 echo "✅ Worker Lambda deployed successfully!"
 echo ""
-echo "🧪 Test it with:"
-echo "curl -X POST https://b4blc4xmh4.execute-api.us-east-1.amazonaws.com/tire-order/start \\"
-echo "  -H 'Content-Type: application/json' \\"
-echo "  -d '{\"vehicle_id\": \"1\"}'"

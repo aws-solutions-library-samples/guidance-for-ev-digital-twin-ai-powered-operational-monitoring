@@ -57,8 +57,7 @@ Resources:
                 Action:
                   - bedrock-agentcore:InvokeAgentRuntime
                 Resource:
-                  - !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:runtime/${AgentCoreRuntimeId}'
-                  - !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:runtime/${AgentCoreRuntimeId}/runtime-endpoint/DEFAULT'
+                  - !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:runtime/*'
               
               # DynamoDB Access
               - Effect: Allow
