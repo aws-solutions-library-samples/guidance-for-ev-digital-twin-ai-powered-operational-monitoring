@@ -199,8 +199,10 @@ const Motor = () => {
   };
 
   const determineMotorStatus = (temp, oilPressure, performanceScore, hasAnomaly) => {
-    if (hasAnomaly || temp > 105 || oilPressure < 15 || performanceScore < 70) return "CRITICAL";
-    if (temp > 95 || oilPressure < 20 || performanceScore < 85) return "WARNING";
+    // CRITICAL only for severe conditions (not just anomaly flag)
+    if (temp > 105 || oilPressure < 15 || performanceScore < 70) return "CRITICAL";
+    // WARNING for elevated conditions or anomaly flag
+    if (hasAnomaly || temp > 95 || oilPressure < 20 || performanceScore < 85) return "WARNING";
     return "GOOD";
   };
 
@@ -232,17 +234,17 @@ const Motor = () => {
     const recommendations = [];
     
     // Intelligent analysis based on motor data
-    if (engineTemp > 105 || hasAnomaly) {
+    if (engineTemp > 105) {
       status = 'CRITICAL';
       riskLevel = 'HIGH';
       summary = 'Critical motor conditions detected requiring immediate attention. ';
       recommendations.push({
         action: 'URGENT: Stop operation and inspect motor immediately',
         priority: 'CRITICAL',
-        reason: 'Engine temperature or anomaly exceeds safe operating limits',
+        reason: 'Engine temperature exceeds safe operating limits',
         urgency: 'Immediately'
       });
-    } else if (engineTemp > 95 || oilPressure < 20) {
+    } else if (hasAnomaly || engineTemp > 95 || oilPressure < 20) {
       status = 'WARNING';
       riskLevel = 'MEDIUM';
       summary = 'Motor performance issues detected that should be addressed soon. ';
@@ -628,11 +630,11 @@ const Motor = () => {
     let statusColor = '#00ff88';
     let statusIcon = '✅';
     
-    if (hasAnomaly || engineTemp > 105 || oilPressure < 15 || performanceScore < 70) {
+    if (engineTemp > 105 || oilPressure < 15 || performanceScore < 70) {
       systemStatus = 'critical';
       statusColor = '#ff4444';
       statusIcon = '🚨';
-    } else if (engineTemp > 95 || oilPressure < 20 || performanceScore < 85 || vibration > 5) {
+    } else if (hasAnomaly || engineTemp > 95 || oilPressure < 20 || performanceScore < 85 || vibration > 5) {
       systemStatus = 'warning';
       statusColor = '#ff9900';
       statusIcon = '⚠️';

@@ -147,7 +147,7 @@ const Vehicle2ConnVehicle = () => {
               <div className="connvehicle-card" onClick={() => navigate(`/car/5YJSA1E26HF123456/motor`)}>
                 <img src={require('../assets/motor.png')} alt="Motor" style={{ width: '20px', height: '20px', margin: '0 auto' }} />
                 <div className="connvehicle-card-title">Motor</div>
-                <div className="connvehicle-card-error">Phase currents are imbalanced</div>
+                <div className="connvehicle-card-warning">Phase currents are imbalanced</div>
               </div>
               <div className="connvehicle-card" onClick={() => navigate(`/car/5YJSA1E26HF123456/tires`)}>
                 <img src={require('../assets/icons/tireicon.png')} alt="Tires" style={{ width: '20px', height: '20px', margin: '0 auto' }} />

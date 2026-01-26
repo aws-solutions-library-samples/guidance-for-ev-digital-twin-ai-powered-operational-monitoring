@@ -255,6 +255,11 @@
   font-size: calc(11px + 0.15vw);
 }
 
+.connvehicle-card-warning {
+  color: #ff9900;
+  font-size: calc(11px + 0.15vw);
+}
+
 /* Right Panel - Individual Boxes */
 .connvehicle-right {
   display: flex;

@@ -7,7 +7,7 @@ const isLocalhost = typeof window !== 'undefined' &&
 
 const redirectUrl = isLocalhost 
   ? 'http://localhost:3000/' 
-  : 'https://dvm0illvncdsh.cloudfront.net/';
+  : `${window.location.origin}/`;
 
 const awsmobile = {
   "aws_project_region": "us-east-1",

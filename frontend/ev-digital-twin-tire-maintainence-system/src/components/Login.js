@@ -57,7 +57,8 @@ const Login = ({ onSignIn }) => {
       console.log('Attempting fallback redirect...');
       const domain = 'ev-digital-twin.auth.us-east-1.amazoncognito.com';
       const clientId = '5pnsuntr6epe0s6v17lqq4bfms';
-      const redirectUri = encodeURIComponent('http://localhost:3000/');
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const redirectUri = encodeURIComponent(isLocalhost ? 'http://localhost:3000/' : `${window.location.origin}/`);
       const url = `https://${domain}/oauth2/authorize?identity_provider=Midway&redirect_uri=${redirectUri}&response_type=code&client_id=${clientId}&scope=openid`;
       console.log('Redirect URL:', url);
       window.location.href = url;
