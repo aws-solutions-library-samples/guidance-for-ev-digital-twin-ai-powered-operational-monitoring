@@ -1,7 +1,7 @@
 // AgentCore Service for AI-powered vehicle maintenance recommendations
-// Working account (009296485814) API endpoints
-const AGENTCORE_API_ENDPOINT = process.env.REACT_APP_AGENTCORE_API || "https://b4blc4xmh4.execute-api.us-east-1.amazonaws.com/chat";
-const TIRE_ORDER_API_BASE = process.env.REACT_APP_TIRE_ORDER_API || "https://b4blc4xmh4.execute-api.us-east-1.amazonaws.com";
+// Use environment variable if set, otherwise use placeholder (users must configure their own)
+const AGENTCORE_API_ENDPOINT = process.env.REACT_APP_AGENTCORE_API || "https://YOUR-API-GATEWAY-ID.execute-api.us-east-1.amazonaws.com/chat";
+const TIRE_ORDER_API_BASE = process.env.REACT_APP_TIRE_ORDER_API || "https://YOUR-API-GATEWAY-ID.execute-api.us-east-1.amazonaws.com";
 
 class AgentCoreService {
   constructor() {
