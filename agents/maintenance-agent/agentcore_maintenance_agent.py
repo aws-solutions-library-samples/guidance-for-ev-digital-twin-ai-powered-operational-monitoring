@@ -6,6 +6,7 @@ Includes Knowledge Base integration for EV Maintenance Manual
 
 from strands.tools import tool
 from strands import Agent
+from strands.models.bedrock import BedrockModel
 from strands.hooks import AfterInvocationEvent, HookProvider, HookRegistry, MessageAddedEvent
 import pandas as pd
 import numpy as np
@@ -44,6 +45,11 @@ except Exception as e:
 
 # Model configuration - Claude Sonnet 4.5 via inference profile
 MODEL_ID = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
+
+# Bedrock Guardrails configuration - loaded from environment variables
+# Set BEDROCK_GUARDRAIL_ID and BEDROCK_GUARDRAIL_VERSION to enable guardrails
+GUARDRAIL_ID = os.environ.get('BEDROCK_GUARDRAIL_ID', '')
+GUARDRAIL_VERSION = os.environ.get('BEDROCK_GUARDRAIL_VERSION', '2')
 
 # Browser Tool configuration - Load from Secrets Manager (lazy-loaded)
 _NOVA_ACT_API_KEY_CACHE = None  # Cache the key once loaded
@@ -460,8 +466,24 @@ class AgentCoreMaintenanceAgent:
         else:
             print("ℹ️  Knowledge Base tools not available - using embedded knowledge only")
         
+        # Create BedrockModel with guardrails if configured
+        if GUARDRAIL_ID:
+            model = BedrockModel(
+                model_id=MODEL_ID,
+                region_name="us-east-1",
+                guardrail_id=GUARDRAIL_ID,
+                guardrail_version=GUARDRAIL_VERSION,
+                guardrail_trace="enabled",
+                guardrail_redact_input=True,
+                guardrail_redact_output=False
+            )
+            print(f"🛡️  Bedrock Guardrails enabled: {GUARDRAIL_ID} (version: {GUARDRAIL_VERSION})")
+        else:
+            model = MODEL_ID
+            print("ℹ️  Bedrock Guardrails not configured - set BEDROCK_GUARDRAIL_ID to enable")
+        
         agent = Agent(
-            model=MODEL_ID,
+            model=model,
             system_prompt=system_prompt,
             hooks=[self.memory_hooks] if self.memory_hooks else [],
             tools=tools_list

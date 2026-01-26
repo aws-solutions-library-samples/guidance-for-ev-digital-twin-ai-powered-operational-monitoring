@@ -8,3 +8,7 @@
 
 # Optional: Ignore deployment summary if you don't want to commit it
 # DEPLOYMENT_SUMMARY.md
+
+# Local environment files with account-specific configuration
+.env.local
+*/.env.local

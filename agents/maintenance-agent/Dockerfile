@@ -54,7 +54,11 @@ RUN mkdir -p models
 # IMPORTANT: Set KNOWLEDGE_BASE_ID to enable KB tools (tire/motor/inverter guidance)
 # Get your KB ID from: aws bedrock-agent list-knowledge-bases --query "knowledgeBaseSummaries[*].[knowledgeBaseId,name]"
 # Or pass as build arg: docker build --build-arg KNOWLEDGE_BASE_ID=YOUR_KB_ID .
-ENV KNOWLEDGE_BASE_ID=${KNOWLEDGE_BASE_ID:-}
+ENV KNOWLEDGE_BASE_ID=${KNOWLEDGE_BASE_ID:-HCHPVDE0PX}
+
+# Bedrock Guardrails configuration
+ENV BEDROCK_GUARDRAIL_ID=${BEDROCK_GUARDRAIL_ID:-420zni8vcw70}
+ENV BEDROCK_GUARDRAIL_VERSION=${BEDROCK_GUARDRAIL_VERSION:-2}
 
 # IMPORTANT: Set AGENTCORE_MEMORY_ID to enable memory features (pattern detection, recurring issues)
 # Get your Memory ID from: .bedrock_agentcore.yaml after running 'bedrock-agentcore launch'
