@@ -1,10 +1,12 @@
 # Use Python 3.11 slim image from AWS ECR Public (avoids Docker Hub rate limits)
 FROM public.ecr.aws/docker/library/python:3.11-slim
 
-# Build arguments for Knowledge Base ID and Memory ID (set during deployment)
+# Build arguments for Knowledge Base ID, Memory ID, and Guardrails (set during deployment)
 ARG KNOWLEDGE_BASE_ID=""
 ARG AGENTCORE_MEMORY_ID=""
 ARG BROWSER_TOOL_ID=""
+ARG BEDROCK_GUARDRAIL_ID=""
+ARG BEDROCK_GUARDRAIL_VERSION=""
 
 # Set working directory
 WORKDIR /app
@@ -53,12 +55,16 @@ RUN mkdir -p models
 # Set environment variables for Knowledge Base and Memory
 # IMPORTANT: Set KNOWLEDGE_BASE_ID to enable KB tools (tire/motor/inverter guidance)
 # Get your KB ID from: aws bedrock-agent list-knowledge-bases --query "knowledgeBaseSummaries[*].[knowledgeBaseId,name]"
-# Or pass as build arg: docker build --build-arg KNOWLEDGE_BASE_ID=YOUR_KB_ID .
-ENV KNOWLEDGE_BASE_ID=${KNOWLEDGE_BASE_ID:-HCHPVDE0PX}
+# Pass as build arg: docker build --build-arg KNOWLEDGE_BASE_ID=YOUR_KB_ID .
+# Or set at runtime: docker run -e KNOWLEDGE_BASE_ID=YOUR_KB_ID ...
+ENV KNOWLEDGE_BASE_ID=${KNOWLEDGE_BASE_ID:-}
 
-# Bedrock Guardrails configuration
-ENV BEDROCK_GUARDRAIL_ID=${BEDROCK_GUARDRAIL_ID:-420zni8vcw70}
-ENV BEDROCK_GUARDRAIL_VERSION=${BEDROCK_GUARDRAIL_VERSION:-2}
+# Bedrock Guardrails configuration (optional - leave empty to disable)
+# Get your Guardrail ID from: aws bedrock list-guardrails --query "guardrails[*].[guardrailId,name]"
+# Pass as build arg: docker build --build-arg BEDROCK_GUARDRAIL_ID=YOUR_ID --build-arg BEDROCK_GUARDRAIL_VERSION=1 .
+# Or set at runtime: docker run -e BEDROCK_GUARDRAIL_ID=YOUR_ID -e BEDROCK_GUARDRAIL_VERSION=1 ...
+ENV BEDROCK_GUARDRAIL_ID=${BEDROCK_GUARDRAIL_ID:-}
+ENV BEDROCK_GUARDRAIL_VERSION=${BEDROCK_GUARDRAIL_VERSION:-}
 
 # IMPORTANT: Set AGENTCORE_MEMORY_ID to enable memory features (pattern detection, recurring issues)
 # Get your Memory ID from: .bedrock_agentcore.yaml after running 'bedrock-agentcore launch'
