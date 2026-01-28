@@ -39,8 +39,7 @@ RUN pip install --no-cache-dir \
     nova-act \
     duckduckgo-search>=4.0.0
 
-# Verify boto3/botocore versions (must be 1.40+ for browser tool API)
-RUN python -c "import boto3, botocore; print(f'boto3={boto3.__version__}, botocore={botocore.__version__}')"
+
 
 # Copy application code and dependencies
 COPY agentcore_runtime_app.py .
@@ -75,9 +74,10 @@ ENV BEDROCK_GUARDRAIL_VERSION=${BEDROCK_GUARDRAIL_VERSION:-}
 # Or pass as build arg: docker build --build-arg AGENTCORE_MEMORY_ID=YOUR_MEMORY_ID .
 ENV AGENTCORE_MEMORY_ID=${AGENTCORE_MEMORY_ID:-}
 
-# BROWSER_TOOL_ID - HARDCODED for account 009296485814
-# This is the correct browser tool ID for the tire ordering automation
-ENV BROWSER_TOOL_ID=vehicle_tire_order_tool-EfIt5YeiPR
+# BROWSER_TOOL_ID - Required for browser automation (tire ordering)
+# Pass as build arg: docker build --build-arg BROWSER_TOOL_ID=YOUR_TOOL_ID .
+# Or set at runtime: docker run -e BROWSER_TOOL_ID=YOUR_TOOL_ID ...
+ENV BROWSER_TOOL_ID=${BROWSER_TOOL_ID:-}
 
 # Expose port (AgentCore Runtime uses 8000 to match ALB configuration)
 EXPOSE 8000

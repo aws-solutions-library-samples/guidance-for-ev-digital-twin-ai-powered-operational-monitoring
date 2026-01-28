@@ -18,10 +18,6 @@ import botocore
 from bedrock_agentcore.memory import MemoryClient
 import os
 
-# Print version info at startup for debugging
-print(f"🔧 boto3={boto3.__version__}, botocore={botocore.__version__}")
-print(f"🔧 BROWSER_TOOL_ID={os.environ.get('BROWSER_TOOL_ID', 'NOT SET')}")
-
 # Import Knowledge Base tools
 try:
     from knowledge_base_tools import (
@@ -1276,8 +1272,14 @@ def order_tire_online(vehicle_id: str, job_id: str = None) -> str:
         import boto3
         
         starting_page = "https://www.amazon.com"
-        # Browser tool ID - can be overridden via environment variable
-        custom_identifier = os.environ.get('BROWSER_TOOL_ID', 'vehicle_tire_order_tool-EfIt5YeiPR')
+        # Browser tool ID - must be set via BROWSER_TOOL_ID environment variable
+        custom_identifier = os.environ.get('BROWSER_TOOL_ID')
+        if not custom_identifier:
+            return json.dumps({
+                "success": False,
+                "error": "BROWSER_TOOL_ID environment variable not set",
+                "message": "Browser automation requires BROWSER_TOOL_ID to be configured"
+            })
         
         # Create BrowserClient
         client = BrowserClient(region='us-east-1')
