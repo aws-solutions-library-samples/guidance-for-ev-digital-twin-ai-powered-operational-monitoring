@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies (all from requirements-agentcore.txt)
+# IMPORTANT: boto3/botocore 1.40+ required for StartBrowserSession API
 RUN pip install --no-cache-dir \
     pandas>=2.0.0 \
     numpy>=1.24.0 \
@@ -32,11 +33,14 @@ RUN pip install --no-cache-dir \
     gunicorn>=21.2.0 \
     strands-agents>=0.1.0 \
     strands-agents-tools>=0.1.0 \
-    boto3>=1.34.0 \
-    botocore>=1.34.0 \
-    bedrock-agentcore \
+    boto3>=1.40.0 \
+    botocore>=1.40.0 \
+    bedrock-agentcore>=1.2.0 \
     nova-act \
     duckduckgo-search>=4.0.0
+
+# Verify boto3/botocore versions (must be 1.40+ for browser tool API)
+RUN python -c "import boto3, botocore; print(f'boto3={boto3.__version__}, botocore={botocore.__version__}')"
 
 # Copy application code and dependencies
 COPY agentcore_runtime_app.py .
@@ -71,9 +75,9 @@ ENV BEDROCK_GUARDRAIL_VERSION=${BEDROCK_GUARDRAIL_VERSION:-}
 # Or pass as build arg: docker build --build-arg AGENTCORE_MEMORY_ID=YOUR_MEMORY_ID .
 ENV AGENTCORE_MEMORY_ID=${AGENTCORE_MEMORY_ID:-}
 
-# OPTIONAL: Set BROWSER_TOOL_ID to override auto-detection
-# If not set, the agent will auto-detect from CloudFormation stack 'ev-digital-twin-browser-tool'
-ENV BROWSER_TOOL_ID=${BROWSER_TOOL_ID:-}
+# BROWSER_TOOL_ID - HARDCODED for account 009296485814
+# This is the correct browser tool ID for the tire ordering automation
+ENV BROWSER_TOOL_ID=vehicle_tire_order_tool-EfIt5YeiPR
 
 # Expose port (AgentCore Runtime uses 8000 to match ALB configuration)
 EXPOSE 8000
