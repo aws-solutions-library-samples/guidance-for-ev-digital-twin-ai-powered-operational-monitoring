@@ -50,7 +50,7 @@ MODEL_ID = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
 # Bedrock Guardrails configuration - loaded from environment variables
 # Set BEDROCK_GUARDRAIL_ID and BEDROCK_GUARDRAIL_VERSION to enable guardrails
 GUARDRAIL_ID = os.environ.get('BEDROCK_GUARDRAIL_ID', '')
-GUARDRAIL_VERSION = os.environ.get('BEDROCK_GUARDRAIL_VERSION', '2')
+GUARDRAIL_VERSION = os.environ.get('BEDROCK_GUARDRAIL_VERSION', '1')
 
 # Browser Tool configuration - Load from Secrets Manager (lazy-loaded)
 _NOVA_ACT_API_KEY_CACHE = None  # Cache the key once loaded

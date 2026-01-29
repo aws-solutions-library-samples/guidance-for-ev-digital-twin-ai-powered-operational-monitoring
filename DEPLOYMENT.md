@@ -174,15 +174,53 @@ python scripts/view_memory.py
 
 ## Multi-Account Deployment
 
-**For multiple AWS accounts:**
+**Deploy to different AWS accounts using account-specific env files:**
 
-1. **Update browser tool ID** in agent code for each account
-2. **Build separate Docker images** or use environment variables
-3. **Configure frontend** with account-specific API endpoints
+### Frontend Deployment
 
-**Example:**
+```bash
+cd frontend/ev-digital-twin-tire-maintainence-system
+
+# Deploy to Account A (e.g., demo)
+cp .env.demo .env.production  # For production build
+npm run build
+aws s3 sync build/ s3://ev-digital-twin-frontend-<account-id>-us-east-1/ --delete
+
+# Deploy to Account B (e.g., handover)
+cp .env.handover .env.production  # For production build
+npm run build
+aws s3 sync build/ s3://ev-digital-twin-frontend-<account-id>-us-east-1/ --delete
+```
+
+**Important:** 
+- `.env.local` is for localhost testing (`npm start`) - NOT used in builds
+- `.env.production` is for production builds (`npm run build`) - baked into JavaScript
+- Always copy the right env file to `.env.production` before building
+
+### Agent Deployment
+
+**Update browser tool ID** in `agents/maintenance-agent/agentcore_maintenance_agent.py` (line ~1251) for each account:
+
+**Example browser tool IDs:**
 - Demo: `vehicle_tire_order_tool-EfIt5YeiPR`
 - Handover: `vehicle_tire_order_tool-x0Jx5FieZc`
+
+Then build with account-specific IDs:
+
+```bash
+cd agents/maintenance-agent
+
+# Build with guardrails and KB ID
+docker buildx build --platform linux/arm64 \
+  --build-arg BEDROCK_GUARDRAIL_ID=<guardrail-id> \
+  --build-arg BEDROCK_GUARDRAIL_VERSION=1 \
+  --build-arg KNOWLEDGE_BASE_ID=<kb-id> \
+  -t bedrock-agentcore-vehicle_maintenance_agent:latest .
+
+# Push to target account ECR
+docker tag bedrock-agentcore-vehicle_maintenance_agent:latest <account-id>.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-vehicle_maintenance_agent:latest
+docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-vehicle_maintenance_agent:latest
+```
 
 ## Troubleshooting
 
