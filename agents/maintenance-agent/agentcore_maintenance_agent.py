@@ -48,9 +48,37 @@ except Exception as e:
 MODEL_ID = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
 
 # Bedrock Guardrails configuration - loaded from environment variables
-# Set BEDROCK_GUARDRAIL_ID and BEDROCK_GUARDRAIL_VERSION to enable guardrails
+# Set BEDROCK_GUARDRAIL_ID to enable guardrails (version auto-detected if not specified)
 GUARDRAIL_ID = os.environ.get('BEDROCK_GUARDRAIL_ID', '')
-GUARDRAIL_VERSION = os.environ.get('BEDROCK_GUARDRAIL_VERSION', '1')
+_GUARDRAIL_VERSION_CACHE = None
+
+def get_guardrail_version():
+    """Get guardrail version - uses env var if set, otherwise fetches latest from API"""
+    global _GUARDRAIL_VERSION_CACHE
+    
+    if _GUARDRAIL_VERSION_CACHE is not None:
+        return _GUARDRAIL_VERSION_CACHE
+    
+    # Check if explicitly set via environment variable
+    env_version = os.environ.get('BEDROCK_GUARDRAIL_VERSION', '')
+    if env_version:
+        _GUARDRAIL_VERSION_CACHE = env_version
+        return _GUARDRAIL_VERSION_CACHE
+    
+    # Auto-detect latest version from Bedrock API
+    if GUARDRAIL_ID:
+        try:
+            bedrock_client = boto3.client('bedrock', region_name='us-east-1')
+            response = bedrock_client.get_guardrail(guardrailIdentifier=GUARDRAIL_ID)
+            _GUARDRAIL_VERSION_CACHE = response.get('version', '1')
+            print(f"✅ Auto-detected guardrail version: {_GUARDRAIL_VERSION_CACHE}")
+            return _GUARDRAIL_VERSION_CACHE
+        except Exception as e:
+            print(f"⚠️ Could not auto-detect guardrail version: {e}, defaulting to '1'")
+            _GUARDRAIL_VERSION_CACHE = '1'
+            return _GUARDRAIL_VERSION_CACHE
+    
+    return '1'
 
 # Browser Tool configuration - Load from Secrets Manager (lazy-loaded)
 _NOVA_ACT_API_KEY_CACHE = None  # Cache the key once loaded
@@ -469,16 +497,17 @@ class AgentCoreMaintenanceAgent:
         
         # Create BedrockModel with guardrails if configured
         if GUARDRAIL_ID:
+            guardrail_version = get_guardrail_version()
             model = BedrockModel(
                 model_id=MODEL_ID,
                 region_name="us-east-1",
                 guardrail_id=GUARDRAIL_ID,
-                guardrail_version=GUARDRAIL_VERSION,
+                guardrail_version=guardrail_version,
                 guardrail_trace="enabled",
                 guardrail_redact_input=True,
                 guardrail_redact_output=False
             )
-            print(f"🛡️  Bedrock Guardrails enabled: {GUARDRAIL_ID} (version: {GUARDRAIL_VERSION})")
+            print(f"🛡️  Bedrock Guardrails enabled: {GUARDRAIL_ID} (version: {guardrail_version})")
         else:
             model = MODEL_ID
             print("ℹ️  Bedrock Guardrails not configured - set BEDROCK_GUARDRAIL_ID to enable")
