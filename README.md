@@ -149,10 +149,10 @@ Deploy the complete solution using Infrastructure as Code with CloudFormation st
 **Quick Deploy:**
 ```bash
 # Deploy all infrastructure (uses default AWS profile)
-./deploy-aws.sh
+./scripts/deploy/deploy-aws.sh
 
 # Or specify a profile
-AWS_PROFILE=demo ./deploy-aws.sh
+AWS_PROFILE=demo ./scripts/deploy/deploy-aws.sh
 ```
 
 Deploys all infrastructure automatically: Cognito, DynamoDB, Lambda functions, API Gateway, and Frontend (CloudFront + ECS).
@@ -160,11 +160,11 @@ Deploys all infrastructure automatically: Cognito, DynamoDB, Lambda functions, A
 **Manual Deploy (for debugging):**
 ```bash
 # Deploy each stack individually
-./deploy-aws.sh cognito
-./deploy-aws.sh appointment-slots
-./deploy-aws.sh tire-automation
-./deploy-aws.sh agentcore-proxy
-./deploy-aws.sh frontend
+./scripts/deploy/deploy-aws.sh cognito
+./scripts/deploy/deploy-aws.sh appointment-slots
+./scripts/deploy/deploy-aws.sh tire-automation
+./scripts/deploy/deploy-aws.sh agentcore-proxy
+./scripts/deploy/deploy-aws.sh frontend
 ```
 
 **Post-Deployment Steps:**

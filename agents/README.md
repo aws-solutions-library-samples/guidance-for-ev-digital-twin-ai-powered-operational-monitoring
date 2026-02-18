@@ -61,12 +61,42 @@ Amazon Bedrock AgentCore is a modern agent runtime platform that provides enhanc
 # AWS credentials configured with named profiles
 aws sts get-caller-identity --profile demo
 
-# bedrock-agentcore CLI installed
-pip install bedrock-agentcore-starter-toolkit --upgrade
+# Python 3.10+ and pip
+python3 --version
 
 # Docker installed (for building containers)
 docker --version
 ```
+
+### Starter Toolkit Setup
+
+The AgentCore starter toolkit is a CLI for deploying Python agents to AgentCore Runtime. Install it along with the required packages:
+
+```bash
+# Create and activate a virtual environment (recommended)
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install required packages
+pip install bedrock-agentcore strands-agents bedrock-agentcore-starter-toolkit
+
+# Verify installation
+agentcore --help
+```
+
+Key CLI commands:
+
+| Command | Description |
+|---------|-------------|
+| `agentcore create` | Scaffold a new agent project (choose framework, name, options) |
+| `agentcore dev` | Run agent locally on http://localhost:8080 for testing |
+| `agentcore invoke --dev "prompt"` | Test your local dev server |
+| `agentcore launch` | Build and deploy agent to AgentCore Runtime (uses CodeBuild) |
+| `agentcore launch --local-build` | Build locally with Docker, deploy to cloud (ARM64 Macs) |
+| `agentcore invoke '{"prompt": "..."}'` | Test your deployed agent |
+| `agentcore destroy` | Clean up all AWS resources created by the toolkit |
+
+For the full tutorial, see the [official AWS guide](https://docs.aws.amazon.com/bedrock/latest/userguide/agentcore-starter-toolkit-tutorial.html).
 
 ### Deploy Maintenance Agent
 

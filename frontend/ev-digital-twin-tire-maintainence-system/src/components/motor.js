@@ -160,7 +160,7 @@ const Motor = () => {
     };
     
     try {
-      const analysisResult = await agentCoreService.getMotorAnalysis(currentData.vehicle_id, motorDataForAnalysis);
+      const analysisResult = await agentCoreService.getMotorAnalysis(currentData.vehicle_id, motorDataForAnalysis, currentData.vehicle_id);
       
       if (analysisResult.throttled) {
         const enhancedFallback = createEnhancedMotorFallback(motorDataForAnalysis, new Error('Service throttled'));

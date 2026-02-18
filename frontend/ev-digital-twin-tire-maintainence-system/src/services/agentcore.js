@@ -71,7 +71,7 @@ class AgentCoreService {
           session_id: this.sessionId,
           vin: vin
         }),
-        timeout: 10000 // 10 second timeout
+        timeout: 25000 // 25 second timeout - must be under API Gateway's 29s hard limit
       });
 
       if (!response.ok) {
@@ -191,6 +191,24 @@ class AgentCoreService {
         return { response: cached.response, fromCache: true, stale: true, error: error.message, timestamp: cached.timestamp };
       }
 
+      // API Gateway times out at 29s but Lambda keeps running and saves result to DynamoDB
+      // Poll for the saved result instead of showing an error
+      if (vin && (error.message.includes('503') || error.message.includes('unavailable'))) {
+        console.log('⏳ API Gateway timed out - polling DynamoDB for saved result...');
+        for (let attempt = 0; attempt < 4; attempt++) {
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          try {
+            const savedResult = await this.getCachedRecommendation(vin);
+            if (savedResult && savedResult.recommendation) {
+              console.log('✅ Retrieved saved result from DynamoDB');
+              const analysisData = { response: savedResult.recommendation, timestamp: Date.now(), fromCache: false, recoveredAfterTimeout: true };
+              this.cache.set(cacheKey, analysisData);
+              return analysisData;
+            }
+          } catch (e) { /* keep polling */ }
+        }
+      }
+
       throw error;
     }
   }
@@ -237,6 +255,23 @@ class AgentCoreService {
         return { response: cached.response, fromCache: true, stale: true, error: error.message, timestamp: cached.timestamp };
       }
 
+      // Poll DynamoDB for saved result after API Gateway timeout
+      if (vin && (error.message.includes('503') || error.message.includes('unavailable'))) {
+        console.log('⏳ Motor analysis: polling DynamoDB for saved result...');
+        for (let attempt = 0; attempt < 4; attempt++) {
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          try {
+            const savedResult = await this.getCachedRecommendation(vin);
+            if (savedResult && savedResult.recommendation) {
+              console.log('✅ Retrieved saved motor result from DynamoDB');
+              const analysisData = { response: savedResult.recommendation, timestamp: Date.now(), fromCache: false, recoveredAfterTimeout: true };
+              this.cache.set(cacheKey, analysisData);
+              return analysisData;
+            }
+          } catch (e) { /* keep polling */ }
+        }
+      }
+
       throw error;
     }
   }
@@ -281,6 +316,23 @@ class AgentCoreService {
       // Try to use stale cache on error
       if (cached) {
         return { response: cached.response, fromCache: true, stale: true, error: error.message, timestamp: cached.timestamp };
+      }
+      
+      // Poll DynamoDB for saved result after API Gateway timeout
+      if (vin && (error.message.includes('503') || error.message.includes('unavailable'))) {
+        console.log('⏳ Inverter analysis: polling DynamoDB for saved result...');
+        for (let attempt = 0; attempt < 4; attempt++) {
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          try {
+            const savedResult = await this.getCachedRecommendation(vin);
+            if (savedResult && savedResult.recommendation) {
+              console.log('✅ Retrieved saved inverter result from DynamoDB');
+              const analysisData = { response: savedResult.recommendation, timestamp: Date.now(), fromCache: false, recoveredAfterTimeout: true };
+              this.cache.set(cacheKey, analysisData);
+              return analysisData;
+            }
+          } catch (e) { /* keep polling */ }
+        }
       }
       
       throw error;

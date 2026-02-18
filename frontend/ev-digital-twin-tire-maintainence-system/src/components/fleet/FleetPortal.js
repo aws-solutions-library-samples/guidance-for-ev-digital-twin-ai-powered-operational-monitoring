@@ -283,7 +283,7 @@ const FleetPortal = () => {
     
     try {
       const response = await fetch(
-        `https://b4blc4xmh4.execute-api.us-east-1.amazonaws.com/action-logs/${jobId}`
+        `${process.env.REACT_APP_TIRE_ORDER_API}/action-logs/${jobId}`
       );
       const data = await response.json();
       setActionDetails(data);
@@ -1660,6 +1660,11 @@ Respond with the available slots.`;
                 <div style={{ fontSize: '14px', color: '#888', marginTop: '10px' }}>
                   Automating tire search and cart addition (30-60 seconds)
                 </div>
+                {!liveViewUrl && (
+                  <div style={{ fontSize: '13px', color: '#aaa', marginTop: '12px' }}>
+                    ⏳ Starting browser session... Watch Live button will appear shortly
+                  </div>
+                )}
                 {liveViewUrl && (
                   <div style={{ marginTop: '15px' }}>
                     <button

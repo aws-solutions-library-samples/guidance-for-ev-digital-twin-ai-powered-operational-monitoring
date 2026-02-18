@@ -6,7 +6,7 @@
 # - Worker Lambda function
 # - IAM roles and permissions
 #
-# Usage: ./deploy-tire-automation.sh [--update-lambda-only]
+# Usage: ./scripts/deploy/deploy-tire-automation.sh [--update-lambda-only]
 
 set -e
 
@@ -207,7 +207,7 @@ echo "2. Check CloudWatch Logs: /aws/lambda/${PROJECT_NAME}-tire-order-worker"
 echo "3. Monitor DynamoDB table: tire-order-jobs"
 echo ""
 echo -e "${BLUE}Quick Commands:${NC}"
-echo "  Update Lambda only:  ./deploy-tire-automation.sh --update-lambda-only"
+echo "  Update Lambda only:  ./scripts/deploy/deploy-tire-automation.sh --update-lambda-only"
 echo "  View logs:           aws logs tail /aws/lambda/${PROJECT_NAME}-tire-order-worker --follow"
 echo "  Check DynamoDB:      aws dynamodb scan --table-name tire-order-jobs --region $REGION"
 echo ""

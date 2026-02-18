@@ -262,6 +262,14 @@ Resources:
       RouteKey: 'GET /browser-live-view/{job_id}'
       Target: !Sub 'integrations/${AgentCoreLambdaIntegration}'
 
+  # Action Logs Route (for Action Details button)
+  ActionLogsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref AgentCoreHttpApi
+      RouteKey: 'GET /action-logs/{job_id}'
+      Target: !Sub 'integrations/${AgentCoreLambdaIntegration}'
+
   # Default Stage
   AgentCoreHttpApiStage:
     Type: AWS::ApiGatewayV2::Stage

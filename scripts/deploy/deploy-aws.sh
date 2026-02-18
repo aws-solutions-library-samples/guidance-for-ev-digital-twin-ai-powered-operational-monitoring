@@ -3,10 +3,10 @@ set -e
 
 # EV Digital Twin - Flexible Stack Deployment Script
 # Usage:
-#   ./deploy-aws.sh                    # Deploy all stacks
-#   ./deploy-aws.sh cognito            # Deploy only cognito stack
-#   ./deploy-aws.sh --rebuild          # Deploy all + force Docker rebuild
-#   ./deploy-aws.sh cognito --rebuild  # Deploy cognito + rebuild Docker
+#   ./scripts/deploy/deploy-aws.sh                    # Deploy all stacks
+#   ./scripts/deploy/deploy-aws.sh cognito            # Deploy only cognito stack
+#   ./scripts/deploy/deploy-aws.sh --rebuild          # Deploy all + force Docker rebuild
+#   ./scripts/deploy/deploy-aws.sh cognito --rebuild  # Deploy cognito + rebuild Docker
 
 # Configuration
 AWS_REGION="us-east-1"
@@ -406,14 +406,14 @@ main() {
             log_error "Unknown stack: $STACK_NAME"
             echo ""
             echo "Usage:"
-            echo "  ./deploy-aws.sh                    # Deploy all stacks"
-            echo "  ./deploy-aws.sh cognito            # Deploy only cognito"
-            echo "  ./deploy-aws.sh appointment-slots  # Deploy only appointment-slots"
-            echo "  ./deploy-aws.sh tire-automation    # Deploy only tire-automation"
-            echo "  ./deploy-aws.sh agentcore-proxy    # Deploy only agentcore-proxy"
-            echo "  ./deploy-aws.sh backend            # Deploy only backend (+ Docker)"
-            echo "  ./deploy-aws.sh frontend           # Deploy only frontend"
-            echo "  ./deploy-aws.sh --rebuild          # Deploy all + force Docker rebuild"
+            echo "  ./scripts/deploy/deploy-aws.sh                    # Deploy all stacks"
+            echo "  ./scripts/deploy/deploy-aws.sh cognito            # Deploy only cognito"
+            echo "  ./scripts/deploy/deploy-aws.sh appointment-slots  # Deploy only appointment-slots"
+            echo "  ./scripts/deploy/deploy-aws.sh tire-automation    # Deploy only tire-automation"
+            echo "  ./scripts/deploy/deploy-aws.sh agentcore-proxy    # Deploy only agentcore-proxy"
+            echo "  ./scripts/deploy/deploy-aws.sh backend            # Deploy only backend (+ Docker)"
+            echo "  ./scripts/deploy/deploy-aws.sh frontend           # Deploy only frontend"
+            echo "  ./scripts/deploy/deploy-aws.sh --rebuild          # Deploy all + force Docker rebuild"
             exit 1
             ;;
     esac
@@ -463,7 +463,7 @@ main() {
     echo "- ${PROJECT_NAME}-backend (ECS + ALB)"
     echo "- ${PROJECT_NAME}-frontend (S3 + CloudFront)"
     echo ""
-    echo "💡 Tip: Deploy individual stacks with ./deploy-aws.sh <stack-name>"
+    echo "💡 Tip: Deploy individual stacks with ./scripts/deploy/deploy-aws.sh <stack-name>"
 }
 
 # Run main function

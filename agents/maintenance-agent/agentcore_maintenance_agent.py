@@ -1363,11 +1363,11 @@ def order_tire_online(vehicle_id: str, job_id: str = None) -> str:
         Try to click on the "By tire size" button to open the Amazon Tire Finder popup.
         If the popup opens and shows a yellow "Filter" button, click it to filter results.
         If the popup is empty or the Filter button doesn't appear after waiting 3 seconds, close the popup and skip this filtering step.
-        Click on the first highly-rated tire in the search results (filtered or unfiltered).
-        Find and click the "Add to Cart" button on the product page.
-        Wait 2 seconds for the cart to update.
-        Verify the cart shows 1 item added.
-        Return the product name, brand, and price.
+        From the search results, click on the first tire product that has a star rating and a price. Skip any sponsored ads at the top.
+        On the product page, if you see any "Select" dropdowns or size/quantity options, choose the default or first option.
+        Find and click the "Add to Cart" button. Do not click "Buy Now".
+        Wait 3 seconds for the cart confirmation to appear.
+        Return the product name, brand, and price as a single string like: "Product name: X, Brand: Y, Price: $Z"
         """
         
         print(f"✓ Executing browser automation for: {tire_size} tires")
