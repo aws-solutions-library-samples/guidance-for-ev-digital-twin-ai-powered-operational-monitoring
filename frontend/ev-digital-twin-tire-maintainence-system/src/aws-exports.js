@@ -1,5 +1,5 @@
 // AWS Cognito configuration for EV Digital Twin
-// Working account (009296485814) configuration
+// Account 844874421931 configuration
 
 // Detect if running locally
 const isLocalhost = typeof window !== 'undefined' && 
@@ -12,11 +12,11 @@ const redirectUrl = isLocalhost
 const awsmobile = {
   "aws_project_region": "us-east-1",
   "aws_cognito_region": "us-east-1",
-  "aws_user_pools_id": "us-east-1_CrSxdrt6f",
-  "aws_user_pools_web_client_id": "5pnsuntr6epe0s6v17lqq4bfms",
+  "aws_user_pools_id": "us-east-1_qJ3MBXrdC",
+  "aws_user_pools_web_client_id": "5d0g8d19gvuum4lp6oucbe9stt",
   "oauth": {
     "domain": "ev-digital-twin.auth.us-east-1.amazoncognito.com",
-    "scope": ["openid"],
+    "scope": ["email", "openid", "profile"],
     "redirectSignIn": redirectUrl,
     "redirectSignOut": redirectUrl,
     "responseType": "code"

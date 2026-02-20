@@ -56,6 +56,10 @@ class AgentCoreService {
       throw new Error('Service call throttled - using cached data or fallback');
     }
 
+    // Detect browser tool calls (they take 60-90 seconds)
+    const isBrowserTool = prompt.includes('order_tire_online');
+    const timeout = isBrowserTool ? 90000 : 10000; // 90s for browser tools, 10s for normal requests
+
     try {
       this.lastCallTime = now;
 
@@ -71,7 +75,7 @@ class AgentCoreService {
           session_id: this.sessionId,
           vin: vin
         }),
-        timeout: 25000 // 25 second timeout - must be under API Gateway's 29s hard limit
+        timeout
       });
 
       if (!response.ok) {
@@ -111,11 +115,23 @@ class AgentCoreService {
         throw new Error('Session reset due to conversation state error. Please retry.');
       }
       
-      // Retry logic for 503 errors (Lambda cold start)
-      // BUT: Don't retry browser tool calls (they take 60-90 seconds and will always timeout)
-      const isBrowserTool = prompt.includes('order_tire_online');
-      if (error.message.includes('503') && retryAttempt < this.MAX_RETRIES && !isBrowserTool) {
-        const delay = Math.pow(2, retryAttempt) * 2000; // Exponential backoff: 2s, 4s - give Lambda more warmup time
+      // Browser tools: Use DynamoDB polling (they legitimately take 60-90 seconds)
+      if (isBrowserTool && (error.message.includes('timeout') || error.message.includes('503')) && vin) {
+        console.log('⏳ Browser tool timeout - polling DynamoDB for result...');
+        return await this.pollForBrowserToolResult(vin);
+      }
+      
+      // Normal requests: Skip retries and poll DynamoDB immediately on 503
+      // The 503 means API Gateway timed out at 29s, but Lambda is still running and will save to DynamoDB
+      if (error.message.includes('503') && vin) {
+        console.log('⏳ API Gateway timeout (29s) - Lambda still processing. Polling DynamoDB for result...');
+        return await this.pollForResult(vin, 10); // Poll for up to 50 seconds (agent takes 39-45s)
+      }
+      
+      // Handle other timeout errors with fast retry (network issues, etc.)
+      if (error.message.includes('timeout') && retryAttempt < this.MAX_RETRIES) {
+        const delay = Math.pow(2, retryAttempt) * 1000; // 1s, 2s
+        console.log(`⏳ Network timeout - retrying in ${delay}ms (attempt ${retryAttempt + 1}/${this.MAX_RETRIES})...`);
         await new Promise(resolve => setTimeout(resolve, delay));
         return this.chat(prompt, vin, retryAttempt + 1);
       }
@@ -129,6 +145,49 @@ class AgentCoreService {
 
       throw error;
     }
+  }
+
+  /**
+   * Poll DynamoDB for browser tool results (only used for long-running browser operations)
+   * @param {string} vin - Vehicle VIN
+   * @returns {Promise<string>} - The saved result
+   */
+  async pollForBrowserToolResult(vin) {
+    for (let attempt = 0; attempt < 12; attempt++) { // 12 attempts × 5s = 60s max polling
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      try {
+        const savedResult = await this.getCachedRecommendation(vin);
+        if (savedResult && savedResult.recommendation) {
+          console.log('✅ Retrieved browser tool result from DynamoDB');
+          return savedResult.recommendation;
+        }
+      } catch (e) {
+        console.log(`Polling attempt ${attempt + 1}/12 failed, retrying...`);
+      }
+    }
+    throw new Error('Browser tool operation timed out after 60 seconds of polling');
+  }
+
+  /**
+   * Poll DynamoDB for normal request results (used when agent takes >29s)
+   * @param {string} vin - Vehicle VIN
+   * @param {number} maxAttempts - Maximum polling attempts
+   * @returns {Promise<string>} - The saved result
+   */
+  async pollForResult(vin, maxAttempts = 8) {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      try {
+        const savedResult = await this.getCachedRecommendation(vin);
+        if (savedResult && savedResult.recommendation) {
+          console.log(`✅ Retrieved saved result from DynamoDB after ${(attempt + 1) * 5}s`);
+          return savedResult.recommendation;
+        }
+      } catch (e) {
+        console.log(`Polling attempt ${attempt + 1}/${maxAttempts}...`);
+      }
+    }
+    throw new Error(`Agent operation timed out after ${maxAttempts * 5} seconds of polling`);
   }
 
   /**
@@ -191,24 +250,7 @@ class AgentCoreService {
         return { response: cached.response, fromCache: true, stale: true, error: error.message, timestamp: cached.timestamp };
       }
 
-      // API Gateway times out at 29s but Lambda keeps running and saves result to DynamoDB
-      // Poll for the saved result instead of showing an error
-      if (vin && (error.message.includes('503') || error.message.includes('unavailable'))) {
-        console.log('⏳ API Gateway timed out - polling DynamoDB for saved result...');
-        for (let attempt = 0; attempt < 4; attempt++) {
-          await new Promise(resolve => setTimeout(resolve, 5000));
-          try {
-            const savedResult = await this.getCachedRecommendation(vin);
-            if (savedResult && savedResult.recommendation) {
-              console.log('✅ Retrieved saved result from DynamoDB');
-              const analysisData = { response: savedResult.recommendation, timestamp: Date.now(), fromCache: false, recoveredAfterTimeout: true };
-              this.cache.set(cacheKey, analysisData);
-              return analysisData;
-            }
-          } catch (e) { /* keep polling */ }
-        }
-      }
-
+      // No DynamoDB polling for normal requests - fast-fail + retry handles this
       throw error;
     }
   }
@@ -255,23 +297,7 @@ class AgentCoreService {
         return { response: cached.response, fromCache: true, stale: true, error: error.message, timestamp: cached.timestamp };
       }
 
-      // Poll DynamoDB for saved result after API Gateway timeout
-      if (vin && (error.message.includes('503') || error.message.includes('unavailable'))) {
-        console.log('⏳ Motor analysis: polling DynamoDB for saved result...');
-        for (let attempt = 0; attempt < 4; attempt++) {
-          await new Promise(resolve => setTimeout(resolve, 5000));
-          try {
-            const savedResult = await this.getCachedRecommendation(vin);
-            if (savedResult && savedResult.recommendation) {
-              console.log('✅ Retrieved saved motor result from DynamoDB');
-              const analysisData = { response: savedResult.recommendation, timestamp: Date.now(), fromCache: false, recoveredAfterTimeout: true };
-              this.cache.set(cacheKey, analysisData);
-              return analysisData;
-            }
-          } catch (e) { /* keep polling */ }
-        }
-      }
-
+      // No DynamoDB polling for normal requests - fast-fail + retry handles this
       throw error;
     }
   }
@@ -318,23 +344,7 @@ class AgentCoreService {
         return { response: cached.response, fromCache: true, stale: true, error: error.message, timestamp: cached.timestamp };
       }
       
-      // Poll DynamoDB for saved result after API Gateway timeout
-      if (vin && (error.message.includes('503') || error.message.includes('unavailable'))) {
-        console.log('⏳ Inverter analysis: polling DynamoDB for saved result...');
-        for (let attempt = 0; attempt < 4; attempt++) {
-          await new Promise(resolve => setTimeout(resolve, 5000));
-          try {
-            const savedResult = await this.getCachedRecommendation(vin);
-            if (savedResult && savedResult.recommendation) {
-              console.log('✅ Retrieved saved inverter result from DynamoDB');
-              const analysisData = { response: savedResult.recommendation, timestamp: Date.now(), fromCache: false, recoveredAfterTimeout: true };
-              this.cache.set(cacheKey, analysisData);
-              return analysisData;
-            }
-          } catch (e) { /* keep polling */ }
-        }
-      }
-      
+      // No DynamoDB polling for normal requests - fast-fail + retry handles this
       throw error;
     }
   }
