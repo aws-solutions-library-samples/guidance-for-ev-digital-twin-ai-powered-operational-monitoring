@@ -1318,7 +1318,11 @@ def order_tire_online(vehicle_id: str, job_id: str = None) -> str:
         session_response = boto_client.start_browser_session(
             browserIdentifier=custom_identifier,
             name=f"tire-order-{vehicle_id}",
-            sessionTimeoutSeconds=3600
+            sessionTimeoutSeconds=3600,
+            viewPort={
+                'width': 1456,
+                'height': 819
+            }
         )
         
         # Set the session ID on BrowserClient so it can generate headers
@@ -1358,14 +1362,17 @@ def order_tire_online(vehicle_id: str, job_id: str = None) -> str:
         
         prompt = f"""
         Type "{tire_size} tires" in the search bar at the top of this Amazon page and press Enter.
-        Wait for Amazon search results to load.
+        Wait 3 seconds for Amazon search results to fully load.
         Scroll down a bit to find the "By tire size" button in the middle of the page.
         Try to click on the "By tire size" button to open the Amazon Tire Finder popup.
         If the popup opens and shows a yellow "Filter" button, click it to filter results.
         If the popup is empty or the Filter button doesn't appear after waiting 3 seconds, close the popup and skip this filtering step.
         From the search results, click on the first tire product that has a star rating and a price. Skip any sponsored ads at the top.
+        Wait 2 seconds for the product page to load.
         On the product page, if you see any "Select" dropdowns or size/quantity options, choose the default or first option.
-        Find and click the "Add to Cart" button. Do not click "Buy Now".
+        If you see an "Add to Cart" button, click it.
+        If you see "See All Buying Options" instead, click it, then click "Add to Cart" from the offers.
+        Do not click "Buy Now".
         Wait 3 seconds for the cart confirmation to appear.
         Return the product name, brand, and price as a single string like: "Product name: X, Brand: Y, Price: $Z"
         """

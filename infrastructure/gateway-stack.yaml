@@ -1,0 +1,255 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AgentCore Gateway - Vehicle History & Report Tools via MCP'
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: ev-digital-twin
+  
+  AgentCoreMemoryId:
+    Type: String
+    Description: AgentCore Memory ID (e.g., vehicle_maintenance_agent_mem-Zz75E62LMt)
+  
+  MemoryNamespace:
+    Type: String
+    Default: /strategies/semantic_builtin_j1hpp-7SvGWG8R9T/actors/fleet_manager
+    Description: Memory namespace for semantic strategy
+  
+  GatewayUrl:
+    Type: String
+    Description: AgentCore Gateway MCP endpoint URL (e.g., https://xxx.gateway.bedrock-agentcore.us-east-1.amazonaws.com/mcp)
+  
+  GatewayCognitoDomain:
+    Type: String
+    Description: Cognito domain for Gateway OAuth (e.g., https://agentcore-xxx.auth.us-east-1.amazoncognito.com)
+  
+  GatewayClientId:
+    Type: String
+    Description: Cognito client ID for Gateway OAuth
+  
+  GatewayClientSecret:
+    Type: String
+    NoEcho: true
+    Description: Cognito client secret for Gateway OAuth
+  
+  GatewayScope:
+    Type: String
+    Default: vehicle-maintenance-gateway/invoke
+    Description: OAuth scope for Gateway access
+  
+  ExistingApiId:
+    Type: String
+    Description: Existing HTTP API Gateway ID to add routes to (e.g., b4blc4xmh4)
+
+Resources:
+  # ============================================================
+  # Vehicle History Lambda (backend tool invoked by Gateway)
+  # ============================================================
+  VehicleHistoryRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-vehicle-history-role"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: AgentCoreMemoryAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock-agentcore:RetrieveMemoryRecords
+                  - bedrock-agentcore:GetMemoryRecord
+                Resource: '*'
+
+  VehicleHistoryLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-vehicle-history"
+      Runtime: python3.11
+      Handler: vehicle_history.lambda_handler
+      Role: !GetAtt VehicleHistoryRole.Arn
+      Timeout: 30
+      MemorySize: 256
+      Environment:
+        Variables:
+          AGENTCORE_MEMORY_ID: !Ref AgentCoreMemoryId
+          MEMORY_NAMESPACE: !Ref MemoryNamespace
+      Code:
+        ZipFile: |
+          # Placeholder - deploy actual code with:
+          # aws lambda update-function-code --function-name ${ProjectName}-vehicle-history \
+          #   --zip-file fileb://vehicle-history.zip
+          def lambda_handler(event, context):
+              return {'statusCode': 200, 'body': '{"error": "Deploy vehicle_history.py code"}'}
+
+  VehicleHistoryGatewayPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref VehicleHistoryLambda
+      Action: lambda:InvokeFunction
+      Principal: bedrock-agentcore.amazonaws.com
+
+  # ============================================================
+  # Gateway Proxy Lambda (frontend -> Gateway MCP bridge)
+  # ============================================================
+  GatewayProxyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-gateway-proxy-role"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  GatewayProxyLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-gateway-proxy"
+      Runtime: python3.11
+      Handler: gateway_proxy.lambda_handler
+      Role: !GetAtt GatewayProxyRole.Arn
+      Timeout: 30
+      MemorySize: 256
+      Environment:
+        Variables:
+          AGENTCORE_GATEWAY_URL: !Ref GatewayUrl
+          GATEWAY_COGNITO_DOMAIN: !Ref GatewayCognitoDomain
+          GATEWAY_CLIENT_ID: !Ref GatewayClientId
+          GATEWAY_CLIENT_SECRET: !Ref GatewayClientSecret
+          GATEWAY_SCOPE: !Ref GatewayScope
+      Code:
+        ZipFile: |
+          # Placeholder - deploy actual code with:
+          # aws lambda update-function-code --function-name ${ProjectName}-gateway-proxy \
+          #   --zip-file fileb://gateway-proxy.zip
+          def lambda_handler(event, context):
+              return {'statusCode': 200, 'body': '{"error": "Deploy gateway_proxy.py code"}'}
+
+  # ============================================================
+  # API Gateway Integration + Routes
+  # ============================================================
+  GatewayProxyIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref ExistingApiId
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt GatewayProxyLambda.Arn
+      PayloadFormatVersion: '2.0'
+
+  VehicleHistoryRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ExistingApiId
+      RouteKey: 'GET /vehicle-history/{vehicleId}'
+      Target: !Sub 'integrations/${GatewayProxyIntegration}'
+
+  VehicleReportRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ExistingApiId
+      RouteKey: 'GET /vehicle-report/{vehicleId}'
+      Target: !Sub 'integrations/${GatewayProxyIntegration}'
+
+  GatewayProxyApiPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref GatewayProxyLambda
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ExistingApiId}/*/*'
+
+Outputs:
+  VehicleHistoryLambdaArn:
+    Description: Vehicle History Lambda ARN (register as Gateway target)
+    Value: !GetAtt VehicleHistoryLambda.Arn
+    Export:
+      Name: !Sub "${ProjectName}-vehicle-history-lambda-arn"
+
+  GatewayProxyLambdaArn:
+    Description: Gateway Proxy Lambda ARN
+    Value: !GetAtt GatewayProxyLambda.Arn
+    Export:
+      Name: !Sub "${ProjectName}-gateway-proxy-lambda-arn"
+
+  VehicleHistoryEndpoint:
+    Description: Vehicle History API endpoint
+    Value: !Sub 'https://${ExistingApiId}.execute-api.${AWS::Region}.amazonaws.com/vehicle-history/{vehicleId}'
+
+  VehicleReportEndpoint:
+    Description: Vehicle Report API endpoint
+    Value: !Sub 'https://${ExistingApiId}.execute-api.${AWS::Region}.amazonaws.com/vehicle-report/{vehicleId}'
+
+  DeployLambdaCode:
+    Description: Commands to deploy actual Lambda code after stack creation
+    Value: !Sub |
+      # Deploy vehicle history Lambda code
+      cd infrastructure/lambda && zip vehicle-history.zip vehicle_history.py
+      aws lambda update-function-code \
+        --function-name ${VehicleHistoryLambda} \
+        --zip-file fileb://vehicle-history.zip
+
+      # Deploy gateway proxy Lambda code
+      zip gateway-proxy.zip gateway_proxy.py
+      aws lambda update-function-code \
+        --function-name ${GatewayProxyLambda} \
+        --zip-file fileb://gateway-proxy.zip
+
+  AddGatewayTarget:
+    Description: Command to register Lambda as Gateway target (run after stack deploy)
+    Value: !Sub |
+      # Register vehicle history Lambda as Gateway target
+      # Replace GATEWAY_ID with your AgentCore Gateway ID
+      aws bedrock-agentcore-control create-gateway-target \
+        --gateway-identifier GATEWAY_ID \
+        --name VehicleHistoryTools \
+        --description "Vehicle maintenance history and report tools" \
+        --target-configuration '{
+          "mcp": {
+            "lambda": {
+              "lambdaArn": "${VehicleHistoryLambda.Arn}",
+              "toolSchema": {
+                "inlinePayload": [
+                  {
+                    "name": "get_vehicle_history",
+                    "description": "Retrieve maintenance history for a vehicle from AgentCore Memory",
+                    "inputSchema": {
+                      "type": "object",
+                      "properties": {
+                        "vehicle_id": {"type": "string", "description": "Vehicle identifier"},
+                        "category": {"type": "string", "description": "Filter: all, tire, motor, inverter, appointment"},
+                        "limit": {"type": "integer", "description": "Max records (1-50)"}
+                      },
+                      "required": ["vehicle_id"]
+                    }
+                  },
+                  {
+                    "name": "generate_vehicle_report",
+                    "description": "Generate maintenance summary report with recommendations",
+                    "inputSchema": {
+                      "type": "object",
+                      "properties": {
+                        "vehicle_id": {"type": "string", "description": "Vehicle identifier"},
+                        "include_recommendations": {"type": "boolean", "description": "Include action items"}
+                      },
+                      "required": ["vehicle_id"]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }' \
+        --credential-provider-configurations '[{"credentialProviderType": "GATEWAY_IAM_ROLE"}]'

@@ -505,6 +505,32 @@ class AgentCoreService {
   resetSession() {
     this.sessionId = null;
   }
+
+  /**
+   * Get vehicle maintenance history via AgentCore Gateway
+   */
+  async getVehicleHistory(vehicleId, category = 'all', limit = 20) {
+    const response = await fetch(
+      `${TIRE_ORDER_API_BASE}/vehicle-history/${vehicleId}?category=${category}&limit=${limit}`
+    );
+    if (!response.ok) {
+      throw new Error(`Failed to get vehicle history: ${response.statusText}`);
+    }
+    return await response.json();
+  }
+
+  /**
+   * Generate vehicle maintenance report via AgentCore Gateway
+   */
+  async getVehicleReport(vehicleId, includeRecommendations = true) {
+    const response = await fetch(
+      `${TIRE_ORDER_API_BASE}/vehicle-report/${vehicleId}?include_recommendations=${includeRecommendations}`
+    );
+    if (!response.ok) {
+      throw new Error(`Failed to get vehicle report: ${response.statusText}`);
+    }
+    return await response.json();
+  }
 }
 
 // Export a singleton instance

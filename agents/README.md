@@ -14,6 +14,7 @@ Amazon Bedrock AgentCore is a modern agent runtime platform that provides enhanc
 
 - **AgentCore Runtime** - Containerized agent deployment as managed AWS service
 - **AgentCore Memory** - Persistent conversation storage with user preference retrieval (STM + LTM)
+- **AgentCore Gateway** - MCP endpoint exposing vehicle history and report tools for external integrations
 - **AgentCore Browser** - Web automation via headless browser with live view streaming
 - **Amazon Nova Act** - Agentic foundation model for browser automation with visual reasoning
 - **Bedrock Knowledge Base** - OpenSearch Serverless backend for vehicle maintenance manuals
@@ -195,31 +196,58 @@ Response (JSON)
 
 ### AgentCore Memory Integration
 
-**Purpose:** Detect recurring vehicle issues and fleet-wide patterns
+Uses STM + LTM to detect recurring vehicle issues and fleet-wide patterns. When a user asks about a vehicle, the agent checks memory for past issues and injects context warnings. After each analysis, detected issues are saved back to memory.
 
-**Configuration:**
-- **Mode:** STM + LTM
-- **Memory ID:** vehicle_maintenance_agent_mem-Zz75E62LMt
-- **Expiry:** 30 days (STM)
-- **Region:** us-east-1
+**Configuration:** STM + LTM mode, 30-day STM expiry, us-east-1
 
 **Use Cases:**
 - Recurring issue detection (e.g., "⚠️ RECURRING ISSUE: Vehicle 1 has 2 previous tire issues")
 - Fleet pattern analysis (e.g., "⚠️ FLEET PATTERN: 3 vehicles have similar tire pressure problems")
 
-**Implementation:**
-```python
-class MaintenanceMemoryHooks(HookProvider):
-    def retrieve_context(self, event):
-        # Check memory for recurring issues before analysis
-        memories = client.retrieve_memories(memory_id, query=f"vehicle {id}")
-        if len(memories) > 1:
-            inject_warning("⚠️ RECURRING ISSUE detected")
-    
-    def save_interaction(self, event):
-        # Save detected issues to memory after analysis
-        if "CRITICAL" or "WARNING" in response:
-            client.create_event(memory_id, messages=[(query, response)])
+**Check memory:**
+```bash
+python scripts/view_memory.py
+python scripts/check_memory.py
+```
+
+### AgentCore Gateway Integration
+
+Exposes vehicle history and report generation as MCP tools via AgentCore Gateway. External systems (fleet software, email automation, any MCP client) can call these programmatically. The frontend also uses this path.
+
+```
+Frontend / External Systems → API Gateway → Gateway Proxy Lambda → AgentCore Gateway (MCP) → Vehicle History Lambda → AgentCore Memory
+```
+
+**MCP Tools:**
+- `get_vehicle_history` — Categorized maintenance history (tire, motor, inverter, appointments)
+- `generate_vehicle_report` — Structured report with prioritized recommendations
+
+**Setup:**
+```bash
+# Option 1: CloudFormation
+aws cloudformation deploy \
+  --template-file infrastructure/gateway-stack.yaml \
+  --stack-name ev-digital-twin-gateway \
+  --parameter-overrides \
+    AgentCoreMemoryId=YOUR_MEMORY_ID \
+    GatewayUrl=YOUR_GATEWAY_URL \
+    GatewayCognitoDomain=YOUR_COGNITO_DOMAIN \
+    GatewayClientId=YOUR_CLIENT_ID \
+    GatewayClientSecret=YOUR_SECRET \
+    ExistingApiId=YOUR_API_ID \
+  --capabilities CAPABILITY_NAMED_IAM
+
+# Option 2: Quick setup script
+python3 scripts/setup_gateway.py --memory-id YOUR_MEMORY_ID
+```
+
+**Test:**
+```bash
+# Test via API Gateway
+curl https://YOUR_API_ID.execute-api.us-east-1.amazonaws.com/vehicle-history/1?category=tire
+
+# Test via Gateway MCP directly
+python3 scripts/test_gateway.py --vehicle-id 1
 ```
 
 ---

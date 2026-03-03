@@ -13,6 +13,7 @@ The EV Digital Twin combines machine learning predictive analytics with Amazon B
 - **Strands Agent Framework**: Python-based agent orchestration framework for building AI agents
 - **AgentCore Runtime**: Containerized AI agent with 17 specialized maintenance tools (12 core + 5 Knowledge Base)
 - **AgentCore Memory**: Persistent conversation storage with recurring issue detection
+- **AgentCore Gateway**: MCP endpoint exposing vehicle history and report tools for external system integration
 - **AgentCore Browser**: Automated tire ordering via Amazon with live view streaming
 - **Amazon Nova Act**: Agentic foundation model for browser automation with visual reasoning and natural language control
 - **Machine Learning**: Random Forest and Isolation Forest models for tire/motor/inverter predictions
@@ -267,6 +268,19 @@ Powered by Amazon Bedrock Knowledge Base with OpenSearch Serverless backend and 
 
 **Note:** Knowledge Base tools use Amazon Bedrock Knowledge Base with OpenSearch Serverless for vector search. Mock realistic vehicle manuals provide maintenance recommendations for demonstration purposes (not actual manufacturer data).
 
+### AgentCore Gateway Tools (2 tools)
+
+Exposed as MCP endpoints via AgentCore Gateway. Accessible by the frontend, external fleet management systems, and any MCP-compatible client.
+
+| Tool | Type | Description | Status |
+|------|------|-------------|--------|
+| `get_vehicle_history` | Gateway / Memory | Retrieve categorized maintenance history from AgentCore Memory | ✅ |
+| `generate_vehicle_report` | Gateway / Memory | Generate maintenance summary report with recommendations | ✅ |
+
+**Architecture:** Frontend → API Gateway → Gateway Proxy Lambda → AgentCore Gateway (MCP) → Vehicle History Lambda → AgentCore Memory
+
+**Setup:** Deploy via CloudFormation (`infrastructure/gateway-stack.yaml`) or quick-start script (`scripts/setup_gateway.py`).
+
 ---
 
 ## 🧠 Machine Learning Models
@@ -355,10 +369,13 @@ ev-digital-twin-tire-maintainence-system/
 ├── infrastructure/                   # CloudFormation stacks
 │   ├── lambda/                      # Lambda function code
 │   │   ├── index.py                # AgentCore proxy Lambda
-│   │   └── tire_order_worker.py    # Tire order worker Lambda
+│   │   ├── tire_order_worker.py    # Tire order worker Lambda
+│   │   ├── vehicle_history.py      # Vehicle history tool Lambda (Gateway target)
+│   │   └── gateway_proxy.py        # Gateway MCP proxy Lambda
 │   ├── agentcore-runtime-policies/ # IAM policy setup
 │   ├── tire-automation-stack.yaml  # Tire ordering infrastructure
 │   ├── agentcore-lambda-proxy-stack.yaml  # API Gateway + Lambda
+│   ├── gateway-stack.yaml          # AgentCore Gateway + vehicle history tools
 │   ├── appointment-slots-stack.yaml # DynamoDB tables
 │   ├── cognito-stack.yaml          # Authentication
 │   └── frontend-stack.yaml         # CloudFront + S3

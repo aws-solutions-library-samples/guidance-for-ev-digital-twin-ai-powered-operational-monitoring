@@ -310,8 +310,18 @@ const FleetPortal = () => {
 
   const parseAvailableSlots = (response) => {
     try {
-      // Try to extract JSON from response
-      const jsonMatch = response.match(/\{[\s\S]*"available_slots"[\s\S]*\}/);
+      console.log('🔍 Parsing slots from response:', response?.substring(0, 200));
+      
+      // Try to extract JSON from response - handle markdown code blocks
+      let cleanResponse = response;
+      
+      // Strip markdown code blocks if present
+      const codeBlockMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (codeBlockMatch) {
+        cleanResponse = codeBlockMatch[1].trim();
+      }
+      
+      const jsonMatch = cleanResponse.match(/\{[\s\S]*"available_slots"[\s\S]*\}/);
       if (jsonMatch) {
         const data = JSON.parse(jsonMatch[0]);
         if (data.available_slots && Array.isArray(data.available_slots)) {
@@ -1128,7 +1138,23 @@ Respond with the available slots.`;
         </div>
 
         <div className="right-panel" style={{ marginTop: windowSize.width <= 1700 ? '-20px' : windowSize.width <= 1815 ? '-10px' : windowSize.width >= 1900 ? '-30px' : '0', height: windowSize.width <= 1700 ? 'calc(100vh - 140px)' : windowSize.width <= 1815 ? 'calc(100vh - 160px)' : 'auto' }}>
-          <div className="panel-title">Maintenance</div>
+          <div className="panel-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>Maintenance</span>
+            <button
+              onClick={() => navigate('/fleet/history')}
+              style={{
+                background: '#3a4552',
+                border: '1px solid #37bc12',
+                color: '#37bc12',
+                padding: '4px 12px',
+                borderRadius: '4px',
+                fontSize: '11px',
+                cursor: 'pointer',
+              }}
+            >
+              🕐 History
+            </button>
+          </div>
           <div className="maintenance-top-sections">
             <div className="maintenance-section">
               <div className="section-header">

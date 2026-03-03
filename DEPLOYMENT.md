@@ -26,12 +26,15 @@ User → CloudFront (+ WAF) → S3 (React Frontend)
    (Tire/Motor/Inverter)  (OpenSearch Serverless)      (Appointments/Jobs)
         ↓                           ↓                           ↓
    CSV Sensor Data        Vehicle Maintenance Manual    AgentCore Memory
+                                                              ↑
+                                                    AgentCore Gateway (MCP)
+                                                    (Vehicle History + Reports)
 ```
 
 ## Quick Deployment
 
 ```bash
-./deploy-aws.sh
+./scripts/deploy/deploy-aws.sh
 ```
 
 **Deploys:** Infrastructure, DynamoDB, API Gateway, Frontend  
@@ -46,7 +49,7 @@ User → CloudFront (+ WAF) → S3 (React Frontend)
 
 ### 2. API Gateway + Lambda Proxy
 - **Purpose:** Routes frontend requests to AgentCore Runtime
-- **Endpoints:** `/chat`, `/tire-order/*`, `/action-logs/*`
+- **Endpoints:** `/chat`, `/tire-order/*`, `/action-logs/*`, `/vehicle-history/*`, `/vehicle-report/*`
 - **Stack:** `infrastructure/agentcore-lambda-proxy-stack.yaml`
 
 ### 3. AgentCore Runtime
@@ -79,12 +82,19 @@ User → CloudFront (+ WAF) → S3 (React Frontend)
 - `tire-order-jobs` - Async job tracking (with TTL)
 - `vehicle-genai-recs` - Cached AI recommendations
 
+### 8. AgentCore Gateway
+- **Purpose:** Exposes vehicle history and report tools as MCP endpoints
+- **Tools:** `get_vehicle_history`, `generate_vehicle_report`
+- **Components:** Vehicle History Lambda, Gateway Proxy Lambda, Cognito OAuth
+- **Stack:** `infrastructure/gateway-stack.yaml`
+- **Quick setup:** `python3 scripts/setup_gateway.py --memory-id YOUR_MEMORY_ID`
+
 ## Step-by-Step Deployment
 
 ### Step 1: Deploy Infrastructure
 
 ```bash
-./deploy-aws.sh
+./scripts/deploy/deploy-aws.sh
 ```
 
 ### Step 2: Deploy AgentCore Runtime
@@ -317,7 +327,7 @@ aws cloudfront create-invalidation --distribution-id <dist-id> --paths "/*"
 
 ```bash
 # Worker Lambda
-./deploy-worker-lambda.sh
+./scripts/deploy/deploy-worker-lambda.sh
 
 # Proxy Lambda
 cd infrastructure/lambda
