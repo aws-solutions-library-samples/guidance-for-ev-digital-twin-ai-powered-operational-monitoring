@@ -34,9 +34,9 @@ bedrock-agentcore invoke --prompt "Search for tire prices for 215/55R17"
 3. `search_tire_prices` - Price search
 
 ## Requirements
-- AWS Account: 009296485814
+- AWS Account: YOUR_ACCOUNT_ID
 - Region: us-east-1
-- Nova Act API Key: 645eef64-f306-4f7b-b930-4dff30d63e25
+- Nova Act API Key: stored in AWS Secrets Manager (`/vehicle-maintenance/novaact-api-key`)
 - AgentCore Browser Tool access
 - Data files: tire_wear_data.csv, car_manual_specs.csv
 

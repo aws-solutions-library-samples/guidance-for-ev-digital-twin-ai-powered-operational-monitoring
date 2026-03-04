@@ -1,49 +1,102 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'AgentCore Gateway - Vehicle History & Report Tools via MCP'
+Description: 'AgentCore Gateway - Vehicle History & Report MCP Tools'
 
 Parameters:
   ProjectName:
     Type: String
     Default: ev-digital-twin
-  
+
   AgentCoreMemoryId:
     Type: String
-    Description: AgentCore Memory ID (e.g., vehicle_maintenance_agent_mem-Zz75E62LMt)
-  
+    Description: AgentCore Memory ID (from .bedrock_agentcore.yaml)
+
   MemoryNamespace:
     Type: String
-    Default: /strategies/semantic_builtin_j1hpp-7SvGWG8R9T/actors/fleet_manager
-    Description: Memory namespace for semantic strategy
-  
-  GatewayUrl:
-    Type: String
-    Description: AgentCore Gateway MCP endpoint URL (e.g., https://xxx.gateway.bedrock-agentcore.us-east-1.amazonaws.com/mcp)
-  
-  GatewayCognitoDomain:
-    Type: String
-    Description: Cognito domain for Gateway OAuth (e.g., https://agentcore-xxx.auth.us-east-1.amazoncognito.com)
-  
-  GatewayClientId:
-    Type: String
-    Description: Cognito client ID for Gateway OAuth
-  
-  GatewayClientSecret:
-    Type: String
-    NoEcho: true
-    Description: Cognito client secret for Gateway OAuth
-  
-  GatewayScope:
-    Type: String
-    Default: vehicle-maintenance-gateway/invoke
-    Description: OAuth scope for Gateway access
-  
+    Default: ''
+    Description: Memory namespace for semantic strategy (e.g., /strategies/semantic_builtin_XXXXX/actors/fleet_manager)
+
   ExistingApiId:
     Type: String
-    Description: Existing HTTP API Gateway ID to add routes to (e.g., b4blc4xmh4)
+    Description: Existing HTTP API Gateway ID to add frontend routes to
 
 Resources:
   # ============================================================
-  # Vehicle History Lambda (backend tool invoked by Gateway)
+  # Gateway OAuth - Resource Server + Client on existing Cognito pool
+  # ============================================================
+  GatewayResourceServer:
+    Type: AWS::Cognito::UserPoolResourceServer
+    Properties:
+      UserPoolId: !ImportValue
+        Fn::Sub: "${ProjectName}-user-pool-id"
+      Identifier: !Sub "${ProjectName}-gateway"
+      Name: !Sub "${ProjectName}-gateway"
+      Scopes:
+        - ScopeName: invoke
+          ScopeDescription: Invoke AgentCore Gateway tools
+
+  GatewayOAuthClient:
+    Type: AWS::Cognito::UserPoolClient
+    DependsOn: GatewayResourceServer
+    Properties:
+      UserPoolId: !ImportValue
+        Fn::Sub: "${ProjectName}-user-pool-id"
+      ClientName: !Sub "${ProjectName}-gateway-client"
+      GenerateSecret: true
+      AllowedOAuthFlows:
+        - client_credentials
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthScopes:
+        - !Sub "${ProjectName}-gateway/invoke"
+
+  # ============================================================
+  # AgentCore Gateway (MCP endpoint)
+  # ============================================================
+  GatewayExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-gateway-execution-role"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: bedrock-agentcore.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: GatewayLambdaInvoke
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: !GetAtt VehicleHistoryLambda.Arn
+
+  AgentCoreGateway:
+    Type: AWS::BedrockAgentCore::Gateway
+    Properties:
+      Name: !Sub "${ProjectName}-gateway"
+      Description: Vehicle maintenance MCP tools via AgentCore Gateway
+      ProtocolType: MCP
+      ProtocolConfiguration:
+        Mcp:
+          SearchType: SEMANTIC
+      RoleArn: !GetAtt GatewayExecutionRole.Arn
+      AuthorizerType: CUSTOM_JWT
+      AuthorizerConfiguration:
+        CustomJwtAuthorizer:
+          DiscoveryUrl: !Sub
+            - "https://cognito-idp.${AWS::Region}.amazonaws.com/${PoolId}/.well-known/openid-configuration"
+            - PoolId: !ImportValue
+                Fn::Sub: "${ProjectName}-user-pool-id"
+          AllowedClients:
+            - !Ref GatewayOAuthClient
+      ExceptionLevel: DEBUG
+      Tags:
+        Project: !Ref ProjectName
+
+  # ============================================================
+  # Vehicle History Lambda (Gateway target)
   # ============================================================
   VehicleHistoryRole:
     Type: AWS::IAM::Role
@@ -84,11 +137,9 @@ Resources:
           MEMORY_NAMESPACE: !Ref MemoryNamespace
       Code:
         ZipFile: |
-          # Placeholder - deploy actual code with:
-          # aws lambda update-function-code --function-name ${ProjectName}-vehicle-history \
-          #   --zip-file fileb://vehicle-history.zip
+          # Placeholder - deploy actual code after stack creation
           def lambda_handler(event, context):
-              return {'statusCode': 200, 'body': '{"error": "Deploy vehicle_history.py code"}'}
+              return {'statusCode': 200, 'body': '{"error": "Deploy vehicle_history.py"}'}
 
   VehicleHistoryGatewayPermission:
     Type: AWS::Lambda::Permission
@@ -96,6 +147,54 @@ Resources:
       FunctionName: !Ref VehicleHistoryLambda
       Action: lambda:InvokeFunction
       Principal: bedrock-agentcore.amazonaws.com
+
+  # ============================================================
+  # Gateway Target (Lambda with tool schema)
+  # ============================================================
+  VehicleHistoryTarget:
+    Type: AWS::BedrockAgentCore::GatewayTarget
+    DependsOn: AgentCoreGateway
+    Properties:
+      GatewayIdentifier: !GetAtt AgentCoreGateway.GatewayIdentifier
+      Name: VehicleHistoryTools
+      Description: Vehicle maintenance history and report generation tools
+      TargetConfiguration:
+        Mcp:
+          Lambda:
+            LambdaArn: !GetAtt VehicleHistoryLambda.Arn
+            ToolSchema:
+              InlinePayload:
+                - Name: get_vehicle_history
+                  Description: Retrieve categorized maintenance history from AgentCore Memory
+                  InputSchema:
+                    Type: object
+                    Properties:
+                      vehicle_id:
+                        Type: string
+                        Description: Vehicle identifier (number, fleet ID, or VIN)
+                      category:
+                        Type: string
+                        Description: "Filter: all, tire, motor, inverter, or appointment"
+                      limit:
+                        Type: integer
+                        Description: Max records to return (1-50)
+                    Required:
+                      - vehicle_id
+                - Name: generate_vehicle_report
+                  Description: Generate maintenance summary report with recommendations
+                  InputSchema:
+                    Type: object
+                    Properties:
+                      vehicle_id:
+                        Type: string
+                        Description: Vehicle identifier (number, fleet ID, or VIN)
+                      include_recommendations:
+                        Type: boolean
+                        Description: Include prioritized action items
+                    Required:
+                      - vehicle_id
+      CredentialProviderConfigurations:
+        - CredentialProviderType: GATEWAY_IAM_ROLE
 
   # ============================================================
   # Gateway Proxy Lambda (frontend -> Gateway MCP bridge)
@@ -125,21 +224,21 @@ Resources:
       MemorySize: 256
       Environment:
         Variables:
-          AGENTCORE_GATEWAY_URL: !Ref GatewayUrl
-          GATEWAY_COGNITO_DOMAIN: !Ref GatewayCognitoDomain
-          GATEWAY_CLIENT_ID: !Ref GatewayClientId
-          GATEWAY_CLIENT_SECRET: !Ref GatewayClientSecret
-          GATEWAY_SCOPE: !Ref GatewayScope
+          AGENTCORE_GATEWAY_URL: !GetAtt AgentCoreGateway.GatewayUrl
+          GATEWAY_COGNITO_DOMAIN: !Sub
+            - "https://${ProjectName}-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com"
+            - {}
+          GATEWAY_CLIENT_ID: !Ref GatewayOAuthClient
+          GATEWAY_CLIENT_SECRET: ''
+          GATEWAY_SCOPE: !Sub "${ProjectName}-gateway/invoke"
       Code:
         ZipFile: |
-          # Placeholder - deploy actual code with:
-          # aws lambda update-function-code --function-name ${ProjectName}-gateway-proxy \
-          #   --zip-file fileb://gateway-proxy.zip
+          # Placeholder - deploy actual code after stack creation
           def lambda_handler(event, context):
-              return {'statusCode': 200, 'body': '{"error": "Deploy gateway_proxy.py code"}'}
+              return {'statusCode': 200, 'body': '{"error": "Deploy gateway_proxy.py"}'}
 
   # ============================================================
-  # API Gateway Integration + Routes
+  # API Gateway routes for frontend
   # ============================================================
   GatewayProxyIntegration:
     Type: AWS::ApiGatewayV2::Integration
@@ -172,84 +271,51 @@ Resources:
       SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ExistingApiId}/*/*'
 
 Outputs:
-  VehicleHistoryLambdaArn:
-    Description: Vehicle History Lambda ARN (register as Gateway target)
-    Value: !GetAtt VehicleHistoryLambda.Arn
+  GatewayUrl:
+    Description: AgentCore Gateway MCP endpoint URL
+    Value: !GetAtt AgentCoreGateway.GatewayUrl
     Export:
-      Name: !Sub "${ProjectName}-vehicle-history-lambda-arn"
+      Name: !Sub "${ProjectName}-gateway-url"
 
-  GatewayProxyLambdaArn:
-    Description: Gateway Proxy Lambda ARN
-    Value: !GetAtt GatewayProxyLambda.Arn
+  GatewayId:
+    Description: AgentCore Gateway ID
+    Value: !GetAtt AgentCoreGateway.GatewayIdentifier
     Export:
-      Name: !Sub "${ProjectName}-gateway-proxy-lambda-arn"
+      Name: !Sub "${ProjectName}-gateway-id"
+
+  GatewayOAuthClientId:
+    Description: Cognito OAuth client ID for Gateway (retrieve secret from console)
+    Value: !Ref GatewayOAuthClient
+
+  VehicleHistoryLambdaArn:
+    Description: Vehicle History Lambda ARN
+    Value: !GetAtt VehicleHistoryLambda.Arn
 
   VehicleHistoryEndpoint:
     Description: Vehicle History API endpoint
     Value: !Sub 'https://${ExistingApiId}.execute-api.${AWS::Region}.amazonaws.com/vehicle-history/{vehicleId}'
 
-  VehicleReportEndpoint:
-    Description: Vehicle Report API endpoint
-    Value: !Sub 'https://${ExistingApiId}.execute-api.${AWS::Region}.amazonaws.com/vehicle-report/{vehicleId}'
-
   DeployLambdaCode:
-    Description: Commands to deploy actual Lambda code after stack creation
+    Description: Deploy actual Lambda code after stack creation
     Value: !Sub |
-      # Deploy vehicle history Lambda code
-      cd infrastructure/lambda && zip vehicle-history.zip vehicle_history.py
-      aws lambda update-function-code \
-        --function-name ${VehicleHistoryLambda} \
-        --zip-file fileb://vehicle-history.zip
-
-      # Deploy gateway proxy Lambda code
+      cd infrastructure/lambda
+      zip vehicle-history.zip vehicle_history.py
+      aws lambda update-function-code --function-name ${VehicleHistoryLambda} --zip-file fileb://vehicle-history.zip
       zip gateway-proxy.zip gateway_proxy.py
-      aws lambda update-function-code \
-        --function-name ${GatewayProxyLambda} \
-        --zip-file fileb://gateway-proxy.zip
+      aws lambda update-function-code --function-name ${GatewayProxyLambda} --zip-file fileb://gateway-proxy.zip
 
-  AddGatewayTarget:
-    Description: Command to register Lambda as Gateway target (run after stack deploy)
+  PostDeployNote:
+    Description: After deploy - get client secret via CLI and set on proxy Lambda
     Value: !Sub |
-      # Register vehicle history Lambda as Gateway target
-      # Replace GATEWAY_ID with your AgentCore Gateway ID
-      aws bedrock-agentcore-control create-gateway-target \
-        --gateway-identifier GATEWAY_ID \
-        --name VehicleHistoryTools \
-        --description "Vehicle maintenance history and report tools" \
-        --target-configuration '{
-          "mcp": {
-            "lambda": {
-              "lambdaArn": "${VehicleHistoryLambda.Arn}",
-              "toolSchema": {
-                "inlinePayload": [
-                  {
-                    "name": "get_vehicle_history",
-                    "description": "Retrieve maintenance history for a vehicle from AgentCore Memory",
-                    "inputSchema": {
-                      "type": "object",
-                      "properties": {
-                        "vehicle_id": {"type": "string", "description": "Vehicle identifier"},
-                        "category": {"type": "string", "description": "Filter: all, tire, motor, inverter, appointment"},
-                        "limit": {"type": "integer", "description": "Max records (1-50)"}
-                      },
-                      "required": ["vehicle_id"]
-                    }
-                  },
-                  {
-                    "name": "generate_vehicle_report",
-                    "description": "Generate maintenance summary report with recommendations",
-                    "inputSchema": {
-                      "type": "object",
-                      "properties": {
-                        "vehicle_id": {"type": "string", "description": "Vehicle identifier"},
-                        "include_recommendations": {"type": "boolean", "description": "Include action items"}
-                      },
-                      "required": ["vehicle_id"]
-                    }
-                  }
-                ]
-              }
-            }
-          }
-        }' \
-        --credential-provider-configurations '[{"credentialProviderType": "GATEWAY_IAM_ROLE"}]'
+      # Step 1: Get the Cognito client secret
+      CLIENT_SECRET=$(aws cognito-idp describe-user-pool-client \
+        --user-pool-id $(aws cloudformation describe-stacks --stack-name ${ProjectName}-cognito \
+          --query 'Stacks[0].Outputs[?OutputKey==`UserPoolId`].OutputValue' --output text) \
+        --client-id $(aws cloudformation describe-stacks --stack-name ${ProjectName}-gateway \
+          --query 'Stacks[0].Outputs[?OutputKey==`GatewayOAuthClientId`].OutputValue' --output text) \
+        --query 'UserPoolClient.ClientSecret' --output text)
+
+      # Step 2: Set it on the proxy Lambda
+      aws lambda update-function-configuration \
+        --function-name ${GatewayProxyLambda} \
+        --environment "Variables={AGENTCORE_GATEWAY_URL=$(aws cloudformation describe-stacks --stack-name ${ProjectName}-gateway --query 'Stacks[0].Outputs[?OutputKey==`GatewayUrl`].OutputValue' --output text),GATEWAY_COGNITO_DOMAIN=https://${ProjectName}-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com,GATEWAY_CLIENT_ID=$(aws cloudformation describe-stacks --stack-name ${ProjectName}-gateway --query 'Stacks[0].Outputs[?OutputKey==`GatewayOAuthClientId`].OutputValue' --output text),GATEWAY_CLIENT_SECRET=$CLIENT_SECRET,GATEWAY_SCOPE=${ProjectName}-gateway/invoke}"

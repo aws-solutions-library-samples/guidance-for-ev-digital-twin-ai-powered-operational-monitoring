@@ -20,16 +20,16 @@ import sys
 import io
 import zipfile
 
-# Existing gateway config
-GATEWAY_ID = "vehicle-maintenance-gateway-sajombqp8t"
-GATEWAY_URL = "https://vehicle-maintenance-gateway-sajombqp8t.gateway.bedrock-agentcore.us-east-1.amazonaws.com/mcp"
-GATEWAY_ROLE_ARN = "arn:aws:iam::009296485814:role/AgentCoreGatewayExecutionRole"
-COGNITO_CLIENT_ID = "4j8tjl6c2eqrmsqkapuri2qn51"
-COGNITO_POOL_ID = "us-east-1_sRvDw7Eip"
+# Existing gateway config — set via environment or pass as arguments
+GATEWAY_ID = os.environ.get('AGENTCORE_GATEWAY_ID', '')
+GATEWAY_URL = os.environ.get('AGENTCORE_GATEWAY_URL', '')
+GATEWAY_ROLE_ARN = os.environ.get('AGENTCORE_GATEWAY_ROLE_ARN', '')
+COGNITO_CLIENT_ID = os.environ.get('GATEWAY_CLIENT_ID', '')
+COGNITO_POOL_ID = os.environ.get('GATEWAY_COGNITO_POOL_ID', '')
 
-# Default memory config (demo account)
-DEFAULT_MEMORY_ID = "vehicle_maintenance_agent_mem-Zz75E62LMt"
-DEFAULT_NAMESPACE = "/strategies/semantic_builtin_j1hpp-7SvGWG8R9T/actors/fleet_manager"
+# Default memory config — override with --memory-id and --memory-namespace
+DEFAULT_MEMORY_ID = os.environ.get('AGENTCORE_MEMORY_ID', '')
+DEFAULT_NAMESPACE = os.environ.get('MEMORY_NAMESPACE', '')
 
 LAMBDA_FUNCTION_NAME = "ev-digital-twin-vehicle-history"
 LAMBDA_ROLE_NAME = "ev-digital-twin-vehicle-history-role"
@@ -83,8 +83,12 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Add vehicle history target to existing Gateway')
     parser.add_argument('--profile', default=os.environ.get('AWS_PROFILE', ''))
     parser.add_argument('--region', default='us-east-1')
-    parser.add_argument('--memory-id', default=DEFAULT_MEMORY_ID)
-    parser.add_argument('--memory-namespace', default=DEFAULT_NAMESPACE)
+    parser.add_argument('--gateway-id', default=GATEWAY_ID, required=not GATEWAY_ID,
+                        help='AgentCore Gateway ID (or set AGENTCORE_GATEWAY_ID env var)')
+    parser.add_argument('--memory-id', default=DEFAULT_MEMORY_ID, required=not DEFAULT_MEMORY_ID,
+                        help='AgentCore Memory ID (or set AGENTCORE_MEMORY_ID env var)')
+    parser.add_argument('--memory-namespace', default=DEFAULT_NAMESPACE,
+                        help='Memory namespace (or set MEMORY_NAMESPACE env var)')
     return parser.parse_args()
 
 
@@ -210,18 +214,18 @@ def add_lambda_invoke_permission(session, region, lambda_arn):
         print("  ✅ Lambda invoke permission already exists")
 
 
-def add_gateway_target(session, region, lambda_arn):
+def add_gateway_target(session, region, lambda_arn, gateway_id):
     """Add Lambda as a target to the existing Gateway."""
     control_client = session.client('bedrock-agentcore-control', region_name=region)
 
     # Check if target already exists
-    existing = control_client.list_gateway_targets(gatewayIdentifier=GATEWAY_ID)
+    existing = control_client.list_gateway_targets(gatewayIdentifier=gateway_id)
     for target in existing.get('items', []):
         if target.get('name') == 'VehicleHistoryTools':
             print(f"  ⚠️  Target 'VehicleHistoryTools' already exists: {target['targetId']}")
             print("  Updating target...")
             response = control_client.update_gateway_target(
-                gatewayIdentifier=GATEWAY_ID,
+                gatewayIdentifier=gateway_id,
                 targetId=target['targetId'],
                 name='VehicleHistoryTools',
                 description='Vehicle maintenance history and report generation tools',
@@ -244,7 +248,7 @@ def add_gateway_target(session, region, lambda_arn):
 
     # Create new target
     response = control_client.create_gateway_target(
-        gatewayIdentifier=GATEWAY_ID,
+        gatewayIdentifier=gateway_id,
         name='VehicleHistoryTools',
         description='Vehicle maintenance history and report generation tools',
         targetConfiguration={
@@ -271,7 +275,7 @@ def main():
     session = boto3.Session(region_name=args.region) if not args.profile else boto3.Session(profile_name=args.profile, region_name=args.region)
 
     print("🚀 Adding Vehicle History tools to existing Gateway")
-    print(f"   Gateway: {GATEWAY_ID}")
+    print(f"   Gateway: {args.gateway_id}")
     print(f"   Memory:  {args.memory_id}")
     print()
 
@@ -285,18 +289,21 @@ def main():
 
     # Step 3: Gateway target
     print("\nStep 3: Gateway target")
-    target_id = add_gateway_target(session, args.region, lambda_arn)
+    target_id = add_gateway_target(session, args.region, lambda_arn, args.gateway_id)
+
+    # Get gateway URL
+    control_client = session.client('bedrock-agentcore-control', region_name=args.region)
+    gw = control_client.get_gateway(gatewayIdentifier=args.gateway_id)
+    gateway_url = gw.get('gatewayUrl', '')
 
     # Save config
     config = {
-        "gateway_id": GATEWAY_ID,
-        "gateway_url": GATEWAY_URL,
+        "gateway_id": args.gateway_id,
+        "gateway_url": gateway_url,
         "target_id": target_id,
         "lambda_arn": lambda_arn,
         "memory_id": args.memory_id,
         "region": args.region,
-        "cognito_client_id": COGNITO_CLIENT_ID,
-        "cognito_pool_id": COGNITO_POOL_ID
     }
 
     config_path = os.path.join(os.path.dirname(__file__), '..', 'gateway_config.json')
@@ -306,7 +313,7 @@ def main():
     print()
     print("=" * 60)
     print("✅ Done!")
-    print(f"   Gateway URL: {GATEWAY_URL}")
+    print(f"   Gateway URL: {gateway_url}")
     print(f"   Tools: get_vehicle_history, generate_vehicle_report")
     print(f"   Config: gateway_config.json")
     print()

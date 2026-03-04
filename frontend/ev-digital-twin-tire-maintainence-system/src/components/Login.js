@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { signIn, signInWithRedirect } from 'aws-amplify/auth';
 import loginTracker from '../services/loginTracker';
+import awsmobile from '../aws-exports';
 import './Login.css';
 
 const Login = ({ onSignIn }) => {
@@ -55,8 +56,8 @@ const Login = ({ onSignIn }) => {
       
       // Fallback: Direct redirect to Cognito hosted UI with Midway provider
       console.log('Attempting fallback redirect...');
-      const domain = 'ev-digital-twin.auth.us-east-1.amazoncognito.com';
-      const clientId = '5pnsuntr6epe0s6v17lqq4bfms';
+      const domain = awsmobile.oauth?.domain || '';
+      const clientId = awsmobile.aws_user_pools_web_client_id || '';
       const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
       const redirectUri = encodeURIComponent(isLocalhost ? 'http://localhost:3000/' : `${window.location.origin}/`);
       const url = `https://${domain}/oauth2/authorize?identity_provider=Midway&redirect_uri=${redirectUri}&response_type=code&client_id=${clientId}&scope=openid`;

@@ -10,6 +10,8 @@ from strands.models import BedrockModel
 from strands.tools import tool
 import pandas as pd
 import json
+import boto3
+import os
 from typing import Optional
 
 # Import browser automation
@@ -25,8 +27,17 @@ except Exception as e:
 # Model configuration - Claude Sonnet 4.5
 MODEL_ID = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
 
-# Browser Tool configuration
-NOVA_ACT_API_KEY = "e7bb6472-19ed-4728-b8c1-bea5f1c52a58"
+# Browser Tool configuration - loaded from Secrets Manager
+def get_nova_act_key():
+    try:
+        import json
+        client = boto3.client('secretsmanager', region_name='us-east-1')
+        response = client.get_secret_value(SecretId='/vehicle-maintenance/novaact-api-key')
+        return json.loads(response['SecretString'])['NOVA_ACT_API_KEY']
+    except Exception:
+        return os.environ.get('NOVA_ACT_API_KEY', '')
+
+NOVA_ACT_API_KEY = get_nova_act_key()
 
 # System prompt for tire ordering agent
 SYSTEM_PROMPT = """You are a tire ordering assistant that helps customers order replacement tires online.

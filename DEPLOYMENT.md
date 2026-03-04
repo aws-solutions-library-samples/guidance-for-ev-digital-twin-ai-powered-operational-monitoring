@@ -87,7 +87,7 @@ User → CloudFront (+ WAF) → S3 (React Frontend)
 - **Tools:** `get_vehicle_history`, `generate_vehicle_report`
 - **Components:** Vehicle History Lambda, Gateway Proxy Lambda, Cognito OAuth
 - **Stack:** `infrastructure/gateway-stack.yaml`
-- **Quick setup:** `python3 scripts/setup_gateway.py --memory-id YOUR_MEMORY_ID`
+- **Post-deploy:** Deploy Lambda code and set Cognito secret — see stack outputs for CLI commands
 
 ## Step-by-Step Deployment
 

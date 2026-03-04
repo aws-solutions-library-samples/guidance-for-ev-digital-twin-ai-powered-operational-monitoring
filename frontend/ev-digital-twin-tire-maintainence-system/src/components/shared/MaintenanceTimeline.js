@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { jsPDF } from 'jspdf';
 import agentCoreService from '../../services/agentcore';
 import './MaintenanceTimeline.css';
 
@@ -13,8 +14,8 @@ const CATEGORY_CONFIG = {
 
 const VEHICLES = [
   { id: '1', name: 'Vehicle 1', vin: '2T1BURHE8JC987654', issue: 'Tire' },
-  { id: '3', name: 'Vehicle 3', vin: '3VWDX7AJ9DM456321', issue: 'Inverter' },
   { id: '5', name: 'Vehicle 2', vin: '5YJSA1E26HF123456', issue: 'Motor' },
+  { id: '3', name: 'Vehicle 3', vin: '3VWDX7AJ9DM456321', issue: 'Inverter' },
 ];
 
 const MaintenanceTimeline = () => {
@@ -38,7 +39,11 @@ const MaintenanceTimeline = () => {
     setReport(null);
     try {
       const data = await agentCoreService.getVehicleHistory(selectedVehicle, activeCategory, 20);
-      setHistory(data.history || []);
+      const sorted = (data.history || []).sort((a, b) => {
+        if (!a.created_at || !b.created_at) return 0;
+        return new Date(b.created_at) - new Date(a.created_at);
+      });
+      setHistory(sorted);
     } catch (err) {
       setError(err.message);
       setHistory([]);
@@ -76,6 +81,96 @@ const MaintenanceTimeline = () => {
   };
 
   const currentVehicle = VEHICLES.find(v => v.id === selectedVehicle);
+
+  const downloadPDF = () => {
+    if (!report) return;
+    const doc = new jsPDF();
+    const vehicle = VEHICLES.find(v => v.id === selectedVehicle);
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let y = 20;
+
+    // Header
+    doc.setFillColor(27, 30, 32);
+    doc.rect(0, 0, pageWidth, 40, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.text('Vehicle Maintenance Report', 14, 18);
+    doc.setFontSize(10);
+    doc.text(`${vehicle?.name || ''} | ${vehicle?.vin || ''} | Generated ${formatDate(report.generated_at)}`, 14, 28);
+    doc.setFontSize(9);
+    doc.setTextColor(55, 188, 18);
+    doc.text('Powered by AgentCore Gateway + Memory', 14, 35);
+    y = 50;
+
+    // Summary stats
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(13);
+    doc.text('Summary', 14, y);
+    y += 8;
+    doc.setFontSize(10);
+    doc.text(`Total Records: ${report.total_records}`, 14, y);
+    y += 6;
+    if (report.sections) {
+      Object.entries(report.sections).forEach(([key, section]) => {
+        const cat = CATEGORY_CONFIG[key] || CATEGORY_CONFIG.general;
+        doc.text(`${cat.label}: ${section.count} records`, 14, y);
+        y += 6;
+      });
+    }
+    y += 6;
+
+    // Recommendations
+    if (report.recommendations && report.recommendations.length > 0) {
+      doc.setFontSize(13);
+      doc.text('Recommendations', 14, y);
+      y += 8;
+      doc.setFontSize(10);
+      report.recommendations.forEach((rec) => {
+        if (y > 270) { doc.addPage(); y = 20; }
+        const priorityColor = rec.priority === 'HIGH' ? [231, 76, 60] : rec.priority === 'MEDIUM' ? [243, 156, 18] : [52, 152, 219];
+        doc.setTextColor(...priorityColor);
+        doc.text(`[${rec.priority}]`, 14, y);
+        doc.setTextColor(0, 0, 0);
+        doc.text(`${rec.action}`, 36, y, { maxWidth: pageWidth - 50 });
+        y += 10;
+      });
+      y += 4;
+    }
+
+    // History items per section
+    if (report.sections) {
+      Object.entries(report.sections).forEach(([key, section]) => {
+        if (section.items && section.items.length > 0) {
+          if (y > 240) { doc.addPage(); y = 20; }
+          const cat = CATEGORY_CONFIG[key] || CATEGORY_CONFIG.general;
+          doc.setFontSize(12);
+          doc.setTextColor(0, 0, 0);
+          doc.text(`${cat.label} History (${section.count})`, 14, y);
+          y += 7;
+          doc.setFontSize(9);
+          doc.setTextColor(80, 80, 80);
+          section.items.forEach((item, idx) => {
+            if (y > 270) { doc.addPage(); y = 20; }
+            const lines = doc.splitTextToSize(`${idx + 1}. ${item}`, pageWidth - 28);
+            doc.text(lines, 14, y);
+            y += lines.length * 4.5 + 3;
+          });
+          y += 4;
+        }
+      });
+    }
+
+    // Footer
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150, 150, 150);
+      doc.text(`EV Digital Twin - Maintenance Report | Page ${i} of ${pageCount}`, 14, 290);
+    }
+
+    doc.save(`vehicle-${selectedVehicle}-maintenance-report.pdf`);
+  };
 
   return (
     <div className="timeline-page">
@@ -182,7 +277,10 @@ const MaintenanceTimeline = () => {
           <div className="timeline-report">
             <div className="report-header">
               <h3>📊 Maintenance Report</h3>
-              <button className="report-close" onClick={() => setReport(null)}>✕</button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="report-download" onClick={downloadPDF} title="Download PDF">📥 PDF</button>
+                <button className="report-close" onClick={() => setReport(null)}>✕</button>
+              </div>
             </div>
             <div className="report-summary">
               <div className="report-stat">
