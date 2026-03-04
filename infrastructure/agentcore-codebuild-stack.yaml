@@ -59,8 +59,18 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - bedrock:*
-                  - bedrock-agentcore:*
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                  - bedrock:Retrieve
+                  - bedrock:RetrieveAndGenerate
+                  - bedrock-agentcore:InvokeAgentRuntime
+                  - bedrock-agentcore:CreateAgentRuntime
+                  - bedrock-agentcore:UpdateAgentRuntime
+                  - bedrock-agentcore:GetAgentRuntime
+                  - bedrock-agentcore:CreateMemory
+                  - bedrock-agentcore:GetMemory
+                  - bedrock-agentcore:CreateEvent
+                  - bedrock-agentcore:RetrieveMemoryRecords
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents

@@ -120,7 +120,7 @@ Resources:
                 Action:
                   - bedrock-agentcore:RetrieveMemoryRecords
                   - bedrock-agentcore:GetMemoryRecord
-                Resource: '*'
+                Resource: !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:memory/*'
 
   VehicleHistoryLambda:
     Type: AWS::Lambda::Function

@@ -65,7 +65,7 @@ Resources:
           AttributeDataType: String
           Required: false
           Mutable: true
-      MfaConfiguration: "OFF"
+      MfaConfiguration: "OPTIONAL"
       DeviceConfiguration:
         ChallengeRequiredOnNewDevice: false
         DeviceOnlyRememberedOnUserPrompt: false
