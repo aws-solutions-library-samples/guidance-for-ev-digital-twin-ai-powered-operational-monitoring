@@ -1,5 +1,7 @@
 // AWS Cognito configuration for EV Digital Twin
-// Account 844874421931 configuration
+// Values are driven by environment variables so each deployment
+// automatically picks up the correct User Pool and client ID.
+// Set REACT_APP_COGNITO_* in your .env.local / .env.production files.
 
 // Detect if running locally
 const isLocalhost = typeof window !== 'undefined' && 
@@ -10,12 +12,12 @@ const redirectUrl = isLocalhost
   : `${window.location.origin}/`;
 
 const awsmobile = {
-  "aws_project_region": "us-east-1",
-  "aws_cognito_region": "us-east-1",
-  "aws_user_pools_id": "us-east-1_qJ3MBXrdC",
-  "aws_user_pools_web_client_id": "5d0g8d19gvuum4lp6oucbe9stt",
+  "aws_project_region": process.env.REACT_APP_COGNITO_REGION || "us-east-1",
+  "aws_cognito_region": process.env.REACT_APP_COGNITO_REGION || "us-east-1",
+  "aws_user_pools_id": process.env.REACT_APP_COGNITO_USER_POOL_ID || "us-east-1_CrSxdrt6f",
+  "aws_user_pools_web_client_id": process.env.REACT_APP_COGNITO_CLIENT_ID || "5pnsuntr6epe0s6v17lqq4bfms",
   "oauth": {
-    "domain": "ev-digital-twin.auth.us-east-1.amazoncognito.com",
+    "domain": process.env.REACT_APP_COGNITO_DOMAIN || "ev-digital-twin.auth.us-east-1.amazoncognito.com",
     "scope": ["email", "openid", "profile"],
     "redirectSignIn": redirectUrl,
     "redirectSignOut": redirectUrl,

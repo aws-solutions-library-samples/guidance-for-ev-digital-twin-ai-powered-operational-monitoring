@@ -112,11 +112,23 @@ function App() {
   const handleSignOut = async () => {
     try {
       await signOut();
-      setUser(null);
-      setIsAuthenticated(false);
     } catch (error) {
       console.error('Error signing out:', error);
     }
+    // Clear all cached auth state
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('CognitoIdentityServiceProvider') || key.startsWith('amplify-'))) {
+        localStorage.removeItem(key);
+      }
+    }
+    sessionStorage.clear();
+    // Redirect to Cognito logout with correct client_id to reset the domain cookie,
+    // then Cognito redirects back and the browser fetches fresh index.html (no-cache)
+    const domain = awsExports.oauth?.domain;
+    const clientId = awsExports.aws_user_pools_web_client_id;
+    const logoutUri = encodeURIComponent(`${window.location.origin}/`);
+    window.location.href = `https://${domain}/logout?client_id=${clientId}&logout_uri=${logoutUri}`;
   };
 
   if (isLoading) {
