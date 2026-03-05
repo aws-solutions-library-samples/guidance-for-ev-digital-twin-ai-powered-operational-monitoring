@@ -15,3 +15,10 @@ f039d22205a532e5275c5eee1c96c29a90144dbe:frontend/ev-digital-twin-tire-maintaine
 
 # Gateway config loaded from environment variables
 457ec377802869347fb99e53bdb92ca7989d260d:scripts/setup_gateway.py:generic-api-key:27
+
+# Bedrock model ID strings and SDK imports - not secrets
+95b91a2ebabb14b6c6b39c70f230dbe9d48f475e:agentcore_maintenance_agent.py:generic-api-key:52
+22a4df3d863e4163af14df4317cffa5fc4e4e2fe:agentcore_maintenance_agent.py:generic-api-key:21
+c067c35fc0b60d9625bab5e81086eab9c259167d:agentcore_maintenance_agent.py:generic-api-key:49
+3cf1c7323d3c341a28e9f4e29a6fe4816002c48b:agents/tire_ordering_agent/tire_ordering_runtime.py:generic-api-key:29
+95b91a2ebabb14b6c6b39c70f230dbe9d48f475e:agents/tire_ordering_agent/tire_ordering_runtime.py:generic-api-key:29
