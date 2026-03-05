@@ -139,7 +139,7 @@ def create_lambda_function(session, region, memory_id, memory_namespace):
         )
 
         print("  ⏳ Waiting 10s for IAM propagation...")
-        time.sleep(10)
+        time.sleep(10)  # nosemgrep: arbitrary-sleep — required for IAM eventual consistency
 
     except iam.exceptions.EntityAlreadyExistsException:
         role = iam.get_role(RoleName=LAMBDA_ROLE_NAME)
@@ -181,7 +181,7 @@ def create_lambda_function(session, region, memory_id, memory_namespace):
             FunctionName=LAMBDA_FUNCTION_NAME,
             ZipFile=zip_buffer.read()
         )
-        time.sleep(2)
+        time.sleep(2)  # nosemgrep: arbitrary-sleep — wait for Lambda code update before config update
         lambda_client.update_function_configuration(
             FunctionName=LAMBDA_FUNCTION_NAME,
             Environment={

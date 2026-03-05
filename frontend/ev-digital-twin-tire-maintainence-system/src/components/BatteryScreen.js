@@ -744,7 +744,7 @@ const BatteryScreen = () => {
                     <span style={{ fontSize: windowSize.width >= 1900 ? '11px' : 'inherit' }}>ML Prediction</span>
                   </div>
                 </div>
-                <div style={{ position: 'relative', marginTop: windowSize.width <= 1512 ? '100px' : windowSize.width <= 1700 ? '90px' : windowSize.width <= 1815 ? '80px' : '80px' }}>
+                <div style={{ position: 'relative', marginTop: windowSize.width <= 1512 ? '100px' : windowSize.width <= 1700 ? '90px' : '80px' }}>
                   <div className="prediction-chart" style={{ transform: windowSize.width <= 1440 ? 'scaleX(0.85) scaleY(0.75)' : windowSize.width <= 1700 ? 'scaleX(0.9) scaleY(0.8)' : windowSize.width <= 1815 ? 'scaleX(0.95) scaleY(0.9)' : windowSize.width >= 1900 ? 'scaleX(1.15)' : 'scale(1)', transformOrigin: windowSize.width >= 1900 ? 'top right' : 'top left' }}>
                     <svg width="350px" height="350px" viewBox="0 0 350 350">
                       {/* Grid lines */}

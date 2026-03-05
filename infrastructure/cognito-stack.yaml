@@ -175,9 +175,16 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - cognito-sync:*
-                  - cognito-identity:*
-                Resource: "*"
+                  - cognito-sync:GetBulkPublishDetails
+                  - cognito-sync:GetCognitoEvents
+                  - cognito-sync:GetIdentityPoolConfiguration
+                  - cognito-sync:ListDatasets
+                  - cognito-sync:ListRecords
+                  - cognito-sync:QueryRecords
+                  - cognito-identity:GetId
+                  - cognito-identity:GetCredentialsForIdentity
+                  - cognito-identity:GetOpenIdToken
+                Resource: !Sub "arn:aws:cognito-identity:${AWS::Region}:${AWS::AccountId}:identitypool/${IdentityPool}"
 
   IdentityPoolRoleAttachment:
     Type: AWS::Cognito::IdentityPoolRoleAttachment

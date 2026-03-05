@@ -142,6 +142,22 @@ Resources:
           ToPort: 8000
           SourceSecurityGroupId: !Ref ALBSecurityGroup
           Description: Access from ALB
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: HTTPS outbound for AWS APIs and Bedrock
+        - IpProtocol: tcp
+          FromPort: 53
+          ToPort: 53
+          CidrIp: 0.0.0.0/0
+          Description: DNS over TCP
+        - IpProtocol: udp
+          FromPort: 53
+          ToPort: 53
+          CidrIp: 0.0.0.0/0
+          Description: DNS over UDP
       Tags:
         - Key: Name
           Value: !Sub "${ProjectName}-ecs-sg"

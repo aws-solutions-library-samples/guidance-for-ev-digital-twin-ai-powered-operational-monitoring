@@ -967,7 +967,7 @@ const Invertor = () => {
     
     return {
       fontSize: width < 1200 ? '13px' : width < 1400 ? '15px' : '16px',
-      smallFontSize: width < 1200 ? '9px' : width < 1400 ? '10px' : '10px',
+      smallFontSize: width < 1200 ? '9px' : '10px',
       titleFontSize: width < 1200 ? '15px' : width < 1400 ? '17px' : '18px',
       gaugeSize: width < 1200 ? 80 : width < 1400 ? 90 : 100,
       chartHeight: height < 800 ? 200 : height < 900 ? 220 : 240,
@@ -1398,7 +1398,7 @@ const Invertor = () => {
               {/* Bottom Containers */}
               <div className="bottom-containers" style={{ 
                 marginBottom: '0',
-                marginTop: windowWidth <= 1440 ? '-40px' : windowWidth <= 1700 ? '-35px' : windowWidth <= 1860 ? '-30px' : '-30px',
+                marginTop: windowWidth <= 1440 ? '-40px' : windowWidth <= 1700 ? '-35px' : '-30px',
                 transform: windowWidth <= 1440 ? 'scaleY(0.75)' : windowWidth <= 1700 ? 'scaleY(0.8)' : windowWidth <= 1860 ? 'scaleY(0.9)' : 'none',
                 transformOrigin: 'top'
               }}>

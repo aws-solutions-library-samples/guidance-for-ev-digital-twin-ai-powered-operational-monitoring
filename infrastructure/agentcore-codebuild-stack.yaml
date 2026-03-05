@@ -132,7 +132,15 @@ Resources:
                 Resource: '*'
               - Effect: Allow
                 Action:
-                  - bedrock-agentcore:*
+                  - bedrock-agentcore:InvokeAgentRuntime
+                  - bedrock-agentcore:CreateAgentRuntime
+                  - bedrock-agentcore:UpdateAgentRuntime
+                  - bedrock-agentcore:DeleteAgentRuntime
+                  - bedrock-agentcore:GetAgentRuntime
+                  - bedrock-agentcore:ListAgentRuntimes
+                  - bedrock-agentcore:CreateMemory
+                  - bedrock-agentcore:GetMemory
+                  - bedrock-agentcore:ListMemories
                 Resource: '*'
 
   # CodeBuild Project for AgentCore deployment

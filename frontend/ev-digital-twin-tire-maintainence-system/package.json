@@ -38,5 +38,11 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "overrides": {
+    "nth-check": ">=2.1.1",
+    "serialize-javascript": ">=6.0.3",
+    "underscore": ">=1.13.7",
+    "jsonpath": "npm:jsonpath-plus@>=10.0.0"
   }
 }

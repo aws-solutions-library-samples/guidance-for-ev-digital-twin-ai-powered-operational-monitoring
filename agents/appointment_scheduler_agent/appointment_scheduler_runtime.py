@@ -10,11 +10,12 @@ from strands.models import BedrockModel
 from strands.tools import tool
 import boto3
 import json
+import os
 from datetime import datetime
 from typing import Optional
 
 # Model configuration - Claude Sonnet 4.5
-MODEL_ID = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
+MODEL_ID = os.environ.get('BEDROCK_MODEL_ID', 'global.anthropic.claude-sonnet-4-5-20250929-v1:0')
 
 # DynamoDB configuration
 APPOINTMENTS_TABLE = 'vehicle-appointment-slots'

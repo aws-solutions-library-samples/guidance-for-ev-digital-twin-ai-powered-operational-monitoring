@@ -25,7 +25,7 @@ except Exception as e:
     browser_session = None
 
 # Model configuration - Claude Sonnet 4.5
-MODEL_ID = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
+MODEL_ID = os.environ.get('BEDROCK_MODEL_ID', 'global.anthropic.claude-sonnet-4-5-20250929-v1:0')
 
 # Browser Tool configuration - loaded from Secrets Manager
 def get_nova_act_key():

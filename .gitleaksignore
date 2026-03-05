@@ -1,0 +1,17 @@
+# DCV SDK vendor files - third-party library, not actual secrets
+30036a0272f38e72019b77fc6d7498692c21a780:frontend/ev-digital-twin-tire-maintainence-system/public/dcv-sdk/dcvjs-esm/dcv/microphoneprocessor.js:aws-access-token:1
+30036a0272f38e72019b77fc6d7498692c21a780:frontend/ev-digital-twin-tire-maintainence-system/public/dcv-sdk/dcvjs-umd/dcv/microphoneprocessor.js:aws-access-token:1
+
+# Cognito User Pool IDs and Client IDs in env/config files - not secrets, required for OAuth flow
+c2553411d881c84e9ca2c107aea16565e2354088:frontend/ev-digital-twin-tire-maintainence-system/.env.production:generic-api-key:8
+2584f3c922f5d5c42cb9fa48a910f2edbdd64e19:frontend/ev-digital-twin-tire-maintainence-system/src/aws-exports.js:generic-api-key:6
+37d6ea666f6c265ec7fcaa23deb65ffb59501f64:frontend/ev-digital-twin-tire-maintainence-system/src/aws-exports.js:generic-api-key:7
+37c85a97e8e0e8f9eafd203af6cd180daf5240e6:frontend/ev-digital-twin-tire-maintainence-system/src/aws-exports.js:generic-api-key:16
+f039d22205a532e5275c5eee1c96c29a90144dbe:frontend/ev-digital-twin-tire-maintainence-system/src/aws-exports.js:generic-api-key:16
+f039d22205a532e5275c5eee1c96c29a90144dbe:frontend/ev-digital-twin-tire-maintainence-system/src/components/Login.js:generic-api-key:59
+
+# Model IDs in README docs - not secrets
+3cf1c7323d3c341a28e9f4e29a6fe4816002c48b:agents/tire_ordering_agent/README.md:generic-api-key:39
+
+# Gateway config loaded from environment variables
+457ec377802869347fb99e53bdb92ca7989d260d:scripts/setup_gateway.py:generic-api-key:27

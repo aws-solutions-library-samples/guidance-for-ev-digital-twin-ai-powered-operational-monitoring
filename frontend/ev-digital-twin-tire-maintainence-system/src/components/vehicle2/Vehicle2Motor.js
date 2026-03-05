@@ -1379,7 +1379,7 @@ const Motor = () => {
                     </div>
                     <div style={{ position: 'relative', marginTop: '20px' }}>
 
-                      <div className="prediction-chart" style={{ marginTop: windowWidth <= 1440 ? '-130px' : windowWidth <= 1700 ? '-110px' : windowWidth <= 1815 ? '-60px' : '-60px' }}>
+                      <div className="prediction-chart" style={{ marginTop: windowWidth <= 1440 ? '-130px' : windowWidth <= 1700 ? '-110px' : '-60px' }}>
                         <svg width="290" height="180" viewBox="0 0 290 180">
                         {/* Grid lines */}
                         {Array.from({ length: 8 }, (_, i) => (
