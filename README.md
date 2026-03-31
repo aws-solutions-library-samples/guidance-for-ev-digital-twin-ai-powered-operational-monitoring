@@ -1,6 +1,6 @@
 # Guidance for EV Digital Twin on AWS powered by GenAI
 
-This architecture diagram illustrates how to build an AI-powered predictive maintenance system for electric vehicle fleets using generative AI agents, retrieval-augmented generation, and browser automation on AWS.
+This guidance illustrates how to build an AI-powered predictive maintenance system for electric vehicle fleets using generative AI agents, retrieval-augmented generation, and browser automation on AWS.
 
 ## Table of Contents
 
