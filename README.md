@@ -1,166 +1,168 @@
-# 🚗 EV Digital Twin - Predictive Maintenance Powered by AI Agents
+# Guidance for EV Digital Twin on AWS powered by GenAI
 
-AI-powered vehicle maintenance system using Amazon Bedrock AgentCore for predictive analytics, anomaly detection, and automated tire ordering with real-time browser automation.
+This architecture diagram illustrates how to build an AI-powered predictive maintenance system for electric vehicle fleets using generative AI agents, retrieval-augmented generation, and browser automation on AWS.
 
-**Quick Links:** [🚀 Quick Start](#quick-start) | [🏗️ Architecture](#architecture) | [📹 Live Demo](https://dvm0illvncdsh.cloudfront.net) | [📚 Documentation](#documentation)
+## Table of Contents
 
----
+1. [Overview](#overview)
+    - [Architecture](#architecture)
+    - [Cost](#cost)
+2. [Prerequisites](#prerequisites)
+    - [Operating System](#operating-system)
+    - [Third-party Tools](#third-party-tools)
+    - [AWS Account Requirements](#aws-account-requirements)
+    - [Supported Regions](#supported-regions)
+3. [Deployment Steps](#deployment-steps)
+4. [Deployment Validation](#deployment-validation)
+5. [Running the Guidance](#running-the-guidance)
+6. [Next Steps](#next-steps)
+7. [Cleanup](#cleanup)
+8. [FAQ, Known Issues, Additional Considerations, and Limitations](#faq-known-issues-additional-considerations-and-limitations)
+9. [Revisions](#revisions)
+10. [Notices](#notices)
+11. [Authors](#authors)
 
 ## Overview
 
-The EV Digital Twin combines machine learning predictive analytics with Amazon Bedrock AgentCore to deliver intelligent vehicle maintenance management:
+Electric vehicle fleets generate large volumes of sensor telemetry across tires, motors, and inverters. Manually analyzing this data to predict failures, schedule maintenance, and order replacement parts is time-consuming and error-prone. This Guidance demonstrates how to build an AI-powered digital twin system that combines machine learning predictive analytics with generative AI agents to deliver intelligent, automated vehicle maintenance management.
 
-- **Strands Agent Framework**: Python-based agent orchestration framework for building AI agents
-- **AgentCore Runtime**: Containerized AI agent with 17 specialized maintenance tools (12 core + 5 Knowledge Base)
-- **AgentCore Memory**: Persistent conversation storage with recurring issue detection
-- **AgentCore Gateway**: MCP endpoint exposing vehicle history and report tools for external system integration
-- **AgentCore Browser**: Automated tire ordering via Amazon with live view streaming
-- **Amazon Nova Act**: Agentic foundation model for browser automation with visual reasoning and natural language control
-- **Machine Learning**: Random Forest and Isolation Forest models for tire/motor/inverter predictions
-- **Predictive Analytics**: 90-day maintenance forecasting with anomaly detection
-- **Fleet Management**: Real-time health monitoring across tire, motor, and inverter systems
+The solution uses Amazon Bedrock AgentCore to orchestrate a maintenance agent with 17 specialized tools spanning real-time vehicle analysis, ML-based predictions, Knowledge Base retrieval (RAG), appointment scheduling, and automated tire ordering via browser automation. AgentCore Memory enables recurring issue detection and cross-vehicle fleet pattern analysis across sessions.
 
----
+### Key Capabilities
 
-## 🎯 Key Features
+- **Predictive Maintenance**: Random Forest and Isolation Forest models forecast tire wear, motor failures, and inverter thermal issues up to 90 days ahead
+- **Retrieval-Augmented Generation (RAG)**: Agent retrieves authoritative guidance from vehicle maintenance manuals via Amazon Bedrock Knowledge Bases with OpenSearch Serverless vector search before generating recommendations
+- **Browser Automation**: Amazon Nova Act automates tire ordering from Amazon.com with live session viewing streamed back to the fleet operator UI
+- **Natural Language Interface**: Fleet operators chat with the AI agent for vehicle diagnostics, maintenance scheduling, and cross-system analysis
+- **Memory-Powered Insights**: AgentCore Memory (short-term + long-term) detects recurring issues and fleet-wide patterns across sessions
+- **Fleet Management**: Unified dashboard monitors tire, motor, and inverter health across the entire vehicle fleet
 
-- **Predictive Maintenance**: ML models forecast tire wear, motor failures, and inverter thermal issues
-- **Anomaly Detection**: Identify unusual patterns across tire, motor, and inverter systems
-- **Browser Automation**: Automated tire ordering from Amazon with live session viewing
-- **Natural Language Interface**: Chat with AI agent for vehicle analysis and recommendations
-- **Cross-System Analysis**: Correlate tire, motor, and inverter issues for comprehensive insights
-- **Memory-Powered Insights**: Detect recurring issues and fleet-wide patterns across sessions
+### Architecture
 
----
+![Architecture Diagram](assets/images/architecture.png)
 
-## Use Cases
+#### Architecture Data Flow
 
-### Demo Scenarios
+1. **EV fleet** vehicles generate telemetry data (tire pressure, motor temperature, inverter thermals) ingested through **AWS IoT Core** into **Amazon S3** for storage and processing.
+2. Sample EV data products provide component-level telemetry — tire (pressure, tread depth, temperature), motor (RPM, oil pressure, vibration), and inverter (voltage, current, efficiency, thermals) — which feed into **Amazon SageMaker AI** for training predictive maintenance and anomaly detection models.
+3. Unstructured vehicle maintenance manuals stored in **Amazon S3** are indexed by **Amazon Bedrock** Knowledge Bases using Titan embeddings and **Amazon OpenSearch Serverless** for hybrid vector and keyword search.
+4. **AgentCore Runtime** hosts the AI agent powered by **Amazon Bedrock** LLM (Claude), orchestrating 17 specialized tools for vehicle analysis, ML predictions, and maintenance guidance.
+5. The agent uses retrieval-augmented generation (RAG) to combine real-time sensor analysis with authoritative manual citations from the Knowledge Base before generating recommendations.
+6. **AgentCore Memory** stores short-term and long-term conversation history, enabling recurring issue detection and cross-vehicle fleet pattern analysis across sessions.
+7. **AgentCore Gateway** exposes vehicle history and report generation as MCP tool endpoints, enabling integration with enterprise applications and external fleet management systems.
+8. Users access the Digital Twin UI — a React application hosted on **Amazon S3** and delivered globally through **Amazon CloudFront** — with natural language chat for vehicle diagnostics and maintenance scheduling.
+9. Browser automation via **Amazon Nova Act** enables automated tire ordering with live session viewing, streamed back to the UI for fleet operator oversight.
 
-**Vehicle-Specific Issues:**
-- **Vehicle 1 (EV-1001)**: Tire failure - Uneven wear pattern requiring immediate attention
-- **Vehicle 2 (EV-1002)**: Motor overheating - Engine temperature exceeding safe thresholds
-- **Vehicle 3 (EV-1003)**: Inverter thermal failure - Power electronics cooling system malfunction
+### AWS Services Used
 
-**Fleet Operator Perspective:**
-- **Fleet Management**: Monitor all 3 vehicles from a unified dashboard
-- **Prioritized Alerts**: AI identifies which vehicle needs attention first
-- **Automated Ordering**: Browser automation orders replacement tires for Vehicle 1
-- **Cross-System Insights**: Detect patterns across tire, motor, and inverter failures
+| AWS Service | Purpose |
+|---|---|
+| Amazon Bedrock (AgentCore Runtime) | AI agent hosting with Strands Agent framework and Claude Sonnet 4.5 |
+| Amazon Bedrock (AgentCore Memory) | Short-term and long-term conversation memory for pattern detection |
+| Amazon Bedrock (AgentCore Gateway) | MCP endpoint for vehicle history and report tools |
+| Amazon Bedrock (Knowledge Bases) | RAG retrieval from vehicle maintenance manuals |
+| Amazon OpenSearch Serverless | Vector store for Knowledge Base embeddings |
+| Amazon S3 | Frontend hosting, manual document storage, browser session recordings |
+| Amazon CloudFront | Global content delivery for the React frontend |
+| AWS WAF | Web application firewall protecting CloudFront distribution |
+| Amazon API Gateway | REST API endpoints for frontend-to-agent communication |
+| AWS Lambda | Proxy Lambda (agent routing), Worker Lambda (async tire ordering), Vehicle History Lambda, Gateway Proxy Lambda |
+| Amazon DynamoDB | Appointment scheduling, async job tracking, cached AI recommendations |
+| Amazon Cognito | User authentication with admin-only registration |
+| Amazon ECR | Container registry for AgentCore Runtime Docker images |
+| AWS Secrets Manager | Secure storage for NovaAct API key |
+| Amazon CloudWatch | Logging and monitoring across all services |
+| AWS CloudFormation | Infrastructure as Code for all stacks |
 
-### Real-World Applications
-- **Predictive Maintenance**: Reduce unexpected failures by 80% with ML-powered forecasting
-- **Cost Optimization**: Save 25-30% on maintenance costs through optimized scheduling
-- **Safety Enhancement**: Prevent 95% of tire-related incidents with early detection
-- **Automated Procurement**: Browser automation streamlines parts ordering workflow
+### Cost
 
----
+_You are responsible for the cost of the AWS services used while running this Guidance. As of March 2026, the cost for running this Guidance with the default settings in the US East (N. Virginia) Region is approximately $150–250 per month for a development/demo workload processing approximately 1,000 agent interactions._
 
-## 🏗️ Architecture
+The primary cost drivers are Amazon Bedrock model invocations (Claude Sonnet 4.5), OpenSearch Serverless for the Knowledge Base vector store, and AgentCore Runtime compute. Browser automation (Nova Act) incurs additional per-session costs when tire ordering is triggered.
 
-### Deployment Architecture
+_We recommend creating a [Budget](https://docs.aws.amazon.com/cost-management/latest/userguide/budgets-managing-costs.html) through [AWS Cost Explorer](https://aws.amazon.com/aws-cost-management/aws-cost-explorer/) to help manage costs. Prices are subject to change. For full details, refer to the pricing webpage for each AWS service used in this Guidance._
 
-When deployed to AWS, the solution uses a modern, scalable architecture:
+#### Sample Cost Table
 
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   CloudFront    │────│   S3 Bucket      │    │   ECS Fargate   │
-│   + WAF         │    │   (React App)    │    │  (React Frontend)│
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-         │                        │                       │
-         │                        │                       │
-         └────────────────────────┼───────────────────────┘
-                                  │
-                            ┌──────────────┐
-                            │ Application  │
-                            │ Load Balancer│
-                            └──────────────┘
-                                  │
-                    ┌─────────────┼─────────────┐
-                    │             │             │
-              ┌──────────┐  ┌──────────┐  ┌──────────┐
-              │ API GW + │  │ Worker   │  │AgentCore │
-              │ Lambda   │  │ Lambda   │  │ Runtime  │
-              └──────────┘  └──────────┘  └──────────┘
-```
+The following table provides a sample cost breakdown for deploying this Guidance with the default parameters in the US East (N. Virginia) Region for one month.
 
-### Core Components
+| AWS Service | Dimensions | Cost [USD] |
+|---|---|---|
+| Amazon Bedrock (Claude Sonnet 4.5) | ~1,000 agent interactions, ~500K input + 200K output tokens | ~$75.00/month |
+| Amazon OpenSearch Serverless | 2 OCUs (indexing + search) for Knowledge Base | ~$50.00/month |
+| Amazon Bedrock (Titan Embeddings) | ~10K embedding requests for KB indexing/queries | ~$1.00/month |
+| Amazon S3 | Frontend hosting + manual storage (~1 GB) | ~$0.03/month |
+| Amazon CloudFront | ~10 GB data transfer, 100K requests | ~$1.50/month |
+| AWS WAF | 1 Web ACL, 6 managed rules, ~100K requests | ~$11.00/month |
+| Amazon API Gateway | ~10,000 REST API calls | ~$0.04/month |
+| AWS Lambda | 4 functions, ~10,000 invocations, 256 MB memory | ~$0.50/month |
+| Amazon DynamoDB | 3 tables, on-demand capacity, ~5K read/write units | ~$1.50/month |
+| Amazon Cognito | <50 active users (free tier) | $0.00/month |
+| Amazon ECR | 1 repository, ~2 GB storage | ~$0.20/month |
+| AWS Secrets Manager | 1 secret, ~100 API calls | ~$0.40/month |
+| Amazon CloudWatch | Logs and metrics across all services | ~$3.00/month |
 
-**Full-Stack Vehicle Maintenance Platform**
+**Estimated Total: ~$144/month** (excluding AgentCore Runtime compute and Nova Act browser sessions)
 
-- **Frontend**: React app on ECS Fargate with Cognito authentication, real-time updates, DCV Web Client SDK for browser live view
-- **Backend**: API Gateway + Lambda proxy for AgentCore integration, worker Lambda for async tire ordering
-- **Agent Runtime**: AgentCore Runtime with Strands Agent framework, 17 specialized tools (12 core + 5 KB), Claude Sonnet 4.5, AgentCore Memory (STM + LTM for pattern detection)
-- **Browser Automation**: AgentCore Browser with NovaAct SDK for automated tire ordering with live view streaming
-- **Data & ML**: CSV sensor data (3,600 tire + 900 motor records), pre-trained Random Forest and Isolation Forest models, Bedrock Knowledge Base with OpenSearch Serverless
-- **Persistence**: DynamoDB for appointments and job tracking, S3 for browser session recordings
-- **Security**: AWS WAF, Secrets Manager, Cognito JWT validation
-- **Deployment**: CloudFront (+ WAF) → ALB → ECS Fargate (React frontend) + API Gateway + Lambda + AgentCore Runtime
+## Prerequisites
 
-**Platform Benefits:**
-- � **MScalable**: Auto-scaling based on demand (ECS + Lambda)
-- 🔒 **Secure**: WAF protection, private networking, HTTPS encryption, Secrets Manager
-- 💰 **Cost-effective**: Pay only for what you use with serverless architecture
-- 🌍 **Global**: CloudFront edge locations worldwide
-- 📊 **Monitored**: CloudWatch logging and metrics across all services
-- 🎥 **Live View**: Real-time browser automation viewing with DCV Web Client SDK
+### Operating System
 
----
+These deployment instructions are optimized to best work on **macOS** or **Amazon Linux 2023 AMI**. Deployment on Windows may require additional steps (e.g., Docker Desktop, WSL2).
 
-## 🚀 Quick Start
+- **Python 3.11+**
+- **Node.js 18+** and npm
+- **Docker** installed and running
+- **AWS CLI v2** configured with credentials
+- **Bedrock AgentCore CLI** (`pip install bedrock-agentcore`)
 
-### Prerequisites
+### Third-party Tools
 
-- AWS Account with Bedrock access (Claude models)
-- AWS CLI configured with credentials
-- Docker installed and running
-- Python 3.11+ and Node.js 18+
-- NovaAct API key for browser automation
+| Tool | Version | Purpose |
+|---|---|---|
+| Docker | 20.10+ | Building AgentCore Runtime container images |
+| Node.js | 18+ | Frontend React application build |
+| Python | 3.11+ | Agent runtime, ML model training, data generation |
+| scikit-learn | 1.3+ | Random Forest and Isolation Forest ML models |
+| Strands Agent SDK | Latest | Agent orchestration framework |
+| NovaAct SDK | Latest | Browser automation (optional, for tire ordering) |
 
-### Local Development
+### AWS Account Requirements
+
+- **Amazon Bedrock access** enabled with Claude Sonnet 4.5 model access granted
+- **Amazon Bedrock AgentCore** access enabled
+- **Service-linked roles** for OpenSearch Serverless (auto-created on first use)
+- **NovaAct API key** stored in AWS Secrets Manager at `/vehicle-maintenance/novaact-api-key` (required for browser automation)
+- IAM permissions to create CloudFormation stacks, Lambda functions, API Gateway, DynamoDB tables, S3 buckets, CloudFront distributions, Cognito user pools, and ECR repositories
+
+### Supported Regions
+
+This Guidance is designed for **US East (N. Virginia) / us-east-1**. Amazon Bedrock AgentCore, Claude Sonnet 4.5, and Nova Act availability may vary by Region. Verify service availability before deploying to other Regions.
+
+## Deployment Steps
+
+### Step 1: Clone the Repository
 
 ```bash
-# 1. Clone repository
 git clone https://gitlab.aws.dev/kvanshaj/ev-digital-twin-tire-maintainence-system.git
 cd ev-digital-twin-tire-maintainence-system
-
-# 2. Install frontend dependencies
-cd frontend/ev-digital-twin-tire-maintainence-system
-npm install
-
-# 3. Start development server
-npm start
 ```
 
-**Services started:**
-- Frontend: http://localhost:3000
-- Connects to deployed AWS backend (AgentCore Runtime, Lambda, DynamoDB)
+### Step 2: Deploy Infrastructure Stacks
 
-**Note:** Local development requires AWS backend to be deployed. The frontend connects to your deployed AgentCore Runtime and Lambda functions.
+Deploy all CloudFormation stacks (Cognito, DynamoDB, Lambda, API Gateway, Frontend):
 
-### AWS Cloud Deployment
-
-Deploy the complete solution using Infrastructure as Code with CloudFormation stacks. All infrastructure is modular and works with any AWS account.
-
-**Prerequisites:**
-- AWS CLI configured with named profiles (e.g., `--profile demo` or `--profile working`)
-- Docker installed and running
-- For ARM64 Macs: Use `--local-build` flag with bedrock-agentcore CLI
-
-**Quick Deploy:**
 ```bash
 # Deploy all infrastructure (uses default AWS profile)
 ./scripts/deploy/deploy-aws.sh
 
-# Or specify a profile
+# Or specify a named profile
 AWS_PROFILE=demo ./scripts/deploy/deploy-aws.sh
 ```
 
-Deploys all infrastructure automatically: Cognito, DynamoDB, Lambda functions, API Gateway, and Frontend (CloudFront + ECS).
+To deploy individual stacks for debugging:
 
-**Manual Deploy (for debugging):**
 ```bash
-# Deploy each stack individually
 ./scripts/deploy/deploy-aws.sh cognito
 ./scripts/deploy/deploy-aws.sh appointment-slots
 ./scripts/deploy/deploy-aws.sh tire-automation
@@ -168,319 +170,344 @@ Deploys all infrastructure automatically: Cognito, DynamoDB, Lambda functions, A
 ./scripts/deploy/deploy-aws.sh frontend
 ```
 
-**Post-Deployment Steps:**
+### Step 3: Set Up the Knowledge Base
 
-1. **Set up Knowledge Base** (required for KB tools):
-   ```bash
-   # Get your Knowledge Base ID
-   aws bedrock-agent list-knowledge-bases --profile demo \
-     --query "knowledgeBaseSummaries[*].[knowledgeBaseId,name]" --output table
-   ```
-   See [docs/KNOWLEDGE_BASE_SETUP.md](docs/KNOWLEDGE_BASE_SETUP.md) for detailed setup.
+Create the Bedrock Knowledge Base with OpenSearch Serverless for RAG:
 
-2. **Deploy AgentCore Runtime** (containerized agent):
-   ```bash
-   cd agents/maintenance-agent
-   
-   # For ARM64 Macs - build locally and deploy
-   bedrock-agentcore launch --local-build --profile demo
-   
-   # For x86 machines or CI/CD - use CodeBuild
-   bedrock-agentcore launch --profile demo
-   ```
-   
-   The deployment automatically:
-   - Creates/updates the AgentCore Runtime
-   - Sets up Memory (STM + LTM) for pattern detection
-   - Configures environment variables from `.bedrock_agentcore.yaml`
-
-3. **Configure environment variables** (in Dockerfile or during build):
-   ```bash
-   # Knowledge Base ID - enables KB tools (tire/motor/inverter guidance)
-   KNOWLEDGE_BASE_ID=YOUR_KB_ID
-   
-   # Memory ID - enables pattern detection (auto-created during launch)
-   AGENTCORE_MEMORY_ID=YOUR_MEMORY_ID
-   ```
-   
-   Or pass as build args:
-   ```bash
-   docker build \
-     --build-arg KNOWLEDGE_BASE_ID=5CZPTMJB9R \
-     --build-arg AGENTCORE_MEMORY_ID=vehicle_maintenance_agent_mem-BriFmNCg0Q \
-     -t bedrock-agentcore-vehicle_maintenance_agent .
-   ```
-
-4. **Create NovaAct API key secret** (for browser automation):
-   ```bash
-   aws secretsmanager create-secret \
-     --name /vehicle-maintenance/novaact-api-key \
-     --secret-string '{"NOVA_ACT_API_KEY":"YOUR_NOVAACT_API_KEY"}' \
-     --region us-east-1 \
-     --profile demo
-   ```
-
-5. **Configure AgentCore permissions**:
-   ```bash
-   ./infrastructure/agentcore-runtime-policies/setup-agentcore-permissions.sh
-   ```
-
-See [docs/AGENTCORE_SETUP.md](docs/AGENTCORE_SETUP.md) for detailed setup instructions.
-
-**🔐 Security Note**: Self-registration is disabled. Only administrators can add users via AWS Console after deployment.
-
----
-
-## 🤖 AgentCore Tools
-
-The system includes 17 specialized tools for comprehensive vehicle maintenance:
-
-### Core Maintenance Tools (12 tools)
-
-| Tool | Type | Description | Status |
-|------|------|-------------|--------|
-| `quick_vehicle_check` | Analysis | Quick health check across all systems | ✅ |
-| `analyze_tire_condition` | Analysis | Detailed tire health assessment | ✅ |
-| `analyze_motor_performance` | Analysis | Engine performance evaluation | ✅ |
-| `analyze_inverter_condition` | Analysis | Inverter health assessment | ✅ |
-| `predict_tire_wear` | ML Prediction | 90-day tire wear forecasting | ✅ |
-| `predict_motor_failure` | ML Prediction | Motor failure risk assessment | ✅ |
-| `predict_inverter_degradation` | ML Prediction | Inverter degradation forecasting | ✅ |
-| `detect_tire_anomalies` | ML Detection | Unusual tire wear pattern detection | ✅ |
-| `detect_motor_anomalies` | ML Detection | Motor performance anomaly detection | ✅ |
-| `get_available_slots` | Integration | Find available appointment slots | ✅ |
-| `schedule_appointment` | Integration | DynamoDB appointment scheduling | ✅ |
-| `order_tire_online` | Browser Automation | Automated Amazon tire ordering with live view | ✅ |
-
-### Knowledge Base Tools (5 tools)
-
-Powered by Amazon Bedrock Knowledge Base with OpenSearch Serverless backend and mock realistic vehicle maintenance manuals:
-
-| Tool | Type | Description | Status |
-|------|------|-------------|--------|
-| `get_tire_maintenance_guidance` | Knowledge Base | Tire maintenance manual guidance | ✅ |
-| `get_pressure_temperature_guidance` | Knowledge Base | Pressure/temperature specifications | ✅ |
-| `get_tread_depth_guidance` | Knowledge Base | Tread depth safety thresholds | ✅ |
-| `get_motor_maintenance_guidance` | Knowledge Base | Motor maintenance procedures | ✅ |
-| `get_inverter_maintenance_guidance` | Knowledge Base | Inverter maintenance guidelines | ✅ |
-
-**Total: 17 tools** (17 ✅)
-
-**Note:** Knowledge Base tools use Amazon Bedrock Knowledge Base with OpenSearch Serverless for vector search. Mock realistic vehicle manuals provide maintenance recommendations for demonstration purposes (not actual manufacturer data).
-
-### AgentCore Gateway Tools (2 tools)
-
-Exposed as MCP endpoints via AgentCore Gateway. Accessible by the frontend, external fleet management systems, and any MCP-compatible client.
-
-| Tool | Type | Description | Status |
-|------|------|-------------|--------|
-| `get_vehicle_history` | Gateway / Memory | Retrieve categorized maintenance history from AgentCore Memory | ✅ |
-| `generate_vehicle_report` | Gateway / Memory | Generate maintenance summary report with recommendations | ✅ |
-
-**Architecture:** Frontend → API Gateway → Gateway Proxy Lambda → AgentCore Gateway (MCP) → Vehicle History Lambda → AgentCore Memory
-
-**Setup:** Deploy via CloudFormation (`infrastructure/gateway-stack.yaml`) or quick-start script (`scripts/setup_gateway.py`).
-
----
-
-## 🧠 Machine Learning Models
-
-### Tire System
-- **Wear Prediction**: Random Forest (95% R² score)
-- **Anomaly Detection**: Isolation Forest (10% contamination rate)
-- **Features**: Vehicle specs, driving patterns, weather, pressure, temperature
-
-### Motor System
-- **Performance Prediction**: Random Forest (93% R² score)
-- **Failure Prediction**: Random Forest (91% R² score)
-- **Anomaly Detection**: Isolation Forest (10% contamination rate)
-- **Features**: Engine specs, temperature, oil pressure, RPM, vibration
-
-### Data Pipeline
-```
-Sensor Data (CSV) → Feature Engineering → Model Training → Predictions → Agent Analysis → UI Display
+```bash
+# Upload maintenance manual to S3
+aws s3 cp manuals/Electric\ Vehicle\ Preventive\ Maintenance\ Manual.pdf \
+  s3://ev-digital-twin-knowledge-base-$(aws sts get-caller-identity --query Account --output text)/manuals/
 ```
 
----
+Create the Knowledge Base in the [Bedrock Console](https://console.aws.amazon.com/bedrock/) → Knowledge Bases → Create, using:
+- Embeddings model: `amazon.titan-embed-text-v1`
+- Vector database: Amazon OpenSearch Serverless
+- Data source: The S3 bucket above
 
-## 🔒 Security Features
+Capture the Knowledge Base ID:
 
-- **AWS WAF**: Deployed in front of CloudFront for web application protection
-- **Secrets Manager**: Secure storage for NovaAct API key
-- **Cognito Authentication**: Admin-only user creation with JWT validation
-- **IAM Least Privilege**: Scoped permissions for all AWS services
-- **VPC Isolation**: Private networking for backend services
-
-See [docs/IAM_POLICIES.md](docs/IAM_POLICIES.md) for complete security setup.
-
----
-
-## 💻 Technology Stack
-
-**Frontend:**
-- React with modern UI components
-- CloudFront + S3 for global delivery
-- AWS WAF for security
-- DCV Web Client SDK for browser live view
-
-**Backend:**
-- Amazon Bedrock AgentCore Runtime with Strands Agent orchestration
-- Claude Sonnet 4.5 for AI reasoning
-- Lambda functions (proxy + worker)
-- API Gateway for HTTP endpoints
-
-**Data & ML:**
-- DynamoDB for appointments and job tracking
-- Pre-trained scikit-learn models
-- CSV-based sensor data (3,600 tire + 900 motor records)
-- S3 for browser session recordings
-
-**Infrastructure:**
-- CloudFormation for Infrastructure as Code
-- Docker containers for AgentCore Runtime
-- ECR for container registry
-- CloudWatch for logging and monitoring
-
----
-
-## 📁 Project Structure
-
-```
-ev-digital-twin-tire-maintainence-system/
-├── frontend/                          # React web application
-│   └── ev-digital-twin-tire-maintainence-system/
-│       ├── src/
-│       │   ├── components/           # React components
-│       │   │   ├── fleet/           # Fleet management portal
-│       │   │   ├── browser-live-view/ # Live browser viewing
-│       │   │   ├── vehicle1/        # Vehicle 1 tire monitoring
-│       │   │   ├── vehicle2/        # Vehicle 2 motor monitoring
-│       │   │   └── vehicle3/        # Vehicle 3 inverter monitoring
-│       │   └── services/            # API services (agentcore.js)
-│       └── public/
-│           └── dcv-sdk/             # DCV Web Client SDK
-│
-├── agents/                           # AgentCore agents
-│   ├── README.md                    # Agent documentation
-│   ├── maintenance-agent/           # Main maintenance agent (17 tools)
-│   ├── appointment_scheduler_agent/ # Appointment scheduling agent
-│   └── tire_ordering_agent/         # Tire ordering agent
-│
-├── infrastructure/                   # CloudFormation stacks
-│   ├── lambda/                      # Lambda function code
-│   │   ├── index.py                # AgentCore proxy Lambda
-│   │   ├── tire_order_worker.py    # Tire order worker Lambda
-│   │   ├── vehicle_history.py      # Vehicle history tool Lambda (Gateway target)
-│   │   └── gateway_proxy.py        # Gateway MCP proxy Lambda
-│   ├── agentcore-runtime-policies/ # IAM policy setup
-│   ├── tire-automation-stack.yaml  # Tire ordering infrastructure
-│   ├── agentcore-lambda-proxy-stack.yaml  # API Gateway + Lambda
-│   ├── gateway-stack.yaml          # AgentCore Gateway + vehicle history tools
-│   ├── appointment-slots-stack.yaml # DynamoDB tables
-│   ├── cognito-stack.yaml          # Authentication
-│   └── frontend-stack.yaml         # CloudFront + S3
-│
-├── knowledge-base/                  # Bedrock Knowledge Base
-│   ├── README.md                   # KB documentation
-│   ├── knowledge_base_tools.py     # 5 KB tools for agent
-│   ├── create_knowledge_base.sh    # Automated setup script
-│   ├── create_opensearch_index.py  # OpenSearch index creation
-│   ├── kb-permissions-policy.json  # IAM policy
-│   └── kb-runtime-policy-fix.json  # Fixed IAM policy
-│
-├── docs/                            # Documentation
-│   ├── AGENTCORE_SETUP.md          # AgentCore Runtime setup guide
-│   ├── IAM_POLICIES.md             # Security configuration
-│   ├── TIRE_ORDER_WORKER_SETUP.md  # Worker Lambda setup
-│   └── ASYNC_TIRE_ORDER_COMPLETE.md # Async implementation docs
-│
-├── manuals/                         # Vehicle maintenance manuals
-│   └── Electric Vehicle Preventive Maintenance Manual.pdf
-│
-└── models/                          # Pre-trained ML models
-    └── tire_models_*.pkl           # Random Forest & Isolation Forest
+```bash
+aws bedrock-agent list-knowledge-bases \
+  --query "knowledgeBaseSummaries[*].[knowledgeBaseId,name]" --output table
 ```
 
----
+See [docs/KNOWLEDGE_BASE_SETUP.md](docs/KNOWLEDGE_BASE_SETUP.md) for detailed instructions.
 
-## 📚 Documentation
+### Step 4: Deploy AgentCore Runtime
 
-- **[AGENTCORE_SETUP.md](docs/AGENTCORE_SETUP.md)**: AgentCore Runtime IAM permissions setup
-- **[IAM_POLICIES.md](docs/IAM_POLICIES.md)**: Security configuration and best practices
-- **[EV_Digital_Twin_Agentic_Solution.md](EV_Digital_Twin_Agentic_Solution.md)**: Complete solution documentation
+Build and deploy the containerized maintenance agent:
 
----
+```bash
+cd agents/maintenance-agent
 
-## 📊 Sample Data
+# For ARM64 Macs — build locally and deploy
+bedrock-agentcore launch --local-build --profile demo
 
-The system includes realistic sample data for demonstration:
+# For x86 machines or CI/CD — use CodeBuild
+bedrock-agentcore launch --profile demo
+```
 
-- **3,600 tire records**: 180 days × 5 vehicles × 4 tire positions
-- **900 motor records**: 180 days × 5 vehicles
-- **900 inverter records**: 180 days × 5 vehicles
-- **5 vehicle specs**: Mock manufacturer guidelines and maintenance thresholds
-- **Mock vehicle manuals**: Realistic maintenance procedures for tire, motor, and inverter systems stored in Bedrock Knowledge Base
+The deployment automatically creates/updates the AgentCore Runtime, sets up Memory (STM + LTM), and configures environment variables from `.bedrock_agentcore.yaml`.
+
+Alternatively, build and push the Docker image manually:
+
+```bash
+docker buildx build --platform linux/arm64 \
+  --build-arg KNOWLEDGE_BASE_ID=<your-kb-id> \
+  -t bedrock-agentcore-vehicle_maintenance_agent:latest .
+
+aws ecr get-login-password --region us-east-1 | \
+  docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-east-1.amazonaws.com
+
+docker tag bedrock-agentcore-vehicle_maintenance_agent:latest \
+  <account-id>.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-vehicle_maintenance_agent:latest
+
+docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-vehicle_maintenance_agent:latest
+```
+
+### Step 5: Configure AgentCore IAM Permissions
+
+```bash
+./infrastructure/agentcore-runtime-policies/setup-agentcore-permissions.sh
+```
+
+This adds 5 IAM policies: DynamoDB, Secrets Manager, S3, Browser Tool, and Knowledge Base.
+
+### Step 6: Store NovaAct API Key (Optional — for Browser Automation)
+
+```bash
+aws secretsmanager create-secret \
+  --name /vehicle-maintenance/novaact-api-key \
+  --secret-string '{"NOVA_ACT_API_KEY":"YOUR_NOVAACT_API_KEY"}' \
+  --region us-east-1
+```
+
+Get your API key from [nova.amazon.com/act](https://nova.amazon.com/act).
+
+### Step 7: Seed Sample Data
+
+```bash
+# Seed appointment slots into DynamoDB
+python scripts/seed_appointment_slots.py
+
+# Generate ML predictions (optional)
+./scripts/setup_ml_predictions.sh
+```
+
+### Step 8: Build and Deploy Frontend
+
+```bash
+cd frontend/ev-digital-twin-tire-maintainence-system
+npm install
+npm run build
+
+# Sync to S3
+aws s3 sync build/ s3://ev-digital-twin-frontend-<account-id>-us-east-1/ --delete
+
+# Invalidate CloudFront cache
+aws cloudfront create-invalidation --distribution-id <dist-id> --paths "/*"
+```
+
+**Note:** Update `.env.production` with your account-specific API endpoints before building. The `REACT_APP_AGENTCORE_API` and `REACT_APP_TIRE_ORDER_API` values are baked into the JavaScript bundle at build time.
+
+## Deployment Validation
+
+1. Verify CloudFormation stacks are in `CREATE_COMPLETE` status:
+
+    ```bash
+    aws cloudformation list-stacks --stack-status-filter CREATE_COMPLETE \
+      --query "StackSummaries[?contains(StackName,'ev-digital-twin')].StackName" --output table
+    ```
+
+2. Verify the CloudFront distribution is deployed:
+
+    ```bash
+    aws cloudformation describe-stacks --stack-name ev-digital-twin-frontend \
+      --query "Stacks[0].Outputs[?OutputKey=='CloudFrontDomainName'].OutputValue" --output text
+    ```
+
+3. Verify the API Gateway endpoint is accessible:
+
+    ```bash
+    curl -s https://<api-gateway-id>.execute-api.us-east-1.amazonaws.com/health
+    ```
+
+4. Verify the AgentCore Runtime is running:
+
+    ```bash
+    bedrock-agentcore status --profile demo
+    ```
+
+5. Open the CloudFront URL in a browser and confirm the login page loads with Cognito authentication.
+
+## Running the Guidance
+
+### Demo Scenarios
+
+The system includes three pre-configured vehicle scenarios demonstrating different failure modes:
+
+| Vehicle | ID | Scenario | Component |
+|---|---|---|---|
+| Vehicle 1 | EV-1001 | Uneven tire wear requiring immediate attention | Tire System |
+| Vehicle 2 | EV-1002 | Motor overheating exceeding safe thresholds | Motor System |
+| Vehicle 3 | EV-1003 | Inverter thermal failure in power electronics | Inverter System |
+
+### Using the Application
+
+1. **Log in** to the application using Cognito credentials (admin-created users only).
+
+2. **Fleet Portal**: View all vehicles from the unified dashboard. The AI identifies which vehicle needs attention first.
+
+3. **Vehicle Analysis**: Select a vehicle to view its digital twin. Click "Analyze" to trigger the AI agent, which:
+   - Calls sensor analysis tools for real-time data
+   - Retrieves maintenance manual guidance via Knowledge Base (RAG)
+   - Runs ML predictions for 90-day forecasting
+   - Generates actionable recommendations with manual citations
+
+4. **Tire Ordering** (Vehicle 1): Click "Order Tires" to trigger browser automation. Nova Act navigates Amazon.com, searches for the correct tire, and adds it to cart — with live session viewing.
+
+5. **Appointment Scheduling**: The agent can schedule maintenance appointments stored in DynamoDB.
+
+### Sample Agent Interaction
+
+```
+User: "Analyze tires for vehicle 1"
+
+Agent: Calls analyze_tire_condition("EV-1001")
+       → Calls get_tire_maintenance_guidance("tire wear analysis")
+       → Calls predict_tire_wear("EV-1001")
+       → Returns: Detailed tire condition with manual citations,
+         90-day wear forecast, and recommended actions
+```
+
+### AgentCore Tools Reference
+
+The agent has 17 specialized tools:
+
+**Core Maintenance Tools (12):**
+`quick_vehicle_check`, `analyze_tire_condition`, `analyze_motor_performance`, `analyze_inverter_condition`, `predict_tire_wear`, `predict_motor_failure`, `predict_inverter_degradation`, `detect_tire_anomalies`, `detect_motor_anomalies`, `get_available_slots`, `schedule_appointment`, `order_tire_online`
+
+**Knowledge Base Tools (5):**
+`get_tire_maintenance_guidance`, `get_pressure_temperature_guidance`, `get_tread_depth_guidance`, `get_motor_maintenance_guidance`, `get_inverter_maintenance_guidance`
+
+**Gateway Tools (2, exposed as MCP endpoints):**
+`get_vehicle_history`, `generate_vehicle_report`
+
+### Machine Learning Models
+
+| System | Model | Algorithm | Accuracy | Features |
+|---|---|---|---|---|
+| Tire Wear Prediction | `tire_models_wear.pkl` | Random Forest | 95% R² | Pressure, tread depth, temperature, mileage, driving pattern, weather |
+| Tire Anomaly Detection | `tire_models_anomaly.pkl` | Isolation Forest | 10% contamination | Tread depth, pressure, temperature, wear rate, mileage |
+| Motor Performance | `motor_models_performance.pkl` | Random Forest | 93% R² | Engine temp, oil pressure, RPM, vibration, speed |
+| Motor Failure Risk | `motor_models_failure.pkl` | Random Forest | 91% R² | Temperature, oil pressure, vibration, performance score |
+| Motor Anomaly Detection | `motor_models_anomaly.pkl` | Isolation Forest | 10% contamination | Temperature, oil pressure, RPM, vibration |
+
+### Sample Data
 
 All data is synthetically generated for demonstration purposes and does not represent actual vehicle telemetry.
 
----
+| Dataset | Records | Description |
+|---|---|---|
+| `tire_wear_data.csv` | 3,600 | 180 days × 5 vehicles × 4 tire positions |
+| `motor_sensor_data.csv` | 900 | 180 days × 5 vehicles |
+| `inverter_sensor_data.csv` | 900 | 180 days × 5 vehicles |
+| `car_manual_specs.csv` | 5 | Vehicle specifications and maintenance thresholds |
 
-## 💼 Business Impact
+## Next Steps
 
-### Quantifiable Benefits
-- Reduce unexpected failures through predictive maintenance
-- Optimize maintenance scheduling for cost savings
-- Prevent tire-related safety incidents with early detection
-- Faster analysis compared to manual inspection
-- Unlimited scalability with cloud-native architecture
+- **Real-time IoT Integration**: Replace CSV sensor data with live telemetry from AWS IoT Core and AWS IoT FleetWise for connected vehicle fleets
+- **SageMaker Model Training**: Migrate pre-trained scikit-learn models to Amazon SageMaker for scalable training, hosting, and A/B testing
+- **SageMaker Unified Studio**: Use data products for component-level analytics and feature engineering at scale
+- **3D Digital Twin Visualization**: Integrate AWS IoT TwinMaker for spatial context and 3D vehicle rendering
+- **BI Dashboard**: Add Amazon QuickSight for executive reporting, KPI tracking, and fleet-wide analytics
+- **Multi-Agent Orchestration**: Deploy specialized agents for procurement, scheduling, and diagnostics with cross-agent communication
+- **Mobile Integration**: Build a mobile interface for field technicians and fleet managers
+- **MCP Tool Ecosystem**: Expand AgentCore Gateway with MCP tools for ERP, CRM, and parts supplier integration
 
-### Competitive Advantages
-- AI-first approach with advanced reasoning (Claude Sonnet 4.5)
-- Natural language interface requiring no technical expertise
-- Real-time browser automation with live viewing capability
-- Comprehensive integration of tire, motor, and inverter data
-- Future-ready architecture for continuous improvement
+## Cleanup
 
----
+Delete all deployed resources in reverse dependency order:
 
-## 🔮 Future Enhancements
+```bash
+# 1. Delete frontend stack
+aws cloudformation delete-stack --stack-name ev-digital-twin-frontend
 
-### IoT & Real-Time Data
-- **AWS IoT FleetWise**: Real-time vehicle telemetry ingestion from connected vehicles
-- **AWS IoT TwinMaker**: 3D digital twin visualization with spatial context
-- **Live Sensor Streaming**: Replace CSV data with real-time IoT sensor feeds
+# 2. Delete API Gateway and Lambda stacks
+aws cloudformation delete-stack --stack-name ev-digital-twin-agentcore-proxy
+aws cloudformation delete-stack --stack-name ev-digital-twin-gateway
 
-### Advanced Analytics
-- **Integrated BI Dashboard**: Amazon QuickSuite for executive reporting and KPI tracking
-- **Natural Language Queries**: Enhanced conversational interface for complex fleet analytics
-- **Deep Learning Models**: Neural networks for advanced pattern recognition
-- **Weather Integration**: Real-time weather impact analysis on vehicle performance
-- **Predictive Routing**: Optimize vehicle routes based on maintenance predictions
+# 3. Delete backend stacks
+aws cloudformation delete-stack --stack-name ev-digital-twin-tire-automation
+aws cloudformation delete-stack --stack-name ev-digital-twin-appointment-slots
+aws cloudformation delete-stack --stack-name ev-digital-twin-browser-tool
 
-### Tool Ecosystem Expansion
-- **AgentCore Gateway**: MCP tool integration for external system connectivity (ERP, CRM, parts suppliers)
-- **MCP Tool Protocol**: Standardized tool definitions for third-party integrations
-- **Multi-Agent Orchestration**: Specialized agents for procurement, scheduling, and diagnostics
-- **Mobile Integration**: Smartphone interface for technicians and fleet managers
+# 4. Delete authentication stack
+aws cloudformation delete-stack --stack-name ev-digital-twin-cognito
 
----
+# 5. Delete AgentCore Runtime (via Bedrock console or CLI)
+bedrock-agentcore delete --profile demo
 
-## 👥 Contributors
+# 6. Delete Knowledge Base (via Bedrock console)
+# Navigate to Bedrock Console → Knowledge Bases → Delete
 
-This project was built by:
+# 7. Delete ECR repository
+aws ecr delete-repository \
+  --repository-name bedrock-agentcore-vehicle_maintenance_agent --force
 
-- **Amit Sinha** - Project Lead
-- **Eduardo Ramirez** - Frontend Lead
-- **Vanshaj Kochar** - Backend Lead
+# 8. Delete Secrets Manager secret
+aws secretsmanager delete-secret \
+  --secret-id /vehicle-maintenance/novaact-api-key --force-delete-without-recovery
 
----
+# 9. Delete S3 buckets (must empty first)
+aws s3 rm s3://ev-digital-twin-frontend-<account-id>-us-east-1 --recursive
+aws s3 rb s3://ev-digital-twin-frontend-<account-id>-us-east-1
+```
+
+**Note:** S3 buckets must be emptied before deletion. DynamoDB tables with deletion protection must have protection disabled first.
+
+## FAQ, Known Issues, Additional Considerations, and Limitations
+
+### Known Issues
+
+- **Browser automation timeout**: Nova Act browser sessions may timeout after 5 minutes of inactivity. If tire ordering fails, retry the operation.
+- **ARM64 build requirement**: AgentCore Runtime Docker images must be built for `linux/arm64`. On ARM64 Macs, use `--local-build` flag. On x86 machines, use CodeBuild.
+- **CloudFront cache**: After updating `.env.production` and rebuilding the frontend, you must invalidate the CloudFront cache (`aws cloudfront create-invalidation --distribution-id <id> --paths "/*"`) for changes to appear.
+- **`.env.local` override**: In local development, `.env.local` overrides `.env.production`. Ensure the correct file has your target API endpoints.
+
+### Additional Considerations
+
+- This Guidance creates a public CloudFront distribution protected by AWS WAF. Cognito authentication is enforced at the application level.
+- Self-registration is disabled. Only administrators can create users via the AWS Cognito Console.
+- The Knowledge Base uses mock vehicle maintenance manuals for demonstration purposes. Replace with actual manufacturer documentation for production use.
+- All sensor data is synthetically generated. In production, integrate with AWS IoT Core for real-time telemetry.
+- Browser automation (Nova Act) requires an API key stored in Secrets Manager. Sessions incur per-use costs.
+- DynamoDB tables use on-demand capacity mode. For high-throughput production workloads, consider provisioned capacity with auto-scaling.
+
+### Limitations
+
+- The solution currently supports a fleet of 5 demo vehicles. Scaling to larger fleets requires data pipeline modifications.
+- ML models are pre-trained scikit-learn models loaded at container startup. For production, migrate to SageMaker endpoints for scalable inference.
+- Browser automation is limited to Amazon.com tire ordering. Extending to other suppliers requires additional Nova Act configurations.
+
+For any feedback, questions, or suggestions, please use the issues tab under this repo.
+
+## Revisions
+
+| Version | Date | Description |
+|---|---|---|
+| 1.0 | March 2026 | Initial release — AgentCore Runtime with 17 tools, Knowledge Base RAG, browser automation, CloudFront + S3 frontend |
+
+## Notices
+
+*Customers are responsible for making their own independent assessment of the information in this Guidance. This Guidance: (a) is for informational purposes only, (b) represents AWS current product offerings and practices, which are subject to change without notice, and (c) does not create any commitments or assurances from AWS and its affiliates, suppliers or licensors. AWS products or services are provided "as is" without warranties, representations, or conditions of any kind, whether express or implied. AWS responsibilities and liabilities to its customers are controlled by AWS agreements, and this Guidance is not part of, nor does it modify, any agreement between AWS and its customers.*
+
+## Authors
+
+- **Amit Sinha** — Project Lead
+- **Eduardo Ramirez** — Frontend Lead
+- **Vanshaj Kochar** — Backend Lead
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
 
----
+## Project Structure
 
-**Built for demonstration purposes - Ready for production enhancement**
+```
+ev-digital-twin-tire-maintainence-system/
+├── frontend/                              # React web application
+│   └── ev-digital-twin-tire-maintainence-system/
+│       ├── src/components/                # React components (fleet, vehicle1-3, browser-live-view)
+│       ├── src/services/                  # API services (agentcore.js, loginTracker.js)
+│       └── public/dcv-sdk/               # DCV Web Client SDK for browser live view
+├── agents/                                # AgentCore agents
+│   ├── maintenance-agent/                 # Main agent (17 tools, ML models, KB integration)
+│   ├── appointment_scheduler_agent/       # Appointment scheduling agent
+│   └── tire_ordering_agent/               # Tire ordering agent
+├── infrastructure/                        # CloudFormation stacks
+│   ├── lambda/                            # Lambda functions (proxy, worker, gateway, history)
+│   ├── agentcore-runtime-policies/        # IAM policy setup scripts
+│   ├── frontend-stack.yaml                # CloudFront + S3 + WAF
+│   ├── cognito-stack.yaml                 # Authentication
+│   ├── agentcore-lambda-proxy-stack.yaml  # API Gateway + Lambda
+│   ├── tire-automation-stack.yaml         # Async tire ordering
+│   ├── appointment-slots-stack.yaml       # DynamoDB tables
+│   ├── gateway-stack.yaml                 # AgentCore Gateway + MCP tools
+│   └── browser-tool-stack.yaml            # Browser automation infrastructure
+├── knowledge-base/                        # Bedrock Knowledge Base setup
+├── manuals/                               # EV Preventive Maintenance Manual (PDF)
+├── models/                                # Pre-trained ML models (.pkl)
+├── docs/                                  # Additional documentation
+├── scripts/                               # Deployment and utility scripts
+└── data_generator.py                      # Synthetic sensor data generator
+```
 
-This proof of concept demonstrates the potential of AI-driven vehicle maintenance management, providing a foundation for enterprise-scale implementation with real-world data integration and advanced analytics capabilities.
+## Additional Documentation
+
+- [AgentCore Setup Guide](docs/AGENTCORE_SETUP.md) — Runtime IAM permissions and deployment
+- [Knowledge Base Setup](docs/KNOWLEDGE_BASE_SETUP.md) — OpenSearch Serverless and manual indexing
+- [IAM Policies](docs/IAM_POLICIES.md) — Security configuration and least-privilege policies
+- [Tire Order Worker](docs/TIRE_ORDER_WORKER_SETUP.md) — Async tire ordering Lambda setup
+- [Deployment Guide](DEPLOYMENT.md) — Detailed multi-account deployment instructions
