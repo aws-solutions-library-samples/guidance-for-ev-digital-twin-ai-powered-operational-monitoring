@@ -154,10 +154,16 @@ def lambda_handler(event, context):
         
         print(f"✅ AgentCore Runtime completed successfully")
         
-        # Parse result
+        # Parse result (may be double-encoded from multi-agent runtime hop)
         if isinstance(result, str):
             try:
                 result_data = json.loads(result)
+                # Unwrap double-encoding: if result_data is still a string, parse again
+                if isinstance(result_data, str):
+                    try:
+                        result_data = json.loads(result_data)
+                    except json.JSONDecodeError:
+                        result_data = {'raw_result': result_data}
             except json.JSONDecodeError:
                 # If it's not JSON, wrap it
                 result_data = {'raw_result': result}

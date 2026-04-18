@@ -47,9 +47,16 @@ def get_available_appointments(date):
         return []
 
 def save_genai_recommendation(vin, recommendation):
-    """Save GenAI recommendation to DynamoDB"""
+    """Save GenAI recommendation to DynamoDB — skip scheduling/slot responses"""
     if not vin:
         return
+    
+    # Don't cache scheduling responses — they overwrite real recommendations
+    if isinstance(recommendation, str):
+        skip_keywords = ['available_slots', 'schedule_appointment', 'Appointment booked', 'time_slot']
+        if any(kw in recommendation for kw in skip_keywords):
+            print(f"Skipping cache for VIN {vin}: scheduling response detected")
+            return
     
     table = dynamodb.Table(GENAI_RECS_TABLE)
     try:

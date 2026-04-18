@@ -12,3 +12,6 @@
 # Local environment files with account-specific configuration
 .env.local
 */.env.local
+
+# Agent deployment config (account-specific)
+.env.agent

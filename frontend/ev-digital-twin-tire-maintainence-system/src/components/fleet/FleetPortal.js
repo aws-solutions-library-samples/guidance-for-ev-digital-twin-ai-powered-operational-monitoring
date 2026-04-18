@@ -548,7 +548,8 @@ IMPORTANT INSTRUCTIONS:
 
 Respond with the available slots.`;
       
-      const response = await agentCoreService.chat(prompt);
+      const vin = VIN_MAP[selectedRecommendation.vehicleId] || null;
+      const response = await agentCoreService.chat(prompt, vin);
       
       // Parse available slots from response
       const slots = parseAvailableSlots(response);
@@ -572,6 +573,42 @@ Respond with the available slots.`;
       setShowSlotSelectionModal(true);
     } catch (error) {
       console.error('Error getting suggestion:', error);
+      console.log('⏳ Falling back to direct DynamoDB slot query...');
+      
+      // Fallback: query DynamoDB directly for available slots
+      try {
+        const offset = typeof dateOffset === 'number' && !isNaN(dateOffset) ? dateOffset : 1;
+        const targetDate = new Date();
+        targetDate.setDate(targetDate.getDate() + offset);
+        const targetDateStr = targetDate.toISOString().split('T')[0];
+        
+        const fallbackResponse = await fetch(
+          `${process.env.REACT_APP_TIRE_ORDER_API}/available-appointments?date=${targetDateStr}`
+        );
+        
+        if (fallbackResponse.ok) {
+          const data = await fallbackResponse.json();
+          const availableSlots = (data.available_slots || []).slice(0, 4).map(slot => ({
+            date: targetDateStr,
+            time: slot.time_slot,
+            duration: `${slot.duration_minutes || 60} min`,
+            service: selectedRecommendation?.description?.toLowerCase().includes('tire') ? 'tire_replacement' : 'inspection'
+          }));
+          
+          if (availableSlots.length > 0) {
+            setSuggestedSlots(availableSlots);
+            setSelectedSlot(null);
+            setApprovalStatus('');
+            setSubmittingApproval(false);
+            setShowApprovalModal(false);
+            setShowSlotSelectionModal(true);
+            return;
+          }
+        }
+      } catch (fallbackError) {
+        console.error('Fallback slot query failed:', fallbackError);
+      }
+      
       setApprovalStatus('');
       setSubmittingApproval(false);
       alert('Failed to get appointment suggestion. Please try again.');

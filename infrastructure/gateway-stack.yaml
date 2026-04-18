@@ -84,7 +84,7 @@ Resources:
       RoleArn: !GetAtt GatewayExecutionRole.Arn
       AuthorizerType: CUSTOM_JWT
       AuthorizerConfiguration:
-        CustomJwtAuthorizer:
+        CustomJWTAuthorizer:
           DiscoveryUrl: !Sub
             - "https://cognito-idp.${AWS::Region}.amazonaws.com/${PoolId}/.well-known/openid-configuration"
             - PoolId: !ImportValue

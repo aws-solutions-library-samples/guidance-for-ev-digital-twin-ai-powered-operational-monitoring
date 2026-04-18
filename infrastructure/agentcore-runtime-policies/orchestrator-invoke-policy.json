@@ -1,0 +1,15 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "InvokeSpecialistAgentRuntimes",
+            "Effect": "Allow",
+            "Action": [
+                "bedrock-agentcore:InvokeAgentRuntime"
+            ],
+            "Resource": [
+                "arn:aws:bedrock-agentcore:us-east-1:*:runtime/*"
+            ]
+        }
+    ]
+}

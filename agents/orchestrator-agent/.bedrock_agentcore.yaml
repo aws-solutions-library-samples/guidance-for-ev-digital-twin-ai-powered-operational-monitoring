@@ -1,0 +1,44 @@
+default_agent: orchestrator_agent
+agents:
+  orchestrator_agent:
+    name: orchestrator_agent
+    entrypoint: orchestrator_runtime.py
+    platform: linux/arm64
+    container_runtime: docker
+    source_path: null
+    aws:
+      execution_role: arn:aws:iam::844874421931:role/AmazonBedrockAgentCoreSDKRuntime-us-east-1-00cafffea8
+      execution_role_auto_create: false
+      account: '844874421931'
+      region: us-east-1
+      ecr_repository: 844874421931.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-orchestrator_agent
+      ecr_auto_create: false
+      network_configuration:
+        network_mode: PUBLIC
+        network_mode_config: null
+      protocol_configuration:
+        server_protocol: HTTP
+      observability:
+        enabled: true
+      lifecycle_configuration:
+        idle_runtime_session_timeout: null
+        max_lifetime: null
+    bedrock_agentcore:
+      agent_id: orchestrator_agent-NVOkZq3aUp
+      agent_arn: arn:aws:bedrock-agentcore:us-east-1:844874421931:runtime/orchestrator_agent-NVOkZq3aUp
+      agent_session_id: null
+    codebuild:
+      project_name: null
+      execution_role: null
+      source_bucket: null
+    memory:
+      mode: STM_AND_LTM
+      memory_id: orchestrator_agent_mem-Pt45gq72dz
+      memory_arn: arn:aws:bedrock-agentcore:us-east-1:844874421931:memory/orchestrator_agent_mem-Pt45gq72dz
+      memory_name: orchestrator_agent_mem
+      event_expiry_days: 30
+      first_invoke_memory_check_done: true
+      was_created_by_toolkit: true
+    authorizer_configuration: null
+    request_header_configuration: null
+    oauth_configuration: null

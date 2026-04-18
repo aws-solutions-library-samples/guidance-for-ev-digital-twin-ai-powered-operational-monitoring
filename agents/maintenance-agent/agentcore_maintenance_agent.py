@@ -7,6 +7,11 @@ Includes Knowledge Base integration for EV Maintenance Manual
 from strands.tools import tool
 from strands import Agent
 from strands.models.bedrock import BedrockModel
+try:
+    from strands.models import CacheConfig
+    CACHE_CONFIG_AVAILABLE = True
+except ImportError:
+    CACHE_CONFIG_AVAILABLE = False
 from strands.hooks import AfterInvocationEvent, HookProvider, HookRegistry, MessageAddedEvent
 import pandas as pd
 import numpy as np
@@ -495,12 +500,15 @@ class AgentCoreMaintenanceAgent:
         else:
             print("ℹ️  Knowledge Base tools not available - using embedded knowledge only")
         
-        # Create BedrockModel with guardrails if configured
+        # Create BedrockModel with guardrails and prompt caching
+        cache_kwargs = {'cache_config': CacheConfig(strategy="auto")} if CACHE_CONFIG_AVAILABLE else {}
+        
         if GUARDRAIL_ID:
             guardrail_version = get_guardrail_version()
             model = BedrockModel(
                 model_id=MODEL_ID,
                 region_name="us-east-1",
+                **cache_kwargs,
                 guardrail_id=GUARDRAIL_ID,
                 guardrail_version=guardrail_version,
                 guardrail_trace="enabled",
@@ -509,8 +517,17 @@ class AgentCoreMaintenanceAgent:
             )
             print(f"🛡️  Bedrock Guardrails enabled: {GUARDRAIL_ID} (version: {guardrail_version})")
         else:
-            model = MODEL_ID
+            model = BedrockModel(
+                model_id=MODEL_ID,
+                region_name="us-east-1",
+                **cache_kwargs,
+            )
             print("ℹ️  Bedrock Guardrails not configured - set BEDROCK_GUARDRAIL_ID to enable")
+        
+        if CACHE_CONFIG_AVAILABLE:
+            print("⚡ Prompt caching enabled (strategy: auto)")
+        else:
+            print("ℹ️  Prompt caching not available - upgrade strands-agents for CacheConfig support")
         
         agent = Agent(
             model=model,

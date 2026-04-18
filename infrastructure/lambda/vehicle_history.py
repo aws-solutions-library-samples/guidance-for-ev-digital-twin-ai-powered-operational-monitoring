@@ -149,7 +149,7 @@ def get_vehicle_history(event):
             
             history.append({
                 'id': record_id,
-                'text': text,
+                'text': clean_memory_text(text),
                 'category': record_category,
                 'relevance_score': round(score, 3) if score else 0,
                 'created_at': str(created_at) if created_at else None
@@ -195,6 +195,16 @@ def categorize_memory(text):
         return 'appointment'
     else:
         return 'general'
+
+def clean_memory_text(text):
+    """Strip XML/topic tags from memory text and clean up whitespace."""
+    import re
+    # Remove <topic ...> and </topic> tags
+    text = re.sub(r'</?topic[^>]*>', '', text)
+    # Collapse multiple newlines/whitespace
+    text = re.sub(r'\n\s*\n', '\n', text).strip()
+    return text
+
 
 
 def generate_vehicle_report(event):
@@ -245,7 +255,7 @@ def generate_vehicle_report(event):
                 text = record.get('content', {}).get('text', '')
                 record_cat = categorize_memory(text)
                 if record_cat == cat:
-                    section_items.append(text)
+                    section_items.append(clean_memory_text(text))
             
             report_sections[cat] = {
                 'count': len(section_items),

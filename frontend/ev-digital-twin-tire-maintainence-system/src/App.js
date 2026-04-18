@@ -9,6 +9,7 @@ import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import { BrowserLiveViewPage } from './components/browser-live-view/BrowserLiveViewPage';
+import ChatWidget from './components/shared/ChatWidget';
 import awsExports from './aws-exports';
 
 // Configure Amplify - needed for both dev and prod for OAuth testing
@@ -171,6 +172,7 @@ function App() {
                   </div>
                 )}
                 <Dashboard />
+                <ChatWidget />
               </div>
             </ProtectedRoute>
           } 

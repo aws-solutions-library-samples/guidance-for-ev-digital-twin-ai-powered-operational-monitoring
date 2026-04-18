@@ -26,14 +26,14 @@ This guidance illustrates how to build an AI-powered predictive maintenance syst
 
 Electric vehicle fleets generate large volumes of sensor telemetry across tires, motors, and inverters. Manually analyzing this data to predict failures, schedule maintenance, and order replacement parts is time-consuming and error-prone. This Guidance demonstrates how to build an AI-powered digital twin system that combines machine learning predictive analytics with generative AI agents to deliver intelligent, automated vehicle maintenance management.
 
-The solution uses Amazon Bedrock AgentCore to orchestrate a maintenance agent with 17 specialized tools spanning real-time vehicle analysis, ML-based predictions, Knowledge Base retrieval (RAG), appointment scheduling, and automated tire ordering via browser automation. AgentCore Memory enables recurring issue detection and cross-vehicle fleet pattern analysis across sessions.
+The solution uses Amazon Bedrock AgentCore with a multi-agent orchestrator architecture. A lightweight orchestrator agent classifies user intent and routes to four specialist agents — Tire, Motor, Inverter, and Fleet Operations — each on its own AgentCore Runtime with domain-specific tools and system prompts. The 17 specialized tools span real-time vehicle analysis, ML-based predictions, Knowledge Base retrieval (RAG), appointment scheduling, and automated tire ordering via browser automation. AgentCore Memory enables recurring issue detection and cross-vehicle fleet pattern analysis across sessions.
 
 ### Key Capabilities
 
 - **Predictive Maintenance**: Random Forest and Isolation Forest models forecast tire wear, motor failures, and inverter thermal issues up to 90 days ahead
 - **Retrieval-Augmented Generation (RAG)**: Agent retrieves authoritative guidance from vehicle maintenance manuals via Amazon Bedrock Knowledge Bases with OpenSearch Serverless vector search before generating recommendations
 - **Browser Automation**: Amazon Nova Act automates tire ordering from Amazon.com with live session viewing streamed back to the fleet operator UI
-- **Natural Language Interface**: Fleet operators chat with the AI agent for vehicle diagnostics, maintenance scheduling, and cross-system analysis
+- **Multi-Agent Orchestration**: Strands Agents on AgentCore Runtime with an orchestrator routing to domain-specific specialist agents
 - **Memory-Powered Insights**: AgentCore Memory (short-term + long-term) detects recurring issues and fleet-wide patterns across sessions
 - **Fleet Management**: Unified dashboard monitors tire, motor, and inverter health across the entire vehicle fleet
 
@@ -46,7 +46,7 @@ The solution uses Amazon Bedrock AgentCore to orchestrate a maintenance agent wi
 1. **EV fleet** vehicles generate telemetry data (tire pressure, motor temperature, inverter thermals) ingested through **AWS IoT Core** into **Amazon S3** for storage and processing.
 2. Sample EV data products provide component-level telemetry — tire (pressure, tread depth, temperature), motor (RPM, oil pressure, vibration), and inverter (voltage, current, efficiency, thermals) — which feed into **Amazon SageMaker AI** for training predictive maintenance and anomaly detection models.
 3. Unstructured vehicle maintenance manuals stored in **Amazon S3** are indexed by **Amazon Bedrock** Knowledge Bases using Titan embeddings and **Amazon OpenSearch Serverless** for hybrid vector and keyword search.
-4. **AgentCore Runtime** hosts the AI agent powered by **Amazon Bedrock** LLM (Claude), orchestrating 17 specialized tools for vehicle analysis, ML predictions, and maintenance guidance.
+4. **AgentCore Runtime** hosts a multi-agent orchestrator powered by **Amazon Bedrock** LLM (Claude). The orchestrator routes queries to four specialist agents — Tire, Motor, Inverter, and Fleet Operations — each with domain-specific tools for vehicle analysis, ML predictions, and maintenance guidance.
 5. The agent uses retrieval-augmented generation (RAG) to combine real-time sensor analysis with authoritative manual citations from the Knowledge Base before generating recommendations.
 6. **AgentCore Memory** stores short-term and long-term conversation history, enabling recurring issue detection and cross-vehicle fleet pattern analysis across sessions.
 7. **AgentCore Gateway** exposes vehicle history and report generation as MCP tool endpoints, enabling integration with enterprise applications and external fleet management systems.
@@ -196,43 +196,56 @@ See [docs/KNOWLEDGE_BASE_SETUP.md](docs/KNOWLEDGE_BASE_SETUP.md) for detailed in
 
 ### Step 4: Deploy AgentCore Runtime
 
-Build and deploy the containerized maintenance agent:
+Deploy the multi-agent orchestrator and specialist agents. Each agent runs on its own AgentCore Runtime.
+
+**Deploy all 4 specialist agents first** (the orchestrator needs their ARNs):
 
 ```bash
-cd agents/maintenance-agent
-
-# For ARM64 Macs — build locally and deploy
-bedrock-agentcore launch --local-build --profile demo
-
-# For x86 machines or CI/CD — use CodeBuild
-bedrock-agentcore launch --profile demo
+# From the project root
+./agents/scripts/deploy-agent.sh tire-specialist-agent
+./agents/scripts/deploy-agent.sh motor-specialist-agent
+./agents/scripts/deploy-agent.sh inverter-specialist-agent
+./agents/scripts/deploy-agent.sh fleet-operations-agent
 ```
 
-The deployment automatically creates/updates the AgentCore Runtime, sets up Memory (STM + LTM), and configures environment variables from `.bedrock_agentcore.yaml`.
+The deploy script automatically:
+- Copies the shared module into the agent directory for Docker build
+- Detects your AWS account ID and sets it in the config
+- Runs `agentcore launch --local-build` (Docker build + ECR push + runtime creation)
+- Cleans up after deployment
 
-Alternatively, build and push the Docker image manually:
+**Note the ARN** from each deployment output, then **deploy the orchestrator**:
 
 ```bash
-docker buildx build --platform linux/arm64 \
-  --build-arg KNOWLEDGE_BASE_ID=<your-kb-id> \
-  -t bedrock-agentcore-vehicle_maintenance_agent:latest .
-
-aws ecr get-login-password --region us-east-1 | \
-  docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-east-1.amazonaws.com
-
-docker tag bedrock-agentcore-vehicle_maintenance_agent:latest \
-  <account-id>.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-vehicle_maintenance_agent:latest
-
-docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-vehicle_maintenance_agent:latest
+./agents/scripts/deploy-agent.sh orchestrator-agent
 ```
+
+**Update the Lambda proxy** to point at the orchestrator:
+
+```bash
+aws lambda update-function-configuration \
+  --function-name ev-digital-twin-agentcore-proxy \
+  --environment "Variables={AGENT_RUNTIME_ARN=<orchestrator-arn>,KNOWLEDGE_BASE_ID=<your-kb-id>,LOG_GROUP_NAME=/aws/bedrock-agentcore/runtimes/<tire-specialist-runtime-id>-DEFAULT}"
+```
+
+**Update the tire order worker Lambda** to point at the tire specialist directly:
+
+```bash
+aws lambda update-function-configuration \
+  --function-name ev-digital-twin-tire-order-worker \
+  --environment "Variables={AGENT_RUNTIME_ARN=<tire-specialist-arn>}"
+```
+
+See [agents/README.md](agents/README.md) for detailed agent architecture, environment variables, and deployment instructions.
 
 ### Step 5: Configure AgentCore IAM Permissions
 
 ```bash
-./infrastructure/agentcore-runtime-policies/setup-agentcore-permissions.sh
+# Multi-agent permissions (orchestrator + all specialists)
+./infrastructure/agentcore-runtime-policies/setup-multi-agent-permissions.sh
 ```
 
-This adds 5 IAM policies: DynamoDB, Secrets Manager, S3, Browser Tool, and Knowledge Base.
+This adds IAM policies for all agent roles: InvokeAgentRuntime (orchestrator), DynamoDB, Secrets Manager, S3, Browser Tool, Knowledge Base, and full Bedrock access.
 
 ### Step 6: Store NovaAct API Key (Optional — for Browser Automation)
 
@@ -458,6 +471,7 @@ For any feedback, questions, or suggestions, please use the issues tab under thi
 | Version | Date | Description |
 |---|---|---|
 | 1.0 | March 2026 | Initial release — AgentCore Runtime with 17 tools, Knowledge Base RAG, browser automation, CloudFront + S3 frontend |
+| 1.1 | April 2026 | Multi-agent orchestrator — refactored monolithic agent into 5 specialist agents on separate AgentCore Runtimes |
 
 ## Notices
 

@@ -31,7 +31,7 @@ RUN pip install --no-cache-dir \
     flask>=2.3.0 \
     flask-cors>=4.0.0 \
     gunicorn>=21.2.0 \
-    strands-agents>=0.1.0 \
+    strands-agents>=1.24.0 \
     strands-agents-tools>=0.1.0 \
     boto3>=1.40.0 \
     botocore>=1.40.0 \

@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 # Configuration
 REGION = 'us-east-1'
 TABLE_NAME = 'vehicle-appointment-slots'
-DAYS_TO_GENERATE = 14
+DAYS_TO_GENERATE = 30
 
 # Time slots (7 AM to 6 PM)
 TIME_SLOTS = [

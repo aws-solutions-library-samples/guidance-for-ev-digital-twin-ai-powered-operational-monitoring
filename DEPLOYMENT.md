@@ -8,7 +8,8 @@ Complete deployment instructions for the AI-powered vehicle maintenance system.
 - **AWS CLI** configured with credentials
 - **Docker** installed and running
 - **Node.js 18+** and **Python 3.11+**
-- **NovaAct API key** (optional - for browser automation)
+- **AgentCore Starter Toolkit** (`pip install bedrock-agentcore-starter-toolkit`)
+- **NovaAct API key** (optional — for browser automation)
 
 ## Architecture Overview
 
@@ -17,19 +18,32 @@ User → CloudFront (+ WAF) → S3 (React Frontend)
                                     ↓ HTTPS
                               API Gateway + Lambda Proxy
                                     ↓
-                          AgentCore Runtime (Docker/ARM64)
-                          (Strands Agent with 17 tools)
-                                    ↓
-        ┌───────────────────────────┼───────────────────────────┐
-        ↓                           ↓                           ↓
-   ML Predictions         Bedrock Knowledge Base        DynamoDB
-   (Tire/Motor/Inverter)  (OpenSearch Serverless)      (Appointments/Jobs)
-        ↓                           ↓                           ↓
-   CSV Sensor Data        Vehicle Maintenance Manual    AgentCore Memory
-                                                              ↑
-                                                    AgentCore Gateway (MCP)
-                                                    (Vehicle History + Reports)
+                          Orchestrator Agent (keyword routing)
+                                    ↓ invoke_agent_runtime
+              ┌─────────────┬──────────────┬──────────────┐
+              ↓              ↓              ↓              ↓
+        Tire Agent     Motor Agent   Inverter Agent  Fleet Ops Agent
+        (7 tools)      (4 tools)     (3 tools)       (3 tools + memory)
+              ↓              ↓              ↓              ↓
+        ┌─────────────────────────────────────────────────────┐
+        ↓              ↓                ↓                     ↓
+   ML Models    Knowledge Base     DynamoDB          AgentCore Memory
+   Browser      (OpenSearch)       (Appointments)    AgentCore Gateway
 ```
+
+## AgentCore Services Used
+
+This solution combines Strands Agent orchestration with Amazon Bedrock AgentCore services:
+
+| Component | Role |
+|---|---|
+| **Strands Agents** | Agent framework for reasoning, tool use, and multi-agent orchestration across 5 specialist runtimes |
+| **AgentCore Runtime** | Containerized deployment of each specialist agent as a managed AWS service |
+| **AgentCore Memory** | Short-term and long-term conversation storage for recurring issue detection and fleet pattern analysis |
+| **AgentCore Gateway** | Exposes vehicle history and report tools as MCP endpoints for external system integration |
+| **AgentCore Browser** | Automated tire ordering from supplier portals with live DCV session streaming |
+| **AgentCore Observability** | Agent action traces, tool invocations, and performance monitoring via CloudWatch |
+| **Amazon Nova Act** | Agentic foundation model powering visual browser automation for tire procurement |
 
 ## Quick Deployment
 
@@ -52,13 +66,16 @@ User → CloudFront (+ WAF) → S3 (React Frontend)
 - **Endpoints:** `/chat`, `/tire-order/*`, `/action-logs/*`, `/vehicle-history/*`, `/vehicle-report/*`
 - **Stack:** `infrastructure/agentcore-lambda-proxy-stack.yaml`
 
-### 3. AgentCore Runtime
-- **Container:** Docker (ARM64) with Strands Agent
+### 3. AgentCore Runtime (Multi-Agent)
+- **Architecture:** Orchestrator + 4 specialist agents on separate runtimes
+- **Orchestrator:** Lightweight keyword router — no domain tools
+- **Tire Specialist:** 7 tools (analysis, ML predictions, KB guidance, browser ordering)
+- **Motor Specialist:** 4 tools (analysis, failure prediction, anomaly detection, KB guidance)
+- **Inverter Specialist:** 3 tools (analysis, degradation prediction, KB guidance)
+- **Fleet Operations:** 3 tools (vehicle checks, scheduling) + Memory hooks
 - **Model:** Claude Sonnet 4.5
-- **Tools:** 17 tools (tire/motor/inverter analysis, appointments, browser automation)
-- **Features:** Memory (STM + LTM), Browser automation (NovaAct)
-- **Location:** `agents/maintenance-agent/`
-- **Docs:** [AGENTCORE_SETUP.md](docs/AGENTCORE_SETUP.md)
+- **Location:** `agents/` (one directory per agent)
+- **Docs:** [agents/README.md](agents/README.md)
 
 ### 4. Browser Tool
 - **Purpose:** Automated tire ordering from Amazon
@@ -97,19 +114,46 @@ User → CloudFront (+ WAF) → S3 (React Frontend)
 ./scripts/deploy/deploy-aws.sh
 ```
 
-### Step 2: Deploy AgentCore Runtime
+### Step 2: Deploy AgentCore Agents
+
+Install the AgentCore starter toolkit (if not already installed):
 
 ```bash
-cd agents/maintenance-agent
+pip install bedrock-agentcore strands-agents bedrock-agentcore-starter-toolkit
+```
 
-# Build and push Docker image
-docker buildx build --platform linux/arm64 -t bedrock-agentcore-vehicle_maintenance_agent:latest .
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-east-1.amazonaws.com
-docker tag bedrock-agentcore-vehicle_maintenance_agent:latest <account-id>.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-vehicle_maintenance_agent:latest
-docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-vehicle_maintenance_agent:latest
+Deploy all 4 specialist agents first (the orchestrator needs their ARNs):
 
-# Deploy via Bedrock console or CLI
-bedrock-agentcore launch
+```bash
+# From the project root
+./agents/scripts/deploy-agent.sh tire-specialist-agent
+./agents/scripts/deploy-agent.sh motor-specialist-agent
+./agents/scripts/deploy-agent.sh inverter-specialist-agent
+./agents/scripts/deploy-agent.sh fleet-operations-agent
+```
+
+Note each agent's ARN from the deployment output, then deploy the orchestrator:
+
+```bash
+./agents/scripts/deploy-agent.sh orchestrator-agent
+```
+
+The deploy script handles everything: copies shared module, sets account ID, builds Docker image, pushes to ECR, creates/updates the AgentCore Runtime, and cleans up.
+
+**Update Lambda proxy** to point at the orchestrator:
+
+```bash
+aws lambda update-function-configuration \
+  --function-name ev-digital-twin-agentcore-proxy \
+  --environment "Variables={AGENT_RUNTIME_ARN=<orchestrator-arn>,KNOWLEDGE_BASE_ID=<your-kb-id>,LOG_GROUP_NAME=/aws/bedrock-agentcore/runtimes/<tire-specialist-runtime-id>-DEFAULT}"
+```
+
+**Update tire order worker** to point at the tire specialist directly:
+
+```bash
+aws lambda update-function-configuration \
+  --function-name ev-digital-twin-tire-order-worker \
+  --environment "Variables={AGENT_RUNTIME_ARN=<tire-specialist-arn>}"
 ```
 
 ### Step 3: Deploy Browser Tool
@@ -129,20 +173,15 @@ aws cloudformation describe-stacks \
   --output text
 ```
 
-**Update agent code** (`agents/maintenance-agent/agentcore_maintenance_agent.py` line ~1251):
-```python
-custom_identifier = "vehicle_tire_order_tool-YOUR_ID_HERE"
-```
-
-Then rebuild and redeploy the agent Docker image.
+The Browser Tool ID is configured as a default in the tire specialist's Dockerfile (`BROWSER_TOOL_ID` env var). Update it if deploying to a different account.
 
 ### Step 4: Configure IAM Permissions
 
 ```bash
-./infrastructure/agentcore-runtime-policies/setup-agentcore-permissions.sh
+./infrastructure/agentcore-runtime-policies/setup-multi-agent-permissions.sh
 ```
 
-Adds 5 policies: DynamoDB, Secrets Manager, S3, Browser Tool, Knowledge Base.
+Adds IAM policies for all agent roles: InvokeAgentRuntime (orchestrator), DynamoDB, Secrets Manager, S3, Browser Tool, Knowledge Base, and full Bedrock access.
 
 ### Step 5: Configure Browser Automation
 
