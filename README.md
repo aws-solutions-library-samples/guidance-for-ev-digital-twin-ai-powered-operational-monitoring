@@ -39,7 +39,9 @@ The solution uses Amazon Bedrock AgentCore with a multi-agent orchestrator archi
 
 ### Architecture
 
-![Architecture Diagram](assets/images/architecture.png)
+![Architecture Diagram](docs/architecture.png)
+
+![Multi-Agent Orchestrator Architecture](docs/architecture2.png)
 
 #### Architecture Data Flow
 
