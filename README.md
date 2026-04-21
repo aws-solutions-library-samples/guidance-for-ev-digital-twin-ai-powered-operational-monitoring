@@ -308,10 +308,11 @@ aws cloudfront create-invalidation --distribution-id <dist-id> --paths "/*"
     curl -s https://<api-gateway-id>.execute-api.us-east-1.amazonaws.com/health
     ```
 
-4. Verify the AgentCore Runtime is running:
+4. Verify the AgentCore Runtimes are running:
 
     ```bash
-    bedrock-agentcore status --profile demo
+    aws bedrock-agentcore list-agent-runtimes \
+      --query "agentRuntimeSummaries[?contains(name,'agent')].{Name:name,Status:status}" --output table
     ```
 
 5. Open the CloudFront URL in a browser and confirm the login page loads with Cognito authentication.
@@ -330,19 +331,21 @@ The system includes three pre-configured vehicle scenarios demonstrating differe
 
 ### Using the Application
 
-1. **Log in** to the application using Cognito credentials (admin-created users only).
+1. **Log in** with Cognito credentials (admin-created users).
 
-2. **Fleet Portal**: View all vehicles from the unified dashboard. The AI identifies which vehicle needs attention first.
-
-3. **Vehicle Analysis**: Select a vehicle to view its digital twin. Click "Analyze" to trigger the AI agent, which:
-   - Calls sensor analysis tools for real-time data
+2. **Connected Vehicles**: Select a vehicle to view its digital twin with detailed tire, motor, inverter, and battery telemetry. Click **Analyze** to trigger the AI agent. The orchestrator routes to the appropriate specialist (Tire, Motor, Inverter) which:
+   - Calls sensor analysis tools for real-time telemetry
    - Retrieves maintenance manual guidance via Knowledge Base (RAG)
    - Runs ML predictions for 90-day forecasting
-   - Generates actionable recommendations with manual citations
+   - Saves actionable recommendations with manual citations to DynamoDB
 
-4. **Tire Ordering** (Vehicle 1): Click "Order Tires" to trigger browser automation. Nova Act navigates Amazon.com, searches for the correct tire, and adds it to cart — with live session viewing.
+3. **Fleet Portal**: View all vehicles in the unified fleet dashboard. Click **Generate Recommendations** to fetch the latest cached analysis from DynamoDB for each vehicle.
 
-5. **Appointment Scheduling**: The agent can schedule maintenance appointments stored in DynamoDB.
+4. **Approve or Reject**: Review each recommendation in the Fleet Portal. Approving triggers the next action.
+
+5. **Tire Ordering** (Vehicle 1): Approving a tire recommendation triggers browser automation. Nova Act navigates Amazon.com, searches for the correct tire, and adds it to cart — with a live DCV session streamed into the UI so fleet operators can watch the agent work in real time.
+
+6. **Appointment Scheduling**: Approving a maintenance recommendation books a service slot. The Fleet Operations agent pulls available slots from DynamoDB and confirms the appointment.
 
 ### Sample Agent Interaction
 
@@ -358,13 +361,21 @@ Agent: Calls analyze_tire_condition("EV-1001")
 
 ### AgentCore Tools Reference
 
-The agent has 17 specialized tools:
+The system uses 17 specialized tools distributed across 5 agents:
 
-**Core Maintenance Tools (12):**
-`quick_vehicle_check`, `analyze_tire_condition`, `analyze_motor_performance`, `analyze_inverter_condition`, `predict_tire_wear`, `predict_motor_failure`, `predict_inverter_degradation`, `detect_tire_anomalies`, `detect_motor_anomalies`, `get_available_slots`, `schedule_appointment`, `order_tire_online`
+**Orchestrator Agent:** Routes queries to the appropriate specialist via keyword classification.
 
-**Knowledge Base Tools (5):**
-`get_tire_maintenance_guidance`, `get_pressure_temperature_guidance`, `get_tread_depth_guidance`, `get_motor_maintenance_guidance`, `get_inverter_maintenance_guidance`
+**Tire Specialist (7 tools):**
+`analyze_tire_condition`, `predict_tire_wear`, `detect_tire_anomalies`, `order_tire_online`, `get_tire_maintenance_guidance`, `get_pressure_temperature_guidance`, `get_tread_depth_guidance`
+
+**Motor Specialist (5 tools):**
+`analyze_motor_performance`, `predict_motor_failure`, `detect_motor_anomalies`, `get_motor_maintenance_guidance`, `quick_vehicle_check`
+
+**Inverter Specialist (3 tools):**
+`analyze_inverter_condition`, `predict_inverter_degradation`, `get_inverter_maintenance_guidance`
+
+**Fleet Operations (2 tools):**
+`get_available_slots`, `schedule_appointment`
 
 **Gateway Tools (2, exposed as MCP endpoints):**
 `get_vehicle_history`, `generate_vehicle_report`
@@ -397,7 +408,7 @@ All data is synthetically generated for demonstration purposes and does not repr
 - **SageMaker Unified Studio**: Use data products for component-level analytics and feature engineering at scale
 - **3D Digital Twin Visualization**: Integrate AWS IoT TwinMaker for spatial context and 3D vehicle rendering
 - **BI Dashboard**: Add Amazon QuickSight for executive reporting, KPI tracking, and fleet-wide analytics
-- **Multi-Agent Orchestration**: Deploy specialized agents for procurement, scheduling, and diagnostics with cross-agent communication
+- **Chatbot Integration**: Wire up the WIP ChatWidget for natural language interaction across all pages with VIN-aware context
 - **Mobile Integration**: Build a mobile interface for field technicians and fleet managers
 - **MCP Tool Ecosystem**: Expand AgentCore Gateway with MCP tools for ERP, CRM, and parts supplier integration
 
@@ -421,8 +432,10 @@ aws cloudformation delete-stack --stack-name ev-digital-twin-browser-tool
 # 4. Delete authentication stack
 aws cloudformation delete-stack --stack-name ev-digital-twin-cognito
 
-# 5. Delete AgentCore Runtime (via Bedrock console or CLI)
-bedrock-agentcore delete --profile demo
+# 5. Delete AgentCore Runtimes
+aws bedrock-agentcore list-agent-runtimes \
+  --query "agentRuntimeSummaries[?contains(name,'agent')].agentRuntimeId" --output text | \
+  xargs -n1 aws bedrock-agentcore delete-agent-runtime --agent-runtime-id
 
 # 6. Delete Knowledge Base (via Bedrock console)
 # Navigate to Bedrock Console → Knowledge Bases → Delete
@@ -498,10 +511,15 @@ ev-digital-twin-tire-maintainence-system/
 │       ├── src/components/                # React components (fleet, vehicle1-3, browser-live-view)
 │       ├── src/services/                  # API services (agentcore.js, loginTracker.js)
 │       └── public/dcv-sdk/               # DCV Web Client SDK for browser live view
-├── agents/                                # AgentCore agents
-│   ├── maintenance-agent/                 # Main agent (17 tools, ML models, KB integration)
-│   ├── appointment_scheduler_agent/       # Appointment scheduling agent
-│   └── tire_ordering_agent/               # Tire ordering agent
+├── agents/                                # AgentCore agents (multi-agent orchestrator)
+│   ├── orchestrator-agent/                # Intent classification and routing
+│   ├── tire-specialist-agent/             # Tire analysis, predictions, ordering
+│   ├── motor-specialist-agent/            # Motor analysis, predictions, anomaly detection
+│   ├── inverter-specialist-agent/         # Inverter analysis and predictions
+│   ├── fleet-operations-agent/            # Scheduling, fleet monitoring, Gateway/MCP tools
+│   ├── shared/                            # Shared code: data, models, prompts, hooks
+│   ├── maintenance-agent/                 # Original monolith agent (reference)
+│   └── scripts/                           # Deploy scripts and ECR policies
 ├── infrastructure/                        # CloudFormation stacks
 │   ├── lambda/                            # Lambda functions (proxy, worker, gateway, history)
 │   ├── agentcore-runtime-policies/        # IAM policy setup scripts
