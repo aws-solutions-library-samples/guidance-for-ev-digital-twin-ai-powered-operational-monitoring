@@ -65,6 +65,7 @@ cleanup_redundant_files.sh
 # AWS deployment artifacts
 task-definition.json
 bucket-policy.json
+scripts/registry/.registry-state.json
 
 # Logs
 *.log

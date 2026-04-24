@@ -1,0 +1,446 @@
+# AWS Agent Registry Configuration for EV Digital Twin
+# 10 records: 5 A2A Agent Cards + 5 MCP Server Records
+
+registry:
+  name: ev-digital-twin-registry
+  region: us-east-1
+  description: "EV Digital Twin predictive maintenance agent and tool registry"
+  authorizerType: AWS_IAM
+  autoApproval: true
+
+records:
+  # =========================================================================
+  # A2A Agent Card Records (5)
+  # =========================================================================
+
+  - name: ev-digital-twin/orchestrator
+    type: AGENT
+    version: "1.0.0"
+    description: "Multi-agent orchestrator that classifies user intent and routes queries to specialist agents"
+    agentCard:
+      url: "${ORCHESTRATOR_RUNTIME_ARN}"
+      provider:
+        organization: "EV Digital Twin"
+      capabilities:
+        streaming: false
+        pushNotifications: false
+      skills:
+        - id: tire-routing
+          name: "Tire Maintenance Routing"
+          description: "Routes tire-related queries to the tire specialist agent"
+          tags: [tire, maintenance, prediction, anomaly, ordering]
+        - id: motor-routing
+          name: "Motor Diagnostics Routing"
+          description: "Routes motor queries to the motor specialist agent"
+          tags: [motor, engine, diagnostics, failure, prediction]
+        - id: inverter-routing
+          name: "Inverter Health Routing"
+          description: "Routes inverter queries to the inverter specialist agent"
+          tags: [inverter, power-electronics, degradation, health]
+        - id: fleet-routing
+          name: "Fleet Operations Routing"
+          description: "Routes fleet management queries to the fleet operations agent"
+          tags: [fleet, vehicle, appointment, scheduling, health-check]
+
+  - name: ev-digital-twin/tire-specialist
+    type: AGENT
+    version: "1.0.0"
+    description: "Specialist agent for EV tire analysis, wear prediction, anomaly detection, and automated ordering"
+    agentCard:
+      url: "${TIRE_AGENT_ARN}"
+      provider:
+        organization: "EV Digital Twin"
+      capabilities:
+        streaming: false
+        pushNotifications: false
+      skills:
+        - id: tire-analysis
+          name: "Tire Condition Analysis"
+          description: "Analyzes tire tread depth, pressure, temperature, and wear patterns"
+          tags: [tire, analysis, tread, pressure, wear]
+        - id: tire-prediction
+          name: "Tire Wear Prediction"
+          description: "Predicts tire wear over 90 days using ML models"
+          tags: [tire, prediction, ml, forecasting]
+        - id: tire-anomaly
+          name: "Tire Anomaly Detection"
+          description: "Detects unusual tire wear patterns using Isolation Forest"
+          tags: [tire, anomaly, detection, ml]
+        - id: tire-ordering
+          name: "Automated Tire Ordering"
+          description: "Orders replacement tires via browser automation"
+          tags: [tire, ordering, automation, browser]
+
+  - name: ev-digital-twin/motor-specialist
+    type: AGENT
+    version: "1.0.0"
+    description: "Specialist agent for EV motor diagnostics, failure prediction, and anomaly detection"
+    agentCard:
+      url: "${MOTOR_AGENT_ARN}"
+      provider:
+        organization: "EV Digital Twin"
+      capabilities:
+        streaming: false
+        pushNotifications: false
+      skills:
+        - id: motor-analysis
+          name: "Motor Performance Analysis"
+          description: "Analyzes motor temperature, oil pressure, RPM, vibration, and performance score"
+          tags: [motor, analysis, temperature, vibration, performance]
+        - id: motor-failure
+          name: "Motor Failure Prediction"
+          description: "Predicts motor failure risk using ML models"
+          tags: [motor, failure, prediction, ml]
+        - id: motor-anomaly
+          name: "Motor Anomaly Detection"
+          description: "Detects unusual motor behavior patterns"
+          tags: [motor, anomaly, detection, ml]
+
+  - name: ev-digital-twin/inverter-specialist
+    type: AGENT
+    version: "1.0.0"
+    description: "Specialist agent for EV inverter health monitoring and degradation forecasting"
+    agentCard:
+      url: "${INVERTER_AGENT_ARN}"
+      provider:
+        organization: "EV Digital Twin"
+      capabilities:
+        streaming: false
+        pushNotifications: false
+      skills:
+        - id: inverter-analysis
+          name: "Inverter Condition Analysis"
+          description: "Analyzes inverter voltage, current, efficiency, temperature, and fault codes"
+          tags: [inverter, analysis, voltage, efficiency, thermal]
+        - id: inverter-degradation
+          name: "Inverter Degradation Prediction"
+          description: "Predicts inverter degradation and thermal issues"
+          tags: [inverter, degradation, prediction, thermal]
+
+  - name: ev-digital-twin/fleet-operations
+    type: AGENT
+    version: "1.0.0"
+    description: "Fleet operations agent for vehicle health monitoring and appointment scheduling"
+    agentCard:
+      url: "${FLEET_AGENT_ARN}"
+      provider:
+        organization: "EV Digital Twin"
+      capabilities:
+        streaming: false
+        pushNotifications: false
+      skills:
+        - id: vehicle-check
+          name: "Quick Vehicle Health Check"
+          description: "Performs rapid health assessment across all vehicle systems"
+          tags: [fleet, vehicle, health, check, monitoring]
+        - id: appointment-slots
+          name: "Appointment Slot Lookup"
+          description: "Finds available maintenance appointment slots"
+          tags: [appointment, scheduling, availability]
+        - id: appointment-scheduling
+          name: "Appointment Scheduling"
+          description: "Schedules maintenance appointments in DynamoDB"
+          tags: [appointment, scheduling, booking]
+
+  # =========================================================================
+  # MCP Server Records (5)
+  # =========================================================================
+
+  - name: ev-digital-twin/tire-tools
+    type: MCP
+    version: "1.0.0"
+    description: "Tire analysis, wear prediction, anomaly detection, and online ordering tools"
+    server:
+      description: "Tire specialist MCP tool server for EV fleet maintenance"
+      metadata:
+        agentRuntimeArn: "${TIRE_AGENT_ARN}"
+    tools:
+      - name: analyze_tire_condition
+        description: "Analyze current tire condition including tread depth, pressure, temperature, and wear patterns"
+        inputSchema:
+          type: object
+          properties:
+            vehicle_id:
+              type: string
+              description: "The vehicle ID (VIN) to analyze"
+          required: [vehicle_id]
+      - name: predict_tire_wear
+        description: "Predict tire wear over a specified number of days using Random Forest ML model"
+        inputSchema:
+          type: object
+          properties:
+            vehicle_id:
+              type: string
+              description: "The vehicle ID (VIN) to predict"
+            days_ahead:
+              type: integer
+              description: "Number of days to forecast (default: 90)"
+          required: [vehicle_id]
+      - name: detect_tire_anomalies
+        description: "Detect unusual tire wear patterns using Isolation Forest anomaly detection"
+        inputSchema:
+          type: object
+          properties:
+            vehicle_id:
+              type: string
+              description: "The vehicle ID (VIN) to check"
+          required: [vehicle_id]
+      - name: order_tire_online
+        description: "Order replacement tires via browser automation using Amazon Nova Act"
+        inputSchema:
+          type: object
+          properties:
+            vehicle_id:
+              type: string
+              description: "The vehicle ID (VIN) to order tires for"
+            job_id:
+              type: string
+              description: "Optional async job ID for tracking"
+          required: [vehicle_id]
+
+  - name: ev-digital-twin/motor-tools
+    type: MCP
+    version: "1.0.0"
+    description: "Motor diagnostics, failure prediction, and anomaly detection tools"
+    server:
+      description: "Motor specialist MCP tool server for EV fleet maintenance"
+      metadata:
+        agentRuntimeArn: "${MOTOR_AGENT_ARN}"
+    tools:
+      - name: analyze_motor_performance
+        description: "Analyze motor temperature, oil pressure, RPM, vibration, and performance score"
+        inputSchema:
+          type: object
+          properties:
+            vehicle_id:
+              type: string
+              description: "The vehicle ID (VIN) to analyze"
+          required: [vehicle_id]
+      - name: predict_motor_failure
+        description: "Predict motor failure risk using Random Forest ML model"
+        inputSchema:
+          type: object
+          properties:
+            vehicle_id:
+              type: string
+              description: "The vehicle ID (VIN) to predict"
+          required: [vehicle_id]
+      - name: detect_motor_anomalies
+        description: "Detect unusual motor behavior patterns using Isolation Forest"
+        inputSchema:
+          type: object
+          properties:
+            vehicle_id:
+              type: string
+              description: "The vehicle ID (VIN) to check"
+          required: [vehicle_id]
+
+  - name: ev-digital-twin/inverter-tools
+    type: MCP
+    version: "1.0.0"
+    description: "Inverter health monitoring and degradation forecasting tools"
+    server:
+      description: "Inverter specialist MCP tool server for EV fleet maintenance"
+      metadata:
+        agentRuntimeArn: "${INVERTER_AGENT_ARN}"
+    tools:
+      - name: analyze_inverter_condition
+        description: "Analyze inverter voltage, current, power output, efficiency, temperature, and fault codes"
+        inputSchema:
+          type: object
+          properties:
+            vehicle_id:
+              type: string
+              description: "The vehicle ID (VIN) to analyze"
+          required: [vehicle_id]
+      - name: predict_inverter_degradation
+        description: "Predict inverter degradation and thermal failure risk"
+        inputSchema:
+          type: object
+          properties:
+            vehicle_id:
+              type: string
+              description: "The vehicle ID (VIN) to predict"
+          required: [vehicle_id]
+
+  - name: ev-digital-twin/fleet-tools
+    type: MCP
+    version: "1.0.0"
+    description: "Fleet health monitoring and appointment scheduling tools"
+    server:
+      description: "Fleet operations MCP tool server for EV fleet management"
+      metadata:
+        agentRuntimeArn: "${FLEET_AGENT_ARN}"
+    tools:
+      - name: quick_vehicle_check
+        description: "Quick health check across all vehicle systems — returns brief status"
+        inputSchema:
+          type: object
+          properties:
+            vehicle_id:
+              type: string
+              description: "The vehicle ID (VIN) to check"
+          required: [vehicle_id]
+      - name: get_available_slots
+        description: "Find available maintenance appointment slots for a vehicle"
+        inputSchema:
+          type: object
+          properties:
+            vehicle_id:
+              type: string
+              description: "The vehicle ID (VIN)"
+            service_type:
+              type: string
+              description: "Type of service (e.g., tire_replacement, motor_repair)"
+            preferred_date:
+              type: string
+              description: "Preferred date in YYYY-MM-DD format"
+          required: [vehicle_id, service_type, preferred_date]
+      - name: schedule_appointment
+        description: "Schedule a maintenance appointment in DynamoDB"
+        inputSchema:
+          type: object
+          properties:
+            vehicle_id:
+              type: string
+              description: "The vehicle ID (VIN)"
+            service_type:
+              type: string
+              description: "Type of service"
+            preferred_date:
+              type: string
+              description: "Date in YYYY-MM-DD format"
+            time_slot:
+              type: string
+              description: "Time slot (e.g., 09:00-10:00)"
+            notes:
+              type: string
+              description: "Optional notes for the appointment"
+          required: [vehicle_id, service_type, preferred_date, time_slot]
+
+  - name: ev-digital-twin/gateway-tools
+    type: MCP
+    version: "1.0.0"
+    description: "AgentCore Gateway MCP tools for vehicle history and maintenance reports"
+    server:
+      description: "AgentCore Gateway MCP server exposing vehicle history and report tools"
+      metadata:
+        gatewayEndpointArn: "${GATEWAY_ENDPOINT_ARN}"
+    tools:
+      - name: get_vehicle_history
+        description: "Retrieve categorized maintenance history from AgentCore Memory"
+        inputSchema:
+          type: object
+          properties:
+            vehicle_id:
+              type: string
+              description: "The vehicle ID (VIN)"
+            category:
+              type: string
+              description: "History category filter (default: all)"
+            limit:
+              type: integer
+              description: "Maximum number of history entries (default: 20)"
+          required: [vehicle_id]
+      - name: generate_vehicle_report
+        description: "Generate maintenance summary report with recommendations"
+        inputSchema:
+          type: object
+          properties:
+            vehicle_id:
+              type: string
+              description: "The vehicle ID (VIN)"
+            include_recommendations:
+              type: boolean
+              description: "Include AI-generated recommendations (default: true)"
+          required: [vehicle_id]
+
+  - name: ev-digital-twin/knowledge-base-tools
+    type: MCP
+    version: "1.0.0"
+    description: "Bedrock Knowledge Base RAG tools for EV maintenance manual guidance"
+    server:
+      description: "Knowledge Base MCP tool server providing RAG retrieval from EV Preventive Maintenance Manual"
+      metadata:
+        knowledgeBaseId: "${KNOWLEDGE_BASE_ID}"
+    tools:
+      - name: get_tire_maintenance_guidance
+        description: "Retrieve tire maintenance guidance from the official EV Preventive Maintenance Manual using RAG"
+        inputSchema:
+          type: object
+          properties:
+            question:
+              type: string
+              description: "Question about tire maintenance to retrieve guidance for"
+          required: [question]
+      - name: get_pressure_temperature_guidance
+        description: "Get manual guidance for specific tire pressure and temperature readings"
+        inputSchema:
+          type: object
+          properties:
+            pressure_psi:
+              type: number
+              description: "Current tire pressure in PSI"
+            temperature_c:
+              type: number
+              description: "Current tire temperature in Celsius"
+          required: [pressure_psi, temperature_c]
+      - name: get_tread_depth_guidance
+        description: "Get manual guidance for specific tread depth reading and replacement thresholds"
+        inputSchema:
+          type: object
+          properties:
+            tread_depth_mm:
+              type: number
+              description: "Current tread depth in millimeters"
+          required: [tread_depth_mm]
+      - name: get_motor_maintenance_guidance
+        description: "Retrieve motor maintenance guidance from the EV Preventive Maintenance Manual using RAG"
+        inputSchema:
+          type: object
+          properties:
+            question:
+              type: string
+              description: "Question about motor maintenance to retrieve guidance for"
+          required: [question]
+      - name: get_inverter_maintenance_guidance
+        description: "Retrieve inverter maintenance guidance from the EV Preventive Maintenance Manual using RAG"
+        inputSchema:
+          type: object
+          properties:
+            question:
+              type: string
+              description: "Question about inverter maintenance to retrieve guidance for"
+          required: [question]
+
+# =========================================================================
+# Verification Queries
+# =========================================================================
+
+verification:
+  queries:
+    - query: "tire maintenance prediction"
+      expectedRecords:
+        - ev-digital-twin/tire-specialist
+        - ev-digital-twin/tire-tools
+    - query: "motor failure diagnostics"
+      expectedRecords:
+        - ev-digital-twin/motor-specialist
+        - ev-digital-twin/motor-tools
+    - query: "inverter degradation health"
+      expectedRecords:
+        - ev-digital-twin/inverter-specialist
+        - ev-digital-twin/inverter-tools
+    - query: "vehicle fleet health check"
+      expectedRecords:
+        - ev-digital-twin/fleet-operations
+        - ev-digital-twin/fleet-tools
+    - query: "vehicle history report"
+      expectedRecords:
+        - ev-digital-twin/gateway-tools
+    - query: "orchestrator routing agent"
+      expectedRecords:
+        - ev-digital-twin/orchestrator
+    - query: "maintenance manual guidance knowledge base"
+      expectedRecords:
+        - ev-digital-twin/knowledge-base-tools
