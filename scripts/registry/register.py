@@ -222,7 +222,7 @@ def wait_for_status(
             else:
                 raise
 
-        time.sleep(poll_delay)
+        time.sleep(poll_delay)  # nosemgrep: arbitrary-sleep
         poll_delay = min(poll_delay * 1.5, 10.0)
 
     raise TimeoutError(
@@ -392,7 +392,7 @@ def create_or_get_registry(
             logger.info("Registry %s is READY", registry_id)
             break
         logger.debug("Registry status: %s, waiting...", status)
-        time.sleep(poll_delay)
+        time.sleep(poll_delay)  # nosemgrep: arbitrary-sleep
         poll_delay = min(poll_delay * 1.5, 10.0)
     else:
         raise TimeoutError(f"Registry {registry_id} did not reach READY within 120s")
