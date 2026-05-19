@@ -62,6 +62,9 @@ temp-distribution-config.json
 # Cleanup scripts (temporary)
 cleanup_redundant_files.sh
 
+# DCV Web Client SDK (download separately — not redistributable under MIT)
+frontend/ev-digital-twin-tire-maintainence-system/public/dcv-sdk/
+
 # AWS deployment artifacts
 task-definition.json
 bucket-policy.json
