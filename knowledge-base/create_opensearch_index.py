@@ -5,12 +5,13 @@ Create OpenSearch Serverless index for Bedrock Knowledge Base
 
 import boto3
 import json
+import os
 from opensearchpy import OpenSearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
 
 # Configuration
-REGION = 'us-east-1'
-COLLECTION_ENDPOINT = 'https://vnyyxsltd9rjuz2b3yif.us-east-1.aoss.amazonaws.com'
+REGION = os.environ.get('AWS_REGION', 'us-east-1')
+COLLECTION_ENDPOINT = os.environ.get('OPENSEARCH_ENDPOINT', 'https://YOUR-COLLECTION-ID.us-east-1.aoss.amazonaws.com')
 INDEX_NAME = 'bedrock-knowledge-base-default-index'
 
 # Get AWS credentials

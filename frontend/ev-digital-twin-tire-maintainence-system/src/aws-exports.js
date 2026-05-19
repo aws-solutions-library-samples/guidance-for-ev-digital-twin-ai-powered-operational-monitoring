@@ -12,12 +12,12 @@ const redirectUrl = isLocalhost
   : `${window.location.origin}/`;
 
 const awsmobile = {
-  "aws_project_region": process.env.REACT_APP_COGNITO_REGION || "us-east-1",
-  "aws_cognito_region": process.env.REACT_APP_COGNITO_REGION || "us-east-1",
-  "aws_user_pools_id": process.env.REACT_APP_COGNITO_USER_POOL_ID || "us-east-1_CrSxdrt6f",
-  "aws_user_pools_web_client_id": process.env.REACT_APP_COGNITO_CLIENT_ID || "5pnsuntr6epe0s6v17lqq4bfms",
+  "aws_project_region": process.env.REACT_APP_COGNITO_REGION || (() => { throw new Error('REACT_APP_COGNITO_REGION not set') })(),
+  "aws_cognito_region": process.env.REACT_APP_COGNITO_REGION || (() => { throw new Error('REACT_APP_COGNITO_REGION not set') })(),
+  "aws_user_pools_id": process.env.REACT_APP_COGNITO_USER_POOL_ID || (() => { throw new Error('REACT_APP_COGNITO_USER_POOL_ID not set') })(),
+  "aws_user_pools_web_client_id": process.env.REACT_APP_COGNITO_CLIENT_ID || (() => { throw new Error('REACT_APP_COGNITO_CLIENT_ID not set') })(),
   "oauth": {
-    "domain": process.env.REACT_APP_COGNITO_DOMAIN || "ev-digital-twin.auth.us-east-1.amazoncognito.com",
+    "domain": process.env.REACT_APP_COGNITO_DOMAIN || (() => { throw new Error('REACT_APP_COGNITO_DOMAIN not set') })(),
     "scope": ["email", "openid", "profile"],
     "redirectSignIn": redirectUrl,
     "redirectSignOut": redirectUrl,

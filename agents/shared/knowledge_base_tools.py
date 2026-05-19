@@ -9,7 +9,7 @@ import json
 import os
 
 # Initialize Bedrock client
-bedrock_runtime = boto3.client('bedrock-agent-runtime', region_name='us-east-1')
+bedrock_runtime = boto3.client('bedrock-agent-runtime', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
 
 # Knowledge Base ID - will be set after KB creation
 KNOWLEDGE_BASE_ID = os.environ.get('KNOWLEDGE_BASE_ID', '')

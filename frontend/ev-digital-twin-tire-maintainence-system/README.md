@@ -34,7 +34,7 @@ npm start
 The frontend is configured to connect to the deployed AWS backend. API endpoints are defined in `src/services/agentcore.js`:
 
 ```javascript
-const AGENTCORE_API_ENDPOINT = "https://b4blc4xmh4.execute-api.us-east-1.amazonaws.com/chat";
+const AGENTCORE_API_ENDPOINT = "https://YOUR-API-GATEWAY-ID.execute-api.us-east-1.amazonaws.com/chat";
 ```
 
 **For local development:**

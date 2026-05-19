@@ -19,13 +19,13 @@ def decimal_default(obj):
         return float(obj)
     raise TypeError
 
-bedrock_agentcore = boto3.client('bedrock-agentcore', region_name='us-east-1')
-logs_client = boto3.client('logs', region_name='us-east-1')
-dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+bedrock_agentcore = boto3.client('bedrock-agentcore', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
+logs_client = boto3.client('logs', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
+dynamodb = boto3.resource('dynamodb', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
 
 # Get log group from environment variable (set by CloudFormation)
 LOG_GROUP_NAME = os.environ.get('LOG_GROUP_NAME', '/aws/bedrock-agentcore/runtimes/vehicle_maintenance_agent-DEFAULT')
-APPOINTMENTS_TABLE = 'vehicle-appointment-slots'
+APPOINTMENTS_TABLE = os.environ.get('APPOINTMENTS_TABLE', 'vehicle-appointment-slots')
 GENAI_RECS_TABLE = 'vehicle-genai-recs'
 
 def get_available_appointments(date):
@@ -267,7 +267,7 @@ def lambda_handler(event, context):
         # GET /tire-order/status/{job_id}
         if path.startswith('/tire-order/status/'):
             job_id = path.split('/')[-1]
-            jobs_table = dynamodb.Table('tire-order-jobs')
+            jobs_table = dynamodb.Table(os.environ.get('TIRE_ORDER_JOBS_TABLE', 'tire-order-jobs'))
             
             try:
                 response = jobs_table.get_item(Key={'job_id': job_id})
@@ -308,7 +308,7 @@ def lambda_handler(event, context):
         # GET /browser-live-view/{job_id} - Generate live view URL for browser session
         if path.startswith('/browser-live-view/'):
             job_id = path.split('/')[-1]
-            jobs_table = dynamodb.Table('tire-order-jobs')
+            jobs_table = dynamodb.Table(os.environ.get('TIRE_ORDER_JOBS_TABLE', 'tire-order-jobs'))
             
             try:
                 response = jobs_table.get_item(Key={'job_id': job_id})
@@ -431,7 +431,7 @@ def lambda_handler(event, context):
             job_id = f"job-{uuid.uuid4()}"
             
             # Save to DynamoDB
-            jobs_table = dynamodb.Table('tire-order-jobs')
+            jobs_table = dynamodb.Table(os.environ.get('TIRE_ORDER_JOBS_TABLE', 'tire-order-jobs'))
             try:
                 jobs_table.put_item(Item={
                     'job_id': job_id,
@@ -445,9 +445,9 @@ def lambda_handler(event, context):
                 print(f"✅ Created job {job_id} for vehicle {vehicle_id}")
                 
                 # Invoke worker Lambda async
-                lambda_client = boto3.client('lambda', region_name='us-east-1')
+                lambda_client = boto3.client('lambda', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
                 lambda_client.invoke(
-                    FunctionName='ev-digital-twin-tire-order-worker',
+                    FunctionName=os.environ.get('TIRE_ORDER_WORKER_FUNCTION', 'ev-digital-twin-tire-order-worker'),
                     InvocationType='Event',  # Async invocation
                     Payload=json.dumps({
                         'job_id': job_id,
@@ -506,6 +506,18 @@ def lambda_handler(event, context):
                     'Access-Control-Allow-Methods': 'POST,OPTIONS'
                 },
                 'body': json.dumps({'error': 'prompt or message is required'})
+            }
+        
+        if len(prompt) > 10000:
+            return {
+                'statusCode': 400,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+                    'Access-Control-Allow-Methods': 'POST,OPTIONS'
+                },
+                'body': json.dumps({'error': 'Prompt exceeds maximum length of 10000 characters'})
             }
         
         agent_arn = os.environ['AGENT_RUNTIME_ARN']

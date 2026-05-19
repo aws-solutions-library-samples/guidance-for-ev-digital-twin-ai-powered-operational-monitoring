@@ -10,7 +10,7 @@ The Knowledge Base provides the AI agent with authoritative maintenance guidance
 
 **Knowledge Base ID:** `HCHPVDE0PX`
 
-**Document Storage:** S3 bucket `ev-maintenance-manual-kb-1763588908`
+**Document Storage:** S3 bucket `ev-maintenance-manual-kb-YOUR-ACCOUNT-ID`
 
 **Vector Store:** Amazon OpenSearch Serverless (for semantic search)
 
@@ -84,7 +84,7 @@ The system includes **5 specialized tools** that query the Knowledge Base:
 
 **File:** `manuals/Electric Vehicle Preventive Maintenance Manual.pdf`
 
-**Stored in:** S3 bucket `ev-maintenance-manual-kb-1763588908`
+**Stored in:** S3 bucket `ev-maintenance-manual-kb-YOUR-ACCOUNT-ID`
 
 **Content Sections:**
 - Tire Monitoring System
@@ -246,7 +246,7 @@ print(get_inverter_maintenance_guidance('inverter thermal failure'))"
 
 1. Upload PDF to S3 bucket:
    ```bash
-   aws s3 cp new-manual.pdf s3://ev-maintenance-manual-kb-1763588908/manuals/
+   aws s3 cp new-manual.pdf s3://ev-maintenance-manual-kb-YOUR-ACCOUNT-ID/manuals/
    ```
 
 2. Start ingestion job:

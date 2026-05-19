@@ -7,7 +7,7 @@ set -e
 echo "🚀 Deploying AgentCore Maintenance Agent to Handover Account"
 echo ""
 
-# Configuration for Handover Account (844874421931)
+# Configuration for Handover Account (123456789012)
 BROWSER_TOOL_ID="vehicle_tire_order_tool-x0Jx5FieZc"
 KNOWLEDGE_BASE_ID="5CZPTMJB9R"  # Handover account knowledge base
 GUARDRAIL_ID="ujynf1g70rnt"  # Handover guardrail ID
@@ -18,8 +18,8 @@ MEMORY_ID="vehicle_maintenance_agent_mem-BriFmNCg0Q"
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 echo "📋 Account ID: $ACCOUNT_ID"
 
-if [ "$ACCOUNT_ID" != "844874421931" ]; then
-    echo "⚠️  Warning: Expected handover account (844874421931) but got $ACCOUNT_ID"
+if [ "$ACCOUNT_ID" != "123456789012" ]; then
+    echo "⚠️  Warning: Expected handover account (123456789012) but got $ACCOUNT_ID"
     read -p "Continue anyway? (y/n) " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then

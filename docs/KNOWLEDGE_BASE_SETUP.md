@@ -78,7 +78,7 @@ aws cloudformation update-stack \
   --stack-name ev-digital-twin-backend \
   --template-body file://infrastructure/backend-stack.yaml \
   --parameters \
-    ParameterKey=ECRImageURI,ParameterValue=844874421931.dkr.ecr.us-east-1.amazonaws.com/ev-digital-twin:latest \
+    ParameterKey=ECRImageURI,ParameterValue=123456789012.dkr.ecr.us-east-1.amazonaws.com/ev-digital-twin:latest \
     ParameterKey=KnowledgeBaseId,ParameterValue=HCHPVDE0PX \
   --capabilities CAPABILITY_NAMED_IAM
 ```

@@ -40,7 +40,7 @@ inverter_agent = maintenance_agent.create_agent(prompt_type="inverter")
 app = BedrockAgentCoreApp()
 
 # Initialize DynamoDB client for session tracking
-dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+dynamodb = boto3.resource('dynamodb', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
 
 # Track browser tool executions per session to prevent duplicates
 BROWSER_TOOL_EXECUTED = set()

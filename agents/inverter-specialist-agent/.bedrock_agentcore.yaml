@@ -7,11 +7,11 @@ agents:
     container_runtime: docker
     source_path: null
     aws:
-      execution_role: arn:aws:iam::844874421931:role/AmazonBedrockAgentCoreSDKRuntime-us-east-1-e853f289cd
+      execution_role: arn:aws:iam::123456789012:role/AmazonBedrockAgentCoreSDKRuntime-us-east-1-e853f289cd
       execution_role_auto_create: false
-      account: '844874421931'
+      account: '123456789012'
       region: us-east-1
-      ecr_repository: 844874421931.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-inverter_specialist_agent
+      ecr_repository: 123456789012.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-inverter_specialist_agent
       ecr_auto_create: false
       network_configuration:
         network_mode: PUBLIC
@@ -25,7 +25,7 @@ agents:
         max_lifetime: null
     bedrock_agentcore:
       agent_id: inverter_specialist_agent-cfqcHeB1jU
-      agent_arn: arn:aws:bedrock-agentcore:us-east-1:844874421931:runtime/inverter_specialist_agent-cfqcHeB1jU
+      agent_arn: arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/inverter_specialist_agent-cfqcHeB1jU
       agent_session_id: null
     codebuild:
       project_name: null
@@ -34,7 +34,7 @@ agents:
     memory:
       mode: STM_AND_LTM
       memory_id: inverter_specialist_agent_mem-ELSMDF41yb
-      memory_arn: arn:aws:bedrock-agentcore:us-east-1:844874421931:memory/inverter_specialist_agent_mem-ELSMDF41yb
+      memory_arn: arn:aws:bedrock-agentcore:us-east-1:123456789012:memory/inverter_specialist_agent_mem-ELSMDF41yb
       memory_name: inverter_specialist_agent_mem
       event_expiry_days: 30
       first_invoke_memory_check_done: true

@@ -16,6 +16,11 @@ Parameters:
     Type: String
     Description: ECR Image URI for the backend container
 
+  KnowledgeBaseId:
+    Type: String
+    Default: ''
+    Description: Bedrock Knowledge Base ID (leave empty to disable KB features)
+
 Resources:
   # ============================================================================
   # NETWORKING
@@ -259,7 +264,7 @@ Resources:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
-                Resource: "*"
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/ecs/${ProjectName}*"
               
               # Bedrock permissions for AgentCore
               - Effect: Allow
@@ -270,7 +275,7 @@ Resources:
                   - bedrock:ListFoundationModels
                   - bedrock:Retrieve
                   - bedrock:RetrieveAndGenerate
-                Resource: "*"
+                Resource: !Sub "arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:*"
               
               # DynamoDB permissions for session tracking
               - Effect: Allow
@@ -281,7 +286,10 @@ Resources:
                   - dynamodb:DeleteItem
                   - dynamodb:Query
                   - dynamodb:Scan
-                Resource: "*"
+                Resource:
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/vehicle-appointment-slots"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/vehicle-genai-recs"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/tire-order-jobs"
               
               # Secrets Manager (for NovaAct API key - optional)
               - Effect: Allow
@@ -322,7 +330,7 @@ Resources:
             - Name: PORT
               Value: "8000"
             - Name: KNOWLEDGE_BASE_ID
-              Value: "5CZPTMJB9R"
+              Value: !Ref KnowledgeBaseId
           HealthCheck:
             Command:
               - CMD-SHELL

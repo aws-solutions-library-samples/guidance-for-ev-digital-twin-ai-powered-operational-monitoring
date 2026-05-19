@@ -22,6 +22,17 @@ Parameters:
     Default: https://midway-auth.amazon.com/SSO/saml/metadata
     Description: Midway SAML metadata URL
 
+  IncludeLocalhostUrls:
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Whether to include localhost URLs in callback/logout URLs (for development)
+
+Conditions:
+  AddLocalhostUrls: !Equals [!Ref IncludeLocalhostUrls, 'true']
+
 Resources:
   # ============================================================================
   # COGNITO AUTHENTICATION
@@ -117,14 +128,18 @@ Resources:
         - openid
         - profile
       AllowedOAuthFlowsUserPoolClient: true
-      CallbackURLs:
-        - !Ref CallbackURL
-        - http://localhost:3000
-        - http://localhost:3000/
-      LogoutURLs:
-        - !Ref CallbackURL
-        - http://localhost:3000
-        - http://localhost:3000/
+      CallbackURLs: !If
+        - AddLocalhostUrls
+        - - !Ref CallbackURL
+          - http://localhost:3000
+          - http://localhost:3000/
+        - - !Ref CallbackURL
+      LogoutURLs: !If
+        - AddLocalhostUrls
+        - - !Ref CallbackURL
+          - http://localhost:3000
+          - http://localhost:3000/
+        - - !Ref CallbackURL
       AccessTokenValidity: 1
       IdTokenValidity: 1
       RefreshTokenValidity: 30

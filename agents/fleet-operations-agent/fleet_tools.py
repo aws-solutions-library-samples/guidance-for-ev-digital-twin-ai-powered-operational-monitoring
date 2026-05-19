@@ -100,7 +100,7 @@ def get_available_slots(vehicle_id: str, service_type: str, preferred_date: str)
         Returns: {"success": true, "available_slots": [{"date": "2025-11-25", "time_slot": "15:00", ...}]}
     """
     try:
-        dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+        dynamodb = boto3.resource('dynamodb', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
         table = dynamodb.Table('vehicle-appointment-slots')
         
         # Query available slots for the date
@@ -154,7 +154,7 @@ def schedule_appointment(vehicle_id: str, service_type: str, preferred_date: str
         Appointment confirmation details
     """
     try:
-        dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+        dynamodb = boto3.resource('dynamodb', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
         table = dynamodb.Table('vehicle-appointment-slots')
         
         # Book the specific time slot requested

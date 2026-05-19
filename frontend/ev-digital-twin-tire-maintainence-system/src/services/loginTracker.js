@@ -1,7 +1,7 @@
 // Login Tracker Service for EV Digital Twin
 // Lightweight service to track successful logins for leadership reporting
 
-const LOGIN_TRACKER_API = process.env.REACT_APP_LOGIN_TRACKER_API || 'https://pi3gtei49b.execute-api.us-east-1.amazonaws.com/prod';
+const LOGIN_TRACKER_API = process.env.REACT_APP_LOGIN_TRACKER_API;
 
 class LoginTracker {
   constructor() {

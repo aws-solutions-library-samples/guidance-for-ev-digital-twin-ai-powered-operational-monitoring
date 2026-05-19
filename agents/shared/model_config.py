@@ -37,7 +37,7 @@ def get_guardrail_version():
     # Auto-detect latest version from Bedrock API
     if GUARDRAIL_ID:
         try:
-            bedrock_client = boto3.client('bedrock', region_name='us-east-1')
+            bedrock_client = boto3.client('bedrock', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
             response = bedrock_client.get_guardrail(guardrailIdentifier=GUARDRAIL_ID)
             _GUARDRAIL_VERSION_CACHE = response.get('version', '1')
             print(f"✅ Auto-detected guardrail version: {_GUARDRAIL_VERSION_CACHE}")
@@ -65,7 +65,7 @@ def get_nova_act_key():
     try:
         import boto3
         import json
-        client = boto3.client('secretsmanager', region_name='us-east-1')
+        client = boto3.client('secretsmanager', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
         response = client.get_secret_value(SecretId='/vehicle-maintenance/novaact-api-key')
         secret = json.loads(response['SecretString'])
         _NOVA_ACT_API_KEY_CACHE = secret['NOVA_ACT_API_KEY']

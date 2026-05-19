@@ -8,7 +8,7 @@ set -e
 AWS_REGION="us-east-1"
 PROJECT_NAME="ev-digital-twin"
 FRONTEND_DIR="frontend/ev-digital-twin-tire-maintainence-system"
-LOGIN_TRACKER_API="https://pi3gtei49b.execute-api.us-east-1.amazonaws.com/prod"
+LOGIN_TRACKER_API="https://YOUR-API-GATEWAY-ID.execute-api.us-east-1.amazonaws.com/prod"
 
 # Colors for output
 RED='\033[0;31m'

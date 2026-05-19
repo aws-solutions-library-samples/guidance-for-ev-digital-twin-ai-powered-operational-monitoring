@@ -13,11 +13,11 @@ import os
 from datetime import datetime
 
 # Initialize AgentCore data plane client
-agentcore_client = boto3.client('bedrock-agentcore', region_name='us-east-1')
+agentcore_client = boto3.client('bedrock-agentcore', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
 
 # Memory configuration from environment
 MEMORY_ID = os.environ.get('AGENTCORE_MEMORY_ID', '')
-MEMORY_NAMESPACE = os.environ.get('MEMORY_NAMESPACE', '/strategies/semantic_builtin_j1hpp-7SvGWG8R9T/actors/fleet_manager')
+MEMORY_NAMESPACE = os.environ.get('MEMORY_NAMESPACE', '')
 
 # VIN mapping (same as used across the project)
 VIN_MAP = {

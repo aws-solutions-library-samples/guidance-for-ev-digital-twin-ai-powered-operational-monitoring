@@ -702,7 +702,7 @@ Respond with the available slots.`;
         const allSlots = [];
         for (const date of dates) {
           try {
-            const response = await fetch(`https://b4blc4xmh4.execute-api.us-east-1.amazonaws.com/available-appointments?date=${date}`);
+            const response = await fetch(`${process.env.REACT_APP_TIRE_ORDER_API}/available-appointments?date=${date}`);
             const data = await response.json();
             if (data.available_slots && data.available_slots.length > 0) {
               allSlots.push(...data.available_slots.slice(0, 3).map(slot => ({
@@ -1650,7 +1650,7 @@ Respond with the available slots.`;
                   
                   // Fetch available slots for the current date
                   try {
-                    const response = await fetch(`https://b4blc4xmh4.execute-api.us-east-1.amazonaws.com/available-appointments?date=${editableAppointment.date}`);
+                    const response = await fetch(`${process.env.REACT_APP_TIRE_ORDER_API}/available-appointments?date=${editableAppointment.date}`);
                     const data = await response.json();
                     
                     if (data.available_slots && data.available_slots.length > 0) {
@@ -2124,7 +2124,7 @@ Respond with the available slots.`;
           >
             <h2 style={{ color: '#4a9eff', marginBottom: '20px' }}>🎬 Agent Action Replay</h2>
             <iframe
-              src={`http://localhost:8081/?session_id=${replaySessionId}`}
+              src={`${process.env.REACT_APP_REPLAY_VIEWER_URL || 'http://localhost:8081'}/?session_id=${replaySessionId}`}
               style={{
                 width: '100%',
                 height: 'calc(100% - 100px)',

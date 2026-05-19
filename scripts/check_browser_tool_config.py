@@ -6,13 +6,14 @@ Verifies that the AgentCore Runtime has the browser tool properly configured
 
 import boto3
 import json
+import os
 
 def main():
     print("🔍 Checking Browser Tool Configuration\n")
     
     # Initialize clients
-    cfn = boto3.client('cloudformation', region_name='us-east-1')
-    agentcore = boto3.client('bedrock-agentcore', region_name='us-east-1')
+    cfn = boto3.client('cloudformation', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
+    agentcore = boto3.client('bedrock-agentcore', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
     
     # Step 1: Get browser tool ID from CloudFormation
     print("1️⃣  Getting Browser Tool ID from CloudFormation...")

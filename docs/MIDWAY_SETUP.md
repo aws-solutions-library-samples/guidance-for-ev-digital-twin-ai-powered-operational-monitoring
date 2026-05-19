@@ -61,8 +61,8 @@ aws cloudformation describe-stacks \
 | Name ID Format | Email |
 
 Example values:
-- ACS URL: `https://ev-digital-twin-844874421931.auth.us-east-1.amazoncognito.com/saml2/idpresponse`
-- Entity ID: `urn:amazon:cognito:sp:us-east-1_qJ3MBXrdC`
+- ACS URL: `https://ev-digital-twin-123456789012.auth.us-east-1.amazoncognito.com/saml2/idpresponse`
+- Entity ID: `urn:amazon:cognito:sp:us-east-1_XXXXXXXXX`
 
 ### Step 3: Configure Attribute Mapping
 
@@ -83,7 +83,7 @@ aws cloudformation deploy \
   --template-file infrastructure/cognito-stack.yaml \
   --stack-name ev-digital-twin-cognito \
   --parameter-overrides \
-    CallbackURL=https://d1bo5awedntspd.cloudfront.net/ \
+    CallbackURL=https://YOUR-CLOUDFRONT-DOMAIN.cloudfront.net/ \
     MidwayMetadataURL=https://midway-auth.amazon.com/SSO/saml/metadata \
   --capabilities CAPABILITY_NAMED_IAM \
   --profile demo
@@ -96,22 +96,22 @@ After deployment, add your CloudFront domain to the allowed callback URLs:
 ```bash
 # Get the User Pool Client ID
 CLIENT_ID=$(aws cognito-idp list-user-pool-clients \
-  --user-pool-id us-east-1_qJ3MBXrdC \
+  --user-pool-id us-east-1_XXXXXXXXX \
   --query "UserPoolClients[0].ClientId" \
   --output text --profile demo)
 
 # Update callback URLs
 aws cognito-idp update-user-pool-client \
-  --user-pool-id us-east-1_qJ3MBXrdC \
+  --user-pool-id us-east-1_XXXXXXXXX \
   --client-id $CLIENT_ID \
   --callback-urls \
-    "https://d1bo5awedntspd.cloudfront.net/" \
-    "https://d1bo5awedntspd.cloudfront.net" \
+    "https://YOUR-CLOUDFRONT-DOMAIN.cloudfront.net/" \
+    "https://YOUR-CLOUDFRONT-DOMAIN.cloudfront.net" \
     "http://localhost:3000/" \
     "http://localhost:3000" \
   --logout-urls \
-    "https://d1bo5awedntspd.cloudfront.net/" \
-    "https://d1bo5awedntspd.cloudfront.net" \
+    "https://YOUR-CLOUDFRONT-DOMAIN.cloudfront.net/" \
+    "https://YOUR-CLOUDFRONT-DOMAIN.cloudfront.net" \
     "http://localhost:3000/" \
     "http://localhost:3000" \
   --supported-identity-providers COGNITO Midway \
@@ -129,10 +129,10 @@ Update `src/aws-exports.js` with the OAuth configuration:
 const awsmobile = {
   // ... existing config ...
   "oauth": {
-    "domain": "ev-digital-twin-844874421931.auth.us-east-1.amazoncognito.com",
+    "domain": "ev-digital-twin-123456789012.auth.us-east-1.amazoncognito.com",
     "scope": ["email", "openid", "profile"],
-    "redirectSignIn": "https://d1bo5awedntspd.cloudfront.net/",
-    "redirectSignOut": "https://d1bo5awedntspd.cloudfront.net/",
+    "redirectSignIn": "https://YOUR-CLOUDFRONT-DOMAIN.cloudfront.net/",
+    "redirectSignOut": "https://YOUR-CLOUDFRONT-DOMAIN.cloudfront.net/",
     "responseType": "code"
   }
 };
@@ -143,13 +143,13 @@ const awsmobile = {
 ```bash
 cd frontend/ev-digital-twin-tire-maintainence-system
 npm run build
-aws s3 sync build/ s3://ev-digital-twin-frontend-844874421931 --delete --profile demo
+aws s3 sync build/ s3://ev-digital-twin-frontend-123456789012 --delete --profile demo
 aws cloudfront create-invalidation --distribution-id E2EXAMPLE --paths "/*" --profile demo
 ```
 
 ## Testing
 
-1. Open the CloudFront URL: https://d1bo5awedntspd.cloudfront.net
+1. Open the CloudFront URL: https://YOUR-CLOUDFRONT-DOMAIN.cloudfront.net
 2. Click "Sign in with Amazon Midway"
 3. Authenticate with your Amazon credentials (badge tap, PIN, etc.)
 4. You should be redirected back to the application, authenticated
@@ -166,7 +166,7 @@ Verify the Midway identity provider is configured in Cognito:
 
 ```bash
 aws cognito-idp describe-identity-provider \
-  --user-pool-id us-east-1_qJ3MBXrdC \
+  --user-pool-id us-east-1_XXXXXXXXX \
   --provider-name Midway \
   --profile demo
 ```

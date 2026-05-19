@@ -5,7 +5,7 @@ set -e
 # Ensures deployment to the correct AWS account
 
 # Target configuration
-TARGET_ACCOUNT="009296485814"
+TARGET_ACCOUNT="123456789012"
 AWS_REGION="us-east-1"
 STACK_NAME="ev-digital-twin-login-tracker"
 

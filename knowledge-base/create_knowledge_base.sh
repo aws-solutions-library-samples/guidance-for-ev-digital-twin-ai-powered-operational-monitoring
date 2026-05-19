@@ -10,7 +10,7 @@ echo "===================================================="
 
 # Configuration
 REGION="us-east-1"
-BUCKET_NAME="ev-maintenance-manual-kb-1763588908"
+BUCKET_NAME="ev-maintenance-manual-kb-$(aws sts get-caller-identity --query Account --output text)"
 KB_NAME="ev-maintenance-manual-kb"
 COLLECTION_NAME="ev-manual-vectors"
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)

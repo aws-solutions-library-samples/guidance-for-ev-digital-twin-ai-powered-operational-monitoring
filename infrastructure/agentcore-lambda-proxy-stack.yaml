@@ -16,6 +16,11 @@ Parameters:
     Default: DEFAULT
     Description: Log group suffix for AgentCore Runtime
 
+  AllowedOrigins:
+    Type: CommaDelimitedList
+    Default: 'http://localhost:3000'
+    Description: Comma-separated list of allowed CORS origins (e.g., CloudFront domains)
+
 Resources:
   # Lambda Execution Role
   AgentCoreLambdaRole:
@@ -200,10 +205,7 @@ Resources:
       Name: !Sub "${ProjectName}-agentcore-http-api"
       ProtocolType: HTTP
       CorsConfiguration:
-        AllowOrigins:
-          - 'https://d1bo5awedntspd.cloudfront.net'
-          - 'https://dvm0illvncdsh.cloudfront.net'
-          - 'http://localhost:3000'
+        AllowOrigins: !Ref AllowedOrigins
         AllowMethods:
           - POST
           - OPTIONS

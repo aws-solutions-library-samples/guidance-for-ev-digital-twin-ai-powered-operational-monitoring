@@ -7,11 +7,11 @@ agents:
     container_runtime: docker
     source_path: null
     aws:
-      execution_role: arn:aws:iam::844874421931:role/AmazonBedrockAgentCoreSDKRuntime-us-east-1-fd1f9a0f5c
+      execution_role: arn:aws:iam::123456789012:role/AmazonBedrockAgentCoreSDKRuntime-us-east-1-fd1f9a0f5c
       execution_role_auto_create: false
-      account: '844874421931'
+      account: '123456789012'
       region: us-east-1
-      ecr_repository: 844874421931.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-fleet_operations_agent
+      ecr_repository: 123456789012.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-fleet_operations_agent
       ecr_auto_create: false
       network_configuration:
         network_mode: PUBLIC
@@ -25,7 +25,7 @@ agents:
         max_lifetime: null
     bedrock_agentcore:
       agent_id: fleet_operations_agent-n8x6MP34ps
-      agent_arn: arn:aws:bedrock-agentcore:us-east-1:844874421931:runtime/fleet_operations_agent-n8x6MP34ps
+      agent_arn: arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/fleet_operations_agent-n8x6MP34ps
       agent_session_id: null
     codebuild:
       project_name: null
@@ -34,7 +34,7 @@ agents:
     memory:
       mode: STM_AND_LTM
       memory_id: fleet_operations_agent_mem-e2ye3EE9Z9
-      memory_arn: arn:aws:bedrock-agentcore:us-east-1:844874421931:memory/fleet_operations_agent_mem-e2ye3EE9Z9
+      memory_arn: arn:aws:bedrock-agentcore:us-east-1:123456789012:memory/fleet_operations_agent_mem-e2ye3EE9Z9
       memory_name: fleet_operations_agent_mem
       event_expiry_days: 30
       first_invoke_memory_check_done: true
