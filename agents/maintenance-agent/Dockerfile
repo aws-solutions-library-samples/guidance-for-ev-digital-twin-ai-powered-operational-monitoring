@@ -36,7 +36,7 @@ RUN pip install --no-cache-dir \
     boto3>=1.40.0 \
     botocore>=1.40.0 \
     bedrock-agentcore>=1.2.0 \
-    nova-act \
+    nova-act>=0.0.6 \
     duckduckgo-search>=4.0.0
 
 

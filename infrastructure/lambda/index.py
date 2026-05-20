@@ -24,7 +24,12 @@ logs_client = boto3.client('logs', region_name=os.environ.get('AWS_REGION', 'us-
 dynamodb = boto3.resource('dynamodb', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
 
 # Get log group from environment variable (set by CloudFormation)
-LOG_GROUP_NAME = os.environ.get('LOG_GROUP_NAME', '/aws/bedrock-agentcore/runtimes/vehicle_maintenance_agent-DEFAULT')
+LOG_GROUP_NAME = os.environ.get('LOG_GROUP_NAME')
+if not LOG_GROUP_NAME:
+    raise EnvironmentError(
+        "LOG_GROUP_NAME environment variable is required. "
+        "Example: /aws/bedrock-agentcore/runtimes/vehicle_maintenance_agent"
+    )
 APPOINTMENTS_TABLE = os.environ.get('APPOINTMENTS_TABLE', 'vehicle-appointment-slots')
 GENAI_RECS_TABLE = 'vehicle-genai-recs'
 

@@ -50,7 +50,13 @@ except Exception as e:
     browser_session = None
 
 # Model configuration - Claude Sonnet 4.5 via inference profile
-MODEL_ID = os.environ.get('BEDROCK_MODEL_ID', 'global.anthropic.claude-sonnet-4-5-20250929-v1:0')
+# Model configuration - Claude Sonnet 4.5 via inference profile
+MODEL_ID = os.environ.get('BEDROCK_MODEL_ID')
+if not MODEL_ID:
+    raise EnvironmentError(
+        "BEDROCK_MODEL_ID environment variable is required. "
+        "Example: global.anthropic.claude-sonnet-4-5-20250929-v1:0"
+    )
 
 # Bedrock Guardrails configuration - loaded from environment variables
 # Set BEDROCK_GUARDRAIL_ID to enable guardrails (version auto-detected if not specified)
