@@ -16,12 +16,13 @@ npm run build
 # Step 2: Deploy to S3
 echo ""
 echo "☁️  Deploying to S3..."
-aws s3 sync build/ s3://ev-digital-twin-frontend --delete
+FRONTEND_BUCKET="${FRONTEND_BUCKET:?FRONTEND_BUCKET env var must be set (e.g., ev-digital-twin-frontend-<account>-<region>)}"
+aws s3 sync build/ "s3://${FRONTEND_BUCKET}" --delete
 
 # Step 3: Invalidate CloudFront cache
 echo ""
 echo "🔄 Invalidating CloudFront cache..."
-DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?Origins.Items[?DomainName=='ev-digital-twin-frontend.s3.amazonaws.com']].Id" --output text)
+DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?Origins.Items[?DomainName=='${FRONTEND_BUCKET}.s3.amazonaws.com']].Id" --output text)
 
 if [ -n "$DISTRIBUTION_ID" ]; then
   aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"

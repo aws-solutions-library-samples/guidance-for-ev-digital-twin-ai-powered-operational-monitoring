@@ -3,8 +3,22 @@ MaintenanceMemoryHooks class for cross-vehicle pattern detection.
 Moved verbatim from agentcore_maintenance_agent.py.
 """
 
+import os
+
 from strands.hooks import AfterInvocationEvent, HookProvider, HookRegistry, MessageAddedEvent
 from bedrock_agentcore.memory import MemoryClient
+
+
+def _get_memory_namespace() -> str:
+    """Build the memory namespace from MEMORY_STRATEGY_ID, raising if unset."""
+    strategy_id = os.environ.get("MEMORY_STRATEGY_ID")
+    if not strategy_id:
+        raise EnvironmentError(
+            "MEMORY_STRATEGY_ID environment variable is required for memory retrieval. "
+            "Example: semantic_builtin_XXXXXXXX"
+        )
+    actor = os.environ.get("MEMORY_ACTOR_ID", "fleet_manager")
+    return f"/strategies/{strategy_id}/actors/{actor}"
 
 
 class MaintenanceMemoryHooks(HookProvider):
@@ -42,7 +56,7 @@ class MaintenanceMemoryHooks(HookProvider):
                 print(f"🔍 MEMORY RETRIEVAL: Searching for vehicle {vehicle_id} history...")
                 memories = self.client.retrieve_memories(
                     memory_id=self.memory_id,
-                    namespace="/strategies/semantic_builtin_j1hpp-7SvGWG8R9T/actors/fleet_manager",
+                    namespace=_get_memory_namespace(),
                     query=f"vehicle {vehicle_id} issues problems",
                     top_k=10
                 )

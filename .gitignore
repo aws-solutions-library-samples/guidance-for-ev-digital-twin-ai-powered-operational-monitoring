@@ -45,6 +45,12 @@ venv.bak/
 .Trashes
 ehthumbs.db
 Thumbs.db
+desktop.ini
+**/desktop.ini
+
+# Node
+node_modules/
+**/node_modules/
 
 # Project specific - Keep data files and models for deployment
 # These are needed for the AgentCore Runtime
@@ -79,6 +85,7 @@ logs/
 .env.local
 .env.development.local
 .env.test.local
+.env.production
 .env.production.local
 .env.demo
 .env.handover

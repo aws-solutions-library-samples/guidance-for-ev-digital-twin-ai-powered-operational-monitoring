@@ -1,9 +1,23 @@
 #!/bin/bash
 # Simplified deployment script for AgentCore agents
+#
+# Required environment variables (set before running):
+#   AWS_REGION             - AWS region for AgentCore CodeBuild (e.g., us-east-1)
+#   CODEBUILD_ROLE_NAME    - IAM role name for the AgentCore CodeBuild project
+#                            (e.g., AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-XXXXXXXXXX)
+#
+# Example:
+#   export AWS_REGION=us-east-1
+#   export CODEBUILD_ROLE_NAME=AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-abc123
+#   ./deploy_codebuild.sh
+
 set -e
 
 echo "🚀 Deploying AgentCore Agents"
 echo ""
+
+AWS_REGION="${AWS_REGION:?AWS_REGION env var must be set (e.g., us-east-1)}"
+CODEBUILD_ROLE_NAME="${CODEBUILD_ROLE_NAME:?CODEBUILD_ROLE_NAME env var must be set}"
 
 # Check AWS credentials
 aws sts get-caller-identity > /dev/null || {
@@ -14,15 +28,15 @@ aws sts get-caller-identity > /dev/null || {
 # Check ECR permissions
 echo "Checking IAM permissions..."
 aws iam get-role-policy \
-    --role-name AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-cdd8445f6e \
+    --role-name "$CODEBUILD_ROLE_NAME" \
     --policy-name ECRPushPolicy \
-    --region us-east-1 > /dev/null 2>&1 || {
+    --region "$AWS_REGION" > /dev/null 2>&1 || {
     echo "⚠️  ECR push permissions not found. Adding..."
     aws iam put-role-policy \
-        --role-name AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-cdd8445f6e \
+        --role-name "$CODEBUILD_ROLE_NAME" \
         --policy-name ECRPushPolicy \
         --policy-document file://ecr-push-policy.json \
-        --region us-east-1
+        --region "$AWS_REGION"
     echo "✅ ECR permissions added"
 }
 

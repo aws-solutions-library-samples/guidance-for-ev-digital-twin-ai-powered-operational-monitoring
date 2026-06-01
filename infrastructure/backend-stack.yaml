@@ -266,16 +266,25 @@ Resources:
                   - logs:PutLogEvents
                 Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/ecs/${ProjectName}*"
               
-              # Bedrock permissions for AgentCore
+              # Bedrock permissions for AgentCore - scoped to specific resource ARNs
+              # rather than a region-wide wildcard. Foundation models live under the
+              # region-only ARN (no account); inference profiles are account-scoped.
               - Effect: Allow
                 Action:
                   - bedrock:InvokeModel
                   - bedrock:InvokeModelWithResponseStream
                   - bedrock:GetFoundationModel
                   - bedrock:ListFoundationModels
+                Resource:
+                  - !Sub "arn:aws:bedrock:${AWS::Region}::foundation-model/*"
+                  - !Sub "arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/*"
+                  - !Sub "arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:application-inference-profile/*"
+              - Effect: Allow
+                Action:
                   - bedrock:Retrieve
                   - bedrock:RetrieveAndGenerate
-                Resource: !Sub "arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:*"
+                Resource:
+                  - !Sub "arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:knowledge-base/*"
               
               # DynamoDB permissions for session tracking
               - Effect: Allow

@@ -79,7 +79,7 @@ def get_guardrail_version():
     # Auto-detect latest version from Bedrock API
     if GUARDRAIL_ID:
         try:
-            bedrock_client = boto3.client('bedrock', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
+            bedrock_client = boto3.client('bedrock', region_name=os.environ['AWS_REGION'])
             response = bedrock_client.get_guardrail(guardrailIdentifier=GUARDRAIL_ID)
             _GUARDRAIL_VERSION_CACHE = response.get('version', '1')
             print(f"✅ Auto-detected guardrail version: {_GUARDRAIL_VERSION_CACHE}")
@@ -105,7 +105,7 @@ def get_nova_act_key():
     try:
         import boto3
         import json
-        client = boto3.client('secretsmanager', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
+        client = boto3.client('secretsmanager', region_name=os.environ['AWS_REGION'])
         response = client.get_secret_value(SecretId='/vehicle-maintenance/novaact-api-key')
         secret = json.loads(response['SecretString'])
         _NOVA_ACT_API_KEY_CACHE = secret['NOVA_ACT_API_KEY']
@@ -130,8 +130,17 @@ def get_nova_act_key():
 # Don't load at startup - will be loaded when order_tire_online is called
 
 # DynamoDB configuration for ML predictions
-DYNAMODB_REGION = "us-east-1"
-ML_PREDICTIONS_TABLE = "vehicle-ml-predictions"
+DYNAMODB_REGION = os.environ.get('AWS_REGION', '')
+ML_PREDICTIONS_TABLE = os.environ.get('ML_PREDICTIONS_TABLE', 'vehicle-ml-predictions')
+
+
+def _required_env(name: str, example: str) -> str:
+    value = os.environ.get(name)
+    if not value:
+        raise EnvironmentError(
+            f"{name} environment variable is required. Example: {example}"
+        )
+    return value
 
 
 # Tire-specific system prompt (specialized for tire diagnostics and Section 5.6)
@@ -299,9 +308,17 @@ class MaintenanceMemoryHooks(HookProvider):
             try:
                 # Retrieve past issues for this vehicle from LTM
                 print(f"🔍 MEMORY RETRIEVAL: Searching for vehicle {vehicle_id} history...")
+                _strategy_id = os.environ.get("MEMORY_STRATEGY_ID")
+                if not _strategy_id:
+                    raise EnvironmentError(
+                        "MEMORY_STRATEGY_ID environment variable is required for memory retrieval. "
+                        "Example: semantic_builtin_XXXXXXXX"
+                    )
+                _actor = os.environ.get("MEMORY_ACTOR_ID", "fleet_manager")
+                _namespace = f"/strategies/{_strategy_id}/actors/{_actor}"
                 memories = self.client.retrieve_memories(
                     memory_id=self.memory_id,
-                    namespace="/strategies/semantic_builtin_j1hpp-7SvGWG8R9T/actors/fleet_manager",
+                    namespace=_namespace,
                     query=f"vehicle {vehicle_id} issues problems",
                     top_k=10
                 )
@@ -442,7 +459,7 @@ class AgentCoreMaintenanceAgent:
         
         if memory_id:
             try:
-                memory_client = MemoryClient(region_name="us-east-1")
+                memory_client = MemoryClient(region_name=os.environ['AWS_REGION'])
                 self.memory_hooks = MaintenanceMemoryHooks(memory_id, memory_client, actor_id, self.session_id)
                 print("✓ Memory hooks initialized for pattern detection")
             except Exception as e:
@@ -513,7 +530,7 @@ class AgentCoreMaintenanceAgent:
             guardrail_version = get_guardrail_version()
             model = BedrockModel(
                 model_id=MODEL_ID,
-                region_name="us-east-1",
+                region_name=os.environ['AWS_REGION'],
                 **cache_kwargs,
                 guardrail_id=GUARDRAIL_ID,
                 guardrail_version=guardrail_version,
@@ -525,7 +542,7 @@ class AgentCoreMaintenanceAgent:
         else:
             model = BedrockModel(
                 model_id=MODEL_ID,
-                region_name="us-east-1",
+                region_name=os.environ['AWS_REGION'],
                 **cache_kwargs,
             )
             print("ℹ️  Bedrock Guardrails not configured - set BEDROCK_GUARDRAIL_ID to enable")
@@ -1178,8 +1195,8 @@ def get_available_slots(vehicle_id: str, service_type: str, preferred_date: str)
         Returns: {"success": true, "available_slots": [{"date": "2025-11-25", "time_slot": "15:00", ...}]}
     """
     try:
-        dynamodb = boto3.resource('dynamodb', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
-        table = dynamodb.Table('vehicle-appointment-slots')
+        dynamodb = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION'])
+        table = dynamodb.Table(_required_env('APPOINTMENTS_TABLE', 'vehicle-appointment-slots'))
         
         # Query available slots for the date
         response = table.query(
@@ -1232,8 +1249,8 @@ def schedule_appointment(vehicle_id: str, service_type: str, preferred_date: str
         Appointment confirmation details
     """
     try:
-        dynamodb = boto3.resource('dynamodb', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
-        table = dynamodb.Table('vehicle-appointment-slots')
+        dynamodb = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION'])
+        table = dynamodb.Table(_required_env('APPOINTMENTS_TABLE', 'vehicle-appointment-slots'))
         
         # Book the specific time slot requested
         table.update_item(
@@ -1334,10 +1351,10 @@ def order_tire_online(vehicle_id: str, job_id: str = None) -> str:
             })
         
         # Create BrowserClient
-        client = BrowserClient(region='us-east-1')
+        client = BrowserClient(region=os.environ['AWS_REGION'])
         
         # Manually start session with custom browser tool using boto3
-        boto_client = boto3.client('bedrock-agentcore', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
+        boto_client = boto3.client('bedrock-agentcore', region_name=os.environ['AWS_REGION'])
         session_response = boto_client.start_browser_session(
             browserIdentifier=custom_identifier,
             name=f"tire-order-{vehicle_id}",
@@ -1361,14 +1378,20 @@ def order_tire_online(vehicle_id: str, job_id: str = None) -> str:
         print(f"✓ Custom browser session created: {starting_page}")
         print(f"✓ Session ID: {client.session_id}")
         print(f"✓ Live View URL: {live_view_url[:100]}...")
-        print(f"✓ Recordings will be saved to: s3://agentcore-browser-tool-recordings/browser-sessions/")
+        _recordings_bucket = os.environ.get('BROWSER_TOOL_RECORDINGS_BUCKET')
+        if not _recordings_bucket:
+            raise EnvironmentError(
+                "BROWSER_TOOL_RECORDINGS_BUCKET environment variable is required. "
+                "Set it to the S3 bucket where AgentCore Browser Tool recordings are stored."
+            )
+        print(f"✓ Recordings will be saved to: s3://{_recordings_bucket}/browser-sessions/")
         
         # IMMEDIATELY save browser session info to DynamoDB for live view
         # This allows frontend to show "Watch Live" button while automation runs
         if job_id:
             try:
-                dynamodb = boto3.resource('dynamodb', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
-                jobs_table = dynamodb.Table('tire-order-jobs')
+                dynamodb = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION'])
+                jobs_table = dynamodb.Table(_required_env('TIRE_ORDER_JOBS_TABLE', 'tire-order-jobs'))
                 jobs_table.update_item(
                     Key={'job_id': job_id},
                     UpdateExpression='SET browser_session_id = :bsid, browser_id = :bid, live_view_url = :url, progress = :progress',

@@ -10,23 +10,35 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from bedrock_agentcore.memory import MemoryClient
 import json
 
-MEMORY_ID = "vehicle_maintenance_agent_mem-Zz75E62LMt"
+MEMORY_ID = os.environ.get("MAINTENANCE_AGENT_MEMORY_ID")
+if not MEMORY_ID:
+    raise EnvironmentError(
+        "MAINTENANCE_AGENT_MEMORY_ID environment variable is required. "
+        "Example: vehicle_maintenance_agent_mem-XXXXXXXXXX"
+    )
+
+MEMORY_NAMESPACE = os.environ.get("MEMORY_NAMESPACE")
+if not MEMORY_NAMESPACE:
+    raise EnvironmentError(
+        "MEMORY_NAMESPACE environment variable is required. "
+        "Example: /strategies/semantic_builtin_XXXXXXXX/actors/fleet_manager"
+    )
 
 
 def view_memory():
     print("🔍 Viewing AgentCore Memory Contents")
     print("=" * 80)
     
-    client = MemoryClient(region_name="us-east-1")
+    client = MemoryClient(region_name=os.environ.get("AWS_REGION", "us-east-1"))
     
     # Try to retrieve all memories
     print("\n📋 Searching for all vehicle-related memories...")
-    print("   Trying semantic strategy namespace...")
+    print(f"   Using namespace: {MEMORY_NAMESPACE}")
     try:
-        # Try the semantic strategy namespace first
+        # Use the configured namespace (typically a semantic strategy namespace)
         memories = client.retrieve_memories(
             memory_id=MEMORY_ID,
-            namespace="/strategies/semantic_builtin_j1hpp-7SvGWG8R9T/actors/fleet_manager",
+            namespace=MEMORY_NAMESPACE,
             query="vehicle",
             top_k=20
         )

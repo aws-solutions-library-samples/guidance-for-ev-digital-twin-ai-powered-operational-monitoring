@@ -227,8 +227,17 @@ python scripts/view_memory.py
 
 ### Frontend Deployment
 
+The frontend ships with `.env.production.example` as a placeholder template.
+For first-time setup, copy that file to `.env.production` and fill in your
+account-specific values; `.env.production` is gitignored so real endpoints
+never get committed.
+
 ```bash
 cd frontend/ev-digital-twin-tire-maintainence-system
+
+# First-time setup: create .env.production from the placeholder template
+cp .env.production.example .env.production
+# Edit .env.production with the values for the target account
 
 # Deploy to Account A (e.g., demo)
 cp .env.demo .env.production  # For production build
@@ -244,15 +253,15 @@ aws s3 sync build/ s3://ev-digital-twin-frontend-<account-id>-us-east-1/ --delet
 **Important:** 
 - `.env.local` is for localhost testing (`npm start`) - NOT used in builds
 - `.env.production` is for production builds (`npm run build`) - baked into JavaScript
+- `.env.production.example` is the checked-in placeholder; copy it before editing
 - Always copy the right env file to `.env.production` before building
 
 ### Agent Deployment
 
-**Update browser tool ID** in `agents/maintenance-agent/agentcore_maintenance_agent.py` (line ~1251) for each account:
+**Set the browser tool ID via the `BROWSER_TOOL_ID` environment variable** for each target account. The agent code reads it from the environment (no need to edit Python sources).
 
-**Example browser tool IDs:**
-- Demo: `vehicle_tire_order_tool-EfIt5YeiPR`
-- Handover: `vehicle_tire_order_tool-x0Jx5FieZc`
+**Example browser tool ID format:**
+- `vehicle_tire_order_tool-XXXXXXXXXX` (replace `XXXXXXXXXX` with the suffix from your AgentCore Browser Tool deployment)
 
 Then build with account-specific IDs:
 

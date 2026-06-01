@@ -35,9 +35,19 @@ _tire_data = None
 _manual_data = None
 _predictor = TirePredictor()
 
+
+def _required_env(name: str, example: str) -> str:
+    value = os.environ.get(name)
+    if not value:
+        raise EnvironmentError(
+            f"{name} environment variable is required. Example: {example}"
+        )
+    return value
+
+
 # DynamoDB configuration for ML predictions
-DYNAMODB_REGION = "us-east-1"
-ML_PREDICTIONS_TABLE = "vehicle-ml-predictions"
+DYNAMODB_REGION = os.environ.get('AWS_REGION', '')
+ML_PREDICTIONS_TABLE = os.environ.get('ML_PREDICTIONS_TABLE', 'vehicle-ml-predictions')
 
 
 def _ensure_data_loaded():
@@ -347,10 +357,10 @@ def order_tire_online(vehicle_id: str, job_id: str = None) -> str:
             })
         
         # Create BrowserClient
-        client = BrowserClient(region='us-east-1')
+        client = BrowserClient(region=os.environ['AWS_REGION'])
         
         # Manually start session with custom browser tool using boto3
-        boto_client = boto3.client('bedrock-agentcore', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
+        boto_client = boto3.client('bedrock-agentcore', region_name=os.environ['AWS_REGION'])
         session_response = boto_client.start_browser_session(
             browserIdentifier=custom_identifier,
             name=f"tire-order-{vehicle_id}",
@@ -378,8 +388,8 @@ def order_tire_online(vehicle_id: str, job_id: str = None) -> str:
         # IMMEDIATELY save browser session info to DynamoDB for live view
         if job_id:
             try:
-                dynamodb = boto3.resource('dynamodb', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
-                jobs_table = dynamodb.Table('tire-order-jobs')
+                dynamodb = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION'])
+                jobs_table = dynamodb.Table(_required_env('TIRE_ORDER_JOBS_TABLE', 'tire-order-jobs'))
                 jobs_table.update_item(
                     Key={'job_id': job_id},
                     UpdateExpression='SET browser_session_id = :bsid, browser_id = :bid, live_view_url = :url, progress = :progress',

@@ -9,7 +9,7 @@ echo "🚀 Creating Bedrock Knowledge Base Programmatically"
 echo "===================================================="
 
 # Configuration
-REGION="us-east-1"
+REGION="${AWS_REGION:?AWS_REGION env var must be set (e.g., us-east-1)}"
 BUCKET_NAME="ev-maintenance-manual-kb-$(aws sts get-caller-identity --query Account --output text)"
 KB_NAME="ev-maintenance-manual-kb"
 COLLECTION_NAME="ev-manual-vectors"
@@ -60,7 +60,9 @@ aws iam create-role \
 
 echo "✅ Created IAM role: $ROLE_NAME"
 
-# Create permissions policy
+# Create permissions policy (without OpenSearch Serverless access — that
+# permission is added later, scoped to the specific collection ID, after the
+# collection is created)
 cat > /tmp/kb-permissions-policy.json <<EOF
 {
   "Version": "2012-10-17",
@@ -82,13 +84,6 @@ cat > /tmp/kb-permissions-policy.json <<EOF
         "bedrock:InvokeModel"
       ],
       "Resource": "arn:aws:bedrock:$REGION::foundation-model/amazon.titan-embed-text-v1"
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "aoss:APIAccessAll"
-      ],
-      "Resource": "arn:aws:aoss:$REGION:$ACCOUNT_ID:collection/*"
     }
   ]
 }
@@ -135,6 +130,9 @@ aws opensearchserverless create-security-policy \
 echo "✅ Created encryption policy"
 
 # Create network policy (allow public access for now)
+# WARNING: Public access enabled for demo simplicity. Production deployments
+# should use VPC access (set AllowFromPublic to false and configure VPC
+# endpoints).
 cat > /tmp/aoss-network-policy.json <<EOF
 [
   {
@@ -252,6 +250,31 @@ COLLECTION_ENDPOINT=$(aws opensearchserverless batch-get-collection \
     --output text)
 
 echo "✅ Collection endpoint: $COLLECTION_ENDPOINT"
+
+# Now that the collection ID is known, attach the OpenSearch Serverless
+# permission scoped to ONLY this collection (rather than collection/*).
+echo ""
+echo "🔐 Attaching OpenSearch Serverless permission for collection $COLLECTION_ID..."
+cat > /tmp/kb-aoss-policy.json <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "aoss:APIAccessAll"
+      ],
+      "Resource": "arn:aws:aoss:$REGION:$ACCOUNT_ID:collection/$COLLECTION_ID"
+    }
+  ]
+}
+EOF
+
+aws iam put-role-policy \
+    --role-name $ROLE_NAME \
+    --policy-name KnowledgeBaseAOSSAccess \
+    --policy-document file:///tmp/kb-aoss-policy.json
+echo "✅ Scoped AOSS permission attached"
 
 # Step 3: Create Knowledge Base
 echo ""

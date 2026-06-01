@@ -8,7 +8,11 @@ and registers it as a target with get_vehicle_history + generate_vehicle_report 
 Usage:
     python scripts/setup_gateway.py
     python scripts/setup_gateway.py --profile demo
-    python scripts/setup_gateway.py --memory-id vehicle_maintenance_agent_mem-Zz75E62LMt
+    python scripts/setup_gateway.py --memory-id vehicle_maintenance_agent_mem-XXXXXXXXXX
+
+Required env vars or CLI args:
+    MAINTENANCE_AGENT_MEMORY_ID (or --memory-id) - AgentCore Memory ID
+    AGENTCORE_GATEWAY_ID         (or --gateway-id) - Gateway ID
 """
 
 import boto3
@@ -28,7 +32,8 @@ COGNITO_CLIENT_ID = os.environ.get('GATEWAY_CLIENT_ID', '')
 COGNITO_POOL_ID = os.environ.get('GATEWAY_COGNITO_POOL_ID', '')
 
 # Default memory config — override with --memory-id and --memory-namespace
-DEFAULT_MEMORY_ID = os.environ.get('AGENTCORE_MEMORY_ID', '')
+# Accept either AGENTCORE_MEMORY_ID or MAINTENANCE_AGENT_MEMORY_ID
+DEFAULT_MEMORY_ID = os.environ.get('MAINTENANCE_AGENT_MEMORY_ID', os.environ.get('AGENTCORE_MEMORY_ID', ''))
 DEFAULT_NAMESPACE = os.environ.get('MEMORY_NAMESPACE', '')
 
 LAMBDA_FUNCTION_NAME = "ev-digital-twin-vehicle-history"

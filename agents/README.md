@@ -116,7 +116,7 @@ agents/
 | `BROWSER_TOOL_ID` | Yes | — | — | — |
 | `BEDROCK_GUARDRAIL_ID` | Optional | Optional | Optional | Optional |
 | `AGENTCORE_MEMORY_ID` | Optional | — | — | Yes |
-| `BEDROCK_MODEL_ID` | Optional | Optional | Optional | Optional |
+| `BEDROCK_MODEL_ID` | Yes | Yes | Yes | Yes |
 
 ---
 
@@ -253,7 +253,7 @@ aws logs tail /aws/bedrock-agentcore/runtimes/<agent-name>-<id>-DEFAULT --follow
 ### Browser Tool Issues
 
 1. Ensure NovaAct API key exists in Secrets Manager (`/vehicle-maintenance/novaact-api-key`)
-2. Check S3 bucket `agentcore-browser-tool-recordings` for recordings
+2. Check the S3 bucket configured via `BROWSER_TOOL_RECORDINGS_BUCKET` (default AgentCore: `agentcore-browser-tool-recordings`) for recordings
 
 ### Memory Issues
 
@@ -266,7 +266,7 @@ python scripts/view_memory.py
 
 ```bash
 aws iam put-role-policy \
-  --role-name AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-cdd8445f6e \
+  --role-name <YOUR_CODEBUILD_ROLE_NAME> \
   --policy-name ECRPushPolicy \
   --policy-document file://ecr-push-policy.json
 ```

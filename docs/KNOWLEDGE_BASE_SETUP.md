@@ -68,7 +68,7 @@ aws bedrock-agent list-knowledge-bases \
   --output text
 ```
 
-Example output: `HCHPVDE0PX`
+Example output: `<KNOWLEDGE_BASE_ID>`
 
 ### Step 5: Update ECS Task Definition
 
@@ -79,7 +79,7 @@ aws cloudformation update-stack \
   --template-body file://infrastructure/backend-stack.yaml \
   --parameters \
     ParameterKey=ECRImageURI,ParameterValue=123456789012.dkr.ecr.us-east-1.amazonaws.com/ev-digital-twin:latest \
-    ParameterKey=KnowledgeBaseId,ParameterValue=HCHPVDE0PX \
+    ParameterKey=KnowledgeBaseId,ParameterValue=<KNOWLEDGE_BASE_ID> \
   --capabilities CAPABILITY_NAMED_IAM
 ```
 

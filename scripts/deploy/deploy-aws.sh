@@ -9,7 +9,7 @@ set -e
 #   ./scripts/deploy/deploy-aws.sh cognito --rebuild  # Deploy cognito + rebuild Docker
 
 # Configuration
-AWS_REGION="us-east-1"
+AWS_REGION="${AWS_REGION:?AWS_REGION env var must be set (e.g., us-east-1)}"
 ECR_REPO="ev-digital-twin-backend"
 IMAGE_TAG="latest"
 PROJECT_NAME="ev-digital-twin"

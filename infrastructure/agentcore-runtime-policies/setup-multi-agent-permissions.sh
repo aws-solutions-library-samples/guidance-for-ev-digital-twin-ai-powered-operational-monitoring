@@ -30,7 +30,8 @@ echo ""
 
 # 1. Add InvokeAgentRuntime permission to the ORCHESTRATOR role
 echo "=== Orchestrator: InvokeAgentRuntime permission ==="
-ORCH_ROLE=$(aws iam list-roles --query 'Roles[?contains(RoleName, `00cafffea8`)].RoleName' --output text)
+ORCHESTRATOR_ROLE_NAME="${ORCHESTRATOR_ROLE_NAME:?ORCHESTRATOR_ROLE_NAME env var must be set (e.g., AmazonBedrockAgentCoreSDKRuntime-us-east-1-XXXXXXXXXX). Find it via 'aws iam list-roles --query \"Roles[?contains(RoleName, \\\`AgentCoreSDKRuntime\\\`)].RoleName\"'}"
+ORCH_ROLE=$(aws iam list-roles --query "Roles[?RoleName=='$ORCHESTRATOR_ROLE_NAME'].RoleName" --output text)
 if [ -n "$ORCH_ROLE" ]; then
     echo "📝 Adding InvokeAgentRuntime policy to: $ORCH_ROLE"
     aws iam put-role-policy \
@@ -39,7 +40,7 @@ if [ -n "$ORCH_ROLE" ]; then
         --policy-document file://infrastructure/agentcore-runtime-policies/orchestrator-invoke-policy.json
     echo "✅ Orchestrator can now invoke specialist agents"
 else
-    echo "⚠️  Orchestrator role not found (looking for 00cafffea8). Adding to all roles as fallback."
+    echo "⚠️  Orchestrator role not found (looking for $ORCHESTRATOR_ROLE_NAME). Adding to all roles as fallback."
     for ROLE in $ROLES; do
         echo "📝 Adding InvokeAgentRuntime policy to: $ROLE"
         aws iam put-role-policy \

@@ -5,8 +5,8 @@ set -e
 # Ensures deployment to the correct AWS account
 
 # Target configuration
-TARGET_ACCOUNT="123456789012"
-AWS_REGION="us-east-1"
+TARGET_ACCOUNT="${TARGET_ACCOUNT:?TARGET_ACCOUNT env var must be set to the expected AWS account ID}"
+AWS_REGION="${AWS_REGION:?AWS_REGION env var must be set (e.g., us-east-1)}"
 STACK_NAME="ev-digital-twin-login-tracker"
 
 # Colors for output

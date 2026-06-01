@@ -9,7 +9,7 @@ Parameters:
   
   AgentCoreRuntimeId:
     Type: String
-    Description: AgentCore Runtime ID (e.g., vehicle_maintenance_agent-3R5q196E7Q)
+    Description: AgentCore Runtime ID (e.g., vehicle_maintenance_agent-XXXXXXXXXX)
 
 Resources:
   # DynamoDB Table for Tire Order Jobs
@@ -88,6 +88,7 @@ Resources:
       Environment:
         Variables:
           AGENT_RUNTIME_ARN: !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:runtime/${AgentCoreRuntimeId}'
+          TIRE_ORDER_JOBS_TABLE: !Ref TireOrderJobsTable
       Code:
         ZipFile: |
           """
@@ -103,8 +104,11 @@ Resources:
           from decimal import Decimal
           
           # Initialize AWS clients
-          dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
-          table = dynamodb.Table('tire-order-jobs')
+          dynamodb = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION'])
+          _table_name = os.environ.get('TIRE_ORDER_JOBS_TABLE')
+          if not _table_name:
+              raise EnvironmentError("TIRE_ORDER_JOBS_TABLE environment variable is required.")
+          table = dynamodb.Table(_table_name)
           
           
           def decimal_default(obj):
@@ -171,7 +175,7 @@ Resources:
                   # Call AgentCore Runtime to execute the browser tool
                   print(f"🌐 Calling AgentCore Runtime to order tires for vehicle {vehicle_id}")
                   
-                  bedrock_agentcore = boto3.client('bedrock-agentcore', region_name='us-east-1')
+                  bedrock_agentcore = boto3.client('bedrock-agentcore', region_name=os.environ['AWS_REGION'])
                   agent_arn = os.environ.get('AGENT_RUNTIME_ARN')
                   
                   if not agent_arn:

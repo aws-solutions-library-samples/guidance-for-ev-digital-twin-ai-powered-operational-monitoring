@@ -9,7 +9,7 @@ Parameters:
   
   AgentCoreRuntimeId:
     Type: String
-    Description: AgentCore Runtime ID (e.g., vehicle_maintenance_agent-3R5q196E7Q)
+    Description: AgentCore Runtime ID (e.g., vehicle_maintenance_agent-XXXXXXXXXX)
   
   AgentCoreLogGroupSuffix:
     Type: String
@@ -61,6 +61,7 @@ Resources:
                   - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/vehicle-appointment-slots'
                   - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/vehicle-genai-recs'
                   - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/tire-order-jobs'
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/browser-session-tracking'
 
   # Lambda Function
   AgentCoreLambdaProxy:
@@ -76,6 +77,11 @@ Resources:
         Variables:
           AGENT_RUNTIME_ARN: !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:runtime/${AgentCoreRuntimeId}'
           LOG_GROUP_NAME: !Sub '/aws/bedrock-agentcore/runtimes/${AgentCoreRuntimeId}-${AgentCoreLogGroupSuffix}'
+          APPOINTMENTS_TABLE: 'vehicle-appointment-slots'
+          VEHICLE_GENAI_RECS_TABLE: 'vehicle-genai-recs'
+          TIRE_ORDER_JOBS_TABLE: 'tire-order-jobs'
+          BROWSER_SESSION_TRACKING_TABLE: 'browser-session-tracking'
+          TIRE_ORDER_WORKER_FUNCTION: !Sub '${ProjectName}-tire-order-worker'
       Code:
         ZipFile: |
           import json

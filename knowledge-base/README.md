@@ -8,7 +8,9 @@ Amazon Bedrock Knowledge Base integration for AI-powered vehicle maintenance rec
 
 The Knowledge Base provides the AI agent with authoritative maintenance guidance from the **Electric Vehicle Preventive Maintenance Manual**. When analyzing vehicle issues, the agent retrieves relevant manual sections to provide accurate, manufacturer-aligned recommendations.
 
-**Knowledge Base ID:** `HCHPVDE0PX`
+**Knowledge Base ID:** `<KNOWLEDGE_BASE_ID>`
+
+> **Substitute placeholders before applying:** the JSON policy files in this directory and the snippets below use `<KNOWLEDGE_BASE_ID>` and `123456789012` (account) as placeholders. Replace them with your actual Knowledge Base ID and account number before running `aws iam put-role-policy` or any other command that consumes them.
 
 **Document Storage:** S3 bucket `ev-maintenance-manual-kb-YOUR-ACCOUNT-ID`
 
@@ -97,6 +99,18 @@ The system includes **5 specialized tools** that query the Knowledge Base:
 
 ---
 
+## ⚠️ Security: OpenSearch Serverless Public Access
+
+The `create_knowledge_base.sh` script creates the OpenSearch Serverless collection with `AllowFromPublic: true` for demo simplicity. **This is unsuitable for production.** Production deployments should:
+
+- Set `AllowFromPublic: false` in the network policy.
+- Configure VPC endpoints so the collection is only reachable from your VPC.
+- Run any Lambda/ECS workload that queries the collection from inside that VPC (or behind PrivateLink).
+
+See the `# WARNING:` comment in `create_knowledge_base.sh` directly above the `AllowFromPublic` block.
+
+---
+
 ## 🚀 Setup
 
 ### Prerequisites
@@ -151,14 +165,14 @@ If you prefer manual setup:
 
 **AgentCore Runtime:**
 ```dockerfile
-ENV KNOWLEDGE_BASE_ID=HCHPVDE0PX
+ENV KNOWLEDGE_BASE_ID=<KNOWLEDGE_BASE_ID>
 ```
 
 **Lambda Functions:**
 ```yaml
 Environment:
   Variables:
-    KNOWLEDGE_BASE_ID: HCHPVDE0PX
+    KNOWLEDGE_BASE_ID: <KNOWLEDGE_BASE_ID>
 ```
 
 ### IAM Permissions
@@ -172,7 +186,7 @@ The AgentCore Runtime role needs:
     "bedrock-agent-runtime:Retrieve",
     "bedrock-agent-runtime:RetrieveAndGenerate"
   ],
-  "Resource": "arn:aws:bedrock:us-east-1:*:knowledge-base/HCHPVDE0PX"
+  "Resource": "arn:aws:bedrock:us-east-1:*:knowledge-base/<KNOWLEDGE_BASE_ID>"
 }
 ```
 
@@ -252,14 +266,14 @@ print(get_inverter_maintenance_guidance('inverter thermal failure'))"
 2. Start ingestion job:
    ```bash
    aws bedrock-agent start-ingestion-job \
-     --knowledge-base-id HCHPVDE0PX \
+     --knowledge-base-id <KNOWLEDGE_BASE_ID> \
      --data-source-id <data-source-id>
    ```
 
 3. Monitor ingestion:
    ```bash
    aws bedrock-agent get-ingestion-job \
-     --knowledge-base-id HCHPVDE0PX \
+     --knowledge-base-id <KNOWLEDGE_BASE_ID> \
      --data-source-id <data-source-id> \
      --ingestion-job-id <job-id>
    ```
@@ -288,7 +302,7 @@ The tools are copied into the Docker container:
 
 ```dockerfile
 COPY knowledge-base/knowledge_base_tools.py .
-ENV KNOWLEDGE_BASE_ID=HCHPVDE0PX
+ENV KNOWLEDGE_BASE_ID=<KNOWLEDGE_BASE_ID>
 ```
 
 ### Lambda Worker
@@ -309,7 +323,7 @@ cp knowledge-base/knowledge_base_tools.py lambda-package/
 
 **Solution:** Set the environment variable:
 ```bash
-export KNOWLEDGE_BASE_ID=HCHPVDE0PX
+export KNOWLEDGE_BASE_ID=<KNOWLEDGE_BASE_ID>
 ```
 
 ### No Results Returned

@@ -14,8 +14,12 @@ from decimal import Decimal
 # from agentcore_maintenance_agent import order_tire_online
 
 # Initialize AWS clients
-dynamodb = boto3.resource('dynamodb', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
-TABLE_NAME = os.environ.get('TIRE_ORDER_JOBS_TABLE', 'tire-order-jobs')
+dynamodb = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION'])
+TABLE_NAME = os.environ.get('TIRE_ORDER_JOBS_TABLE')
+if not TABLE_NAME:
+    raise EnvironmentError(
+        "TIRE_ORDER_JOBS_TABLE environment variable is required."
+    )
 table = dynamodb.Table(TABLE_NAME)
 
 
@@ -114,7 +118,7 @@ def lambda_handler(event, context):
         # Call AgentCore Runtime to execute the browser tool
         print(f"🌐 Calling AgentCore Runtime to order tires for vehicle {vehicle_id}")
         
-        bedrock_agentcore = boto3.client('bedrock-agentcore', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
+        bedrock_agentcore = boto3.client('bedrock-agentcore', region_name=os.environ['AWS_REGION'])
         agent_arn = os.environ.get('AGENT_RUNTIME_ARN')
         
         if not agent_arn:

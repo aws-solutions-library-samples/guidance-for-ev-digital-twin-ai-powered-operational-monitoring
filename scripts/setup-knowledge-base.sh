@@ -12,7 +12,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-REGION="us-east-1"
+REGION="${AWS_REGION:?AWS_REGION env var must be set (e.g., us-east-1)}"
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 BUCKET_NAME="ev-digital-twin-knowledge-base-${ACCOUNT_ID}"
 KB_NAME="ev-digital-twin-maintenance-kb"

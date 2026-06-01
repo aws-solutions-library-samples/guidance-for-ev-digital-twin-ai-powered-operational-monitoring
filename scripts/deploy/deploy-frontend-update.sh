@@ -5,10 +5,10 @@ set -e
 # Updates the existing frontend deployment with login tracking functionality
 
 # Configuration
-AWS_REGION="us-east-1"
+AWS_REGION="${AWS_REGION:?AWS_REGION env var must be set (e.g., us-east-1)}"
 PROJECT_NAME="ev-digital-twin"
 FRONTEND_DIR="frontend/ev-digital-twin-tire-maintainence-system"
-LOGIN_TRACKER_API="https://YOUR-API-GATEWAY-ID.execute-api.us-east-1.amazonaws.com/prod"
+LOGIN_TRACKER_API="${LOGIN_TRACKER_API:?LOGIN_TRACKER_API env var must be set (e.g., https://API-ID.execute-api.${AWS_REGION}.amazonaws.com/prod)}"
 
 # Colors for output
 RED='\033[0;31m'

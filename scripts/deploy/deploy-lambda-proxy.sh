@@ -5,6 +5,8 @@ echo "🚀 Deploying AgentCore Lambda Proxy"
 echo "===================================="
 echo ""
 
+AWS_REGION="${AWS_REGION:?AWS_REGION env var must be set (e.g., us-east-1)}"
+
 # Package Lambda
 echo "📦 Packaging Lambda function..."
 cd infrastructure/lambda
@@ -16,7 +18,7 @@ echo "📤 Uploading to AWS Lambda..."
 aws lambda update-function-code \
   --function-name ev-digital-twin-agentcore-proxy \
   --zip-file fileb://lambda-proxy.zip \
-  --region us-east-1
+  --region "$AWS_REGION"
 
 echo "✅ Lambda function updated"
 

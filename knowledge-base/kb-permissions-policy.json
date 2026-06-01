@@ -9,7 +9,7 @@
         "bedrock:RetrieveAndGenerate"
       ],
       "Resource": [
-        "arn:aws:bedrock:us-east-1:123456789012:knowledge-base/HCHPVDE0PX"
+        "arn:aws:bedrock:us-east-1:123456789012:knowledge-base/<KNOWLEDGE_BASE_ID>"
       ]
     }
   ]

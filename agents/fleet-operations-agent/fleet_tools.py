@@ -15,6 +15,17 @@ import boto3
 # Import shared modules
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from shared.data_loader import load_tire_data, load_motor_data
+from shared.validators import validate_vehicle_id
+
+
+def _required_env(name: str, example: str) -> str:
+    value = os.environ.get(name)
+    if not value:
+        raise EnvironmentError(
+            f"{name} environment variable is required. Example: {example}"
+        )
+    return value
+
 
 # Module-level data (replaces agent_instance.* pattern)
 _tire_data = None
@@ -46,6 +57,12 @@ def quick_vehicle_check(vehicle_id: str) -> str:
     try:
         _ensure_data_loaded()
         
+        # Validate ID before using it as a query key.
+        try:
+            validate_vehicle_id(vehicle_id)
+        except ValueError as e:
+            return f"Invalid vehicle_id: {e}"
+
         # Get latest tire data
         tire_data = _tire_data[_tire_data['vehicle_id'] == vehicle_id]
         if not tire_data.empty:
@@ -100,9 +117,15 @@ def get_available_slots(vehicle_id: str, service_type: str, preferred_date: str)
         Returns: {"success": true, "available_slots": [{"date": "2025-11-25", "time_slot": "15:00", ...}]}
     """
     try:
-        dynamodb = boto3.resource('dynamodb', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
-        table = dynamodb.Table('vehicle-appointment-slots')
+        dynamodb = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION'])
+        table = dynamodb.Table(_required_env('APPOINTMENTS_TABLE', 'vehicle-appointment-slots'))
         
+        # Validate ID before persisting it.
+        try:
+            validate_vehicle_id(vehicle_id)
+        except ValueError as e:
+            return json.dumps({"error": f"Invalid vehicle_id: {e}", "available_slots": []})
+
         # Query available slots for the date
         response = table.query(
             KeyConditionExpression='#d = :date',
@@ -154,9 +177,15 @@ def schedule_appointment(vehicle_id: str, service_type: str, preferred_date: str
         Appointment confirmation details
     """
     try:
-        dynamodb = boto3.resource('dynamodb', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
-        table = dynamodb.Table('vehicle-appointment-slots')
+        dynamodb = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION'])
+        table = dynamodb.Table(_required_env('APPOINTMENTS_TABLE', 'vehicle-appointment-slots'))
         
+        # Validate ID before persisting it.
+        try:
+            validate_vehicle_id(vehicle_id)
+        except ValueError as e:
+            return json.dumps({"error": f"Invalid vehicle_id: {e}"})
+
         # Book the specific time slot requested
         table.update_item(
             Key={'date': preferred_date, 'time_slot': time_slot},

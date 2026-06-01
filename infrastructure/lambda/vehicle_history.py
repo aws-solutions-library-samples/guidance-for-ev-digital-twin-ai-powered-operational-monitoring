@@ -13,7 +13,7 @@ import os
 from datetime import datetime
 
 # Initialize AgentCore data plane client
-agentcore_client = boto3.client('bedrock-agentcore', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
+agentcore_client = boto3.client('bedrock-agentcore', region_name=os.environ['AWS_REGION'])
 
 # Memory configuration from environment
 MEMORY_ID = os.environ.get('AGENTCORE_MEMORY_ID', '')

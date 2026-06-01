@@ -13,8 +13,22 @@ import boto3
 import json
 import os
 
-# Model configuration - Claude Sonnet 4.5 via inference profile
-MODEL_ID = os.environ.get('BEDROCK_MODEL_ID', 'global.anthropic.claude-sonnet-4-5-20250929-v1:0')
+
+def _required_env(name: str, example: str) -> str:
+    value = os.environ.get(name)
+    if not value:
+        raise EnvironmentError(
+            f"{name} environment variable is required. Example: {example}"
+        )
+    return value
+
+
+# Model configuration - required env var (no default model is baked in)
+# Example: 'global.anthropic.claude-sonnet-4-5-20250929-v1:0'
+MODEL_ID = _required_env(
+    'BEDROCK_MODEL_ID',
+    'global.anthropic.claude-sonnet-4-5-20250929-v1:0'
+)
 
 # Bedrock Guardrails configuration - loaded from environment variables
 GUARDRAIL_ID = os.environ.get('BEDROCK_GUARDRAIL_ID', '')
@@ -37,7 +51,7 @@ def get_guardrail_version():
     # Auto-detect latest version from Bedrock API
     if GUARDRAIL_ID:
         try:
-            bedrock_client = boto3.client('bedrock', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
+            bedrock_client = boto3.client('bedrock', region_name=os.environ['AWS_REGION'])
             response = bedrock_client.get_guardrail(guardrailIdentifier=GUARDRAIL_ID)
             _GUARDRAIL_VERSION_CACHE = response.get('version', '1')
             print(f"✅ Auto-detected guardrail version: {_GUARDRAIL_VERSION_CACHE}")
@@ -65,7 +79,7 @@ def get_nova_act_key():
     try:
         import boto3
         import json
-        client = boto3.client('secretsmanager', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
+        client = boto3.client('secretsmanager', region_name=os.environ['AWS_REGION'])
         response = client.get_secret_value(SecretId='/vehicle-maintenance/novaact-api-key')
         secret = json.loads(response['SecretString'])
         _NOVA_ACT_API_KEY_CACHE = secret['NOVA_ACT_API_KEY']
@@ -99,7 +113,7 @@ def create_bedrock_model():
         guardrail_version = get_guardrail_version()
         model = BedrockModel(
             model_id=MODEL_ID,
-            region_name="us-east-1",
+            region_name=os.environ['AWS_REGION'],
             **cache_kwargs,
             guardrail_id=GUARDRAIL_ID,
             guardrail_version=guardrail_version,
@@ -111,7 +125,7 @@ def create_bedrock_model():
     else:
         model = BedrockModel(
             model_id=MODEL_ID,
-            region_name="us-east-1",
+            region_name=os.environ['AWS_REGION'],
             **cache_kwargs,
         )
         print("ℹ️  Bedrock Guardrails not configured - set BEDROCK_GUARDRAIL_ID to enable")

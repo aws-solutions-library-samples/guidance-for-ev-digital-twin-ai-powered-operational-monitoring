@@ -181,7 +181,7 @@ const BatteryScreen = () => {
             <circle cx="32.5" cy="10.5" r="5.25" fill="#37bc12"/>
             <circle cx="10.5" cy="10.5" r="5.25" fill="#37bc12"/>
           </svg>
-          <h1 style={{ fontSize: windowSize.width <= 1700 ? '20px' : windowSize.width <= 1815 ? '22px' : '24px', fontWeight: '700', fontFamily: 'Amazon Ember' }}>EV Digital Twin</h1>
+          <h1 style={{ fontSize: windowSize.width <= 1700 ? '20px' : windowSize.width <= 1815 ? '22px' : '24px', fontWeight: '700', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}>EV Digital Twin</h1>
         </div>
         <div className="header-right">
           <div className="user-dropdown" style={{ position: 'relative' }}>
@@ -375,7 +375,7 @@ const BatteryScreen = () => {
                     fontSize: '14px', 
                     fontWeight: '700', 
                     color: 'white', 
-                    fontFamily: 'Amazon Ember',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
                     display: 'block',
                     marginBottom: '10px'
                   }}>Charging Details</span>
@@ -490,7 +490,7 @@ const BatteryScreen = () => {
                 <h3>Safety & Control</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                 <img src={require('./assets/divider.png')} alt="Divider" style={{ width: '12px', height: '120px', position: 'absolute', left: '30%', top: '30px' }} />
-                <span style={{ fontSize: '14px', fontWeight: '700', color: 'white', fontFamily: 'Amazon Ember', position: 'absolute', left: '35%', top: '0px' }}>Fault Detection</span>
+                <span style={{ fontSize: '14px', fontWeight: '700', color: 'white', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif', position: 'absolute', left: '35%', top: '0px' }}>Fault Detection</span>
                 
                 {/* First Row of Fault Detection Items - 4 boxes */}
                 <div style={{ position: 'absolute', left: '35%', top: '25px', width: '60%', display: 'flex', gap: '4px' }}>
@@ -978,7 +978,15 @@ const BatteryScreen = () => {
                   Access the full AWS Battery Digital Twin with ML-powered predictions and advanced monitoring
                 </div>
                 <button
-                  onClick={() => window.open('https://d641sgdoddhxl.cloudfront.net/dashboard', '_blank')}
+                  onClick={() => {
+                    const dashboardBase = process.env.REACT_APP_DASHBOARD_URL || '';
+                    if (!dashboardBase) {
+                      console.warn(
+                        'REACT_APP_DASHBOARD_URL is not configured; falling back to relative /dashboard path.'
+                      );
+                    }
+                    window.open(`${dashboardBase}/dashboard`, '_blank');
+                  }}
                   style={{
                     background: '#37bc12',
                     border: 'none',

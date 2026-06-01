@@ -1,26 +1,30 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'EV Digital Twin - Cognito Authentication Stack with Midway Federation'
+Description: 'EV Digital Twin - Cognito Authentication Stack with optional SAML federation'
 
 Parameters:
   ProjectName:
     Type: String
     Default: ev-digital-twin
     Description: Name of the project
-  
+
   Environment:
     Type: String
     Default: demo
     Description: Environment name
-  
+
   CallbackURL:
     Type: String
     Default: https://localhost:3000
     Description: OAuth callback URL (update with CloudFront domain after deployment)
-  
-  MidwayMetadataURL:
+
+  SAMLMetadataURL:
     Type: String
-    Default: https://midway-auth.amazon.com/SSO/saml/metadata
-    Description: Midway SAML metadata URL
+    Default: ''
+    Description: >-
+      Optional URL to your corporate SAML 2.0 identity provider metadata
+      document (for example, https://idp.example.com/saml/metadata.xml).
+      Leave empty to skip provisioning the SAML federation provider and use
+      Cognito-only sign-in.
 
   IncludeLocalhostUrls:
     Type: String
@@ -32,6 +36,7 @@ Parameters:
 
 Conditions:
   AddLocalhostUrls: !Equals [!Ref IncludeLocalhostUrls, 'true']
+  HasSAMLProvider: !Not [!Equals [!Ref SAMLMetadataURL, '']]
 
 Resources:
   # ============================================================================
@@ -91,17 +96,18 @@ Resources:
       Domain: !Sub "${ProjectName}-${AWS::AccountId}"
       UserPoolId: !Ref UserPool
 
-  # Midway SAML Identity Provider
-  # Note: After stack creation, you need to manually configure the SAML provider
-  # with Midway metadata. See docs/MIDWAY_SETUP.md for instructions.
-  MidwayIdentityProvider:
+  # Optional Corporate SAML Identity Provider.
+  # Created only when SAMLMetadataURL parameter is supplied. Bring your own
+  # SAML 2.0 IdP (Okta, Ping, ADFS, Azure AD, etc.) by passing the metadata URL.
+  CorporateSAMLProvider:
     Type: AWS::Cognito::UserPoolIdentityProvider
+    Condition: HasSAMLProvider
     Properties:
       UserPoolId: !Ref UserPool
-      ProviderName: Midway
+      ProviderName: CorporateSSO
       ProviderType: SAML
       ProviderDetails:
-        MetadataURL: !Ref MidwayMetadataURL
+        MetadataURL: !Ref SAMLMetadataURL
         IDPSignout: "true"
       AttributeMapping:
         email: "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
@@ -110,7 +116,6 @@ Resources:
 
   UserPoolClient:
     Type: AWS::Cognito::UserPoolClient
-    DependsOn: MidwayIdentityProvider
     Properties:
       ClientName: !Sub "${ProjectName}-web-client"
       UserPoolId: !Ref UserPool
@@ -118,9 +123,14 @@ Resources:
       ExplicitAuthFlows:
         - ALLOW_USER_SRP_AUTH
         - ALLOW_REFRESH_TOKEN_AUTH
-      SupportedIdentityProviders:
-        - COGNITO
-        - Midway
+      # CorporateSSO is added to the supported providers only when the
+      # CorporateSAMLProvider resource is created. The conditional reference
+      # below also serves as the implicit DependsOn for ordering.
+      SupportedIdentityProviders: !If
+        - HasSAMLProvider
+        - - COGNITO
+          - !Ref CorporateSAMLProvider
+        - - COGNITO
       AllowedOAuthFlows:
         - code
       AllowedOAuthScopes:
@@ -243,8 +253,9 @@ Outputs:
     Export:
       Name: !Sub "${ProjectName}-user-pool-domain"
 
-  MidwaySignInURL:
-    Description: URL for Midway federated sign-in
-    Value: !Sub "https://${ProjectName}-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com/oauth2/authorize?identity_provider=Midway&redirect_uri=${CallbackURL}&response_type=code&client_id=${UserPoolClient}&scope=email+openid+profile"
+  CorporateSSOSignInURL:
+    Condition: HasSAMLProvider
+    Description: URL for corporate SSO federated sign-in (only emitted when a SAML metadata URL is configured)
+    Value: !Sub "https://${ProjectName}-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com/oauth2/authorize?identity_provider=CorporateSSO&redirect_uri=${CallbackURL}&response_type=code&client_id=${UserPoolClient}&scope=email+openid+profile"
     Export:
-      Name: !Sub "${ProjectName}-midway-signin-url"
+      Name: !Sub "${ProjectName}-corporate-sso-signin-url"

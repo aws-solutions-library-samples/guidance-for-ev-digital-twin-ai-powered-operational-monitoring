@@ -4,12 +4,17 @@ import loginTracker from '../services/loginTracker';
 import awsmobile from '../aws-exports';
 import './Login.css';
 
+// Identity provider name registered in the Cognito User Pool for SAML
+// federation. Must match the ProviderName configured in cognito-stack.yaml
+// (CorporateSAMLProvider). Override via env var if a different IdP name is used.
+const SSO_PROVIDER_NAME = process.env.REACT_APP_SSO_PROVIDER_NAME || 'CorporateSSO';
+
 const Login = ({ onSignIn }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isMidwayLoading, setIsMidwayLoading] = useState(false);
+  const [isSsoLoading, setIsSsoLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
@@ -37,30 +42,30 @@ const Login = ({ onSignIn }) => {
     }
   };
 
-  const handleMidwaySignIn = async () => {
-    setIsMidwayLoading(true);
+  const handleSsoSignIn = async () => {
+    setIsSsoLoading(true);
     setError('');
-    
+
     try {
-      console.log('Initiating Midway sign-in...');
-      // Redirect to Midway OIDC provider
+      console.log('Initiating corporate SSO sign-in...');
+      // Redirect to the configured corporate SAML/OIDC provider
       await signInWithRedirect({
         provider: {
-          custom: 'Midway'
+          custom: SSO_PROVIDER_NAME
         }
       });
       console.log('Redirect initiated');
     } catch (error) {
-      console.error('Error signing in with Midway:', error);
+      console.error('Error signing in with corporate SSO:', error);
       console.error('Error details:', JSON.stringify(error, null, 2));
-      
-      // Fallback: Direct redirect to Cognito hosted UI with Midway provider
+
+      // Fallback: Direct redirect to Cognito hosted UI with the SSO provider
       console.log('Attempting fallback redirect...');
       const domain = awsmobile.oauth?.domain || '';
       const clientId = awsmobile.aws_user_pools_web_client_id || '';
       const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
       const redirectUri = encodeURIComponent(isLocalhost ? 'http://localhost:3000/' : `${window.location.origin}/`);
-      const url = `https://${domain}/oauth2/authorize?identity_provider=Midway&redirect_uri=${redirectUri}&response_type=code&client_id=${clientId}&scope=openid`;
+      const url = `https://${domain}/oauth2/authorize?identity_provider=${encodeURIComponent(SSO_PROVIDER_NAME)}&redirect_uri=${redirectUri}&response_type=code&client_id=${clientId}&scope=openid`;
       console.log('Redirect URL:', url);
       window.location.href = url;
     }
@@ -82,18 +87,18 @@ const Login = ({ onSignIn }) => {
             <h1 className="login-title">Sign in</h1>
           </div>
 
-          {/* Midway SSO Button */}
-          <div className="midway-section">
+          {/* Corporate SSO Button */}
+          <div className="sso-section">
             <button
               type="button"
-              className="midway-button"
-              onClick={handleMidwaySignIn}
-              disabled={isMidwayLoading || isLoading}
+              className="sso-button"
+              onClick={handleSsoSignIn}
+              disabled={isSsoLoading || isLoading}
             >
-              <span className="midway-icon">🔐</span>
-              {isMidwayLoading ? 'Redirecting to Midway...' : 'Sign in with Amazon Midway'}
+              <span className="sso-icon">🔐</span>
+              {isSsoLoading ? 'Redirecting to Corporate SSO...' : 'Sign in with Corporate SSO'}
             </button>
-            <p className="midway-hint">For Amazon employees</p>
+            <p className="sso-hint">For SSO users</p>
           </div>
 
           <div className="divider">
@@ -113,7 +118,7 @@ const Login = ({ onSignIn }) => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
-                disabled={isLoading || isMidwayLoading}
+                disabled={isLoading || isSsoLoading}
               />
             </div>
 
@@ -130,13 +135,13 @@ const Login = ({ onSignIn }) => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  disabled={isLoading || isMidwayLoading}
+                  disabled={isLoading || isSsoLoading}
                 />
                 <button
                   type="button"
                   className="password-toggle"
                   onClick={() => setShowPassword(!showPassword)}
-                  disabled={isLoading || isMidwayLoading}
+                  disabled={isLoading || isSsoLoading}
                 >
                   {showPassword ? '🙈' : '👁️'}
                 </button>
@@ -152,7 +157,7 @@ const Login = ({ onSignIn }) => {
             <button
               type="submit"
               className="sign-in-button"
-              disabled={isLoading || isMidwayLoading || !username || !password}
+              disabled={isLoading || isSsoLoading || !username || !password}
             >
               {isLoading ? 'Signing in...' : 'Sign in'}
             </button>
@@ -161,7 +166,7 @@ const Login = ({ onSignIn }) => {
               type="button"
               className="forgot-password-link"
               onClick={handleForgotPassword}
-              disabled={isLoading || isMidwayLoading}
+              disabled={isLoading || isSsoLoading}
             >
               Forgot your password?
             </button>

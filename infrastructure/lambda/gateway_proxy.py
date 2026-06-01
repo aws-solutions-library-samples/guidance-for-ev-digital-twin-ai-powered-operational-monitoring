@@ -10,20 +10,41 @@ Routes:
 
 import json
 import os
+import re
 import uuid
 import base64
 import time
 from urllib import request as urllib_request
 from urllib.parse import urlencode
 
-# Gateway config
-GATEWAY_URL = os.environ.get('AGENTCORE_GATEWAY_URL',
-    'https://vehicle-maintenance-gateway-sajombqp8t.gateway.bedrock-agentcore.us-east-1.amazonaws.com/mcp')
-COGNITO_DOMAIN = os.environ.get('GATEWAY_COGNITO_DOMAIN',
-    'https://agentcore-b00196cb.auth.us-east-1.amazoncognito.com')
-CLIENT_ID = os.environ.get('GATEWAY_CLIENT_ID', '4j8tjl6c2eqrmsqkapuri2qn51')
-CLIENT_SECRET = os.environ.get('GATEWAY_CLIENT_SECRET', '')
-SCOPE = os.environ.get('GATEWAY_SCOPE', 'vehicle-maintenance-gateway/invoke')
+import boto3
+
+# Gateway config — all values must be supplied via environment variables.
+# No defaults are baked in: callers must wire real values through their
+# Lambda configuration (e.g., the CloudFormation stack) for this account.
+def _required_env(name: str, example: str) -> str:
+    value = os.environ.get(name)
+    if not value:
+        raise EnvironmentError(
+            f"{name} environment variable is required. Example: {example}"
+        )
+    return value
+
+
+GATEWAY_URL = _required_env(
+    'AGENTCORE_GATEWAY_URL',
+    'https://<gateway-id>.gateway.bedrock-agentcore.<region>.amazonaws.com/mcp'
+)
+COGNITO_DOMAIN = _required_env(
+    'GATEWAY_COGNITO_DOMAIN',
+    'https://<your-domain>.auth.<region>.amazoncognito.com'
+)
+CLIENT_ID = _required_env('GATEWAY_CLIENT_ID', 'your-cognito-app-client-id')
+# Client secret is loaded from Secrets Manager (preferred) at first use, with
+# a backward-compatible fallback to the GATEWAY_CLIENT_SECRET env var.
+GATEWAY_CLIENT_SECRET_ARN = os.environ.get('GATEWAY_CLIENT_SECRET_ARN', '')
+_LEGACY_CLIENT_SECRET_ENV = os.environ.get('GATEWAY_CLIENT_SECRET', '')
+SCOPE = _required_env('GATEWAY_SCOPE', 'vehicle-maintenance-gateway/invoke')
 
 CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
@@ -32,8 +53,62 @@ CORS_HEADERS = {
     'Content-Type': 'application/json'
 }
 
+# Permissive but safe vehicle_id pattern. Matches the shared validator in
+# agents/shared/validators.py — duplicated here because Lambda packaging does
+# not include the agents/shared/ tree.
+_VEHICLE_ID_RE = re.compile(r'^[A-Za-z0-9_-]{1,32}$')
+
+
+def _validate_vehicle_id(vehicle_id: str) -> bool:
+    """Return True if ``vehicle_id`` is a safe identifier (1-32 chars, [A-Za-z0-9_-])."""
+    return isinstance(vehicle_id, str) and bool(_VEHICLE_ID_RE.match(vehicle_id))
+
 # Token cache (persists across warm Lambda invocations)
 _token_cache = {'token': None, 'expires_at': 0}
+_client_secret_cache = None
+
+
+def _load_client_secret() -> str:
+    """Load the Cognito client secret from Secrets Manager (preferred) or env."""
+    global _client_secret_cache
+    if _client_secret_cache:
+        return _client_secret_cache
+
+    if GATEWAY_CLIENT_SECRET_ARN:
+        secrets_client = boto3.client(
+            'secretsmanager', region_name=os.environ['AWS_REGION']
+        )
+        response = secrets_client.get_secret_value(SecretId=GATEWAY_CLIENT_SECRET_ARN)
+        secret = response.get('SecretString', '')
+        # Allow JSON-wrapped secrets like {"client_secret": "..."}
+        try:
+            parsed = json.loads(secret)
+            if isinstance(parsed, dict):
+                secret = parsed.get('client_secret') or parsed.get(
+                    'GATEWAY_CLIENT_SECRET', ''
+                ) or secret
+        except (json.JSONDecodeError, TypeError):
+            pass
+
+        if not secret or secret == 'PLACEHOLDER_POPULATE_POST_DEPLOY':
+            raise ValueError(
+                "Gateway client secret is not yet populated. Run "
+                "'aws secretsmanager put-secret-value --secret-id "
+                f"{GATEWAY_CLIENT_SECRET_ARN} --secret-string <client-secret>' "
+                "after retrieving the value from Cognito."
+            )
+        _client_secret_cache = secret
+        return secret
+
+    # Fallback to legacy env var (backward compatibility for local testing)
+    if _LEGACY_CLIENT_SECRET_ENV:
+        _client_secret_cache = _LEGACY_CLIENT_SECRET_ENV
+        return _client_secret_cache
+
+    raise ValueError(
+        "Gateway client secret not configured. Set GATEWAY_CLIENT_SECRET_ARN "
+        "to a Secrets Manager secret containing the Cognito client secret."
+    )
 
 
 def get_token():
@@ -42,10 +117,9 @@ def get_token():
     if _token_cache['token'] and _token_cache['expires_at'] > now + 60:
         return _token_cache['token']
 
-    if not CLIENT_SECRET:
-        raise ValueError("GATEWAY_CLIENT_SECRET not set")
+    client_secret = _load_client_secret()
 
-    creds = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
+    creds = base64.b64encode(f"{CLIENT_ID}:{client_secret}".encode()).decode()
     data = urlencode({'grant_type': 'client_credentials', 'scope': SCOPE}).encode()
 
     req = urllib_request.Request(
@@ -130,6 +204,12 @@ def lambda_handler(event, context):
         # GET /vehicle-history/{vehicleId}
         if path.startswith('/vehicle-history/'):
             vehicle_id = path.split('/')[-1]
+            if not _validate_vehicle_id(vehicle_id):
+                return {
+                    'statusCode': 400,
+                    'headers': CORS_HEADERS,
+                    'body': json.dumps({'error': 'Invalid vehicle_id'})
+                }
             category = query_params.get('category', 'all')
             limit = int(query_params.get('limit', '20'))
 
@@ -147,6 +227,12 @@ def lambda_handler(event, context):
         # GET /vehicle-report/{vehicleId}
         if path.startswith('/vehicle-report/'):
             vehicle_id = path.split('/')[-1]
+            if not _validate_vehicle_id(vehicle_id):
+                return {
+                    'statusCode': 400,
+                    'headers': CORS_HEADERS,
+                    'body': json.dumps({'error': 'Invalid vehicle_id'})
+                }
             include_recs = query_params.get('include_recommendations', 'true').lower() == 'true'
 
             result = call_gateway(

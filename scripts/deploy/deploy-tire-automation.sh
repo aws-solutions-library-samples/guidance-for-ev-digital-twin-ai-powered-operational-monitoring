@@ -19,7 +19,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 STACK_NAME="ev-digital-twin-tire-automation"
-REGION="us-east-1"
+REGION="${AWS_REGION:?AWS_REGION env var must be set (e.g., us-east-1)}"
 PROJECT_NAME="ev-digital-twin"
 
 echo -e "${BLUE}🚀 EV Digital Twin - Tire Automation Deployment${NC}"
@@ -53,7 +53,7 @@ if [[ -z "$RUNTIME_ARN" || "$RUNTIME_ARN" == "None" ]]; then
         --output table
     
     echo ""
-    echo -e "${YELLOW}Please enter the Runtime ID (e.g., vehicle_maintenance_agent-3R5q196E7Q):${NC}"
+    echo -e "${YELLOW}Please enter the Runtime ID (e.g., vehicle_maintenance_agent-XXXXXXXXXX):${NC}"
     read -r RUNTIME_ID
     
     # Get account ID

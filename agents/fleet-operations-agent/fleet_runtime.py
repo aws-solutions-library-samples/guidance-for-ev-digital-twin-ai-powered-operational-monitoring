@@ -46,7 +46,7 @@ memory_hooks = None
 
 if MEMORY_ID:
     try:
-        memory_client = MemoryClient(region_name="us-east-1")
+        memory_client = MemoryClient(region_name=os.environ.get("AWS_REGION", "us-east-1"))
         session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
         memory_hooks = MaintenanceMemoryHooks(MEMORY_ID, memory_client, "fleet_manager", session_id)
         print("✓ Memory hooks initialized for pattern detection")

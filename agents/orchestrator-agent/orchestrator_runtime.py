@@ -33,7 +33,7 @@ if _missing:
     print("   Routing to missing specialists will fail at invocation time.")
 
 # boto3 client for invoking specialist agent runtimes
-agentcore_client = boto3.client("bedrock-agentcore", region_name="us-east-1")
+agentcore_client = boto3.client("bedrock-agentcore", region_name=os.environ.get("AWS_REGION", "us-east-1"))
 
 # Initialize the AgentCore Runtime App
 app = BedrockAgentCoreApp()

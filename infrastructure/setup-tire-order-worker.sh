@@ -5,7 +5,7 @@
 
 set -e
 
-REGION="us-east-1"
+REGION="${AWS_REGION:?AWS_REGION env var must be set (e.g., us-east-1)}"
 ROLE_NAME="ev-digital-twin-tire-order-worker-role"
 LAMBDA_NAME="ev-digital-twin-tire-order-worker"
 TABLE_NAME="tire-order-jobs"

@@ -19,6 +19,19 @@ Parameters:
     Type: String
     Description: Existing HTTP API Gateway ID to add frontend routes to
 
+  ExistingClientSecretArn:
+    Type: String
+    Default: ''
+    Description: >-
+      Optional ARN of an existing Secrets Manager secret holding the Cognito
+      OAuth client secret. If empty, a new secret named
+      "<ProjectName>-gateway-client-secret" is created with an empty value
+      that you must populate post-deploy via
+      "aws secretsmanager put-secret-value".
+
+Conditions:
+  CreateNewClientSecret: !Equals [!Ref ExistingClientSecretArn, '']
+
 Resources:
   # ============================================================
   # Gateway OAuth - Resource Server + Client on existing Cognito pool
@@ -47,6 +60,25 @@ Resources:
       AllowedOAuthFlowsUserPoolClient: true
       AllowedOAuthScopes:
         - !Sub "${ProjectName}-gateway/invoke"
+
+  # ============================================================
+  # Gateway OAuth Client Secret (Secrets Manager)
+  # ============================================================
+  # The Cognito user pool client generates a client secret automatically, but
+  # the Lambda needs it at runtime. We store it in Secrets Manager so it isn't
+  # exposed as a plaintext Lambda env var. Users must populate it post-deploy:
+  #   aws secretsmanager put-secret-value \
+  #     --secret-id <secret-arn> \
+  #     --secret-string "$(aws cognito-idp describe-user-pool-client \
+  #       --user-pool-id <pool> --client-id <client> \
+  #       --query 'UserPoolClient.ClientSecret' --output text)"
+  GatewayClientSecret:
+    Type: AWS::SecretsManager::Secret
+    Condition: CreateNewClientSecret
+    Properties:
+      Name: !Sub "${ProjectName}-gateway-client-secret"
+      Description: Cognito OAuth client secret for the AgentCore Gateway proxy Lambda
+      SecretString: 'PLACEHOLDER_POPULATE_POST_DEPLOY'
 
   # ============================================================
   # AgentCore Gateway (MCP endpoint)
@@ -212,6 +244,18 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: GatewayClientSecretAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !If
+                  - CreateNewClientSecret
+                  - !Ref GatewayClientSecret
+                  - !Ref ExistingClientSecretArn
 
   GatewayProxyLambda:
     Type: AWS::Lambda::Function
@@ -229,7 +273,10 @@ Resources:
             - "https://${ProjectName}-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com"
             - {}
           GATEWAY_CLIENT_ID: !Ref GatewayOAuthClient
-          GATEWAY_CLIENT_SECRET: ''
+          GATEWAY_CLIENT_SECRET_ARN: !If
+            - CreateNewClientSecret
+            - !Ref GatewayClientSecret
+            - !Ref ExistingClientSecretArn
           GATEWAY_SCOPE: !Sub "${ProjectName}-gateway/invoke"
       Code:
         ZipFile: |

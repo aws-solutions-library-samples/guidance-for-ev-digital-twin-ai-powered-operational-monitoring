@@ -41,7 +41,7 @@ Resources:
   BedrockAgentCoreRuntimeRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "AmazonBedrockAgentCoreSDKRuntime-${AWS::Region}-cdd8445f6e"
+      RoleName: !Sub "AmazonBedrockAgentCoreSDKRuntime-${AWS::Region}-${AWS::StackName}"
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -92,7 +92,7 @@ Resources:
   BedrockAgentCoreCodeBuildRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "AmazonBedrockAgentCoreSDKCodeBuild-${AWS::Region}-cdd8445f6e"
+      RoleName: !Sub "AmazonBedrockAgentCoreSDKCodeBuild-${AWS::Region}-${AWS::StackName}"
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -155,6 +155,9 @@ Resources:
         Type: LINUX_CONTAINER
         ComputeType: BUILD_GENERAL1_LARGE
         Image: aws/codebuild/amazonlinux2-aarch64-standard:3.0
+        # PrivilegedMode is required because the build pulls and pushes Docker images to ECR
+        # (Docker-in-Docker). This grants the build container elevated privileges. Do not
+        # enable for builds that run untrusted code.
         PrivilegedMode: true
         EnvironmentVariables:
           - Name: AWS_DEFAULT_REGION

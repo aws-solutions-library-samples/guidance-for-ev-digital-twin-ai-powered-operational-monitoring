@@ -3,3 +3,7 @@ node_modules/
 build/
 .DS_Store
 src/aws-exports.js
+.env.production
+.env.development.local
+.env.test.local
+.env.production.local

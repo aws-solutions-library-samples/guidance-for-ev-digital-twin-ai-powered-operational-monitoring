@@ -19,9 +19,9 @@ def decimal_default(obj):
         return float(obj)
     raise TypeError
 
-bedrock_agentcore = boto3.client('bedrock-agentcore', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
-logs_client = boto3.client('logs', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
-dynamodb = boto3.resource('dynamodb', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
+bedrock_agentcore = boto3.client('bedrock-agentcore', region_name=os.environ['AWS_REGION'])
+logs_client = boto3.client('logs', region_name=os.environ['AWS_REGION'])
+dynamodb = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION'])
 
 # Get log group from environment variable (set by CloudFormation)
 LOG_GROUP_NAME = os.environ.get('LOG_GROUP_NAME')
@@ -30,8 +30,43 @@ if not LOG_GROUP_NAME:
         "LOG_GROUP_NAME environment variable is required. "
         "Example: /aws/bedrock-agentcore/runtimes/vehicle_maintenance_agent"
     )
-APPOINTMENTS_TABLE = os.environ.get('APPOINTMENTS_TABLE', 'vehicle-appointment-slots')
-GENAI_RECS_TABLE = 'vehicle-genai-recs'
+
+def _required_env(name: str, example: str) -> str:
+    value = os.environ.get(name)
+    if not value:
+        raise EnvironmentError(
+            f"{name} environment variable is required. Example: {example}"
+        )
+    return value
+
+# Permissive but safe vehicle_id pattern. Matches the shared validator in
+# agents/shared/validators.py — duplicated here because Lambda packaging does
+# not include the agents/shared/ tree.
+_VEHICLE_ID_RE = re.compile(r'^[A-Za-z0-9_-]{1,32}$')
+
+
+def _validate_vehicle_id(vehicle_id) -> bool:
+    """Return True if ``vehicle_id`` is a safe identifier (1-32 chars, [A-Za-z0-9_-])."""
+    return isinstance(vehicle_id, str) and bool(_VEHICLE_ID_RE.match(vehicle_id))
+
+
+def _bad_request(message: str) -> dict:
+    """Return a 400 response with the standard CORS headers."""
+    return {
+        'statusCode': 400,
+        'headers': {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+            'Access-Control-Allow-Methods': 'GET,POST,OPTIONS'
+        },
+        'body': json.dumps({'error': message})
+    }
+
+APPOINTMENTS_TABLE = _required_env('APPOINTMENTS_TABLE', 'vehicle-appointment-slots')
+GENAI_RECS_TABLE = _required_env('VEHICLE_GENAI_RECS_TABLE', 'vehicle-genai-recs')
+TIRE_ORDER_JOBS_TABLE = _required_env('TIRE_ORDER_JOBS_TABLE', 'tire-order-jobs')
+BROWSER_SESSION_TRACKING_TABLE = _required_env('BROWSER_SESSION_TRACKING_TABLE', 'browser-session-tracking')
 
 def get_available_appointments(date):
     """Query DynamoDB for available appointment slots on a specific date"""
@@ -99,6 +134,8 @@ def lambda_handler(event, context):
         # GET /genai-recs/{vin}
         if path.startswith('/genai-recs/'):
             vin = path.split('/')[-1]
+            if not _validate_vehicle_id(vin):
+                return _bad_request('Invalid vin')
             table = dynamodb.Table(GENAI_RECS_TABLE)
             
             try:
@@ -230,7 +267,7 @@ def lambda_handler(event, context):
             conversation_session_id = path.split('/')[-1]
             
             try:
-                table = dynamodb.Table('browser-session-tracking')
+                table = dynamodb.Table(BROWSER_SESSION_TRACKING_TABLE)
                 response = table.get_item(Key={'conversation_session_id': conversation_session_id})
                 item = response.get('Item')
                 
@@ -272,7 +309,7 @@ def lambda_handler(event, context):
         # GET /tire-order/status/{job_id}
         if path.startswith('/tire-order/status/'):
             job_id = path.split('/')[-1]
-            jobs_table = dynamodb.Table(os.environ.get('TIRE_ORDER_JOBS_TABLE', 'tire-order-jobs'))
+            jobs_table = dynamodb.Table(TIRE_ORDER_JOBS_TABLE)
             
             try:
                 response = jobs_table.get_item(Key={'job_id': job_id})
@@ -313,7 +350,7 @@ def lambda_handler(event, context):
         # GET /browser-live-view/{job_id} - Generate live view URL for browser session
         if path.startswith('/browser-live-view/'):
             job_id = path.split('/')[-1]
-            jobs_table = dynamodb.Table(os.environ.get('TIRE_ORDER_JOBS_TABLE', 'tire-order-jobs'))
+            jobs_table = dynamodb.Table(TIRE_ORDER_JOBS_TABLE)
             
             try:
                 response = jobs_table.get_item(Key={'job_id': job_id})
@@ -432,11 +469,14 @@ def lambda_handler(event, context):
                     'body': json.dumps({'error': 'vehicle_id is required'})
                 }
             
+            if not _validate_vehicle_id(vehicle_id):
+                return _bad_request('Invalid vehicle_id')
+            
             # Generate job ID
             job_id = f"job-{uuid.uuid4()}"
             
             # Save to DynamoDB
-            jobs_table = dynamodb.Table(os.environ.get('TIRE_ORDER_JOBS_TABLE', 'tire-order-jobs'))
+            jobs_table = dynamodb.Table(TIRE_ORDER_JOBS_TABLE)
             try:
                 jobs_table.put_item(Item={
                     'job_id': job_id,
@@ -450,9 +490,12 @@ def lambda_handler(event, context):
                 print(f"✅ Created job {job_id} for vehicle {vehicle_id}")
                 
                 # Invoke worker Lambda async
-                lambda_client = boto3.client('lambda', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
+                lambda_client = boto3.client('lambda', region_name=os.environ['AWS_REGION'])
                 lambda_client.invoke(
-                    FunctionName=os.environ.get('TIRE_ORDER_WORKER_FUNCTION', 'ev-digital-twin-tire-order-worker'),
+                    FunctionName=_required_env(
+                        'TIRE_ORDER_WORKER_FUNCTION',
+                        '<your-tire-order-worker-lambda-name>'
+                    ),
                     InvocationType='Event',  # Async invocation
                     Payload=json.dumps({
                         'job_id': job_id,
