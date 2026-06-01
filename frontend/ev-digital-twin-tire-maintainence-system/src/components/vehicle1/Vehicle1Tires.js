@@ -1539,7 +1539,7 @@ const Vehicle1Tires = () => {
   const currentPredictions = calculateDynamicPredictions(currentData);
 
   return (
-    <div style={{ width: '100%', minHeight: '100vh', background: '#000', fontFamily: 'Amazon Ember' }}>
+    <div style={{ width: '100%', minHeight: '100vh', background: '#000', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}>
       <style>
         {`
           @keyframes spin {
@@ -1564,7 +1564,7 @@ const Vehicle1Tires = () => {
             <circle cx="32.5" cy="10.5" r="5.25" fill="#37bc12"/>
             <circle cx="10.5" cy="10.5" r="5.25" fill="#37bc12"/>
           </svg>
-          <h1 style={{ fontSize: windowWidth <= 1440 ? '18px' : windowWidth <= 1700 ? '20px' : windowWidth <= 1815 ? '22px' : '24px', fontWeight: '700', fontFamily: 'Amazon Ember' }}>EV Digital Twin</h1>
+          <h1 style={{ fontSize: windowWidth <= 1440 ? '18px' : windowWidth <= 1700 ? '20px' : windowWidth <= 1815 ? '22px' : '24px', fontWeight: '700', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}>EV Digital Twin</h1>
         </div>
         <div className="header-right">
           <div className="user-dropdown" style={{ position: 'relative' }}>

@@ -34,7 +34,7 @@ const FleetMgmt = () => {
             <circle cx="32.5" cy="10.5" r="5.25" fill="#37bc12"/>
             <circle cx="10.5" cy="10.5" r="5.25" fill="#37bc12"/>
           </svg>
-          <h1 style={{ fontSize: '24px', fontWeight: '700', fontFamily: 'Amazon Ember' }}>Fleet Management Portal</h1>
+          <h1 style={{ fontSize: '24px', fontWeight: '700', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}>Fleet Management Portal</h1>
         </div>
         <div className="header-right">
           <div className="user-dropdown" style={{ position: 'relative' }}>

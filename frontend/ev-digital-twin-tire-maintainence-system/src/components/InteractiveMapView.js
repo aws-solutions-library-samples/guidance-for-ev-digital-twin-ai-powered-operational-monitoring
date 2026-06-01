@@ -60,7 +60,7 @@ const InteractiveMapView = () => {
               <circle cx="32.5" cy="10.5" r="5.25" fill="#37bc12"/>
               <circle cx="10.5" cy="10.5" r="5.25" fill="#37bc12"/>
             </svg>
-            <h1 style={{ fontSize: '24px', fontWeight: '700', fontFamily: 'Amazon Ember' }}>EV Digital Twin</h1>
+            <h1 style={{ fontSize: '24px', fontWeight: '700', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}>EV Digital Twin</h1>
           </div>
           <div className="header-right">
             <div className="user-dropdown" style={{ position: 'relative' }}>
@@ -139,13 +139,13 @@ const InteractiveMapView = () => {
                   }}
                 >
                   <Tooltip direction="top" offset={[0, -80]} opacity={1}>
-                    <div style={{ fontFamily: 'Amazon Ember, sans-serif', fontSize: '11px', fontWeight: 'bold' }}>
+                    <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif', fontSize: '11px', fontWeight: 'bold' }}>
                       <div>VIN: {vehicle.vin}</div>
                       <div>Battery: {vehicle.battery}%</div>
                     </div>
                   </Tooltip>
                   <Popup>
-                    <div style={{ fontFamily: 'Amazon Ember, sans-serif' }}>
+                    <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}>
                       <strong>VIN: {vehicle.vin}</strong><br/>
                       Battery: {vehicle.battery}%<br/>
                       Status: {vehicle.status}

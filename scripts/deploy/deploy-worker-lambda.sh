@@ -5,6 +5,9 @@
 
 set -e
 
+AWS_REGION="${AWS_REGION:?AWS_REGION env var must be set (e.g., us-east-1)}"
+TIRE_ORDER_WORKER_FUNCTION="${TIRE_ORDER_WORKER_FUNCTION:?TIRE_ORDER_WORKER_FUNCTION env var must be set (e.g., <your-tire-order-worker-lambda-name>)}"
+
 echo "📦 Packaging tire order worker Lambda..."
 
 # Create temp directory
@@ -22,14 +25,14 @@ cd ..
 
 echo "☁️  Deploying to Lambda..."
 aws lambda update-function-code \
-  --function-name ev-digital-twin-tire-order-worker \
+  --function-name "$TIRE_ORDER_WORKER_FUNCTION" \
   --zip-file fileb://tire-order-worker.zip \
-  --region us-east-1
+  --region "$AWS_REGION"
 
 echo "⏳ Waiting for Lambda to update..."
 aws lambda wait function-updated \
-  --function-name ev-digital-twin-tire-order-worker \
-  --region us-east-1
+  --function-name "$TIRE_ORDER_WORKER_FUNCTION" \
+  --region "$AWS_REGION"
 
 # Cleanup
 rm -rf lambda-package
