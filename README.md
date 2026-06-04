@@ -159,6 +159,10 @@ Before exposing this Guidance publicly, you must:
 
 `knowledge-base/create_knowledge_base.sh` creates the OpenSearch Serverless collection with `AllowFromPublic: true` for demo simplicity. Production deployments should set `AllowFromPublic` to `false` and configure VPC endpoints so the collection is only reachable from within your VPC. The Bedrock Knowledge Base service role and any Lambda or ECS workloads that query the collection then need to live inside that VPC (or behind PrivateLink).
 
+### Third-Party Services
+
+This Guidance uses [OpenStreetMap](https://www.openstreetmap.org/) tile servers for the interactive map component in the frontend. OpenStreetMap is a third-party service not provided by, endorsed by, or affiliated with Amazon Web Services (AWS). Use of OpenStreetMap is subject to their [Tile Usage Policy](https://operations.osmfoundation.org/policies/tiles/) and [Terms of Use](https://wiki.osmfoundation.org/wiki/Terms_of_Use). For production workloads, consider using [Amazon Location Service](https://aws.amazon.com/location-service/) as a managed alternative.
+
 ### Other Hardening Notes
 
 - The `.env.production.example` template ships with placeholder values only. Copy it to `.env.production` (gitignored) and fill in real endpoints locally — never commit real Cognito IDs or API URLs.
