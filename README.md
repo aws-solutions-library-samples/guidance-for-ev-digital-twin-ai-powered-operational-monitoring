@@ -37,6 +37,21 @@ The solution uses Amazon Bedrock AgentCore with a multi-agent orchestrator archi
 - **Memory-Powered Insights**: AgentCore Memory (short-term + long-term) detects recurring issues and fleet-wide patterns across sessions
 - **Fleet Management**: Unified dashboard monitors tire, motor, and inverter health across the entire vehicle fleet
 
+### Screenshots
+
+<table>
+  <tr>
+    <td><img src="docs/screenshot-1.png" alt="Digital Twin Dashboard" width="100%"></td>
+    <td><img src="docs/screenshot-2.png" alt="Vehicle Diagnostics" width="100%"></td>
+    <td><img src="docs/screenshot-3.png" alt="AI Chat Interface" width="100%"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshot-4.png" alt="Fleet Management" width="100%"></td>
+    <td><img src="docs/screenshot-5.png" alt="Tire Order Automation" width="100%"></td>
+    <td><img src="docs/screenshot-6.png" alt="Motor Analysis" width="100%"></td>
+  </tr>
+</table>
+
 ### Architecture
 
 ![Architecture Diagram](docs/architecture.png)
