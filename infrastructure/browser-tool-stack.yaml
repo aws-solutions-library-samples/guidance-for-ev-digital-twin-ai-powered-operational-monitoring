@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'AgentCore Browser Tool for Automated Tire Ordering'
+Description: '(SO9702) Guidance for EV Digital Twin - AgentCore Browser Tool for Automated Tire Ordering'
 
 Parameters:
   RecordingBucketName:

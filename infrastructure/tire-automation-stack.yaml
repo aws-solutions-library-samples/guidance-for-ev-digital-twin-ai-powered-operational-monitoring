@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Tire Automation Infrastructure - Worker Lambda, DynamoDB, and Browser Automation'
+Description: '(SO9702) Guidance for EV Digital Twin - Tire Automation Infrastructure (Worker Lambda, DynamoDB, Browser Automation)'
 
 Parameters:
   ProjectName:

@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'AgentCore Gateway - Vehicle History & Report MCP Tools'
+Description: '(SO9702) Guidance for EV Digital Twin - AgentCore Gateway Vehicle History & Report MCP Tools'
 
 Parameters:
   ProjectName:

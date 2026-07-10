@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Lambda Proxy for AgentCore Runtime Integration with Frontend'
+Description: '(SO9702) Guidance for EV Digital Twin - Lambda Proxy for AgentCore Runtime Integration with Frontend'
 
 Parameters:
   ProjectName:

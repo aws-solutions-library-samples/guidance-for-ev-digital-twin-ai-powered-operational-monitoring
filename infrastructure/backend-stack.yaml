@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'EV Digital Twin - Backend Stack (ECS + ALB)'
+Description: '(SO9702) Guidance for EV Digital Twin - Backend Stack (ECS + ALB)'
 
 Parameters:
   ProjectName:

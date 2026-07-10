@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'CodeBuild project and IAM roles for Bedrock AgentCore deployment'
+Description: '(SO9702) Guidance for EV Digital Twin - CodeBuild project and IAM roles for Bedrock AgentCore deployment'
 
 Parameters:
   ProjectName:

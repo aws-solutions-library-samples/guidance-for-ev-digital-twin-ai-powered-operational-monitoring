@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'EV Digital Twin - Cognito Authentication Stack with optional SAML federation'
+Description: '(SO9702) Guidance for EV Digital Twin - Cognito Authentication Stack with optional SAML federation'
 
 Parameters:
   ProjectName:

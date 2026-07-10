@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'DynamoDB table for vehicle appointment scheduling'
+Description: '(SO9702) Guidance for EV Digital Twin - DynamoDB table for vehicle appointment scheduling'
 
 Parameters:
   ProjectName:
